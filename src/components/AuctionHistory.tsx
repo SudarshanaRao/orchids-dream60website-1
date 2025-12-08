@@ -194,7 +194,25 @@ const AuctionCard = ({
     return localAuction.finalRank > localAuction.currentEligibleRank;
   };
 
-  // ✅ NEW: Check if it's currently user's turn to claim
+  // ✅ NEW: Check if user is in the 1-minute "claim soon" buffer period
+  const isInClaimSoonBuffer = () => {
+    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
+    
+    // Must be user's turn (rank matches currentEligibleRank)
+    if (!localAuction.currentEligibleRank || !localAuction.finalRank) return false;
+    if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
+    
+    // Check if claimWindowStartedAt is in the future (but within 1 minute)
+    if (!localAuction.claimWindowStartedAt) return false;
+    
+    const now = Date.now();
+    const windowStart = localAuction.claimWindowStartedAt;
+    
+    // If window start is in the future, user is in "claim soon" buffer
+    return now < windowStart;
+  };
+
+  // ✅ NEW: Check if it's currently user's turn to claim (after buffer period)
   const isCurrentlyMyTurn = () => {
     if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
     
@@ -211,11 +229,14 @@ const AuctionCard = ({
     // User can claim only if their rank equals current eligible rank
     const isMyRankEligible = localAuction.finalRank === localAuction.currentEligibleRank;
     
-    // Also check deadline hasn't passed
+    // ✅ NEW: Also check that claim window has started (buffer period passed)
     const now = Date.now();
+    const windowStarted = !localAuction.claimWindowStartedAt || now >= localAuction.claimWindowStartedAt;
+    
+    // Also check deadline hasn't passed
     const beforeDeadline = !localAuction.claimDeadline || now < localAuction.claimDeadline;
     
-    return isMyRankEligible && beforeDeadline;
+    return isMyRankEligible && windowStarted && beforeDeadline;
   };
 
   // ✅ NEW: Check if prize was claimed by someone with better rank than current user
@@ -786,6 +807,41 @@ const AuctionCard = ({
                     <div className="bg-white/60 rounded-lg p-2 border border-blue-200">
                       <p className="text-[10px] text-blue-700 leading-relaxed">
                         💡 You'll be able to claim if previous {localAuction.finalRank === 2 ? 'winner' : 'winners'} don't claim within their 30-minute window{localAuction.finalRank === 3 ? 's' : ''}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ✅ NEW: "You Can Claim Soon" Banner - Show during 1-minute buffer period */}
+                {localAuction.prizeClaimStatus === 'PENDING' && isInClaimSoonBuffer() && (
+                  <div className="p-2 sm:p-3 bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-50 border-2 border-yellow-400 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center animate-pulse">
+                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] sm:text-xs font-semibold text-yellow-900">
+                            {getRankEmoji(localAuction.finalRank || 1)} You Can Claim Soon! - Rank {getRankSuffix(localAuction.finalRank || 1)}
+                          </p>
+                          <p className="text-[8px] sm:text-[10px] text-yellow-700">Your turn is starting...</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-300">
+                      <p className="text-[10px] text-yellow-900 leading-relaxed mb-1.5">
+                        <strong>⏰ Get ready!</strong> Your 30-minute claim window will open in:
+                      </p>
+                      <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
+                        <Clock className="w-3.5 h-3.5 text-yellow-700 animate-pulse" />
+                        <span className="font-bold text-xs text-yellow-900">{timeLeft}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/60 rounded-lg p-2 border border-yellow-200">
+                      <p className="text-[10px] text-yellow-800 leading-relaxed">
+                        🎯 Once the timer reaches zero, you'll have 30 minutes to claim your prize by paying the final round bid amount.
                       </p>
                     </div>
                   </div>

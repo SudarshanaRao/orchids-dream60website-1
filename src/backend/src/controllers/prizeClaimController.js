@@ -160,7 +160,7 @@ const submitPrizeClaim = async (req, res) => {
 };
 
 /**
- * ✅ NEW: Immediately advance queue to next winner (no delay)
+ * ✅ NEW: Immediately advance queue to next winner (with 1-minute buffer before claim window)
  */
 async function advanceQueueImmediately(hourlyAuctionId, expiredRank) {
   try {
@@ -171,7 +171,13 @@ async function advanceQueueImmediately(hourlyAuctionId, expiredRank) {
       return;
     }
     
-    // Update next winner immediately with new 30-minute window
+    // ✅ NEW: Next winner gets 1-minute buffer, then 30-minute claim window
+    // - claimWindowStartedAt: 1 minute from now (when they can actually claim)
+    // - claimDeadline: 31 minutes from now (1 min buffer + 30 min window)
+    const now = Date.now();
+    const windowStartTime = new Date(now + 1 * 60 * 1000); // 1 minute from now
+    const deadlineTime = new Date(now + 31 * 60 * 1000); // 31 minutes from now (1 + 30)
+    
     const result = await AuctionHistory.updateOne(
       {
         hourlyAuctionId,
@@ -182,14 +188,16 @@ async function advanceQueueImmediately(hourlyAuctionId, expiredRank) {
       {
         $set: {
           currentEligibleRank: nextRank,
-          claimWindowStartedAt: new Date(),
-          claimDeadline: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+          claimWindowStartedAt: windowStartTime, // Starts in 1 minute
+          claimDeadline: deadlineTime // 31 minutes total (1 min buffer + 30 min window)
         }
       }
     );
     
     if (result.modifiedCount > 0) {
-      console.log(`✅ [QUEUE_ADVANCE] Rank ${nextRank} winner can now claim (30-minute window started)`);
+      console.log(`✅ [QUEUE_ADVANCE] Rank ${nextRank} winner - 1-minute buffer before claim window opens`);
+      console.log(`   Window opens at: ${windowStartTime.toISOString()}`);
+      console.log(`   Deadline at: ${deadlineTime.toISOString()}`);
     }
   } catch (error) {
     console.error('❌ [QUEUE_ADVANCE] Error advancing queue:', error);
