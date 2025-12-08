@@ -185,9 +185,10 @@ const AuctionCard = ({
       return false; // Prize already claimed by someone with better rank
     }
     
-    // ✅ CRITICAL: Must have currentEligibleRank to determine waiting queue
-    if (!localAuction.currentEligibleRank || !localAuction.finalRank) {
-      return false; // If no currentEligibleRank, can't determine waiting status
+    // ✅ UPDATED: If no currentEligibleRank is set, rank 1 is NOT in waiting queue (they can claim)
+    if (!localAuction.currentEligibleRank) {
+      // Rank 1 can claim immediately, others are in waiting queue
+      return localAuction.finalRank !== 1;
     }
     
     // User is in waiting queue if their rank is higher than current eligible rank
@@ -198,8 +199,12 @@ const AuctionCard = ({
   const isInClaimSoonBuffer = () => {
     if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
     
+    // ✅ UPDATED: If no currentEligibleRank, rank 1 doesn't have buffer (they can claim immediately)
+    if (!localAuction.currentEligibleRank) {
+      return false; // No buffer for rank 1 when currentEligibleRank is not set
+    }
+    
     // Must be user's turn (rank matches currentEligibleRank)
-    if (!localAuction.currentEligibleRank || !localAuction.finalRank) return false;
     if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
     
     // Check if claimWindowStartedAt is in the future (but within 2 minutes)
@@ -224,9 +229,16 @@ const AuctionCard = ({
       return false; // Prize already claimed by someone with better rank
     }
     
-    // ✅ CRITICAL: Must have currentEligibleRank to determine turn
-    if (!localAuction.currentEligibleRank || !localAuction.finalRank) {
-      return false; // If no currentEligibleRank, assume not user's turn
+    // ✅ UPDATED: If currentEligibleRank is not set, rank 1 can claim immediately
+    if (!localAuction.currentEligibleRank) {
+      if (localAuction.finalRank === 1) {
+        // Rank 1 winner can claim immediately when no currentEligibleRank is set
+        const now = Date.now();
+        const beforeDeadline = !localAuction.claimDeadline || now < localAuction.claimDeadline;
+        return beforeDeadline;
+      }
+      // Other ranks cannot claim without currentEligibleRank being set
+      return false;
     }
     
     // User can claim only if their rank equals current eligible rank
