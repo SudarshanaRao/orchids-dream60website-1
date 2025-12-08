@@ -52,7 +52,7 @@ const getAllUsers = async (req, res) => {
 /**
  * GET /auth/me
  *
- * - If user_id is provided -> return that user (sanitized)
+ * - If user_id is provided -> return that user (sanitized) with auction stats
  * - If no user_id provided -> return list of all non-deleted users (sanitized) via userRepo.getAllUsers()
  */
 const getMe = async (req, res) => {
@@ -73,7 +73,43 @@ const getMe = async (req, res) => {
     const user = await userRepo.getUserById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    return res.json({ success: true, user: sanitizeUser(user) });
+    // ✅ Fetch auction statistics from AuctionHistory
+    let auctionStats = {
+      totalAuctionsJoined: 0,
+      totalWins: 0,
+      totalAmountSpent: 0,
+      totalAmountWon: 0,
+    };
+
+    try {
+      // Get total auctions joined (all entries for this user)
+      const totalAuctionsJoined = await AuctionHistory.countDocuments({ userId });
+      
+      // Get detailed stats
+      const stats = await AuctionHistory.getUserStats(userId);
+      
+      if (stats) {
+        auctionStats = {
+          totalAuctionsJoined: totalAuctionsJoined || 0,
+          totalWins: stats.totalWins || 0,
+          totalAmountSpent: stats.totalSpent || 0,
+          totalAmountWon: stats.totalWon || 0,
+        };
+      } else {
+        auctionStats.totalAuctionsJoined = totalAuctionsJoined || 0;
+      }
+    } catch (statsError) {
+      console.error('Error fetching auction stats:', statsError);
+      // Continue with default values if stats fetch fails
+    }
+
+    // ✅ Combine user data with auction stats
+    const userData = {
+      ...sanitizeUser(user),
+      ...auctionStats,
+    };
+
+    return res.json({ success: true, user: userData });
   } catch (err) {
     console.error('getMe error:', err);
     if (err.name === 'CastError') return res.status(400).json({ success: false, message: 'Invalid user id format' });
