@@ -264,6 +264,27 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     return auction.finalRank > auction.currentEligibleRank;
   };
 
+  // ✅ NEW: Check if user is in the 1-minute "claim soon" buffer period
+  const isInClaimSoonBuffer = () => {
+    if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return false;
+    
+    // Must be user's turn (rank matches currentEligibleRank)
+    if (!auction.currentEligibleRank || !auction.finalRank) return false;
+    if (auction.finalRank !== auction.currentEligibleRank) return false;
+    
+    // Check if claimWindowStartedAt is in the future (but within 1 minute)
+    if (!auction.claimWindowStartedAt) return false;
+    
+    const now = Date.now();
+    const windowStart = auction.claimWindowStartedAt;
+    
+    // ✅ UPDATED: If window start is in the future (up to 1 minute away), user is in "claim soon" buffer
+    const timeDiff = windowStart - now;
+    const isInBuffer = timeDiff > 0 && timeDiff <= 60 * 1000; // Within next 1 minute
+    
+    return isInBuffer;
+  };
+
   // ✅ NEW: Get position in waiting queue
   const getQueuePosition = () => {
     if (!auction.finalRank || !auction.currentEligibleRank) return 0;

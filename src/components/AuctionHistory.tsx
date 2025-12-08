@@ -208,8 +208,11 @@ const AuctionCard = ({
     const now = Date.now();
     const windowStart = localAuction.claimWindowStartedAt;
     
-    // If window start is in the future, user is in "claim soon" buffer
-    return now < windowStart;
+    // ✅ UPDATED: If window start is in the future (up to 1 minute away), user is in "claim soon" buffer
+    const timeDiff = windowStart - now;
+    const isInBuffer = timeDiff > 0 && timeDiff <= 60 * 1000; // Within next 1 minute
+    
+    return isInBuffer;
   };
 
   // ✅ NEW: Check if it's currently user's turn to claim (after buffer period)
@@ -229,7 +232,7 @@ const AuctionCard = ({
     // User can claim only if their rank equals current eligible rank
     const isMyRankEligible = localAuction.finalRank === localAuction.currentEligibleRank;
     
-    // ✅ NEW: Also check that claim window has started (buffer period passed)
+    // ✅ UPDATED: Also check that claim window has started (buffer period passed)
     const now = Date.now();
     const windowStarted = !localAuction.claimWindowStartedAt || now >= localAuction.claimWindowStartedAt;
     
