@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 // import { motion } from 'motion/react';
 import { AnimatedBackground } from './AnimatedBackground';
 import { motion, Variants } from "framer-motion";
-import { API_ENDPOINTS } from '../lib/api-config';
+import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
 
 interface AccountSettingsProps {
   user: {
@@ -39,21 +39,19 @@ interface AccountSettingsProps {
 
 
 export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onLogout }: AccountSettingsProps) {
-  const [emailAlerts, setEmailAlerts] = useState(
-    user.preferences?.emailNotifications ?? false
-  );
+  // Loading and error states
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [userDataError, setUserDataError] = useState<string | null>(null);
 
-  const [smsAlerts, setSmsAlerts] = useState(
-    user.preferences?.smsNotifications ?? false
-  );
+  // User data states - will be populated from API
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
 
-  const [bidAlerts, setBidAlerts] = useState(
-    user.preferences?.bidAlerts ?? false
-  );
-
-  const [winNotifications, setWinNotifications] = useState(
-    user.preferences?.winNotifications ?? false
-  );
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [smsAlerts, setSmsAlerts] = useState(false);
+  const [bidAlerts, setBidAlerts] = useState(false);
+  const [winNotifications, setWinNotifications] = useState(false);
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage] = useState('');
@@ -86,6 +84,66 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
 
     return `+91 ${first} ${last}`;
   };
+
+  // Fetch real-time user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoadingUser(true);
+        setUserDataError(null);
+
+        const userId = localStorage.getItem('user_id');
+        
+        if (!userId) {
+          throw new Error('User ID not found in localStorage');
+        }
+
+        const queryParams = buildQueryString({ user_id: userId });
+        const response = await fetch(`${API_ENDPOINTS.auth.deleteAccount}${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user data: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data && data.user) {
+          const userData = data.user;
+          
+          // Update user information
+          setFullName(userData.username || userData.name || '');
+          setEmail(userData.email || '');
+          setPhone(formatIndianMobile(userData.mobile || userData.phone || ''));
+
+          // Update preferences
+          if (userData.preferences) {
+            setEmailAlerts(userData.preferences.emailNotifications ?? false);
+            setSmsAlerts(userData.preferences.smsNotifications ?? false);
+            setBidAlerts(userData.preferences.bidAlerts ?? false);
+            setWinNotifications(userData.preferences.winNotifications ?? false);
+          }
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUserDataError(error instanceof Error ? error.message : 'Failed to load user data');
+        toast.error('Failed to load user data', {
+          description: 'Please try refreshing the page.',
+        });
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleDeleteAccount = async () => {
     try {
@@ -130,12 +188,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     }
   };
 
-
-  // User data states
-  const [fullName, setFullName] = useState(user.username);
-  const [email, setEmail] = useState(user.email || 'player@dream60.com');
-  const [phone, setPhone] = useState(formatIndianMobile(user.mobile || '+91 98765 43210'));
-
   const handleSaveChanges = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success('Account settings saved successfully!', {
@@ -176,7 +228,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
 
     setShowOTPVerification(false);
   };
-
 
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {
     try {
@@ -258,10 +309,72 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       transition: {
         delay: i * 0.1,
         duration: 0.5,
-        ease: [0.42, 0, 0.58, 1] as [number, number, number, number], // cast it as tuple
+        ease: [0.42, 0, 0.58, 1] as [number, number, number, number],
       },
     }),
   };
+
+  // Show loading state
+  if (isLoadingUser) {
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        <AnimatedBackground />
+        <div className="flex items-center justify-center min-h-screen relative z-10">
+          <motion.div
+            className="text-center space-y-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <motion.div
+              className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 mx-auto"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <User className="w-8 h-8 text-white" />
+            </motion.div>
+            <p className="text-purple-600 font-medium">Loading account data...</p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (userDataError) {
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        <AnimatedBackground />
+        <div className="flex items-center justify-center min-h-screen relative z-10 px-4">
+          <motion.div
+            className="text-center space-y-4 max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <User className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-purple-900">Unable to Load Account</h2>
+            <p className="text-purple-600">{userDataError}</p>
+            <div className="flex gap-3 justify-center">
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white"
+              >
+                Retry
+              </Button>
+              <Button
+                onClick={onBack}
+                variant="outline"
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                Go Back
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
