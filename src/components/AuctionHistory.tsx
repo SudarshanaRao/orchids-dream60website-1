@@ -151,6 +151,7 @@ const AuctionCard = ({
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [localAuction, setLocalAuction] = useState(auction);
+  const [isInGracePeriod, setIsInGracePeriod] = useState(false); // ✅ NEW: Track grace period
   
   // ✅ REMOVED: Individual fetch logic - now using prop
   
@@ -306,32 +307,40 @@ const AuctionCard = ({
       
       // ✅ NEW: If in waiting queue, show time until claim window opens
       if (isInWaitingQueue() && localAuction.claimWindowStartedAt) {
-        // ✅ Already UTC timestamp (number), no conversion needed
         const windowStart = localAuction.claimWindowStartedAt;
         let diff = windowStart - now;
-        
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
         diff = diff - (330 * 60 * 1000);
         
         if (diff > 0) {
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
           setTimeLeft(`Opens in ${minutes}m ${seconds}s`);
+          setIsInGracePeriod(false);
           return;
         }
       }
       
       // ✅ Show time left until deadline when it's user's turn
       if (localAuction.claimDeadline) {
-        // ✅ Already UTC timestamp (number), no conversion needed
         const deadline = localAuction.claimDeadline;
         let diff = deadline - now;
-
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
         diff = diff - (330 * 60 * 1000);
 
         if (diff <= 0) {
-          setTimeLeft('EXPIRED');
+          // ✅ NEW: Check if within 1 minute grace period after expiration
+          const timeSinceExpired = Math.abs(diff);
+          const oneMinute = 60 * 1000;
+          
+          if (timeSinceExpired <= oneMinute) {
+            // Within 1 minute grace period
+            const gracePeriodSecondsLeft = Math.ceil((oneMinute - timeSinceExpired) / 1000);
+            setTimeLeft(`EXPIRED (${gracePeriodSecondsLeft}s grace period)`);
+            setIsInGracePeriod(true);
+          } else {
+            // Beyond grace period
+            setTimeLeft('EXPIRED');
+            setIsInGracePeriod(false);
+          }
           return;
         }
 
@@ -339,6 +348,7 @@ const AuctionCard = ({
         const minutes = Math.floor(diff / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
         setTimeLeft(`${minutes}m ${seconds}s`);
+        setIsInGracePeriod(false);
       }
     };
 
@@ -349,7 +359,7 @@ const AuctionCard = ({
   }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank]);
 
   const handleClaimPrize = async () => {
-    if (timeLeft === 'EXPIRED') {
+    if (timeLeft === 'EXPIRED' || timeLeft.includes('EXPIRED')) {
       toast.error('Claim window has expired');
       return;
     }
