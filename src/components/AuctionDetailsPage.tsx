@@ -272,15 +272,15 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     if (!auction.currentEligibleRank || !auction.finalRank) return false;
     if (auction.finalRank !== auction.currentEligibleRank) return false;
     
-    // Check if claimWindowStartedAt is in the future (but within 1 minute)
+    // Check if claimWindowStartedAt is in the future (but within 2 minutes)
     if (!auction.claimWindowStartedAt) return false;
     
     const now = Date.now();
     const windowStart = auction.claimWindowStartedAt;
     
-    // ✅ UPDATED: If window start is in the future (up to 1 minute away), user is in "claim soon" buffer
+    // ✅ UPDATED: Changed from 1 minute to 2 minutes buffer to account for system delay
     const timeDiff = windowStart - now;
-    const isInBuffer = timeDiff > 0 && timeDiff <= 60 * 1000; // Within next 1 minute
+    const isInBuffer = timeDiff > 0 && timeDiff <= 2 * 60 * 1000; // Within next 2 minutes (changed from 1 minute)
     
     return isInBuffer;
   };
