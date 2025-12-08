@@ -185,42 +185,16 @@ const AuctionCard = ({
       return false; // Prize already claimed by someone with better rank
     }
     
-    // ✅ UPDATED: If no currentEligibleRank is set, rank 1 is NOT in waiting queue (they can claim)
-    if (!localAuction.currentEligibleRank) {
-      // Rank 1 can claim immediately, others are in waiting queue
-      return localAuction.finalRank !== 1;
+    // ✅ CRITICAL: Must have currentEligibleRank to determine waiting queue
+    if (!localAuction.currentEligibleRank || !localAuction.finalRank) {
+      return false; // If no currentEligibleRank, can't determine waiting status
     }
     
     // User is in waiting queue if their rank is higher than current eligible rank
     return localAuction.finalRank > localAuction.currentEligibleRank;
   };
 
-  // ✅ NEW: Check if user is in the 1-minute "claim soon" buffer period
-  const isInClaimSoonBuffer = () => {
-    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
-    
-    // ✅ UPDATED: If no currentEligibleRank, rank 1 doesn't have buffer (they can claim immediately)
-    if (!localAuction.currentEligibleRank) {
-      return false; // No buffer for rank 1 when currentEligibleRank is not set
-    }
-    
-    // Must be user's turn (rank matches currentEligibleRank)
-    if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
-    
-    // Check if claimWindowStartedAt is in the future (but within 2 minutes)
-    if (!localAuction.claimWindowStartedAt) return false;
-    
-    const now = Date.now();
-    const windowStart = localAuction.claimWindowStartedAt;
-    
-    // ✅ UPDATED: Changed from 1 minute to 2 minutes buffer to account for system delay
-    const timeDiff = windowStart - now;
-    const isInBuffer = timeDiff > 0 && timeDiff <= 2 * 60 * 1000; // Within next 2 minutes (changed from 1 minute)
-    
-    return isInBuffer;
-  };
-
-  // ✅ NEW: Check if it's currently user's turn to claim (after buffer period)
+  // ✅ NEW: Check if it's currently user's turn to claim
   const isCurrentlyMyTurn = () => {
     if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
     
@@ -229,29 +203,19 @@ const AuctionCard = ({
       return false; // Prize already claimed by someone with better rank
     }
     
-    // ✅ UPDATED: If currentEligibleRank is not set, rank 1 can claim immediately
-    if (!localAuction.currentEligibleRank) {
-      if (localAuction.finalRank === 1) {
-        // Rank 1 winner can claim immediately when no currentEligibleRank is set
-        const now = Date.now();
-        const beforeDeadline = !localAuction.claimDeadline || now < localAuction.claimDeadline;
-        return beforeDeadline;
-      }
-      // Other ranks cannot claim without currentEligibleRank being set
-      return false;
+    // ✅ CRITICAL: Must have currentEligibleRank to determine turn
+    if (!localAuction.currentEligibleRank || !localAuction.finalRank) {
+      return false; // If no currentEligibleRank, assume not user's turn
     }
     
     // User can claim only if their rank equals current eligible rank
     const isMyRankEligible = localAuction.finalRank === localAuction.currentEligibleRank;
     
-    // ✅ UPDATED: Also check that claim window has started (buffer period passed)
-    const now = Date.now();
-    const windowStarted = !localAuction.claimWindowStartedAt || now >= localAuction.claimWindowStartedAt;
-    
     // Also check deadline hasn't passed
+    const now = Date.now();
     const beforeDeadline = !localAuction.claimDeadline || now < localAuction.claimDeadline;
     
-    return isMyRankEligible && windowStarted && beforeDeadline;
+    return isMyRankEligible && beforeDeadline;
   };
 
   // ✅ NEW: Check if prize was claimed by someone with better rank than current user
@@ -628,7 +592,7 @@ const AuctionCard = ({
             </div>
 
             {/* Winner's Last Round Bid & Claim Section */}
-            {localAuction.isWinner && (
+            {localAuction.isWinner && localAuction.lastRoundBidAmount !== undefined && localAuction.lastRoundBidAmount > 0 && (
               <div onClick={(e) => e.stopPropagation()}>
                 {/* ✅ Green Banner - Prize Claimed (Check claimedBy and claimedByRank) */}
                 {localAuction.claimedBy && localAuction.claimedByRank && (
@@ -827,43 +791,8 @@ const AuctionCard = ({
                   </div>
                 )}
 
-                {/* ✅ NEW: "You Can Claim Soon" Banner - Show during 1-minute buffer period */}
-                {localAuction.prizeClaimStatus === 'PENDING' && isInClaimSoonBuffer() && (
-                  <div className="p-2 sm:p-3 bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-50 border-2 border-yellow-400 rounded-lg space-y-2">
-                    <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center animate-pulse">
-                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] sm:text-xs font-semibold text-yellow-900">
-                            {getRankEmoji(localAuction.finalRank || 1)} You Can Claim Soon! - Rank {getRankSuffix(localAuction.finalRank || 1)}
-                          </p>
-                          <p className="text-[8px] sm:text-[10px] text-yellow-700">Your turn is starting...</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-300">
-                      <p className="text-[10px] text-yellow-900 leading-relaxed mb-1.5">
-                        <strong>⏰ Get ready!</strong> Your 30-minute claim window will open in:
-                      </p>
-                      <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
-                        <Clock className="w-3.5 h-3.5 text-yellow-700 animate-pulse" />
-                        <span className="font-bold text-xs text-yellow-900">{timeLeft}</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/60 rounded-lg p-2 border border-yellow-200">
-                      <p className="text-[10px] text-yellow-800 leading-relaxed">
-                        🎯 Once the timer reaches zero, you'll have 30 minutes to claim your prize by paying the final round bid amount.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 {/* Pending claim - current user's turn (only show when it's their turn) */}
-                {localAuction.prizeClaimStatus === 'PENDING' && isCurrentlyMyTurn() && localAuction.lastRoundBidAmount && (
+                {localAuction.prizeClaimStatus === 'PENDING' && isCurrentlyMyTurn() && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 rounded-lg space-y-2">
                     <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
                       <div className="flex items-center gap-1.5">
@@ -971,6 +900,28 @@ const AuctionCard = ({
                 )}
               </div>
             )}
+
+            {/* Footer */}
+            <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-purple-100" onClick={() => onViewDetails(localAuction)}>
+              <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm text-purple-600">
+                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{localAuction.totalParticipants} participants</span>
+                <span className="sm:hidden">{localAuction.totalParticipants} users</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5">
+                {didNotPayEntry && (
+                  <Badge className="bg-red-100/80 text-red-700 border-red-300 text-[8px] sm:text-[10px] px-1.5 py-0.5">
+                    <span className="hidden sm:inline">No Entry Fee</span>
+                    <span className="sm:hidden">No Entry</span>
+                  </Badge>
+                )}
+                <div className="flex items-center gap-1 text-[9px] sm:text-xs text-purple-700 font-medium bg-purple-100/60 px-2 py-0.5 sm:py-1 rounded-full border border-purple-200/50">
+                  <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                  <span>View Details</span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

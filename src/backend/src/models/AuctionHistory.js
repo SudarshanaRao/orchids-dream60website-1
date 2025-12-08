@@ -336,25 +336,10 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
     const now = getISTTime(); // ✅ Use IST time
     
     for (const winner of winners) {
-      // ✅ UPDATED: Add 1-minute buffer between each winner's window
-      // Rank 1: 0-30 mins (no buffer before)
-      // Rank 2: 31-61 mins (1 min buffer at 30-31, then 30 min window)
-      // Rank 3: 62-92 mins (1 min buffer at 61-62, then 30 min window)
-      
-      let claimWindowStart, claimDeadline;
-      
-      if (winner.rank === 1) {
-        // Rank 1 starts immediately, no buffer
-        claimWindowStart = now;
-        claimDeadline = new Date(now.getTime() + 30 * 60 * 1000); // T+30
-      } else {
-        // Rank 2 and 3: Add 1-minute buffer after previous rank's deadline
-        // Rank 2: Previous deadline (T+30) + 1 min buffer = T+31 start, T+61 deadline
-        // Rank 3: Previous deadline (T+61) + 1 min buffer = T+62 start, T+92 deadline
-        const bufferMinutes = (winner.rank - 1) * 31; // 31, 62, etc. (30 min window + 1 min buffer per rank)
-        claimWindowStart = new Date(now.getTime() + bufferMinutes * 60 * 1000);
-        claimDeadline = new Date(now.getTime() + (bufferMinutes + 30) * 60 * 1000);
-      }
+      // ✅ Calculate deadline based on rank (fixed time slots from winners announcement)
+      // Rank 1: 0-30 mins, Rank 2: 31-60 mins, Rank 3: 61-90 mins
+      const claimWindowStart = new Date(now.getTime() + (winner.rank - 1) * 30 * 60 * 1000);
+      const claimDeadline = new Date(now.getTime() + winner.rank * 30 * 60 * 1000);
       
       const updateData = {
         isWinner: true,
@@ -366,9 +351,9 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
         prizeClaimStatus: 'PENDING',
         claimDeadline: claimDeadline, // ✅ IST-based deadline
         totalParticipants: totalParticipants,
-        // ✅ UPDATED: Fixed time slots with 1-minute buffers
+        // ✅ NEW: Fixed time slots - rank 1 starts immediately, others wait
         currentEligibleRank: 1, // All winners see that rank 1 is currently eligible
-        claimWindowStartedAt: claimWindowStart, // ✅ IST-based window start with buffer
+        claimWindowStartedAt: claimWindowStart, // ✅ IST-based window start
         ranksOffered: [1], // Track that rank 1 has been offered
       };
       
@@ -400,9 +385,9 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
       if (winner.rank === 1) {
         console.log(`     ✅ Rank 1 can claim NOW (0-30 mins)`);
       } else if (winner.rank === 2) {
-        console.log(`     ⏳ Rank 2 buffer period: 30-31 mins, then claim window 31-61 mins`);
+        console.log(`     ⏳ Rank 2 in waiting queue (claim window opens at 31 mins)`);
       } else if (winner.rank === 3) {
-        console.log(`     ⏳ Rank 3 buffer period: 61-62 mins, then claim window 62-92 mins`);
+        console.log(`     ⏳ Rank 3 in waiting queue (claim window opens at 61 mins)`);
       }
       
       const update = await this.findOneAndUpdate(
