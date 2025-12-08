@@ -151,7 +151,6 @@ const AuctionCard = ({
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [localAuction, setLocalAuction] = useState(auction);
-  const [isInGracePeriod, setIsInGracePeriod] = useState(false); // ✅ NEW: Track grace period
   
   // ✅ REMOVED: Individual fetch logic - now using prop
   
@@ -219,57 +218,6 @@ const AuctionCard = ({
     return isMyRankEligible && beforeDeadline;
   };
 
-  // ✅ NEW: Check if in "claim soon" period (window opened but less than 1 minute)
-  const isInClaimSoonPeriod = () => {
-    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
-    
-    // Check if someone already claimed
-    if (localAuction.claimedByRank && localAuction.finalRank && localAuction.claimedByRank < localAuction.finalRank) {
-      return false;
-    }
-    
-    // Must have currentEligibleRank and it must match user's rank
-    if (!localAuction.currentEligibleRank || !localAuction.finalRank) return false;
-    if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
-    
-    // Check if window has opened
-    if (!localAuction.claimWindowStartedAt) return false;
-    
-    const now = Date.now();
-    const windowStart = localAuction.claimWindowStartedAt - (330 * 60 * 1000); // Adjust for IST
-    const oneMinuteAfterStart = windowStart + (60 * 1000); // 1 minute after window opens
-    
-    // In "claim soon" period if: window has opened but less than 1 minute has passed
-    return now >= windowStart && now < oneMinuteAfterStart;
-  };
-
-  // ✅ NEW: Check if can actually claim (more than 1 minute after window opens)
-  const canClaimNow = () => {
-    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
-    
-    // Check if someone already claimed
-    if (localAuction.claimedByRank && localAuction.finalRank && localAuction.claimedByRank < localAuction.finalRank) {
-      return false;
-    }
-    
-    // Must have currentEligibleRank and it must match user's rank
-    if (!localAuction.currentEligibleRank || !localAuction.finalRank) return false;
-    if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
-    
-    // Check if window has opened and 1 minute has passed
-    if (!localAuction.claimWindowStartedAt) return false;
-    
-    const now = Date.now();
-    const windowStart = localAuction.claimWindowStartedAt - (330 * 60 * 1000); // Adjust for IST
-    const oneMinuteAfterStart = windowStart + (60 * 1000);
-    
-    // Check deadline hasn't passed
-    const beforeDeadline = !localAuction.claimDeadline || now < (localAuction.claimDeadline - (330 * 60 * 1000));
-    
-    // Can claim if: more than 1 minute has passed since window opened and before deadline
-    return now >= oneMinuteAfterStart && beforeDeadline;
-  };
-
   // ✅ NEW: Check if prize was claimed by someone with better rank than current user
   const isPrizeClaimedByBetterRank = () => {
     if (!localAuction.isWinner) return false;
@@ -307,40 +255,32 @@ const AuctionCard = ({
       
       // ✅ NEW: If in waiting queue, show time until claim window opens
       if (isInWaitingQueue() && localAuction.claimWindowStartedAt) {
+        // ✅ Already UTC timestamp (number), no conversion needed
         const windowStart = localAuction.claimWindowStartedAt;
         let diff = windowStart - now;
+        
+        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
         diff = diff - (330 * 60 * 1000);
         
         if (diff > 0) {
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
           setTimeLeft(`Opens in ${minutes}m ${seconds}s`);
-          setIsInGracePeriod(false);
           return;
         }
       }
       
       // ✅ Show time left until deadline when it's user's turn
       if (localAuction.claimDeadline) {
+        // ✅ Already UTC timestamp (number), no conversion needed
         const deadline = localAuction.claimDeadline;
         let diff = deadline - now;
+
+        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
         diff = diff - (330 * 60 * 1000);
 
         if (diff <= 0) {
-          // ✅ NEW: Check if within 1 minute grace period after expiration
-          const timeSinceExpired = Math.abs(diff);
-          const oneMinute = 60 * 1000;
-          
-          if (timeSinceExpired <= oneMinute) {
-            // Within 1 minute grace period
-            const gracePeriodSecondsLeft = Math.ceil((oneMinute - timeSinceExpired) / 1000);
-            setTimeLeft(`EXPIRED (${gracePeriodSecondsLeft}s grace period)`);
-            setIsInGracePeriod(true);
-          } else {
-            // Beyond grace period
-            setTimeLeft('EXPIRED');
-            setIsInGracePeriod(false);
-          }
+          setTimeLeft('EXPIRED');
           return;
         }
 
@@ -348,7 +288,6 @@ const AuctionCard = ({
         const minutes = Math.floor(diff / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
         setTimeLeft(`${minutes}m ${seconds}s`);
-        setIsInGracePeriod(false);
       }
     };
 
@@ -359,7 +298,7 @@ const AuctionCard = ({
   }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank]);
 
   const handleClaimPrize = async () => {
-    if (timeLeft === 'EXPIRED' || timeLeft.includes('EXPIRED')) {
+    if (timeLeft === 'EXPIRED') {
       toast.error('Claim window has expired');
       return;
     }
@@ -852,54 +791,8 @@ const AuctionCard = ({
                   </div>
                 )}
 
-                {/* ✅ NEW: "You Can Claim Soon" Banner - Show for 1 minute after window opens */}
-                {localAuction.prizeClaimStatus === 'PENDING' && isInClaimSoonPeriod() && (
-                  <div className="p-2 sm:p-3 bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-50 border-2 border-yellow-400 rounded-lg space-y-2">
-                    <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
-                      <div className="flex items-center gap-1.5">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.2, 1],
-                            rotate: [0, 10, -10, 0]
-                          }}
-                          transition={{ 
-                            duration: 1,
-                            repeat: Infinity,
-                            repeatDelay: 0.5
-                          }}
-                          className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg flex items-center justify-center"
-                        >
-                          <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                        </motion.div>
-                        <div>
-                          <p className="text-[9px] sm:text-xs font-bold text-yellow-900">
-                            {getRankEmoji(localAuction.finalRank || 1)} You Can Claim Soon!
-                          </p>
-                          <p className="text-[8px] sm:text-[10px] text-yellow-700">Get ready to claim your prize</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-300">
-                      <p className="text-[10px] text-yellow-900 leading-relaxed mb-1.5 font-semibold">
-                        🎉 Your claim window is now open! The claim button will appear in:
-                      </p>
-                      <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
-                        <Clock className="w-3.5 h-3.5 text-yellow-600" />
-                        <span className="font-bold text-xs text-yellow-900">Less than 1 minute</span>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/60 rounded-lg p-2 border border-yellow-200">
-                      <p className="text-[10px] text-yellow-800 leading-relaxed">
-                        ⏳ Please wait a moment while we prepare everything for your claim...
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Pending claim - current user's turn (only show when it's their turn AND can claim now) */}
-                {localAuction.prizeClaimStatus === 'PENDING' && canClaimNow() && (
+                {/* Pending claim - current user's turn (only show when it's their turn) */}
+                {localAuction.prizeClaimStatus === 'PENDING' && isCurrentlyMyTurn() && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 rounded-lg space-y-2">
                     <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
                       <div className="flex items-center gap-1.5">
@@ -932,13 +825,19 @@ const AuctionCard = ({
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (isInWaitingQueue()) {
+                            toast.info('Please wait for your turn', {
+                              description: 'Previous winners are being given their chance to claim first.'
+                            });
+                            return;
+                          }
                           setShowClaimForm(true);
                         }}
-                        disabled={timeLeft === 'EXPIRED' || globalPaymentLoading}
+                        disabled={timeLeft === 'EXPIRED' || globalPaymentLoading || isInWaitingQueue()}
                         className="w-full bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold py-2 rounded-xl text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Gift className="w-4 h-4 mr-2" />
-                        {globalPaymentLoading ? 'Processing...' : 'Pay Now & Claim Prize'}
+                        {globalPaymentLoading ? 'Processing...' : isInWaitingQueue() ? 'Waiting for Your Turn...' : 'Pay Now & Claim Prize'}
                       </Button>
                     ) : (
                       <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -975,7 +874,7 @@ const AuctionCard = ({
                           <Button
                             type="button"
                             onClick={handleClaimPrize}
-                            disabled={globalPaymentLoading || timeLeft === 'EXPIRED' || isProcessing}
+                            disabled={globalPaymentLoading || timeLeft === 'EXPIRED' || isProcessing || isInWaitingQueue()}
                             className="flex-1 bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isProcessing ? (
