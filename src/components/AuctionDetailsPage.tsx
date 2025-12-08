@@ -264,6 +264,71 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     return auction.finalRank > auction.currentEligibleRank;
   };
 
+  // ✅ NEW: Check if in "claim soon" period (window opened but less than 1 minute)
+  const isInClaimSoonPeriod = () => {
+    if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return false;
+    
+    // Check if someone already claimed
+    const claimStatus = checkPrizeClaimedStatus();
+    if (claimStatus && claimStatus.claimed) {
+      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) {
+        return false;
+      }
+    }
+    
+    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) {
+      return false;
+    }
+    
+    // Must have currentEligibleRank and it must match user's rank
+    if (!auction.currentEligibleRank || !auction.finalRank) return false;
+    if (auction.finalRank !== auction.currentEligibleRank) return false;
+    
+    // Check if window has opened
+    if (!auction.claimWindowStartedAt) return false;
+    
+    const now = Date.now();
+    const windowStart = auction.claimWindowStartedAt - (330 * 60 * 1000); // Adjust for IST
+    const oneMinuteAfterStart = windowStart + (60 * 1000); // 1 minute after window opens
+    
+    // In "claim soon" period if: window has opened but less than 1 minute has passed
+    return now >= windowStart && now < oneMinuteAfterStart;
+  };
+
+  // ✅ NEW: Check if can actually claim (more than 1 minute after window opens)
+  const canClaimNow = () => {
+    if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return false;
+    
+    // Check if someone already claimed
+    const claimStatus = checkPrizeClaimedStatus();
+    if (claimStatus && claimStatus.claimed) {
+      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) {
+        return false;
+      }
+    }
+    
+    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) {
+      return false;
+    }
+    
+    // Must have currentEligibleRank and it must match user's rank
+    if (!auction.currentEligibleRank || !auction.finalRank) return false;
+    if (auction.finalRank !== auction.currentEligibleRank) return false;
+    
+    // Check if window has opened and 1 minute has passed
+    if (!auction.claimWindowStartedAt) return false;
+    
+    const now = Date.now();
+    const windowStart = auction.claimWindowStartedAt - (330 * 60 * 1000); // Adjust for IST
+    const oneMinuteAfterStart = windowStart + (60 * 1000);
+    
+    // Check deadline hasn't passed
+    const beforeDeadline = !auction.claimDeadline || now < (auction.claimDeadline - (330 * 60 * 1000));
+    
+    // Can claim if: more than 1 minute has passed since window opened and before deadline
+    return now >= oneMinuteAfterStart && beforeDeadline;
+  };
+  
   // ✅ NEW: Get position in waiting queue
   const getQueuePosition = () => {
     if (!auction.finalRank || !auction.currentEligibleRank) return 0;
@@ -744,8 +809,83 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
               </motion.div>
             )}
 
-            {/* Winner Prize Claim Section - Only show if currently eligible */}
-            {auction.isWinner && auction.prizeClaimStatus === 'PENDING' && isCurrentlyEligibleToClaim() && auction.lastRoundBidAmount && (
+            {/* ✅ NEW: "You Can Claim Soon" Banner - Show for 1 minute after window opens */}
+            {auction.isWinner && auction.prizeClaimStatus === 'PENDING' && isInClaimSoonPeriod() && auction.lastRoundBidAmount && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="border-2 border-yellow-400/70 bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-50 backdrop-blur-xl shadow-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 10, -10, 0]
+                        }}
+                        transition={{ 
+                          duration: 1,
+                          repeat: Infinity,
+                          repeatDelay: 0.5
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h2 className="text-lg sm:text-xl font-bold text-yellow-900">
+                          {getRankEmoji(auction.finalRank || 1)} You Can Claim Soon! Rank {getRankSuffix(auction.finalRank || 1)}
+                        </h2>
+                        <p className="text-sm text-yellow-700">Get ready to claim your prize - button appearing shortly</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between bg-white/60 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center">
+                            <IndianRupee className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-yellow-900">Final Round Bid Amount</p>
+                            <p className="text-[10px] text-yellow-700">You'll pay this to claim</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          <IndianRupee className="w-5 h-5 text-yellow-900 font-bold" />
+                          <span className="text-xl font-bold text-yellow-900">
+                            {auction.lastRoundBidAmount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-300">
+                        <p className="text-sm text-yellow-900 leading-relaxed mb-2 font-semibold text-center">
+                          🎉 Your claim window is now open!
+                        </p>
+                        <p className="text-xs text-yellow-800 text-center mb-3">
+                          The claim button will appear in less than 1 minute
+                        </p>
+                        <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-2">
+                          <Clock className="w-4 h-4 text-yellow-600" />
+                          <span className="font-bold text-sm text-yellow-900">Preparing claim interface...</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
+                        <p className="text-xs text-yellow-800 leading-relaxed text-center">
+                          ⏳ Please wait a moment while we prepare everything for your claim...
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* Winner Prize Claim Section - Only show if can claim now (more than 1 minute) */}
+            {auction.isWinner && auction.prizeClaimStatus === 'PENDING' && canClaimNow() && auction.lastRoundBidAmount && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -866,6 +1006,81 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                           </div>
                         </div>
                       )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {/* ✅ NEW: "You Can Claim Soon" Banner - Show for 1 minute after window opens */}
+            {auction.isWinner && auction.prizeClaimStatus === 'PENDING' && isInClaimSoonPeriod() && auction.lastRoundBidAmount && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="border-2 border-yellow-400/70 bg-gradient-to-r from-yellow-50 via-amber-50 to-yellow-50 backdrop-blur-xl shadow-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotate: [0, 10, -10, 0]
+                        }}
+                        transition={{ 
+                          duration: 1,
+                          repeat: Infinity,
+                          repeatDelay: 0.5
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h2 className="text-lg sm:text-xl font-bold text-yellow-900">
+                          {getRankEmoji(auction.finalRank || 1)} You Can Claim Soon! Rank {getRankSuffix(auction.finalRank || 1)}
+                        </h2>
+                        <p className="text-sm text-yellow-700">Get ready to claim your prize - button appearing shortly</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between bg-white/60 rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center">
+                            <IndianRupee className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-yellow-900">Final Round Bid Amount</p>
+                            <p className="text-[10px] text-yellow-700">You'll pay this to claim</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5">
+                          <IndianRupee className="w-5 h-5 text-yellow-900 font-bold" />
+                          <span className="text-xl font-bold text-yellow-900">
+                            {auction.lastRoundBidAmount.toLocaleString('en-IN')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-300">
+                        <p className="text-sm text-yellow-900 leading-relaxed mb-2 font-semibold text-center">
+                          🎉 Your claim window is now open!
+                        </p>
+                        <p className="text-xs text-yellow-800 text-center mb-3">
+                          The claim button will appear in less than 1 minute
+                        </p>
+                        <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-2">
+                          <Clock className="w-4 h-4 text-yellow-600" />
+                          <span className="font-bold text-sm text-yellow-900">Preparing claim interface...</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/60 rounded-lg p-3 border border-yellow-200">
+                        <p className="text-xs text-yellow-800 leading-relaxed text-center">
+                          ⏳ Please wait a moment while we prepare everything for your claim...
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
