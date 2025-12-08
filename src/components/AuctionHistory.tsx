@@ -628,7 +628,7 @@ const AuctionCard = ({
             </div>
 
             {/* Winner's Last Round Bid & Claim Section */}
-            {localAuction.isWinner && localAuction.lastRoundBidAmount !== undefined && localAuction.lastRoundBidAmount > 0 && (
+            {localAuction.isWinner && (
               <div onClick={(e) => e.stopPropagation()}>
                 {/* ✅ Green Banner - Prize Claimed (Check claimedBy and claimedByRank) */}
                 {localAuction.claimedBy && localAuction.claimedByRank && (
@@ -971,28 +971,6 @@ const AuctionCard = ({
                 )}
               </div>
             )}
-
-            {/* Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-purple-100" onClick={() => onViewDetails(localAuction)}>
-              <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm text-purple-600">
-                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                <span className="hidden sm:inline">{localAuction.totalParticipants} participants</span>
-                <span className="sm:hidden">{localAuction.totalParticipants} users</span>
-              </div>
-              
-              <div className="flex items-center gap-1.5">
-                {didNotPayEntry && (
-                  <Badge className="bg-red-100/80 text-red-700 border-red-300 text-[8px] sm:text-[10px] px-1.5 py-0.5">
-                    <span className="hidden sm:inline">No Entry Fee</span>
-                    <span className="sm:hidden">No Entry</span>
-                  </Badge>
-                )}
-                <div className="flex items-center gap-1 text-[9px] sm:text-xs text-purple-700 font-medium bg-purple-100/60 px-2 py-0.5 sm:py-1 rounded-full border border-purple-200/50">
-                  <Target className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
-                  <span>View Details</span>
-                </div>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
