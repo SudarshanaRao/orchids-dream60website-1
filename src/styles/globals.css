@@ -1,0 +1,448 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  /* Royal Purple Palette */
+  --purple-950: #221432;
+  --purple-900: #3A2257;
+  --purple-800: #53317B;
+  --purple-700: #6B3FA0;
+  --purple-600: #8456BC;
+  --purple-500: #9F7ACB;
+  --purple-400: #B99FD9;
+  --purple-300: #C8B3E5;
+  --purple-200: #D7C7F0;
+  --purple-100: #E6DBFB;
+  --purple-50: #F5F2FE;
+  
+  /* Light theme using purple palette */
+  --background: #ffffff;
+  --foreground: var(--purple-950);
+  --card: #ffffff;
+  --card-foreground: var(--purple-950);
+  --popover: #ffffff;
+  --popover-foreground: var(--purple-950);
+  --primary: var(--purple-700);
+  --primary-foreground: #ffffff;
+  --secondary: var(--purple-400);
+  --secondary-foreground: var(--purple-950);
+  --muted: var(--purple-400);
+  --muted-foreground: var(--purple-800);
+  --accent: var(--purple-500);
+  --accent-foreground: var(--purple-950);
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: var(--purple-500);
+  --input: transparent;
+  --input-background: var(--purple-400);
+  --switch-background: var(--purple-500);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: var(--purple-600);
+  --chart-1: var(--purple-700);
+  --chart-2: var(--purple-600);
+  --chart-3: var(--purple-500);
+  --chart-4: var(--purple-800);
+  --chart-5: var(--purple-900);
+  --radius: 0.625rem;
+  --sidebar: var(--purple-400);
+  --sidebar-foreground: var(--purple-950);
+  --sidebar-primary: var(--purple-700);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--purple-500);
+  --sidebar-accent-foreground: var(--purple-950);
+  --sidebar-border: var(--purple-500);
+  --sidebar-ring: var(--purple-600);
+}
+
+.dark {
+  /* Dark theme using purple palette */
+  --background: var(--purple-950);
+  --foreground: var(--purple-400);
+  --card: var(--purple-900);
+  --card-foreground: var(--purple-400);
+  --popover: var(--purple-900);
+  --popover-foreground: var(--purple-400);
+  --primary: var(--purple-500);
+  --primary-foreground: var(--purple-950);
+  --secondary: var(--purple-800);
+  --secondary-foreground: var(--purple-400);
+  --muted: var(--purple-800);
+  --muted-foreground: var(--purple-500);
+  --accent: var(--purple-700);
+  --accent-foreground: var(--purple-400);
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: var(--purple-700);
+  --input: var(--purple-800);
+  --ring: var(--purple-600);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: var(--purple-600);
+  --chart-2: var(--purple-700);
+  --chart-3: var(--purple-800);
+  --chart-4: var(--purple-500);
+  --chart-5: var(--purple-400);
+  --sidebar: var(--purple-900);
+  --sidebar-foreground: var(--purple-400);
+  --sidebar-primary: var(--purple-600);
+  --sidebar-primary-foreground: var(--purple-950);
+  --sidebar-accent: var(--purple-800);
+  --sidebar-accent-foreground: var(--purple-400);
+  --sidebar-border: var(--purple-700);
+  --sidebar-ring: var(--purple-600);
+}
+
+@theme inline {
+  /* Custom Purple Palette */
+  --color-purple-950: var(--purple-950);
+  --color-purple-900: var(--purple-900);
+  --color-purple-800: var(--purple-800);
+  --color-purple-700: var(--purple-700);
+  --color-purple-600: var(--purple-600);
+  --color-purple-500: var(--purple-500);
+  --color-purple-400: var(--purple-400);
+  --color-purple-300: var(--purple-300);
+  --color-purple-200: var(--purple-200);
+  --color-purple-100: var(--purple-100);
+  --color-purple-50: var(--purple-50);
+  
+  /* System Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-gray-300 outline-purple-500/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+/* Custom Scrollbar - Purple Gradient */
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3e8ff;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #9333ea 0%, #7c3aed 50%, #6b21a8 100%);
+  border-radius: 10px;
+  border: 2px solid #f3e8ff;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7c3aed 0%, #6b21a8 50%, #581c87 100%);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9333ea #f3e8ff;
+}
+
+/* Custom Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+
+/* Custom Toast Styling with Glassmorphism */
+.toast-custom {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Toaster container positioning */
+[data-sonner-toaster] {
+  z-index: 99999 !important;
+  position: fixed !important;
+}
+
+[data-sonner-toaster][data-x-position='right'] {
+  right: 16px !important;
+}
+
+[data-sonner-toaster][data-y-position='top'] {
+  top: 16px !important;
+}
+
+/* Make sure toasts are visible */
+[data-sonner-toast] {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+/* Success Toast - Green/Purple Gradient */
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(135deg, rgba(167, 243, 208, 0.95) 0%, rgba(185, 159, 217, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(134, 239, 172, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(34, 197, 94, 0.35), 
+              0 0 0 1px rgba(167, 243, 208, 0.3),
+              0 4px 16px 0 rgba(107, 63, 160, 0.25) !important;
+  color: #065f46 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+}
+
+/* Error Toast - Red/Purple Gradient */
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(135deg, rgba(254, 202, 202, 0.95) 0%, rgba(185, 159, 217, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(248, 113, 113, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(220, 38, 38, 0.35), 
+              0 0 0 1px rgba(254, 202, 202, 0.3),
+              0 4px 16px 0 rgba(107, 63, 160, 0.25) !important;
+  color: #7f1d1d !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+}
+
+/* Info Toast - Blue/Purple Gradient */
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(135deg, rgba(191, 219, 254, 0.95) 0%, rgba(185, 159, 217, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(147, 197, 253, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(59, 130, 246, 0.35), 
+              0 0 0 1px rgba(191, 219, 254, 0.3),
+              0 4px 16px 0 rgba(107, 63, 160, 0.25) !important;
+  color: #1e3a8a !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+}
+
+/* Warning Toast - Yellow/Purple Gradient */
+[data-sonner-toast][data-type="warning"] {
+  background: linear-gradient(135deg, rgba(254, 240, 138, 0.95) 0%, rgba(185, 159, 217, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.35), 
+              0 0 0 1px rgba(254, 240, 138, 0.3),
+              0 4px 16px 0 rgba(107, 63, 160, 0.25) !important;
+  color: #78350f !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+}
+
+/* Default Toast - Purple Gradient */
+[data-sonner-toast]:not([data-type]) {
+  background: linear-gradient(135deg, rgba(216, 180, 254, 0.95) 0%, rgba(185, 159, 217, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(192, 132, 252, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(107, 63, 160, 0.4), 
+              0 0 0 1px rgba(216, 180, 254, 0.3),
+              0 4px 16px 0 rgba(147, 51, 234, 0.25) !important;
+  color: #581c87 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+}
+
+/* Toast icon styling */
+[data-sonner-toast] [data-icon] {
+  color: inherit !important;
+  flex-shrink: 0;
+}
+
+/* Toast content */
+[data-sonner-toast] [data-content] {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Toast description text */
+[data-sonner-toast] [data-description] {
+  opacity: 0.9 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4 !important;
+  margin-top: 4px !important;
+  color: inherit !important;
+}
+
+/* Toast title text */
+[data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+  font-size: 0.9375rem !important;
+  line-height: 1.3 !important;
+  color: inherit !important;
+}
+
+/* Close button */
+[data-sonner-toast] [data-close-button] {
+  color: inherit !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Shine effect on hover */
+[data-sonner-toast]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+  z-index: 1;
+  pointer-events: none;
+}
+
+[data-sonner-toast]:hover::before {
+  left: 100%;
+}
+
+/* Ensure content is above shine effect */
+[data-sonner-toast] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Animation entrance */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+[data-sonner-toast] {
+  animation: toast-slide-in 0.3s ease-out !important;
+  min-width: 320px !important;
+  max-width: 420px !important;
+}
