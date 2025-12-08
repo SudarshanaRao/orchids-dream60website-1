@@ -863,7 +863,7 @@ const AuctionCard = ({
                 )}
 
                 {/* Pending claim - current user's turn (only show when it's their turn) */}
-                {localAuction.prizeClaimStatus === 'PENDING' && isCurrentlyMyTurn() && (
+                {localAuction.prizeClaimStatus === 'PENDING' && isCurrentlyMyTurn() && localAuction.lastRoundBidAmount && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 rounded-lg space-y-2">
                     <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
                       <div className="flex items-center gap-1.5">
