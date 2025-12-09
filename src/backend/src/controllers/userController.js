@@ -73,40 +73,31 @@ const getMe = async (req, res) => {
     const user = await userRepo.getUserById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // ✅ Fetch auction statistics from AuctionHistory
-    let auctionStats = {
-      totalAuctionsJoined: 0,
+    // ✅ Fetch complete auction statistics from AuctionHistory
+    let stats = {
+      totalAuctions: 0,
       totalWins: 0,
-      totalAmountSpent: 0,
-      totalAmountWon: 0,
+      totalLosses: 0,
+      totalSpent: 0,
+      totalWon: 0,
+      winRate: 0,
+      netGain: 0,
     };
 
     try {
-      // Get total auctions joined (all entries for this user)
-      const totalAuctionsJoined = await AuctionHistory.countDocuments({ userId });
-      
-      // Get detailed stats
-      const stats = await AuctionHistory.getUserStats(userId);
-      
-      if (stats) {
-        auctionStats = {
-          totalAuctionsJoined: totalAuctionsJoined || 0,
-          totalWins: stats.totalWins || 0,
-          totalAmountSpent: stats.totalSpent || 0,
-          totalAmountWon: stats.totalWon || 0,
-        };
-      } else {
-        auctionStats.totalAuctionsJoined = totalAuctionsJoined || 0;
+      const auctionStats = await AuctionHistory.getUserStats(userId);
+      if (auctionStats) {
+        stats = auctionStats;
       }
     } catch (statsError) {
       console.error('Error fetching auction stats:', statsError);
       // Continue with default values if stats fetch fails
     }
 
-    // ✅ Combine user data with auction stats
+    // ✅ Combine user data with complete auction stats
     const userData = {
       ...sanitizeUser(user),
-      ...auctionStats,
+      stats,
     };
 
     return res.json({ success: true, user: userData });
@@ -120,7 +111,7 @@ const getMe = async (req, res) => {
 /**
  * GET /auth/me/profile
  * Requires user_id
- * Returns user profile with auction statistics (totalWins, totalAmountSpent, totalAmountWon)
+ * Returns user profile with complete auction statistics
  */
 const getProfile = async (req, res) => {
   try {
@@ -130,31 +121,31 @@ const getProfile = async (req, res) => {
     const user = await userRepo.getUserById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // ✅ Fetch auction statistics from AuctionHistory
-    let auctionStats = {
+    // ✅ Fetch complete auction statistics from AuctionHistory
+    let stats = {
+      totalAuctions: 0,
       totalWins: 0,
-      totalAmountSpent: 0,
-      totalAmountWon: 0,
+      totalLosses: 0,
+      totalSpent: 0,
+      totalWon: 0,
+      winRate: 0,
+      netGain: 0,
     };
 
     try {
-      const stats = await AuctionHistory.getUserStats(userId);
-      if (stats) {
-        auctionStats = {
-          totalWins: stats.totalWins || 0,
-          totalAmountSpent: stats.totalSpent || 0,
-          totalAmountWon: stats.totalWon || 0,
-        };
+      const auctionStats = await AuctionHistory.getUserStats(userId);
+      if (auctionStats) {
+        stats = auctionStats;
       }
     } catch (statsError) {
       console.error('Error fetching auction stats:', statsError);
       // Continue with default values if stats fetch fails
     }
 
-    // ✅ Combine user profile with auction stats
+    // ✅ Combine user profile with complete auction stats
     const profileData = {
       ...sanitizeUser(user),
-      ...auctionStats,
+      stats,
     };
 
     return res.json({ success: true, data: profileData, profile: profileData });
