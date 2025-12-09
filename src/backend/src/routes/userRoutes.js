@@ -156,7 +156,15 @@ const ensureUserId = (req, res, next) => {
  * /auth/users:
  *   get:
  *     summary: GET ALL USERS
- *     description: |\n *       Returns all non-deleted users in the system.\n *       No authentication or parameters required.\n *       \n *       **Use this endpoint to:**\n *       - Get list of all users\n *       - Admin user management\n *       - User search and filtering\n *     tags: [Users]
+ *     description: |
+ *       Returns all non-deleted users in the system.
+ *       No authentication or parameters required.
+ *       
+ *       **Use this endpoint to:**
+ *       - Get list of all users
+ *       - Admin user management
+ *       - User search and filtering
+ *     tags: [Users]
  *     responses:
  *       200:
  *         description: List of users retrieved successfully
@@ -202,7 +210,22 @@ router.get('/users', getAllUsers);
  * /auth/me:
  *   get:
  *     summary: GET CURRENT USER'S FULL DETAILS
- *     description: |\n *       Fetches complete user details including profile information and statistics.\n *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.\n *       \n *       **What it returns:**\n *       - User profile (username, email, mobile)\n *       - User preferences (notification settings)\n *       - User statistics (auctions, wins, losses, spending, earnings)\n *       - Account metadata (creation date, last updated)\n *       \n *       **Use this endpoint to:**\n *       - Display user profile page\n *       - Show user dashboard with stats\n *       - Update UI with latest user information\n *       - Sync user data after login\n *     tags: [Users]
+ *     description: |
+ *       Fetches complete user details including profile information and statistics.
+ *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.
+ *       
+ *       **What it returns:**
+ *       - User profile (username, email, mobile)
+ *       - User preferences (notification settings)
+ *       - User statistics (auctions, wins, losses, spending, earnings)
+ *       - Account metadata (creation date, last updated)
+ *       
+ *       **Use this endpoint to:**
+ *       - Display user profile page
+ *       - Show user dashboard with stats
+ *       - Update UI with latest user information
+ *       - Sync user data after login
+ *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -258,7 +281,15 @@ router.get('/me', ensureUserId, getMe);
  * /auth/me/profile:
  *   get:
  *     summary: GET CURRENT USER'S PROFILE INFO
- *     description: |\n *       Fetches user profile information (lighter version of /auth/me).\n *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.\n *       \n *       **Use this endpoint to:**\n *       - Quick profile lookup\n *       - Display user info in headers/navbars\n *       - User verification\n *     tags: [Users]
+ *     description: |
+ *       Fetches user profile information (lighter version of /auth/me).
+ *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.
+ *       
+ *       **Use this endpoint to:**
+ *       - Quick profile lookup
+ *       - Display user info in headers/navbars
+ *       - User verification
+ *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -299,7 +330,21 @@ router.get('/me/profile', ensureUserId, getProfile);
  * /auth/me/preferences:
  *   put:
  *     summary: UPDATE USER NOTIFICATION PREFERENCES
- *     description: |\n *       Updates user's notification preferences.\n *       All notification settings are optional - only provided fields will be updated.\n *       \n *       **Preference options:**\n *       - emailNotifications: Receive email notifications\n *       - smsNotifications: Receive SMS notifications\n *       - bidAlerts: Get alerts when auction bids are placed\n *       - winNotifications: Get notified when you win auctions\n *       \n *       **Use this endpoint to:**\n *       - Allow users to customize their notification settings\n *       - Enable/disable specific notification channels\n *       - Update communication preferences\n *     tags: [Users]
+ *     description: |
+ *       Updates user's notification preferences.
+ *       All notification settings are optional - only provided fields will be updated.
+ *       
+ *       **Preference options:**
+ *       - emailNotifications: Receive email notifications
+ *       - smsNotifications: Receive SMS notifications
+ *       - bidAlerts: Get alerts when auction bids are placed
+ *       - winNotifications: Get notified when you win auctions
+ *       
+ *       **Use this endpoint to:**
+ *       - Allow users to customize their notification settings
+ *       - Enable/disable specific notification channels
+ *       - Update communication preferences
+ *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
@@ -340,7 +385,21 @@ router.put('/me/preferences', ensureUserId, updatePreferences);
  * /auth/me:
  *   delete:
  *     summary: SOFT DELETE USER ACCOUNT
- *     description: |\n *       Performs a soft delete on user account (marks as deleted but doesn't remove from database).\n *       User data is retained for audit purposes but account becomes inaccessible.\n *       \n *       **What happens:**\n *       - Account is marked as deleted\n *       - User cannot login anymore\n *       - User data is retained for historical records\n *       - Auction history is preserved\n *       \n *       **Use this endpoint to:**\n *       - Allow users to delete their account\n *       - Implement GDPR compliance\n *       - Handle account closure requests\n *     tags: [Users]
+ *     description: |
+ *       Performs a soft delete on user account (marks as deleted but doesn't remove from database).
+ *       User data is retained for audit purposes but account becomes inaccessible.
+ *       
+ *       **What happens:**
+ *       - Account is marked as deleted
+ *       - User cannot login anymore
+ *       - User data is retained for historical records
+ *       - Auction history is preserved
+ *       
+ *       **Use this endpoint to:**
+ *       - Allow users to delete their account
+ *       - Implement GDPR compliance
+ *       - Handle account closure requests
+ *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -404,7 +463,21 @@ router.delete('/me', ensureUserId, deleteMe);
  * /auth/updateUserDetails:
  *   put:
  *     summary: UPDATE USER'S MOBILE OR EMAIL
- *     description: |\n *       Updates user's mobile number or email address.\n *       Use flags to specify which field to update.\n *       \n *       **Requirements:**\n *       - Either isMobile or isEmail must be true (not both)\n *       - identifier must be valid mobile number (10 digits) or email format\n *       - Mobile/email must not already exist for another user\n *       \n *       **Use this endpoint to:**\n *       - Allow users to update contact information\n *       - Change mobile number after verification\n *       - Update email address\n *       - Maintain up-to-date user records\n *     tags: [Users]
+ *     description: |
+ *       Updates user's mobile number or email address.
+ *       Use flags to specify which field to update.
+ *       
+ *       **Requirements:**
+ *       - Either isMobile or isEmail must be true (not both)
+ *       - identifier must be valid mobile number (10 digits) or email format
+ *       - Mobile/email must not already exist for another user
+ *       
+ *       **Use this endpoint to:**
+ *       - Allow users to update contact information
+ *       - Change mobile number after verification
+ *       - Update email address
+ *       - Maintain up-to-date user records
+ *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
