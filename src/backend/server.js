@@ -18,6 +18,7 @@ const razorpayRoutes = require('./src/routes/razorpayRoutes');
 const utilityRoutes = require('./src/routes/utilityRoutes');
 const userHistoryRoutes = require('./src/routes/userHistory');
 const prizeClaimRoutes = require('./src/routes/prizeClaim');
+const emailRoutes = require('./src/routes/emailRoutes');
 
 const app = express();
 
@@ -149,6 +150,7 @@ console.log(
 app.use('/auth', authRoutes);
 app.use('/auth', userRoutes);
 app.use('/admin', adminRoutes);
+app.use('/admin/emails', emailRoutes);
 app.use('/priceMart', priceMartRoutes);
 app.use('/scheduler', schedulerRoutes);
 app.use('/api/razorpay', razorpayRoutes);

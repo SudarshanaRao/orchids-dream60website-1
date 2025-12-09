@@ -1,5 +1,7 @@
 // src/models/AuctionHistory.js
 const mongoose = require('mongoose');
+const { sendPrizeClaimWinnerEmail, sendWaitingQueueEmail } = require('../utils/emailService');
+const User = require('./user');
 
 /**
  * Helper function to get current IST time
@@ -404,6 +406,38 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
       if (update) {
         updates.push(update);
         console.log(`🏆 [AUCTION_HISTORY] Marked ${winner.playerUsername} as WINNER (Rank ${winner.rank}) in auction ${hourlyAuctionId}`);
+        
+        // ✅ Send email notification to winners
+        try {
+          const user = await User.findOne({ user_id: winner.playerId });
+          if (user && user.email) {
+            const auctionName = update.auctionName || 'Auction';
+            
+            if (winner.rank === 1) {
+              // Send prize claim winner email to rank 1
+              console.log(`📧 [EMAIL] Sending prize claim email to ${user.email} (Rank 1)`);
+              await sendPrizeClaimWinnerEmail(user.email, {
+                username: winner.playerUsername,
+                auctionName: auctionName,
+                prizeAmount: winner.prizeAmount || 0,
+                claimDeadline: claimDeadline,
+                upiId: null // Not claimed yet
+              });
+            } else {
+              // Send waiting queue email to rank 2 and 3
+              console.log(`📧 [EMAIL] Sending waiting queue email to ${user.email} (Rank ${winner.rank})`);
+              await sendWaitingQueueEmail(user.email, {
+                username: winner.playerUsername,
+                auctionName: auctionName,
+                rank: winner.rank,
+                prizeAmount: winner.prizeAmount || 0
+              });
+            }
+          }
+        } catch (emailError) {
+          console.error(`❌ [EMAIL] Error sending email to ${winner.playerUsername}:`, emailError.message);
+          // Don't fail the entire operation if email fails
+        }
       }
     }
     
@@ -496,6 +530,25 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
     );
     
     console.log(`🎁 [AUCTION_HISTORY] Prize claimed by ${entry.username} (Rank ${entry.finalRank}) for auction ${hourlyAuctionId}`);
+    
+    // ✅ Send confirmation email
+    try {
+      const user = await User.findOne({ user_id: userId });
+      if (user && user.email) {
+        console.log(`📧 [EMAIL] Sending prize claimed confirmation to ${user.email}`);
+        await sendPrizeClaimWinnerEmail(user.email, {
+          username: entry.username,
+          auctionName: entry.auctionName || 'Auction',
+          prizeAmount: entry.prizeAmountWon || 0,
+          claimDeadline: entry.claimDeadline,
+          upiId: upiId // Now claimed
+        });
+      }
+    } catch (emailError) {
+      console.error(`❌ [EMAIL] Error sending confirmation email:`, emailError.message);
+      // Don't fail the operation if email fails
+    }
+    
     return updated;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error submitting prize claim:`, error);
@@ -714,6 +767,24 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
     );
     
     console.log(`✅ [PRIORITY_CLAIM] Updated ${result.modifiedCount} winner records for auction ${hourlyAuctionId}`);
+    
+    // ✅ Send email notification to next rank winner
+    try {
+      const user = await User.findOne({ user_id: nextRankWinner.userId });
+      if (user && user.email) {
+        console.log(`📧 [EMAIL] Sending prize claim notification to ${user.email} (Rank ${nextRank} now eligible)`);
+        await sendPrizeClaimWinnerEmail(user.email, {
+          username: nextRankWinner.username,
+          auctionName: nextRankWinner.auctionName || 'Auction',
+          prizeAmount: nextRankWinner.prizeAmountWon || 0,
+          claimDeadline: nextRankWinner.claimDeadline,
+          upiId: null // Not claimed yet
+        });
+      }
+    } catch (emailError) {
+      console.error(`❌ [EMAIL] Error sending email to rank ${nextRank} winner:`, emailError.message);
+      // Don't fail the operation if email fails
+    }
     
     return {
       previousRank: currentEligibleRank,
