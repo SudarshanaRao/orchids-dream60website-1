@@ -375,7 +375,34 @@ const App = () => {
     };
   };
 
-  // ✅ REMOVED fetchAndSetUser function - no longer needed
+  // ✅ NEW: Fetch user data from API and update state
+  const fetchAndSetUser = async (userId: string) => {
+    try {
+      console.log('🔄 Fetching user data from API for userId:', userId);
+      const response = await fetch(`${API_ENDPOINTS.auth.me}?user_id=${userId}`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch user data:', response.statusText);
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.user) {
+        console.log('✅ User data fetched from API:', result.user);
+        const mappedUser = mapUserData(result.user);
+        setCurrentUser(mappedUser);
+        console.log('✅ User state updated with stats:', {
+          totalAuctions: mappedUser.totalAuctions,
+          totalWins: mappedUser.totalWins,
+          totalAmountSpent: mappedUser.totalAmountSpent,
+          totalAmountWon: mappedUser.totalAmountWon,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
 
   const [adminUser, setAdminUser] = useState<{
     user_id: string;
@@ -715,7 +742,13 @@ const App = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  // ✅ REMOVED: useEffect that called fetchAndSetUser - no longer needed
+  // ✅ NEW: Fetch user data from API when user is logged in
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log('🔄 User logged in - fetching updated user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentUser?.id]);
 
   // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
