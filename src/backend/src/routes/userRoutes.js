@@ -46,6 +46,58 @@ const ensureUserId = (req, res, next) => {
  *
  * components:
  *   schemas:
+ *     UserStats:
+ *       type: object
+ *       properties:
+ *         totalAuctions:
+ *           type: number
+ *           example: 14
+ *           description: Total auctions participated in
+ *         totalWins:
+ *           type: number
+ *           example: 11
+ *           description: Number of auctions won
+ *         totalLosses:
+ *           type: number
+ *           example: 3
+ *           description: Number of auctions lost
+ *         totalSpent:
+ *           type: number
+ *           example: 36197
+ *           description: Total amount spent on auctions
+ *         totalWon:
+ *           type: number
+ *           example: 110000
+ *           description: Total prize money won
+ *         winRate:
+ *           type: number
+ *           example: 79
+ *           description: Win percentage
+ *         netGain:
+ *           type: number
+ *           example: 73803
+ *           description: Total won minus total spent
+ *
+ *     UserPreferences:
+ *       type: object
+ *       properties:
+ *         emailNotifications:
+ *           type: boolean
+ *           example: true
+ *           description: Enable/disable email notifications
+ *         smsNotifications:
+ *           type: boolean
+ *           example: true
+ *           description: Enable/disable SMS notifications
+ *         bidAlerts:
+ *           type: boolean
+ *           example: true
+ *           description: Enable/disable bid alerts
+ *         winNotifications:
+ *           type: boolean
+ *           example: true
+ *           description: Enable/disable win notifications
+ *
  *     UserProfile:
  *       type: object
  *       properties:
@@ -65,18 +117,81 @@ const ensureUserId = (req, res, next) => {
  *           type: string
  *           example: "user@dream60.com"
  *         preferences:
- *           type: object
+ *           $ref: '#/components/schemas/UserPreferences'
+ *         stats:
+ *           $ref: '#/components/schemas/UserStats'
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-11-20T10:30:00.000Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-11-26T14:30:00.000Z"
+ *
+ *     UpdatePreferencesRequest:
+ *       type: object
+ *       required:
+ *         - user_id
+ *       properties:
+ *         user_id:
+ *           type: string
+ *           example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *         emailNotifications:
+ *           type: boolean
+ *           example: true
+ *         smsNotifications:
+ *           type: boolean
+ *           example: false
+ *         bidAlerts:
+ *           type: boolean
+ *           example: true
+ *         winNotifications:
+ *           type: boolean
+ *           example: true
  */
+
 /**
  * @swagger
  * /auth/users:
  *   get:
  *     summary: GET ALL USERS
- *     description: Returns all non-deleted users. No parameters required.
- *     tags: [Users]
+ *     description: |\n *       Returns all non-deleted users in the system.\n *       No authentication or parameters required.\n *       \n *       **Use this endpoint to:**\n *       - Get list of all users\n *       - Admin user management\n *       - User search and filtering\n *     tags: [Users]
  *     responses:
  *       200:
  *         description: List of users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/UserProfile'
+ *             example:
+ *               success: true
+ *               data:
+ *                 - user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                   username: "player1"
+ *                   mobile: "9876543210"
+ *                   email: "player1@dream60.com"
+ *                   preferences:
+ *                     emailNotifications: true
+ *                     smsNotifications: true
+ *                     bidAlerts: true
+ *                     winNotifications: true
+ *                   stats:
+ *                     totalAuctions: 14
+ *                     totalWins: 11
+ *                     totalLosses: 3
+ *                     totalSpent: 36197
+ *                     totalWon: 110000
+ *                     winRate: 79
+ *                     netGain: 73803
  *       500:
  *         description: Server error
  */
@@ -86,9 +201,8 @@ router.get('/users', getAllUsers);
  * @swagger
  * /auth/me:
  *   get:
- *     summary: GET CURRENT USER'S FULL DETAILS.
- *     description: Provide `user_id` as a **query** parameter or in the request body to fetch user details.
- *     tags: [Users]
+ *     summary: GET CURRENT USER'S FULL DETAILS
+ *     description: |\n *       Fetches complete user details including profile information and statistics.\n *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.\n *       \n *       **What it returns:**\n *       - User profile (username, email, mobile)\n *       - User preferences (notification settings)\n *       - User statistics (auctions, wins, losses, spending, earnings)\n *       - Account metadata (creation date, last updated)\n *       \n *       **Use this endpoint to:**\n *       - Display user profile page\n *       - Show user dashboard with stats\n *       - Update UI with latest user information\n *       - Sync user data after login\n *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -96,13 +210,42 @@ router.get('/users', getAllUsers);
  *         schema:
  *           type: string
  *         description: User UUID (user_id)
+ *         example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
  *     responses:
  *       200:
- *         description: Successful fetch
+ *         description: User details fetched successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserProfile'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *             example:
+ *               success: true
+ *               user:
+ *                 user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                 username: "asha"
+ *                 mobile: "9876543210"
+ *                 email: "asha@dream60.com"
+ *                 preferences:
+ *                   emailNotifications: true
+ *                   smsNotifications: true
+ *                   bidAlerts: true
+ *                   winNotifications: true
+ *                 stats:
+ *                   totalAuctions: 14
+ *                   totalWins: 11
+ *                   totalLosses: 3
+ *                   totalSpent: 36197
+ *                   totalWon: 110000
+ *                   winRate: 79
+ *                   netGain: 73803
+ *                 createdAt: "2025-11-20T10:30:00.000Z"
+ *                 updatedAt: "2025-11-26T14:30:00.000Z"
  *       400:
  *         description: Missing user_id
  *       404:
@@ -114,9 +257,8 @@ router.get('/me', ensureUserId, getMe);
  * @swagger
  * /auth/me/profile:
  *   get:
- *     summary: GET CURRENT USER'S PROFILE INFO.
- *     description: Provide `user_id` as a **query** parameter or in the request body to fetch user profile.
- *     tags: [Users]
+ *     summary: GET CURRENT USER'S PROFILE INFO
+ *     description: |\n *       Fetches user profile information (lighter version of /auth/me).\n *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.\n *       \n *       **Use this endpoint to:**\n *       - Quick profile lookup\n *       - Display user info in headers/navbars\n *       - User verification\n *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -124,13 +266,27 @@ router.get('/me', ensureUserId, getMe);
  *         schema:
  *           type: string
  *         description: User UUID (user_id)
+ *         example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
  *     responses:
  *       200:
  *         description: Profile fetched successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/UserProfile'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *             example:
+ *               success: true
+ *               user:
+ *                 user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                 username: "asha"
+ *                 mobile: "9876543210"
+ *                 email: "asha@dream60.com"
  *       400:
  *         description: Missing user_id
  *       404:
@@ -142,30 +298,36 @@ router.get('/me/profile', ensureUserId, getProfile);
  * @swagger
  * /auth/me/preferences:
  *   put:
- *     summary: UPDATE USER NOTIFICATIONS PREFERENCES
- *     tags: [Users]
+ *     summary: UPDATE USER NOTIFICATION PREFERENCES
+ *     description: |\n *       Updates user's notification preferences.\n *       All notification settings are optional - only provided fields will be updated.\n *       \n *       **Preference options:**\n *       - emailNotifications: Receive email notifications\n *       - smsNotifications: Receive SMS notifications\n *       - bidAlerts: Get alerts when auction bids are placed\n *       - winNotifications: Get notified when you win auctions\n *       \n *       **Use this endpoint to:**\n *       - Allow users to customize their notification settings\n *       - Enable/disable specific notification channels\n *       - Update communication preferences\n *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - user_id
- *             properties:
- *               user_id:
- *                 type: string
- *               emailNotifications:
- *                 type: boolean
- *               smsNotifications:
- *                 type: boolean
- *               bidAlerts:
- *                 type: boolean
- *               winNotifications:
- *                 type: boolean
+ *             $ref: '#/components/schemas/UpdatePreferencesRequest'
+ *           example:
+ *             user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *             emailNotifications: true
+ *             smsNotifications: false
+ *             bidAlerts: true
+ *             winNotifications: true
  *     responses:
  *       200:
  *         description: Preferences updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Preferences updated successfully"
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
  *       400:
  *         description: Missing user_id or validation error
  *       404:
@@ -178,7 +340,7 @@ router.put('/me/preferences', ensureUserId, updatePreferences);
  * /auth/me:
  *   delete:
  *     summary: SOFT DELETE USER ACCOUNT
- *     tags: [Users]
+ *     description: |\n *       Performs a soft delete on user account (marks as deleted but doesn't remove from database).\n *       User data is retained for audit purposes but account becomes inaccessible.\n *       \n *       **What happens:**\n *       - Account is marked as deleted\n *       - User cannot login anymore\n *       - User data is retained for historical records\n *       - Auction history is preserved\n *       \n *       **Use this endpoint to:**\n *       - Allow users to delete their account\n *       - Implement GDPR compliance\n *       - Handle account closure requests\n *     tags: [Users]
  *     parameters:
  *       - name: user_id
  *         in: query
@@ -186,9 +348,21 @@ router.put('/me/preferences', ensureUserId, updatePreferences);
  *         schema:
  *           type: string
  *         description: User UUID (user_id)
+ *         example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
  *     responses:
  *       200:
  *         description: Account deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Account deleted successfully"
  *       400:
  *         description: Missing user_id
  *       404:
@@ -230,13 +404,28 @@ router.delete('/me', ensureUserId, deleteMe);
  * /auth/updateUserDetails:
  *   put:
  *     summary: UPDATE USER'S MOBILE OR EMAIL
- *     tags: [Users]
+ *     description: |\n *       Updates user's mobile number or email address.\n *       Use flags to specify which field to update.\n *       \n *       **Requirements:**\n *       - Either isMobile or isEmail must be true (not both)\n *       - identifier must be valid mobile number (10 digits) or email format\n *       - Mobile/email must not already exist for another user\n *       \n *       **Use this endpoint to:**\n *       - Allow users to update contact information\n *       - Change mobile number after verification\n *       - Update email address\n *       - Maintain up-to-date user records\n *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/UpdateMobileRequest'
+ *           examples:
+ *             updateMobile:
+ *               summary: Update mobile number
+ *               value:
+ *                 user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                 isMobile: true
+ *                 isEmail: false
+ *                 identifier: "9876543210"
+ *             updateEmail:
+ *               summary: Update email address
+ *               value:
+ *                 user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                 isMobile: false
+ *                 isEmail: true
+ *                 identifier: "newemail@dream60.com"
  *     responses:
  *       200:
  *         description: Mobile number or email updated successfully
@@ -253,6 +442,14 @@ router.delete('/me', ensureUserId, deleteMe);
  *                   example: "Mobile number updated successfully"
  *                 user:
  *                   $ref: '#/components/schemas/UserProfile'
+ *             example:
+ *               success: true
+ *               message: "Mobile number updated successfully"
+ *               user:
+ *                 user_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+ *                 username: "asha"
+ *                 mobile: "9876543210"
+ *                 email: "asha@dream60.com"
  *       400:
  *         description: Missing or invalid parameters
  *       404:
