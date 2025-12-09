@@ -750,6 +750,14 @@ const App = () => {
     }
   }, [currentUser?.id]);
 
+  // ✅ NEW: Refresh user data when navigating back to game page (homepage)
+  useEffect(() => {
+    if (currentPage === 'game' && currentUser?.id) {
+      console.log('🔄 Navigated to homepage - refreshing user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentPage, currentUser?.id]);
+
   // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
     if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
