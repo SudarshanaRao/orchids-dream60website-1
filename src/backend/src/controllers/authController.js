@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const OTP = require('../models/OTP');
+const { sendOtpEmail, sendWelcomeEmail } = require('../utils/emailService');
 require('dotenv').config();
 
 // -----------------------------
@@ -95,6 +96,14 @@ const signup = async (req, res) => {
     });
 
     await newUser.save();
+
+    // ✅ Send welcome email if email is provided
+    if (email) {
+      sendWelcomeEmail(email, username).catch(err => {
+        console.error('Failed to send welcome email:', err);
+        // Don't fail signup if email fails
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -215,12 +224,28 @@ const forgotPassword = async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json({
+    // ✅ Send OTP via email if type is email
+    if (type === 'email') {
+      const emailResult = await sendOtpEmail(identifier, otpCode);
+      if (!emailResult.success) {
+        console.warn('Email send failed:', emailResult.message);
+        // Continue anyway - OTP still generated
+      }
+    }
+
+    // ✅ In development, return OTP in response for testing
+    const responseData = {
       success: true,
-      message: 'OTP generated',
-      otp: otpCode,
+      message: type === 'email' ? 'OTP sent to your email' : 'OTP generated',
       userExists: !!user,
-    });
+    };
+
+    // Only include OTP in response for development/testing
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.otp = otpCode;
+    }
+
+    return res.status(200).json(responseData);
   } catch (err) {
     console.error('Forgot Password Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -276,7 +301,27 @@ const resendOtp = async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json({ success: true, message: 'OTP resent', otp: otpCode });
+    // ✅ Send OTP via email if type is email
+    if (type === 'email') {
+      const emailResult = await sendOtpEmail(identifier, otpCode);
+      if (!emailResult.success) {
+        console.warn('Email send failed:', emailResult.message);
+        // Continue anyway - OTP still generated
+      }
+    }
+
+    // ✅ In development, return OTP in response for testing
+    const responseData = {
+      success: true,
+      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent',
+    };
+
+    // Only include OTP in response for development/testing
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.otp = otpCode;
+    }
+
+    return res.status(200).json(responseData);
   } catch (err) {
     console.error('Resend OTP Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
