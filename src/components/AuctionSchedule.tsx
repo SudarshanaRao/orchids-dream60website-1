@@ -219,10 +219,10 @@ export function AuctionSchedule() {
           className="flex items-center gap-2 flex-wrap"
         >
           {[
-            { id: 'all', label: 'ALL', icon: Calendar },
-            { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
-            { id: 'completed', label: 'COMPLETED', icon: Trophy }
+            { id: 'live', label: 'LIVE', icon: Radio },
+            { id: 'completed', label: 'COMPLETED', icon: Trophy },
+            { id: 'all', label: 'ALL', icon: Calendar }
           ].map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter === filter.id;
