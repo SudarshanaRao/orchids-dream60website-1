@@ -327,8 +327,6 @@ const AuctionCard = ({
     
     // ✅ NEW: If no mobile, try to fetch from API but don't block payment
     if (!userMobile) {
-      console.log('📱 Mobile number not found. Fetching from server in background...');
-      
       try {
         const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userId}`);
         
@@ -345,17 +343,15 @@ const AuctionCard = ({
               username: result.profile.username || currentUserName,
             });
             localStorage.setItem('user_mobile', result.profile.mobile);
-            console.log('✅ Mobile number retrieved:', result.profile.mobile);
           }
         }
       } catch (error) {
-        console.error('Failed to fetch mobile number:', error);
+        // Silently handle error - mobile is optional
       }
       
       // ✅ Use placeholder if mobile still not available
       if (!userMobile) {
         userMobile = '9999999999'; // Placeholder for payment gateway
-        console.log('⚠️ Using placeholder mobile number for payment');
       }
     }
 

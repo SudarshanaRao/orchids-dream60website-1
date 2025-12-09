@@ -85,7 +85,6 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     const fetchUserData = async () => {
       if (!userInfo.userMobile && userInfo.userId) {
         try {
-          console.log('📱 Mobile number not found in localStorage, fetching from backend...');
           const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`);
           
           if (response.ok) {
@@ -94,8 +93,6 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
               const mobile = result.data.mobile || result.data.phone || result.data.contact || '';
               const name = result.data.name || userInfo.userName;
               const email = result.data.email || userInfo.userEmail;
-              
-              console.log('✅ User data fetched from backend:', { name, email, mobile });
               
               // Update state
               setUserInfo(prev => ({
@@ -112,7 +109,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
             }
           }
         } catch (error) {
-          console.error('❌ Error fetching user data:', error);
+          // Silently handle error - mobile is optional
         }
       }
     };
