@@ -314,52 +314,49 @@ const AuctionCard = ({
       return;
     }
 
-    // ✅ NEW: Get mobile number from fetched profile or localStorage
+    // ✅ FIXED: Get mobile number from fetched profile or localStorage (OPTIONAL - not required)
     let userMobile = userProfile?.mobile || localStorage.getItem('user_mobile') || '';
     const currentUserEmail = userProfile?.email || userEmail;
     const currentUserName = userProfile?.username || localStorage.getItem('user_name') || user.username;
     
-    // ✅ NEW: If no mobile number, try to fetch from API
+    // ✅ FIXED: Mobile is now optional - only validate email
+    if (!currentUserEmail) {
+      toast.error('Email not found. Please update your profile.');
+      return;
+    }
+    
+    // ✅ NEW: If no mobile, try to fetch from API but don't block payment
     if (!userMobile) {
-      toast.info('Mobile number not found. Attempting to fetch from server...');
+      console.log('📱 Mobile number not found. Fetching from server in background...');
       
       try {
         const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userId}`);
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch user profile');
-        }
-        
-        const result = await response.json();
-        console.log('✅ [RETRY_FETCH] User profile fetched:', result);
-        
-        if (result.success && result.profile && result.profile.mobile) {
-          userMobile = result.profile.mobile;
+        if (response.ok) {
+          const result = await response.json();
           
-          // Update state and localStorage
-          setUserProfile({
-            mobile: result.profile.mobile,
-            email: result.profile.email || currentUserEmail,
-            username: result.profile.username || currentUserName,
-          });
-          localStorage.setItem('user_mobile', result.profile.mobile);
-          
-          toast.success('Mobile number retrieved! Please click "Pay Now" again.');
-          return; // Exit and let user click Pay Now again
-        } else {
-          toast.error('Mobile number not found. Please update your profile with a valid mobile number.');
-          return;
+          if (result.success && result.profile && result.profile.mobile) {
+            userMobile = result.profile.mobile;
+            
+            // Update state and localStorage for future use
+            setUserProfile({
+              mobile: result.profile.mobile,
+              email: result.profile.email || currentUserEmail,
+              username: result.profile.username || currentUserName,
+            });
+            localStorage.setItem('user_mobile', result.profile.mobile);
+            console.log('✅ Mobile number retrieved:', result.profile.mobile);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch mobile number:', error);
-        toast.error('Failed to retrieve mobile number. Please update your profile.');
-        return;
       }
-    }
-
-    if (!currentUserEmail) {
-      toast.error('Email not found. Please update your profile.');
-      return;
+      
+      // ✅ Use placeholder if mobile still not available
+      if (!userMobile) {
+        userMobile = '9999999999'; // Placeholder for payment gateway
+        console.log('⚠️ Using placeholder mobile number for payment');
+      }
     }
 
     setIsProcessing(true);
@@ -376,7 +373,7 @@ const AuctionCard = ({
         {
           name: currentUserName,
           email: currentUserEmail,
-          contact: userMobile, // ✅ Use fetched mobile number
+          contact: userMobile, // ✅ Use fetched or placeholder mobile number
           upiId: currentUserEmail,
         },
         async (response) => {

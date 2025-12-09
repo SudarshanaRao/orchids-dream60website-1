@@ -379,14 +379,18 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
       return;
     }
 
+    // ✅ FIXED: Mobile is now optional - only validate email
     if (!userInfo.userEmail) {
       toast.error('Email not found. Please update your profile.');
       return;
     }
 
-    // ✅ NEW: Enhanced mobile number validation with retry
-    if (!userInfo.userMobile) {
-      toast.error('Mobile number not found. Attempting to fetch from server...');
+    // ✅ FIXED: Get mobile number (optional - use placeholder if not available)
+    let userMobile = userInfo.userMobile;
+    
+    // ✅ NEW: If no mobile, try to fetch from API but don't block payment
+    if (!userMobile) {
+      console.log('📱 Mobile number not found. Fetching from server in background...');
       
       try {
         const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`);
@@ -395,18 +399,21 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
           const mobile = result.data?.mobile || result.data?.phone || result.data?.contact;
           
           if (mobile) {
+            userMobile = mobile;
             setUserInfo(prev => ({ ...prev, userMobile: mobile }));
             localStorage.setItem('user_mobile', mobile);
-            toast.success('Mobile number retrieved successfully! Click "Pay Now" again.');
-            return;
+            console.log('✅ Mobile number retrieved:', mobile);
           }
         }
       } catch (error) {
         console.error('Failed to fetch mobile:', error);
       }
       
-      toast.error('Mobile number not found. Please update your profile with a valid mobile number.');
-      return;
+      // ✅ Use placeholder if mobile still not available
+      if (!userMobile) {
+        userMobile = '9999999999'; // Placeholder for payment gateway
+        console.log('⚠️ Using placeholder mobile number for payment');
+      }
     }
 
     setIsProcessing(true);
@@ -423,7 +430,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
         {
           name: userInfo.userName,
           email: userInfo.userEmail,
-          contact: userInfo.userMobile,
+          contact: userMobile, // ✅ Use fetched or placeholder mobile number
           upiId: userInfo.userEmail,
         },
         async (response) => {
