@@ -1477,11 +1477,9 @@ const App = () => {
       };
     });
 
-    // ✅ NEW: Trigger immediate refetch of auction data after payment
-    console.log('💳 Payment successful - triggering immediate auction data refresh');
-    setTimeout(() => {
-      setForceRefetchTrigger(prev => prev + 1);
-    }, 1500); // Wait 1.5 seconds for backend to process
+    // ✅ CRITICAL FIX: Trigger IMMEDIATE refetch of auction data after payment (no delay)
+    console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+    setForceRefetchTrigger(prev => prev + 1);
 
     setShowEntrySuccess(null);
   };
@@ -1954,6 +1952,11 @@ const App = () => {
               isLoadingLiveAuction={isLoadingLiveAuction} // ✅ NEW: Pass loading state from parent
               onPayEntry={(_boxId, totalEntryFee) => {
                 if (!currentUser) return;
+                
+                // ✅ CRITICAL FIX: Trigger IMMEDIATE refresh when payment succeeds
+                console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                setForceRefetchTrigger(prev => prev + 1);
+                
                 setShowEntrySuccess({
                   entryFee: totalEntryFee,
                   boxNumber: 0
