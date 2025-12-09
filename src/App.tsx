@@ -357,10 +357,11 @@ const App = () => {
       mobile: userData.mobile,
       email: userData.email,
       isDeleted: userData.isDeleted || false,
-      totalAuctions: userData.totalAuctions || 0,
-      totalWins: userData.totalWins || 0,
-      totalAmountSpent: userData.totalAmountSpent || 0,
-      totalAmountWon: userData.totalAmountWon || 0,
+      // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
+      totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
+      totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
+      totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
+      totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
       userType: userData.userType || 'PLAYER',
       userCode: userData.userCode || '',
       preferences: userData.preferences || {
