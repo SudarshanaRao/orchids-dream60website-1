@@ -17,8 +17,10 @@ import {
   Trash2,
   Edit,
   X,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AdminEmailManagement } from './AdminEmailManagement';
 
 interface AdminUser {
   user_id: string;
@@ -97,7 +99,7 @@ interface CombinedUser {
 
 
 export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'emails'>('overview');
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [masterAuctions, setMasterAuctions] = useState<MasterAuction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -238,10 +240,10 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mt-4 border-b border-purple-200">
+          <div className="flex gap-2 mt-4 border-b border-purple-200 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-semibold transition-all ${
+              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'text-purple-700 border-b-2 border-purple-700'
                   : 'text-purple-500 hover:text-purple-700'
@@ -252,7 +254,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-6 py-3 font-semibold transition-all ${
+              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'users'
                   ? 'text-purple-700 border-b-2 border-purple-700'
                   : 'text-purple-500 hover:text-purple-700'
@@ -263,7 +265,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             </button>
             <button
               onClick={() => setActiveTab('auctions')}
-              className={`px-6 py-3 font-semibold transition-all ${
+              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'auctions'
                   ? 'text-purple-700 border-b-2 border-purple-700'
                   : 'text-purple-500 hover:text-purple-700'
@@ -271,6 +273,17 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             >
               <Trophy className="w-5 h-5 inline-block mr-2" />
               Master Auctions
+            </button>
+            <button
+              onClick={() => setActiveTab('emails')}
+              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'emails'
+                  ? 'text-purple-700 border-b-2 border-purple-700'
+                  : 'text-purple-500 hover:text-purple-700'
+              }`}
+            >
+              <Mail className="w-5 h-5 inline-block mr-2" />
+              Email Management
             </button>
           </div>
         </div>
@@ -696,6 +709,10 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
               )}
             </div>
           </div>
+        )}
+
+        {activeTab === 'emails' && (
+          <AdminEmailManagement adminUserId={adminUser.user_id} />
         )}
       </main>
 
