@@ -6,6 +6,7 @@ const cors = require('cors');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const { initializeScheduler, stopScheduler } = require('./src/config/scheduler');
+const { connectDB, isConnected } = require('./src/config/db');
 
 // Route imports
 const authRoutes = require('./src/routes/authRoutes');
@@ -158,21 +159,28 @@ app.use('/prize-claim', prizeClaimRoutes);
 // --------------------
 // MongoDB Connection
 // --------------------
-const MONGO_URI =
-  process.env.MONGO_URI || 'mongodb://localhost:27017/dream60';
+let schedulerJobs = null;
 
-mongoose
-  .connect(MONGO_URI)
+connectDB()
   .then(() => {
     console.log(`✅ MongoDB connected successfully`);
     
-    // Initialize scheduler after database connection
-    const schedulerJobs = initializeScheduler();
+    // ✅ Wait a moment for connection to stabilize before initializing scheduler
+    setTimeout(() => {
+      if (isConnected()) {
+        schedulerJobs = initializeScheduler();
+        console.log('✅ Scheduler initialized successfully');
+      } else {
+        console.error('⚠️ MongoDB not connected, scheduler initialization delayed');
+      }
+    }, 2000);
     
     // Graceful shutdown handler with Promise-based mongoose close
     process.on('SIGINT', async () => {
       console.log('\n🛑 Received SIGINT signal. Shutting down gracefully...');
-      stopScheduler(schedulerJobs);
+      if (schedulerJobs) {
+        stopScheduler(schedulerJobs);
+      }
       try {
         await mongoose.connection.close();
         console.log('✅ MongoDB connection closed');
@@ -185,7 +193,9 @@ mongoose
     
     process.on('SIGTERM', async () => {
       console.log('\n🛑 Received SIGTERM signal. Shutting down gracefully...');
-      stopScheduler(schedulerJobs);
+      if (schedulerJobs) {
+        stopScheduler(schedulerJobs);
+      }
       try {
         await mongoose.connection.close();
         console.log('✅ MongoDB connection closed');
@@ -197,8 +207,9 @@ mongoose
     });
   })
   .catch((err) => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
+    console.error('❌ MongoDB connection failed:', err.message);
+    console.error('❌ Application will continue but database operations will fail');
+    // Don't exit - let the app run and retry connection logic will handle it
   });
 
 // --------------------
@@ -209,6 +220,29 @@ app.get('/', (req, res) => {
     message: 'Welcome to Dream60 Backend API 🚀',
     environment: process.env.NODE_ENV || 'development',
     documentation: '/api-docs',
+    database: isConnected() ? 'Connected' : 'Disconnected',
+  });
+});
+
+// --------------------
+// Health Check Endpoint
+// --------------------
+app.get('/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const stateMap = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  
+  res.status(dbState === 1 ? 200 : 503).json({
+    status: dbState === 1 ? 'healthy' : 'unhealthy',
+    database: {
+      state: stateMap[dbState] || 'unknown',
+      connected: isConnected(),
+    },
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -218,4 +252,5 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });

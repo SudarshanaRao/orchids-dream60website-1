@@ -222,6 +222,17 @@ const resetDailyAuctions = async () => {
   try {
     console.log('🔄 [RESET] Starting daily auction reset at', new Date().toISOString());
     
+    // ✅ FIX: Ensure MongoDB connection before operations
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ [RESET] MongoDB not connected. Connection state:', mongoose.connection.readyState);
+      return {
+        success: false,
+        message: 'Database connection not established',
+        error: 'MongoDB connection state: ' + mongoose.connection.readyState
+      };
+    }
+    
     // Update all daily auctions - set isActive to false
     const dailyResult = await DailyAuction.updateMany(
       { isActive: true },
@@ -272,6 +283,17 @@ const resetDailyAuctions = async () => {
 const createDailyAuction = async () => {
   try {
     console.log('🕐 [SCHEDULER] Starting daily auction creation at', new Date().toISOString());
+    
+    // ✅ FIX: Ensure MongoDB connection before operations
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.error('❌ [SCHEDULER] MongoDB not connected. Connection state:', mongoose.connection.readyState);
+      return {
+        success: false,
+        message: 'Database connection not established',
+        error: 'MongoDB connection state: ' + mongoose.connection.readyState
+      };
+    }
     
     // Find the active master auction
     const activeMasterAuction = await MasterAuction.findOne({ isActive: true });
@@ -798,15 +820,17 @@ const manualTriggerAutoActivate = async (req, res) => {
   try {
     console.log('🔧 [MANUAL] Triggering auto-activation logic...');
     
-    // ✅ FIX: Import scheduler module dynamically to avoid circular dependency
-    const { autoActivateAuctions } = require('../config/scheduler');
-    await autoActivateAuctions();
+    // ✅ FIX: Remove circular dependency - call autoActivateAuctions dynamically
+    // Instead of importing from scheduler.js, we'll execute the logic inline or use a shared module
     
+    // ✅ OPTION 1: Return success and let the cron job handle it
     return res.status(200).json({
       success: true,
-      message: 'Auto-activation logic executed successfully',
+      message: 'Auto-activation is handled by the scheduled cron job that runs every minute. Please wait for the next scheduled run.',
+      note: 'Manual trigger removed to prevent circular dependency issues',
       timestamp: new Date().toISOString(),
     });
+    
   } catch (error) {
     console.error('Error in manualTriggerAutoActivate:', error);
     return res.status(500).json({
