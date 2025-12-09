@@ -319,20 +319,146 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
         <AnimatedBackground />
-        <div className="flex items-center justify-center min-h-screen relative z-10">
+        <div className="flex items-center justify-center min-h-screen relative z-10 px-4">
           <motion.div
-            className="text-center space-y-4"
+            className="text-center space-y-6"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
           >
+            {/* Animated Rings */}
+            <div className="relative w-32 h-32 mx-auto">
+              {/* Outer ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full border-4 border-purple-200"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.1, 0.3],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              
+              {/* Middle ring */}
+              <motion.div
+                className="absolute inset-2 rounded-full border-4 border-purple-400"
+                animate={{
+                  scale: [1, 1.15, 1],
+                  opacity: [0.5, 0.2, 0.5],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.3,
+                }}
+              />
+              
+              {/* Inner spinning circle */}
+              <motion.div
+                className="absolute inset-4 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/50"
+                animate={{ rotate: 360 }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              >
+                <User className="w-12 h-12 text-white" />
+              </motion.div>
+
+              {/* Orbiting dots */}
+              {[0, 1, 2, 3].map((i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 bg-purple-600 rounded-full"
+                  style={{
+                    top: '50%',
+                    left: '50%',
+                    marginTop: '-6px',
+                    marginLeft: '-6px',
+                  }}
+                  animate={{
+                    x: [0, Math.cos((i * Math.PI) / 2) * 60, 0],
+                    y: [0, Math.sin((i * Math.PI) / 2) * 60, 0],
+                    scale: [1, 1.5, 1],
+                    opacity: [1, 0.5, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Loading text with gradient */}
             <motion.div
-              className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30 mx-auto"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="space-y-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              <User className="w-8 h-8 text-white" />
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+                Loading Your Profile
+              </h2>
+              <motion.p
+                className="text-purple-600 font-medium"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                Just a moment, we're preparing your account...
+              </motion.p>
             </motion.div>
-            <p className="text-purple-600 font-medium">Loading account data...</p>
+
+            {/* Loading progress dots */}
+            <div className="flex items-center justify-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 bg-purple-600 rounded-full"
+                  animate={{
+                    scale: [1, 1.5, 1],
+                    opacity: [0.3, 1, 0.3],
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Shimmer effect bar */}
+            <motion.div
+              className="w-64 h-1 bg-purple-100 rounded-full overflow-hidden mx-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-600 via-purple-700 to-purple-600 rounded-full"
+                animate={{
+                  x: ['-100%', '200%'],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            </motion.div>
           </motion.div>
         </div>
       </div>
