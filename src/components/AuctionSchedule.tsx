@@ -38,7 +38,7 @@ export function AuctionSchedule() {
   // ✅ Use IST time instead of browser local time
   const now = getCurrentIST();
   const currentHour = now.getHours();
-  const [activeFilter, setActiveFilter] = useState<TabFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [scheduleStats, setScheduleStats] = useState({
