@@ -103,7 +103,6 @@ const hourlyAuctionSchema = new mongoose.Schema(
       default: () => randomUUID(),
       index: true,
       unique: true,
-      immutable: true,
     },
     
     // Human-friendly code (e.g., HA000001)
@@ -167,7 +166,7 @@ const hourlyAuctionSchema = new mongoose.Schema(
       index: true,
     },
     
-    // ========== NEW: Early Completion Flag ==========
+    // ========== NEW: Early Completion Flag ========== 
     // Set to true when winners are announced before auction completion
     // (when qualified players ≤ 3 in any round)
     winnersAnnounced: {
@@ -221,7 +220,7 @@ const hourlyAuctionSchema = new mongoose.Schema(
       default: null,
     },
     
-    // ========== NEW FIELDS FOR PLAYER TRACKING ==========
+    // ========== NEW FIELDS FOR PLAYER TRACKING ========== 
     
     // List of all participants
     participants: {

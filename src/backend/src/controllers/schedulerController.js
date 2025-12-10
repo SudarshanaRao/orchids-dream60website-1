@@ -215,8 +215,10 @@ const syncHourlyStatusToDailyConfig = async (hourlyAuctionId, newStatus) => {
 };
 
 /**
- * Reset all daily and hourly auctions by setting isActive to false
+ * ✅ FIXED: Reset all daily and hourly auctions by setting isActive to false
  * This runs at 00:00 AM (midnight) before creating new auctions
+ * ✅ CRITICAL FIX: Does NOT delete old auctions - only marks them as inactive/completed
+ * This preserves all historical data including participants, bids, winners, etc.
  */
 const resetDailyAuctions = async () => {
   try {
@@ -233,9 +235,17 @@ const resetDailyAuctions = async () => {
       };
     }
     
-    // Update all daily auctions - set isActive to false
+    // ✅ CRITICAL FIX: Only mark previous days' auctions as inactive - DO NOT DELETE
+    // This preserves all participant data, bids, winners, etc.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Update all PAST daily auctions - set isActive to false (not today's)
     const dailyResult = await DailyAuction.updateMany(
-      { isActive: true },
+      { 
+        isActive: true,
+        auctionDate: { $lt: today } // Only update auctions BEFORE today
+      },
       { 
         $set: { 
           isActive: false,
@@ -244,11 +254,14 @@ const resetDailyAuctions = async () => {
       }
     );
     
-    console.log(`✅ [RESET] Updated ${dailyResult.modifiedCount} daily auctions (isActive: false)`);
+    console.log(`✅ [RESET] Marked ${dailyResult.modifiedCount} past daily auctions as inactive (preserved data)`);
     
-    // Update all hourly auctions - set isActive to false (if you have this field)
+    // Update all PAST hourly auctions - set status to COMPLETED (not today's)
     const hourlyResult = await HourlyAuction.updateMany(
-      { Status: { $in: ['LIVE', 'UPCOMING'] } },
+      { 
+        Status: { $in: ['LIVE', 'UPCOMING'] },
+        auctionDate: { $lt: today } // Only update auctions BEFORE today
+      },
       { 
         $set: { 
           Status: 'COMPLETED',
@@ -257,11 +270,11 @@ const resetDailyAuctions = async () => {
       }
     );
     
-    console.log(`✅ [RESET] Updated ${hourlyResult.modifiedCount} hourly auctions (Status: COMPLETED)`);
+    console.log(`✅ [RESET] Marked ${hourlyResult.modifiedCount} past hourly auctions as COMPLETED (preserved data)`);
     
     return {
       success: true,
-      message: 'All daily and hourly auctions reset successfully',
+      message: 'All past daily and hourly auctions marked as completed (data preserved)',
       dailyAuctionsUpdated: dailyResult.modifiedCount,
       hourlyAuctionsUpdated: hourlyResult.modifiedCount,
     };
@@ -276,9 +289,10 @@ const resetDailyAuctions = async () => {
 };
 
 /**
- * Create daily auction from active master auction for TODAY
+ * ✅ FIXED: Create daily auction from active master auction for TODAY
  * This runs automatically at 12:00 AM (midnight) every day AFTER resetting old auctions
  * Creates 1 DailyAuction for TODAY with all statuses set to UPCOMING
+ * ✅ CRITICAL FIX: Does NOT delete existing auctions - creates new ones only if not exist
  */
 const createDailyAuction = async () => {
   try {
@@ -314,42 +328,67 @@ const createDailyAuction = async () => {
     
     console.log(`📅 [SCHEDULER] Creating daily auction for TODAY: ${today.toDateString()}`);
     
-    // ✅ CRITICAL FIX: Delete existing daily auctions for today (including inactive ones)
-    // This prevents compound unique index violations on { masterId, auctionDate }
-    const deleteResult = await DailyAuction.deleteMany({
+    // ✅ CRITICAL FIX: Check if daily auction for today ALREADY exists
+    const existingDailyAuction = await DailyAuction.findOne({
       masterId: activeMasterAuction.master_id,
       auctionDate: today,
+      isActive: true
     });
     
-    if (deleteResult.deletedCount > 0) {
-      console.log(`🗑️ [SCHEDULER] Deleted ${deleteResult.deletedCount} existing daily auction(s) for today`);
+    if (existingDailyAuction) {
+      console.log(`⚠️ [SCHEDULER] Daily auction for today already exists: ${existingDailyAuction.dailyAuctionId}`);
+      console.log(`⚠️ [SCHEDULER] Skipping creation to prevent duplicate. Use the existing auction.`);
       
-      // Also delete associated hourly auctions
-      const hourlyDeleteResult = await HourlyAuction.deleteMany({
-        masterId: activeMasterAuction.master_id,
-        auctionDate: today,
+      // Make sure hourly auctions exist
+      const existingHourlyCount = await HourlyAuction.countDocuments({
+        dailyAuctionId: existingDailyAuction.dailyAuctionId
       });
-      console.log(`🗑️ [SCHEDULER] Deleted ${hourlyDeleteResult.deletedCount} associated hourly auctions`);
+      
+      if (existingHourlyCount === 0) {
+        console.log(`📌 [SCHEDULER] No hourly auctions found for existing daily auction. Creating them...`);
+        const hourlyResult = await createHourlyAuctions(existingDailyAuction);
+        return {
+          success: true,
+          message: 'Daily auction already exists. Created missing hourly auctions.',
+          dailyAuction: existingDailyAuction,
+          hourlyAuctions: hourlyResult,
+          date: today.toISOString(),
+          wasExisting: true,
+        };
+      }
+      
+      return {
+        success: true,
+        message: 'Daily auction and hourly auctions already exist for today',
+        dailyAuction: existingDailyAuction,
+        date: today.toISOString(),
+        wasExisting: true,
+      };
     }
     
-    // ✅ Generate NEW unique auctionId for each config to avoid duplicate key errors
+    // ✅ Generate NEW unique dailyAuctionId
+    const newDailyAuctionId = uuidv4();
+    
+    // ✅ Generate NEW unique hourlyAuctionId for each config UPFRONT
+    // This ensures consistency across all models from the start
     const dailyAuctionConfigForToday = activeMasterAuction.dailyAuctionConfig.map(config => {
       const configObj = config.toObject ? config.toObject() : { ...config };
+      const newHourlyAuctionId = uuidv4(); // Generate hourlyAuctionId upfront
       return {
         ...configObj,
-        auctionId: uuidv4(), // ✅ Generate NEW UUID for each config entry
+        auctionId: uuidv4(), // Generate NEW UUID for each config entry
         Status: 'UPCOMING', // Force all to UPCOMING
         isAuctionCompleted: false,
         completedAt: null,
         topWinners: [],
-        hourlyAuctionId: null,
+        hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
       };
     });
     
     // Create daily auction as complete replica of master auction for TODAY
     const dailyAuctionData = {
       masterId: activeMasterAuction.master_id,
-      dailyAuctionId: uuidv4(), 
+      dailyAuctionId: newDailyAuctionId, 
       auctionDate: today, // TODAY's date
       createdBy: activeMasterAuction.createdBy,
       isActive: true,
@@ -368,6 +407,7 @@ const createDailyAuction = async () => {
     console.log(`📊 [SCHEDULER] Total auctions to create: ${dailyAuction.dailyAuctionConfig.length}`);
     
     // Now create hourly auctions from the daily auction config (all UPCOMING)
+    // ✅ Pass the pre-generated hourlyAuctionIds
     const hourlyAuctionResult = await createHourlyAuctions(dailyAuction);
     
     console.log(`🎉 [SCHEDULER] Daily auction creation completed for TODAY (${today.toDateString()}).`);
@@ -378,7 +418,7 @@ const createDailyAuction = async () => {
       dailyAuction: dailyAuction,
       hourlyAuctions: hourlyAuctionResult,
       date: today.toISOString(),
-      deletedOldAuctions: deleteResult.deletedCount,
+      wasExisting: false,
     };
   } catch (error) {
     console.error('❌ [SCHEDULER] Error in createDailyAuction:', error);
@@ -391,11 +431,10 @@ const createDailyAuction = async () => {
 };
 
 /**
- * Create hourly auctions from daily auction config (all set to UPCOMING)
+ * ✅ FIXED: Create hourly auctions from daily auction config (all set to UPCOMING)
  * Creates individual HourlyAuction documents for each config in DailyAuction
- * Also updates the dailyAuctionConfig with hourlyAuctionId references
- * ✅ NOW pre-calculates round startedAt and completedAt times based on TimeSlot
- * ✅ USES UPSERT to handle duplicate keys gracefully (update if exists, create if not)
+ * ✅ CRITICAL FIX: Uses pre-generated hourlyAuctionId from dailyAuctionConfig
+ * ✅ Does NOT overwrite existing hourly auctions - creates only if not exist
  */
 const createHourlyAuctions = async (dailyAuction) => {
   try {
@@ -413,12 +452,43 @@ const createHourlyAuctions = async (dailyAuction) => {
     }
     
     const createdAuctions = [];
-    const updatedAuctions = [];
+    const skippedAuctions = [];
     const errors = [];
     
     for (let i = 0; i < configs.length; i++) {
       const config = configs[i];
       try {
+        // ✅ CRITICAL FIX: Check if hourly auction already exists with this hourlyAuctionId
+        // This prevents duplicate creation and data loss
+        const existingHourlyAuction = await HourlyAuction.findOne({
+          hourlyAuctionId: config.hourlyAuctionId
+        });
+        
+        if (existingHourlyAuction) {
+          console.log(`  ⏭️ Hourly auction already exists: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
+          skippedAuctions.push(existingHourlyAuction);
+          continue; // Skip to next config - don't overwrite existing data
+        }
+        
+        // ✅ Also check by dailyAuctionId + TimeSlot to prevent duplicates
+        const existingByTimeSlot = await HourlyAuction.findOne({
+          dailyAuctionId: dailyAuction.dailyAuctionId,
+          TimeSlot: config.TimeSlot
+        });
+        
+        if (existingByTimeSlot) {
+          console.log(`  ⏭️ Hourly auction for this time slot already exists: ${existingByTimeSlot.hourlyAuctionCode} (${config.TimeSlot})`);
+          
+          // ✅ Update the dailyAuctionConfig with the existing hourlyAuctionId
+          if (config.hourlyAuctionId !== existingByTimeSlot.hourlyAuctionId) {
+            dailyAuction.dailyAuctionConfig[i].hourlyAuctionId = existingByTimeSlot.hourlyAuctionId;
+            console.log(`  📝 Updated config ${config.TimeSlot} with existing hourlyAuctionId: ${existingByTimeSlot.hourlyAuctionId}`);
+          }
+          
+          skippedAuctions.push(existingByTimeSlot);
+          continue;
+        }
+        
         // ✅ Calculate pre-scheduled round times based on TimeSlot
         const roundTimes = calculateRoundTimes(
           dailyAuction.auctionDate,
@@ -426,8 +496,9 @@ const createHourlyAuctions = async (dailyAuction) => {
           config.roundConfig || []
         );
         
-        // Prepare hourly auction data (all UPCOMING)
+        // ✅ Prepare hourly auction data with pre-generated hourlyAuctionId
         const hourlyAuctionData = {
+          hourlyAuctionId: config.hourlyAuctionId, // ✅ Use pre-generated ID from dailyAuctionConfig
           dailyAuctionId: dailyAuction.dailyAuctionId,
           masterId: dailyAuction.masterId,
           auctionDate: dailyAuction.auctionDate,
@@ -436,7 +507,7 @@ const createHourlyAuctions = async (dailyAuction) => {
           TimeSlot: config.TimeSlot,
           auctionName: config.auctionName,
           prizeValue: config.prizeValue,
-          Status: 'UPCOMING', // Force UPCOMING for next day
+          Status: 'UPCOMING', // Force UPCOMING for new day
           maxDiscount: config.maxDiscount || 0,
           EntryFee: config.EntryFee,
           minEntryFee: config.minEntryFee,
@@ -446,59 +517,60 @@ const createHourlyAuctions = async (dailyAuction) => {
           roundConfig: config.roundConfig || [],
           imageUrl: config.imageUrl || null,
           rounds: roundTimes, // ✅ Use pre-calculated round times
+          participants: [], // ✅ Start with empty participants
+          winners: [], // ✅ Start with empty winners
+          totalParticipants: 0,
+          totalBids: 0,
+          currentRound: 1,
         };
         
-        // ✅ CRITICAL FIX: Use findOneAndUpdate with upsert to handle duplicates
-        // This will update if exists, create if not - no duplicate key errors
-        const hourlyAuction = await HourlyAuction.findOneAndUpdate(
-          { 
-            dailyAuctionId: dailyAuction.dailyAuctionId,
-            TimeSlot: config.TimeSlot 
-          },
-          { $set: hourlyAuctionData },
-          { 
-            upsert: true,  // Create if doesn't exist
-            new: true,     // Return updated document
-            setDefaultsOnInsert: true  // Apply schema defaults on insert
-          }
-        );
+        // ✅ CRITICAL FIX: Use create() instead of findOneAndUpdate to avoid overwriting
+        const hourlyAuction = await HourlyAuction.create(hourlyAuctionData);
         
-        // Check if this was an update or insert
-        const isNew = !createdAuctions.some(a => a.hourlyAuctionId === hourlyAuction.hourlyAuctionId) &&
-                      !updatedAuctions.some(a => a.hourlyAuctionId === hourlyAuction.hourlyAuctionId);
-        
-        if (isNew) {
-          createdAuctions.push(hourlyAuction);
-          console.log(`  ✅ Created hourly auction (UPCOMING): ${hourlyAuction.auctionName} at ${hourlyAuction.TimeSlot} (${hourlyAuction.hourlyAuctionCode})`);
-        } else {
-          updatedAuctions.push(hourlyAuction);
-          console.log(`  🔄 Updated existing hourly auction: ${hourlyAuction.auctionName} at ${hourlyAuction.TimeSlot} (${hourlyAuction.hourlyAuctionCode})`);
-        }
-        
-        // Update the dailyAuctionConfig with the hourlyAuctionId
-        dailyAuction.dailyAuctionConfig[i].hourlyAuctionId = hourlyAuction.hourlyAuctionId;
+        createdAuctions.push(hourlyAuction);
+        console.log(`  ✅ Created hourly auction (UPCOMING): ${hourlyAuction.auctionName} at ${hourlyAuction.TimeSlot} (${hourlyAuction.hourlyAuctionCode}) - ID: ${hourlyAuction.hourlyAuctionId}`);
         
       } catch (error) {
-        console.error(`  ❌ Error creating/updating hourly auction for ${config.auctionName}:`, error.message);
-        errors.push({
-          auctionName: config.auctionName,
-          error: error.message,
-        });
+        // Handle duplicate key error gracefully
+        if (error.code === 11000) {
+          console.log(`  ⚠️ Duplicate key for ${config.auctionName} at ${config.TimeSlot} - already exists (skipping)`);
+          
+          // Try to find the existing one
+          const existing = await HourlyAuction.findOne({
+            dailyAuctionId: dailyAuction.dailyAuctionId,
+            TimeSlot: config.TimeSlot
+          });
+          
+          if (existing) {
+            // ✅ Update the dailyAuctionConfig with the existing hourlyAuctionId
+            dailyAuction.dailyAuctionConfig[i].hourlyAuctionId = existing.hourlyAuctionId;
+            skippedAuctions.push(existing);
+          }
+        } else {
+          console.error(`  ❌ Error creating hourly auction for ${config.auctionName}:`, error.message);
+          errors.push({
+            auctionName: config.auctionName,
+            error: error.message,
+          });
+        }
       }
     }
     
-    // Save the updated dailyAuction with hourlyAuctionId references
+    // Save the updated dailyAuction with hourlyAuctionId references (if any were updated)
+    dailyAuction.markModified('dailyAuctionConfig');
     await dailyAuction.save();
     
-    console.log(`🎉 [SCHEDULER] Hourly auction creation completed. Created: ${createdAuctions.length}, Updated: ${updatedAuctions.length}, Errors: ${errors.length}`);
+    console.log(`🎉 [SCHEDULER] Hourly auction creation completed.`);
+    console.log(`   📊 Created: ${createdAuctions.length}, Skipped (existing): ${skippedAuctions.length}, Errors: ${errors.length}`);
     
     return {
       success: true,
-      message: 'Hourly auctions created/updated successfully (all UPCOMING with pre-calculated round times)',
+      message: 'Hourly auctions created successfully (all UPCOMING with pre-calculated round times)',
       created: createdAuctions.length,
-      updated: updatedAuctions.length,
+      skipped: skippedAuctions.length,
       errors: errors.length > 0 ? errors : undefined,
-      auctions: [...createdAuctions, ...updatedAuctions],
+      createdAuctions,
+      skippedAuctions,
     };
   } catch (error) {
     console.error('❌ [SCHEDULER] Error in createHourlyAuctions:', error);
@@ -511,11 +583,11 @@ const createHourlyAuctions = async (dailyAuction) => {
 };
 
 /**
- * Complete midnight reset and creation workflow
+ * ✅ FIXED: Complete midnight reset and creation workflow
  * This is the main function called by the cron job at 00:00 AM
- * 1. Resets all old daily and hourly auctions (isActive: false)
- * 2. Creates new daily auction for TODAY
- * 3. Creates hourly auctions for TODAY
+ * 1. Marks all OLD daily and hourly auctions as completed (preserves data)
+ * 2. Creates new daily auction for TODAY (only if not exists)
+ * 3. Creates hourly auctions for TODAY (only if not exists)
  */
 const midnightResetAndCreate = async () => {
   try {
@@ -524,8 +596,8 @@ const midnightResetAndCreate = async () => {
     console.log('🌙 [MIDNIGHT] Time:', new Date().toISOString());
     console.log('🌙 [MIDNIGHT] ========================================');
     
-    // Step 1: Reset all old auctions (set isActive to false)
-    console.log('🌙 [MIDNIGHT] Step 1: Resetting old auctions...');
+    // Step 1: Mark all old auctions as completed (DO NOT DELETE - preserves data)
+    console.log('🌙 [MIDNIGHT] Step 1: Marking old auctions as completed (preserving data)...');
     const resetResult = await resetDailyAuctions();
     
     if (!resetResult.success) {
@@ -537,9 +609,9 @@ const midnightResetAndCreate = async () => {
       };
     }
     
-    console.log('✅ [MIDNIGHT] Step 1 completed: Old auctions reset');
+    console.log('✅ [MIDNIGHT] Step 1 completed: Old auctions marked as completed (data preserved)');
     
-    // Step 2: Create new daily auction for TODAY
+    // Step 2: Create new daily auction for TODAY (only if not exists)
     console.log('🌙 [MIDNIGHT] Step 2: Creating new daily auction for TODAY...');
     const createResult = await createDailyAuction();
     
