@@ -7,6 +7,7 @@ const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
 const AuctionHistory = require('../models/AuctionHistory');
 const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
+const { syncUserStats } = require('./userController');
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -583,6 +584,14 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
         hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Log the correct ID
         auctionCode: hourlyAuction.hourlyAuctionCode,
       });
+
+      // ✅ Sync user stats after joining auction
+      try {
+        await syncUserStats(payment.userId);
+        console.log('✅ [USER_STATS] User stats synced after joining auction');
+      } catch (syncError) {
+        console.error('⚠️ [USER_STATS] Failed to sync user stats:', syncError);
+      }
     } catch (historyError) {
       // Log error but don't fail the payment verification
       console.error('❌ [AUCTION_HISTORY] Failed to create entry:', historyError);

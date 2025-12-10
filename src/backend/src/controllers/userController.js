@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const userRepo = require('../repositories/userRepository');
 const AuctionHistory = require('../models/AuctionHistory');
+const User = require('../models/user');
 
 /**
  * Removes sensitive fields like password from the user object.
@@ -32,6 +33,105 @@ const resolveUserId = (req) => {
     req.resolvedUserId ||
     null
   );
+};
+
+/**
+ * Sync user stats from AuctionHistory to User model
+ * Called when user joins auction or auction completes (win/loss)
+ * @param {string} userId - User ID to sync stats for
+ * @returns {object|null} Updated user or null on error
+ */
+const syncUserStats = async (userId) => {
+  try {
+    if (!userId) {
+      console.error('❌ [SYNC_USER_STATS] No userId provided');
+      return null;
+    }
+
+    console.log(`🔄 [SYNC_USER_STATS] Syncing stats for user: ${userId}`);
+
+    // Get aggregated stats from AuctionHistory
+    const stats = await AuctionHistory.getUserStats(userId);
+    
+    if (!stats) {
+      console.log(`⚠️ [SYNC_USER_STATS] No stats found for user: ${userId}`);
+      return null;
+    }
+
+    // Update User model with aggregated stats
+    const updatedUser = await User.findOneAndUpdate(
+      { user_id: userId },
+      {
+        $set: {
+          totalAuctions: stats.totalAuctions || 0,
+          totalWins: stats.totalWins || 0,
+          totalAmountSpent: stats.totalSpent || 0,
+          totalAmountWon: stats.totalWon || 0,
+        }
+      },
+      { new: true }
+    );
+
+    if (updatedUser) {
+      console.log(`✅ [SYNC_USER_STATS] Updated user stats:`, {
+        userId,
+        totalAuctions: updatedUser.totalAuctions,
+        totalWins: updatedUser.totalWins,
+        totalAmountSpent: updatedUser.totalAmountSpent,
+        totalAmountWon: updatedUser.totalAmountWon,
+      });
+    } else {
+      console.log(`⚠️ [SYNC_USER_STATS] User not found: ${userId}`);
+    }
+
+    return updatedUser;
+  } catch (error) {
+    console.error(`❌ [SYNC_USER_STATS] Error syncing stats for user ${userId}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Sync stats for all users (utility function for initial data sync)
+ * @returns {object} Result with count of updated users
+ */
+const syncAllUserStats = async (req, res) => {
+  try {
+    console.log('🔄 [SYNC_ALL_USER_STATS] Starting sync for all users...');
+
+    // Get all users
+    const users = await User.find({ isDeleted: { $ne: true } }).select('user_id username');
+    
+    let updatedCount = 0;
+    let errorCount = 0;
+
+    for (const user of users) {
+      try {
+        const result = await syncUserStats(user.user_id);
+        if (result) {
+          updatedCount++;
+        }
+      } catch (err) {
+        errorCount++;
+        console.error(`❌ [SYNC_ALL_USER_STATS] Error for user ${user.username}:`, err.message);
+      }
+    }
+
+    console.log(`✅ [SYNC_ALL_USER_STATS] Completed. Updated: ${updatedCount}, Errors: ${errorCount}`);
+
+    return res.json({
+      success: true,
+      message: `Synced ${updatedCount} users successfully`,
+      data: {
+        totalUsers: users.length,
+        updated: updatedCount,
+        errors: errorCount,
+      }
+    });
+  } catch (error) {
+    console.error('❌ [SYNC_ALL_USER_STATS] Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
 };
 
 /**
@@ -307,4 +407,6 @@ module.exports = {
   updatePreferences,
   deleteMe,
   updateMobile,
+  syncUserStats,
+  syncAllUserStats,
 };

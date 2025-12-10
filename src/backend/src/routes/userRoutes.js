@@ -8,6 +8,7 @@ const {
   updatePreferences,
   deleteMe,
   updateMobile,
+  syncAllUserStats,
 } = require('../controllers/userController');
 
 /**
@@ -532,5 +533,31 @@ router.delete('/me', ensureUserId, deleteMe);
  *         description: Mobile number or email already in use
  */
 router.put('/updateUserDetails', ensureUserId, updateMobile);
+
+/**
+ * @swagger
+ * /auth/sync-user-stats:
+ *   post:
+ *     summary: Sync all user statistics from auction history
+ *     description: |
+ *       Admin endpoint to sync user statistics (totalAuctions, totalWins, totalAmountSpent, totalAmountWon) 
+ *       from AuctionHistory to User model for all users.
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: User stats synced successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: "Synced 50 users successfully"
+ *               data:
+ *                 totalUsers: 50
+ *                 updated: 48
+ *                 errors: 2
+ *       500:
+ *         description: Server error
+ */
+router.post('/sync-user-stats', syncAllUserStats);
 
 module.exports = router;

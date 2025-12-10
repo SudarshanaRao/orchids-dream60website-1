@@ -4,6 +4,7 @@ const MasterAuction = require('../models/masterAuction');
 const DailyAuction = require('../models/DailyAuction');
 const HourlyAuction = require('../models/HourlyAuction');
 const AuctionHistory = require('../models/AuctionHistory');
+const { syncUserStats } = require('./userController');
 
 /**
  * ✅ Helper function to get current IST time
@@ -1389,6 +1390,20 @@ const markAuctionWinners = async (req, res) => {
     console.log(`   📊 Non-winners marked: ${nonWinnersUpdated.modifiedCount}`);
     console.log(`   👥 Total participants passed: ${totalParticipants}`);
     
+    // ✅ Sync user stats for all participants after auction completion
+    console.log(`🔄 [SYNC_STATS] Syncing user stats for all participants...`);
+    const participantIds = auction.participants?.map(p => p.playerId) || [];
+    let syncCount = 0;
+    for (const participantId of participantIds) {
+      try {
+        await syncUserStats(participantId);
+        syncCount++;
+      } catch (syncError) {
+        console.error(`⚠️ [SYNC_STATS] Failed to sync stats for user ${participantId}:`, syncError.message);
+      }
+    }
+    console.log(`✅ [SYNC_STATS] Synced stats for ${syncCount}/${participantIds.length} participants`);
+    
     return res.status(200).json({
       success: true,
       message: 'Auction winners marked successfully in history',
@@ -1398,6 +1413,7 @@ const markAuctionWinners = async (req, res) => {
         winnersMarked: winnersUpdated.length,
         nonWinnersMarked: nonWinnersUpdated.modifiedCount,
         totalParticipants,
+        statsSynced: syncCount,
         winners: winnersUpdated.map(w => ({
           userId: w.userId,
           username: w.username,

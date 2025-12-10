@@ -1535,6 +1535,10 @@ const App = () => {
     console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
     setForceRefetchTrigger(prev => prev + 1);
 
+    // ✅ Refresh user data from API to update header stats (wins/joined counts)
+    console.log('🔄 Refreshing user data to update header stats...');
+    fetchAndSetUser(currentUser.id);
+
     setShowEntrySuccess(null);
   };
 
