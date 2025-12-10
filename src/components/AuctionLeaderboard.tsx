@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Trophy, Download, Eye, BarChart2, Clock, Users, IndianRupee, Medal, Crown, Award, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Trophy, Download, Eye, BarChart2, Clock, Users, IndianRupee, Medal, Crown, Award, CheckCircle, XCircle, Gift, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
 import { toast } from 'sonner';
@@ -26,6 +26,17 @@ interface RoundData {
   leaderboard: LeaderboardEntry[];
 }
 
+interface WinnerData {
+  rank: number;
+  playerId: string;
+  playerUsername: string;
+  prizeAmount: number;
+  isPrizeClaimed: boolean;
+  prizeClaimedAt: string | null;
+  prizeClaimedBy: string | null;
+  isCurrentUser: boolean;
+}
+
 interface AuctionSummary {
   hourlyAuctionId: string;
   hourlyAuctionCode: string;
@@ -37,13 +48,7 @@ interface AuctionSummary {
   status: string;
   totalParticipants: number;
   totalRounds: number;
-  winners: {
-    rank: number;
-    playerId: string;
-    playerUsername: string;
-    prizeAmount: number;
-    isCurrentUser: boolean;
-  }[];
+  winners: WinnerData[];
 }
 
 interface AuctionLeaderboardProps {
@@ -214,25 +219,69 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
                     <div 
                       key={winner.rank}
                       className={`rounded-xl p-3 border-2 ${
-                        winner.isCurrentUser 
+                        winner.rank === 1 
+                          ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300' 
+                          : winner.rank === 2
+                          ? 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300'
+                          : winner.rank === 3
+                          ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300'
+                          : winner.isCurrentUser 
                           ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
                           : 'bg-purple-50/80 border-purple-200/60'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         {getRankIcon(winner.rank)}
-                        <span className={`font-bold ${winner.isCurrentUser ? 'text-green-700' : 'text-purple-900'}`}>
-                          {winner.playerUsername}
-                          {winner.isCurrentUser && ' (You)'}
-                        </span>
+                        <div className="flex-1">
+                          <span className={`font-bold ${winner.isCurrentUser ? 'text-green-700' : 'text-purple-900'}`}>
+                            {winner.playerUsername}
+                            {winner.isCurrentUser && ' (You)'}
+                          </span>
+                          <div className="text-xs text-purple-500">
+                            {winner.rank === 1 ? '1st Place' : winner.rank === 2 ? '2nd Place' : '3rd Place'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-purple-600 mt-1 flex items-center gap-1">
+                      <div className="text-xs text-purple-600 mt-2 flex items-center gap-1">
                         <IndianRupee className="w-3 h-3" />
                         Prize: {winner.prizeAmount.toLocaleString('en-IN')}
+                      </div>
+                      <div className={`text-xs mt-2 flex items-center gap-1 ${
+                        winner.isPrizeClaimed ? 'text-green-600' : 'text-orange-600'
+                      }`}>
+                        {winner.isPrizeClaimed ? (
+                          <>
+                            <Gift className="w-3 h-3" />
+                            Claimed by {winner.prizeClaimedBy}
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3" />
+                            Prize not claimed yet
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
+                
+                {/* Sorry message for non-winners */}
+                {!auction.winners.some(w => w.isCurrentUser) && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-purple-100/60 to-violet-100/60 rounded-xl border border-purple-200/60">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-purple-200 rounded-full flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-purple-900">Better luck next time!</p>
+                        <p className="text-sm text-purple-600 mt-1">
+                          You participated in this auction but didn't make it to the top 3 winners. 
+                          Keep trying, your winning moment is just around the corner!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

@@ -1716,16 +1716,27 @@ const getAuctionLeaderboard = async (req, res) => {
         return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
       });
       
-      // Assign ranks
-      const leaderboard = sortedPlayers.map((player, index) => ({
-        rank: index + 1,
-        playerId: player.playerId,
-        playerUsername: player.playerUsername,
-        bidAmount: player.auctionPlacedAmount,
-        bidTime: player.auctionPlacedTime,
-        isQualified: player.isQualified,
-        isCurrentUser: player.playerId === userId,
-      }));
+      // Assign ranks - same bid amount = same rank
+      let currentRank = 1;
+      const leaderboard = sortedPlayers.map((player, index) => {
+        // If this player has same bid as previous, use same rank
+        if (index > 0 && sortedPlayers[index - 1].auctionPlacedAmount === player.auctionPlacedAmount) {
+          // Keep the same rank as previous player
+        } else {
+          // New rank = current position + 1
+          currentRank = index + 1;
+        }
+        
+        return {
+          rank: currentRank,
+          playerId: player.playerId,
+          playerUsername: player.playerUsername,
+          bidAmount: player.auctionPlacedAmount,
+          bidTime: player.auctionPlacedTime,
+          isQualified: player.isQualified,
+          isCurrentUser: player.playerId === userId,
+        };
+      });
       
       return {
         roundNumber: round.roundNumber,
@@ -1738,7 +1749,7 @@ const getAuctionLeaderboard = async (req, res) => {
       };
     }) || [];
     
-    // Get auction summary
+    // Get auction summary with prize claim info for winners
     const auctionSummary = {
       hourlyAuctionId: auction.hourlyAuctionId,
       hourlyAuctionCode: auction.hourlyAuctionCode,
@@ -1755,6 +1766,9 @@ const getAuctionLeaderboard = async (req, res) => {
         playerId: w.playerId,
         playerUsername: w.playerUsername,
         prizeAmount: w.prizeAmount,
+        isPrizeClaimed: w.isPrizeClaimed || false,
+        prizeClaimedAt: w.prizeClaimedAt || null,
+        prizeClaimedBy: w.playerUsername || null, // The winner who claimed it
         isCurrentUser: w.playerId === userId,
       })) || [],
     };
