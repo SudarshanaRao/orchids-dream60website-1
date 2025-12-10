@@ -1,6 +1,31 @@
 # Force correct MIME types for JavaScript and CSS files
-AddType application/javascript .js .mjs
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType application/javascript .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType application/json .json
+</IfModule>
+
+# Fallback MIME types without IfModule check
+AddType application/javascript .js
+AddType application/javascript .mjs
 AddType text/css .css
+AddType image/svg+xml .svg
+AddType application/json .json
+
+# Force MIME type for .js files to prevent text/plain
+<FilesMatch "\.js$">
+  ForceType application/javascript
+</FilesMatch>
+
+<FilesMatch "\.mjs$">
+  ForceType application/javascript
+</FilesMatch>
+
+<FilesMatch "\.css$">
+  ForceType text/css
+</FilesMatch>
 
 # Enable GZIP compression
 <IfModule mod_deflate.c>
