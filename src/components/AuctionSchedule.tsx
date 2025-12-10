@@ -18,6 +18,37 @@ interface WinnerInfo {
   prizeClaimedAt?: Date | null;
 }
 
+interface ParticipantInfo {
+  playerId: string;
+  playerUsername: string;
+  entryFee: number;
+  joinedAt: Date;
+  currentRound: number;
+  isEliminated: boolean;
+  eliminatedInRound?: number | null;
+  totalBidsPlaced: number;
+  totalAmountBid: number;
+}
+
+interface RoundPlayerData {
+  playerId: string;
+  playerUsername: string;
+  auctionPlacedAmount: number;
+  auctionPlacedTime: Date;
+  isQualified: boolean;
+  rank?: number | null;
+}
+
+interface RoundInfo {
+  roundNumber: number;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  totalParticipants: number;
+  playersData: RoundPlayerData[];
+  qualifiedPlayers: string[];
+  status: 'PENDING' | 'ACTIVE' | 'COMPLETED';
+}
+
 interface AuctionConfig {
   auctionNumber: number;
   auctionId: string;
@@ -32,6 +63,11 @@ interface AuctionConfig {
     BoxB: number;
   };
   topWinners?: WinnerInfo[];
+  participants?: ParticipantInfo[];
+  rounds?: RoundInfo[];
+  totalParticipants?: number;
+  currentRound?: number;
+  totalBids?: number;
 }
 
 interface AuctionScheduleProps {

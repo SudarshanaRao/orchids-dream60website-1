@@ -94,6 +94,64 @@ const fetchServerTime = async () => {
   });
 };
 
+/**
+ * Sync participant data from HourlyAuction to DailyAuction
+ * This ensures dailyAuctionConfig.participants stays in sync with hourlyAuction.participants
+ */
+const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => {
+  try {
+    // Find the daily auction
+    const dailyAuction = await DailyAuction.findOne({ 
+      dailyAuctionId: hourlyAuction.dailyAuctionId 
+    });
+    
+    if (!dailyAuction) {
+      console.warn(`⚠️ [SYNC_PARTICIPANT] Daily auction not found: ${hourlyAuction.dailyAuctionId}`);
+      return { success: false, message: 'Daily auction not found' };
+    }
+    
+    // Find the matching config entry by hourlyAuctionId
+    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
+      config => config.hourlyAuctionId === hourlyAuction.hourlyAuctionId
+    );
+    
+    if (configIndex === -1) {
+      console.warn(`⚠️ [SYNC_PARTICIPANT] Config entry not found for hourlyAuctionId: ${hourlyAuction.hourlyAuctionId}`);
+      return { success: false, message: 'Config entry not found' };
+    }
+    
+    // Check if participant already exists in dailyAuctionConfig
+    const existingParticipant = dailyAuction.dailyAuctionConfig[configIndex].participants?.find(
+      p => p.playerId === participantData.playerId
+    );
+    
+    if (!existingParticipant) {
+      // Add participant to dailyAuctionConfig
+      if (!dailyAuction.dailyAuctionConfig[configIndex].participants) {
+        dailyAuction.dailyAuctionConfig[configIndex].participants = [];
+      }
+      
+      dailyAuction.dailyAuctionConfig[configIndex].participants.push(participantData);
+      dailyAuction.dailyAuctionConfig[configIndex].totalParticipants = 
+        dailyAuction.dailyAuctionConfig[configIndex].participants.length;
+      
+      // Update total participants today
+      dailyAuction.totalParticipantsToday = (dailyAuction.totalParticipantsToday || 0) + 1;
+      
+      await dailyAuction.save();
+      
+      console.log(`✅ [SYNC_PARTICIPANT] Participant ${participantData.playerUsername} synced to DailyAuction for TimeSlot ${hourlyAuction.TimeSlot}`);
+      return { success: true, message: 'Participant synced to DailyAuction' };
+    }
+    
+    console.log(`ℹ️ [SYNC_PARTICIPANT] Participant ${participantData.playerUsername} already exists in DailyAuction`);
+    return { success: true, message: 'Participant already exists' };
+  } catch (error) {
+    console.error(`❌ [SYNC_PARTICIPANT] Error syncing participant:`, error);
+    return { success: false, message: error.message };
+  }
+};
+
 // User clicks "Join & Pay" for a specific hourly auction
 exports.createHourlyAuctionOrder = async (req, res) => {
   try {
@@ -457,6 +515,16 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
         timeSlot: hourlyAuction.TimeSlot,
         currentRound: hourlyAuction.currentRound
       });
+
+      // ✅ Sync participant to DailyAuction immediately after adding to HourlyAuction
+      try {
+        const syncResult = await syncParticipantToDailyAuction(hourlyAuction, participantData);
+        if (!syncResult.success) {
+          console.error('❌ [SYNC_PARTICIPANT] Failed to sync participant to DailyAuction:', syncResult.message);
+        }
+      } catch (syncError) {
+        console.error('❌ [SYNC_PARTICIPANT] Error syncing to DailyAuction:', syncError);
+      }
     } else {
       console.log('User already exists as participant:', {
         auctionId: payment.auctionId,

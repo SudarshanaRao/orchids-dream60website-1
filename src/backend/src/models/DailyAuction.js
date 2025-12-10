@@ -49,6 +49,53 @@ const WinnerInfoSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// ========== NEW: Schema for tracking player bids in each round (same as HourlyAuction) ==========
+const RoundPlayerAuctionSchema = new mongoose.Schema(
+  {
+    playerId: { type: String, required: true },
+    playerUsername: { type: String, required: true },
+    auctionPlacedAmount: { type: Number, required: true, min: 0 },
+    auctionPlacedTime: { type: Date, default: Date.now },
+    isQualified: { type: Boolean, default: false },
+    rank: { type: Number, default: null },
+  },
+  { _id: false }
+);
+
+// ========== NEW: Schema for tracking each round's data (same as HourlyAuction) ==========
+const RoundDataSchema = new mongoose.Schema(
+  {
+    roundNumber: { type: Number, required: true, min: 1 },
+    startedAt: { type: Date, default: null },
+    completedAt: { type: Date, default: null },
+    totalParticipants: { type: Number, default: 0 },
+    playersData: { type: [RoundPlayerAuctionSchema], default: [] },
+    qualifiedPlayers: { type: [String], default: [] },
+    status: { 
+      type: String, 
+      enum: ['PENDING', 'ACTIVE', 'COMPLETED'], 
+      default: 'PENDING' 
+    },
+  },
+  { _id: false }
+);
+
+// ========== NEW: Schema for tracking participants (same as HourlyAuction) ==========
+const ParticipantSchema = new mongoose.Schema(
+  {
+    playerId: { type: String, required: true },
+    playerUsername: { type: String, required: true },
+    entryFee: { type: Number, required: true, min: 0 },
+    joinedAt: { type: Date, default: Date.now },
+    currentRound: { type: Number, default: 1 },
+    isEliminated: { type: Boolean, default: false },
+    eliminatedInRound: { type: Number, default: null },
+    totalBidsPlaced: { type: Number, default: 0 },
+    totalAmountBid: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DailyAuctionConfigSchema = new mongoose.Schema(
@@ -81,7 +128,7 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
 
-    // ========== NEW FIELDS FOR TRACKING ==========
+    // ========== TRACKING FIELDS ==========
     isAuctionCompleted: { type: Boolean, default: false },
     completedAt: { type: Date, default: null },
 
@@ -89,6 +136,13 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
 
     // Reference to hourly auction
     hourlyAuctionId: { type: String, default: null },
+
+    // ========== NEW FIELDS FOR PARTICIPANTS AND ROUNDS (synced from HourlyAuction) ==========
+    participants: { type: [ParticipantSchema], default: [] },
+    rounds: { type: [RoundDataSchema], default: [] },
+    totalParticipants: { type: Number, default: 0 },
+    currentRound: { type: Number, default: 1, min: 1 },
+    totalBids: { type: Number, default: 0 },
   },
   { _id: false }
 );

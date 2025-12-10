@@ -139,6 +139,107 @@ const calculateRoundTimes = (auctionDate, timeSlot, roundConfig) => {
 };
 
 /**
+ * Sync rounds and bid data from HourlyAuction to DailyAuction after a bid is placed
+ * This keeps the dailyAuctionConfig.rounds array in sync with hourlyAuction.rounds
+ */
+const syncBidDataToDailyAuction = async (hourlyAuction, roundNumber, bidData, participantStats) => {
+  try {
+    // Find the daily auction
+    const dailyAuction = await DailyAuction.findOne({ 
+      dailyAuctionId: hourlyAuction.dailyAuctionId 
+    });
+    
+    if (!dailyAuction) {
+      console.warn(`⚠️ [SYNC_BID] Daily auction not found: ${hourlyAuction.dailyAuctionId}`);
+      return { success: false, message: 'Daily auction not found' };
+    }
+    
+    // Find the matching config entry by hourlyAuctionId
+    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
+      config => config.hourlyAuctionId === hourlyAuction.hourlyAuctionId
+    );
+    
+    if (configIndex === -1) {
+      console.warn(`⚠️ [SYNC_BID] Config entry not found for hourlyAuctionId: ${hourlyAuction.hourlyAuctionId}`);
+      return { success: false, message: 'Config entry not found' };
+    }
+    
+    // Initialize rounds array if not present
+    if (!dailyAuction.dailyAuctionConfig[configIndex].rounds) {
+      dailyAuction.dailyAuctionConfig[configIndex].rounds = [];
+    }
+    
+    // Find or create the round entry
+    let roundIndex = dailyAuction.dailyAuctionConfig[configIndex].rounds.findIndex(
+      r => r.roundNumber === roundNumber
+    );
+    
+    if (roundIndex === -1) {
+      // Create new round entry
+      dailyAuction.dailyAuctionConfig[configIndex].rounds.push({
+        roundNumber,
+        startedAt: bidData.placedAt,
+        completedAt: null,
+        totalParticipants: 1,
+        playersData: [{
+          playerId: bidData.playerId,
+          playerUsername: bidData.playerUsername,
+          auctionPlacedAmount: bidData.auctionValue,
+          auctionPlacedTime: bidData.placedAt,
+          isQualified: false,
+          rank: null,
+        }],
+        qualifiedPlayers: [],
+        status: 'ACTIVE',
+      });
+    } else {
+      // Add bid to existing round
+      const existingBid = dailyAuction.dailyAuctionConfig[configIndex].rounds[roundIndex].playersData.find(
+        p => p.playerId === bidData.playerId
+      );
+      
+      if (!existingBid) {
+        dailyAuction.dailyAuctionConfig[configIndex].rounds[roundIndex].playersData.push({
+          playerId: bidData.playerId,
+          playerUsername: bidData.playerUsername,
+          auctionPlacedAmount: bidData.auctionValue,
+          auctionPlacedTime: bidData.placedAt,
+          isQualified: false,
+          rank: null,
+        });
+        dailyAuction.dailyAuctionConfig[configIndex].rounds[roundIndex].totalParticipants += 1;
+      }
+    }
+    
+    // Update participant stats in dailyAuctionConfig
+    if (dailyAuction.dailyAuctionConfig[configIndex].participants) {
+      const participantIndex = dailyAuction.dailyAuctionConfig[configIndex].participants.findIndex(
+        p => p.playerId === bidData.playerId
+      );
+      
+      if (participantIndex !== -1 && participantStats) {
+        dailyAuction.dailyAuctionConfig[configIndex].participants[participantIndex].totalBidsPlaced = participantStats.totalBidsPlaced;
+        dailyAuction.dailyAuctionConfig[configIndex].participants[participantIndex].totalAmountBid = participantStats.totalAmountBid;
+        dailyAuction.dailyAuctionConfig[configIndex].participants[participantIndex].currentRound = roundNumber;
+      }
+    }
+    
+    // Update total bids count
+    dailyAuction.dailyAuctionConfig[configIndex].totalBids = (dailyAuction.dailyAuctionConfig[configIndex].totalBids || 0) + 1;
+    dailyAuction.dailyAuctionConfig[configIndex].currentRound = roundNumber;
+    
+    dailyAuction.markModified('dailyAuctionConfig');
+    await dailyAuction.save();
+    
+    console.log(`✅ [SYNC_BID] Bid synced to DailyAuction for ${bidData.playerUsername} in round ${roundNumber}`);
+    return { success: true, message: 'Bid synced to DailyAuction' };
+  } catch (error) {
+    console.error(`❌ [SYNC_BID] Error syncing bid data:`, error);
+    return { success: false, message: error.message };
+  }
+};
+
+/**
  * Sync hourly auction status back to daily auction config
  * Updates the corresponding slot in dailyAuctionConfig when hourly auction status changes
  * ✅ NOW ALSO SYNCS WINNERS when auction is completed 
@@ -197,10 +298,16 @@ const syncHourlyStatusToDailyConfig = async (hourlyAuctionId, newStatus) => {
         
         console.log(`     🏆 [SYNC-WINNERS] Synced ${hourlyAuction.winners.length} winners to daily auction config for ${hourlyAuction.TimeSlot}`);
         console.log(`     🏆 [SYNC-WINNERS] Winners: ${hourlyAuction.winners.map(w => `${w.rank}. ${w.playerUsername}`).join(', ')}`);
-      } else {
-        console.log(`     ⚠️ [SYNC-WINNERS] No winners found in hourly auction ${hourlyAuctionId}`);
-        dailyAuction.dailyAuctionConfig[configIndex].topWinners = [];
       }
+
+      // ✅ Sync participants and rounds data to DailyAuction
+      dailyAuction.dailyAuctionConfig[configIndex].participants = hourlyAuction.participants || [];
+      dailyAuction.dailyAuctionConfig[configIndex].rounds = hourlyAuction.rounds || [];
+      dailyAuction.dailyAuctionConfig[configIndex].totalParticipants = hourlyAuction.totalParticipants || 0;
+      dailyAuction.dailyAuctionConfig[configIndex].currentRound = hourlyAuction.currentRound || 1;
+      dailyAuction.dailyAuctionConfig[configIndex].totalBids = hourlyAuction.totalBids || 0;
+      
+      console.log(`     📊 [SYNC-DATA] Synced ${hourlyAuction.participants?.length || 0} participants and ${hourlyAuction.rounds?.length || 0} rounds to DailyAuction`);
       
       // Mark the array as modified for Mongoose
       dailyAuction.markModified('dailyAuctionConfig');
@@ -1185,6 +1292,22 @@ const placeBid = async (req, res) => {
       isFirstBidInRound,
     });
     
+    // ✅ Sync bid data to DailyAuction
+    const bidPlacedAt = new Date();
+    try {
+      await syncBidDataToDailyAuction(auction, currentRound, {
+        playerId,
+        playerUsername,
+        auctionValue,
+        placedAt: bidPlacedAt,
+      }, {
+        totalBidsPlaced: auction.participants[participantIndex].totalBidsPlaced,
+        totalAmountBid: auction.participants[participantIndex].totalAmountBid,
+      });
+    } catch (syncError) {
+      console.error('❌ [SYNC_BID] Error syncing bid to DailyAuction:', syncError);
+    }
+    
     console.log(`✅ [BID] Player ${playerUsername} placed bid of ₹${auctionValue} in round ${currentRound} for auction ${auction.hourlyAuctionCode}`);
     
     return res.status(200).json({
@@ -1195,7 +1318,7 @@ const placeBid = async (req, res) => {
         playerUsername,
         auctionValue: auctionValue,
         roundNumber: currentRound,
-        placedAt: new Date(),
+        placedAt: bidPlacedAt,
         totalBidsPlaced: auction.participants[participantIndex].totalBidsPlaced,
       },
     });
