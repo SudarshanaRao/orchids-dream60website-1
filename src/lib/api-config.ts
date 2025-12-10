@@ -51,6 +51,8 @@ export const API_ENDPOINTS = {
     upcomingAuctions: `${API_BASE_URL}/scheduler/upcoming-auctions`,
     dailyAuction: `${API_BASE_URL}/scheduler/daily-auction`,
     leaderboard: `${API_BASE_URL}/scheduler/leaderboard`,
+    auctionLeaderboard: `${API_BASE_URL}/scheduler/auction-leaderboard`,
+    checkParticipation: `${API_BASE_URL}/scheduler/check-participation`,
     adminDashboard: `${API_BASE_URL}/scheduler/admin/dashboard`,
     adminAuctionHistory: `${API_BASE_URL}/scheduler/admin/auction-history`,
     adminAuctionDetails: `${API_BASE_URL}/scheduler/admin/auction-details`,

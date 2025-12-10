@@ -16,6 +16,8 @@ const {
   getUserAuctionHistory,
   getAuctionDetails,
   getHourlyAuctionById,
+  getAuctionLeaderboard,
+  checkAuctionParticipation,
 } = require('../controllers/schedulerController');
 
 /**
@@ -824,5 +826,78 @@ router.get('/auction-details', getAuctionDetails);
  *         description: Internal server error
  */
 router.get('/hourly-auction/:hourlyAuctionId', getHourlyAuctionById);
+
+/**
+ * @swagger
+ * /scheduler/auction-leaderboard:
+ *   get:
+ *     summary: Get auction leaderboard for participants
+ *     description: |
+ *       Returns leaderboard data for each round of an auction.
+ *       Only accessible by users who participated in the auction.
+ *       
+ *       **What it returns:**
+ *       - Leaderboard data for each round (sorted by bid amount, then by time)
+ *       - Auction summary with prize info and winners
+ *       
+ *       **Access Control:**
+ *       - Only participants can view the leaderboard
+ *       - Non-participants receive 403 Forbidden
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: query
+ *         name: hourlyAuctionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Hourly auction UUID
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's UUID
+ *     responses:
+ *       200:
+ *         description: Leaderboard retrieved successfully
+ *       403:
+ *         description: Access denied - user did not participate
+ *       404:
+ *         description: Auction not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/auction-leaderboard', getAuctionLeaderboard);
+
+/**
+ * @swagger
+ * /scheduler/check-participation:
+ *   get:
+ *     summary: Check if user participated in an auction
+ *     description: |
+ *       Quick check endpoint for frontend to determine if leaderboard button should be shown.
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: query
+ *         name: hourlyAuctionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Hourly auction UUID
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's UUID
+ *     responses:
+ *       200:
+ *         description: Participation status retrieved
+ *       404:
+ *         description: Auction not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/check-participation', checkAuctionParticipation);
 
 module.exports = router;

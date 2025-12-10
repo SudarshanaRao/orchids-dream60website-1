@@ -16,7 +16,6 @@ import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
-import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
@@ -414,7 +413,6 @@ const App = () => {
   } | null>(null);
 
   const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
-  const [selectedAuctionLeaderboard, setSelectedAuctionLeaderboard] = useState<any | null>(null);
 
   // ✅ Restore selected auction details from localStorage on mount
   useEffect(() => {
@@ -1278,16 +1276,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-  const handleNavigate = (page: string, data?: any) => {
+  const handleNavigate = (page: string) => {
     setCurrentPage(page);
-    
-    // ✅ Handle auction-leaderboard navigation with data
-    if (page === 'leaderboard' && data?.hourlyAuctionId) {
-      setSelectedAuctionLeaderboard({ hourlyAuctionId: data.hourlyAuctionId });
-      setCurrentPage('auction-leaderboard');
-      window.history.pushState({}, '', '/auction-leaderboard');
-      return;
-    }
     
     // ✅ Update browser URL to match the page
     const urlMap: { [key: string]: string } = {
@@ -1304,7 +1294,6 @@ const App = () => {
       'profile': '/profile',
       'history': '/history',
       'leaderboard': '/leaderboard',
-      'auction-leaderboard': '/auction-leaderboard',
       'admin-login': '/admin',
       'admin-dashboard': '/admin'
     };
@@ -1318,7 +1307,6 @@ const App = () => {
     window.history.pushState({}, '', '/');
     setSelectedLeaderboard(null);
     setSelectedAuctionDetails(null);
-    setSelectedAuctionLeaderboard(null);
   };
 
   const handleShowLeaderboard = (
@@ -1713,22 +1701,6 @@ const App = () => {
     );
   }
 
-  // ✅ NEW: Auction Leaderboard page (for completed auctions)
-  if (currentPage === 'auction-leaderboard' && selectedAuctionLeaderboard) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AuctionLeaderboard
-            hourlyAuctionId={selectedAuctionLeaderboard.hourlyAuctionId}
-            userId={currentUser?.id}
-            onBack={handleBackToGame}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
   if (currentPage === 'profile' && currentUser) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -2061,11 +2033,11 @@ const App = () => {
                   serverTime={serverTime} // ✅ Pass server time to AuctionGrid
                 />
 
-                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+                <AuctionSchedule />
               </>
             ) : (
               <>
-                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+                <AuctionSchedule />
                 {/* Guest View - Show login prompt instead of auction  */}
                 <div className="text-center py-8 sm:py-12 md:py-16 px-4">
                   <div className="max-w-2xl mx-auto space-y-6">

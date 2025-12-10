@@ -1,11 +1,12 @@
-import { Clock, Calendar, Trophy, Sparkles, IndianRupee, Star, Zap, Lock, Unlock, Radio, PlayCircle } from 'lucide-react';
+import { Clock, Calendar, Trophy, Sparkles, IndianRupee, Star, Zap, Lock, Unlock, Radio, PlayCircle, BarChart2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { getCurrentIST } from '../utils/timezone';
-import { API_ENDPOINTS } from '../lib/api-config';
+import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
+import { Button } from './ui/button';
 
 interface WinnerInfo {
   rank: number;
@@ -20,6 +21,7 @@ interface WinnerInfo {
 interface AuctionConfig {
   auctionNumber: number;
   auctionId: string;
+  hourlyAuctionId?: string;
   TimeSlot: string;
   auctionName: string;
   imageUrl?: string;
@@ -32,15 +34,24 @@ interface AuctionConfig {
   topWinners?: WinnerInfo[];
 }
 
+interface AuctionScheduleProps {
+  user?: {
+    id?: string;
+    username?: string;
+  } | null;
+  onNavigate?: (page: string, data?: any) => void;
+}
+
 type TabFilter = 'all' | 'live' | 'upcoming' | 'completed';
 
-export function AuctionSchedule() {
+export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
   // ✅ Use IST time instead of browser local time
   const now = getCurrentIST();
   const currentHour = now.getHours();
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [participationMap, setParticipationMap] = useState<Record<string, boolean>>({});
   const [scheduleStats, setScheduleStats] = useState({
     totalAuctions: 0,
     earliestTime: '',
@@ -91,6 +102,8 @@ export function AuctionSchedule() {
               hour: auctionHour,
               minute: auctionMinute,
               status,
+              hourlyAuctionId: auction.hourlyAuctionId,
+              auctionId: auction.auctionId,
               prize: {
                 name: auction.auctionName || `Auction ${index + 1}`,
                 value: auction.prizeValue || 0,
@@ -102,6 +115,28 @@ export function AuctionSchedule() {
           });
           
           setScheduleData(auctions);
+          
+          // ✅ Check participation for completed auctions if user is logged in
+          if (user?.id) {
+            const completedAuctions = auctions.filter((a: any) => a.status === 'completed' && a.hourlyAuctionId);
+            const participationPromises = completedAuctions.map(async (auction: any) => {
+              try {
+                const queryString = buildQueryString({ hourlyAuctionId: auction.hourlyAuctionId, userId: user.id });
+                const res = await fetch(`${API_ENDPOINTS.scheduler.checkParticipation}${queryString}`);
+                const result = await res.json();
+                return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: result.isParticipant || false };
+              } catch {
+                return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: false };
+              }
+            });
+            
+            const participationResults = await Promise.all(participationPromises);
+            const newParticipationMap: Record<string, boolean> = {};
+            participationResults.forEach(({ hourlyAuctionId, isParticipant }) => {
+              newParticipationMap[hourlyAuctionId] = isParticipant;
+            });
+            setParticipationMap(newParticipationMap);
+          }
           
           // ✅ Calculate dynamic schedule statistics
           if (auctions.length > 0) {
@@ -383,37 +418,69 @@ export function AuctionSchedule() {
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
+                      className="mt-3 flex items-center justify-between gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
                     >
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-                        <Trophy className="w-4 h-4 text-white" />
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
+                          <Trophy className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-xs text-purple-700">Winner</div>
+                          <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-purple-700">Winner</div>
-                        <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
-                      </div>
+                      
+                      {/* View Leaderboard Button - Only for participants */}
+                      {auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                        <Button
+                          onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                          size="sm"
+                          className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                        >
+                          <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                          View Leaderboard
+                        </Button>
+                      )}
                     </motion.div>
                   )}
-                  
-                  {/* Active auction CTA */}
-                  {auction.status === 'active' && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
-                    >
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
+                    
+                    {/* View Leaderboard for completed auctions without winner but user participated */}
+                    {auction.status === 'completed' && !auction.winner && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 flex items-center justify-end"
                       >
-                        <Zap className="w-5 h-5 text-violet-600" />
+                        <Button
+                          onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                          size="sm"
+                          className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                        >
+                          <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                          View Leaderboard
+                        </Button>
                       </motion.div>
-                      <div>
-                        <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
-                        <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
-                      </div>
-                    </motion.div>
-                  )}
+                    )}
+                    
+                    {/* Active auction CTA */}
+                    {auction.status === 'active' && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
+                      >
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                        >
+                          <Zap className="w-5 h-5 text-violet-600" />
+                        </motion.div>
+                        <div>
+                          <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
+                          <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
+                        </div>
+                      </motion.div>
+                    )}
                 </div>
               </div>
             </motion.div>

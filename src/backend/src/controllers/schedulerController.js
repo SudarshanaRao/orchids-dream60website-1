@@ -1543,6 +1543,163 @@ const getHourlyAuctionById = async (req, res) => {
   }
 };
 
+/**
+ * Get auction leaderboard for participants
+ * GET /scheduler/auction-leaderboard
+ * Returns leaderboard data for each round of an auction
+ * Only accessible by users who participated in the auction
+ */
+const getAuctionLeaderboard = async (req, res) => {
+  try {
+    const { hourlyAuctionId, userId } = req.query;
+    
+    if (!hourlyAuctionId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'hourlyAuctionId and userId are required',
+      });
+    }
+    
+    // Find the hourly auction
+    const auction = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
+    
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+      });
+    }
+    
+    // Check if user participated in this auction
+    const userParticipated = auction.participants?.some(p => p.playerId === userId);
+    
+    if (!userParticipated) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only participants can view the leaderboard.',
+        isParticipant: false,
+      });
+    }
+    
+    // Build leaderboard data for each round
+    const roundLeaderboards = auction.rounds?.map(round => {
+      // Sort players by bid amount (highest first) and then by time (earliest first for same amount)
+      const sortedPlayers = [...(round.playersData || [])].sort((a, b) => {
+        // First sort by auction amount (descending - highest first)
+        if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
+          return b.auctionPlacedAmount - a.auctionPlacedAmount;
+        }
+        // If same amount, sort by time (ascending - earliest first)
+        return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
+      });
+      
+      // Assign ranks
+      const leaderboard = sortedPlayers.map((player, index) => ({
+        rank: index + 1,
+        playerId: player.playerId,
+        playerUsername: player.playerUsername,
+        bidAmount: player.auctionPlacedAmount,
+        bidTime: player.auctionPlacedTime,
+        isQualified: player.isQualified,
+        isCurrentUser: player.playerId === userId,
+      }));
+      
+      return {
+        roundNumber: round.roundNumber,
+        status: round.status,
+        totalParticipants: round.playersData?.length || 0,
+        qualifiedCount: round.qualifiedPlayers?.length || 0,
+        startedAt: round.startedAt,
+        completedAt: round.completedAt,
+        leaderboard,
+      };
+    }) || [];
+    
+    // Get auction summary
+    const auctionSummary = {
+      hourlyAuctionId: auction.hourlyAuctionId,
+      hourlyAuctionCode: auction.hourlyAuctionCode,
+      auctionName: auction.auctionName,
+      auctionDate: auction.auctionDate,
+      timeSlot: auction.TimeSlot,
+      prizeValue: auction.prizeValue,
+      imageUrl: auction.imageUrl,
+      status: auction.Status,
+      totalParticipants: auction.participants?.length || 0,
+      totalRounds: auction.roundCount || 4,
+      winners: auction.winners?.map(w => ({
+        rank: w.rank,
+        playerId: w.playerId,
+        playerUsername: w.playerUsername,
+        prizeAmount: w.prizeAmount,
+        isCurrentUser: w.playerId === userId,
+      })) || [],
+    };
+    
+    return res.status(200).json({
+      success: true,
+      isParticipant: true,
+      auction: auctionSummary,
+      rounds: roundLeaderboards,
+    });
+  } catch (error) {
+    console.error('❌ [GET_AUCTION_LEADERBOARD] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Check if user participated in a specific auction
+ * GET /scheduler/check-participation
+ * Quick check endpoint for frontend to determine if leaderboard button should be shown
+ */
+const checkAuctionParticipation = async (req, res) => {
+  try {
+    const { hourlyAuctionId, userId } = req.query;
+    
+    if (!hourlyAuctionId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'hourlyAuctionId and userId are required',
+      });
+    }
+    
+    // Find the hourly auction - only fetch participants array
+    const auction = await HourlyAuction.findOne(
+      { hourlyAuctionId },
+      { participants: 1, hourlyAuctionId: 1 }
+    ).lean();
+    
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+        isParticipant: false,
+      });
+    }
+    
+    // Check if user participated
+    const isParticipant = auction.participants?.some(p => p.playerId === userId);
+    
+    return res.status(200).json({
+      success: true,
+      isParticipant,
+      hourlyAuctionId,
+    });
+  } catch (error) {
+    console.error('❌ [CHECK_PARTICIPATION] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -1563,4 +1720,6 @@ module.exports = {
   getUserAuctionHistory,
   getAuctionDetails,
   getHourlyAuctionById,
+  getAuctionLeaderboard,
+  checkAuctionParticipation,
 };
