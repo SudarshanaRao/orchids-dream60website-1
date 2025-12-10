@@ -216,7 +216,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
     }, 60000); // Refresh every 60 seconds
     
     return () => clearInterval(refreshInterval);
-  }, [currentHour]);
+  }, [currentHour, user?.id]);
 
   // Filter auctions based on active filter
   const filteredAuctions = scheduleData.filter(auction => {
