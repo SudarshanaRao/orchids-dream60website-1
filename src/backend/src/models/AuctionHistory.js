@@ -101,13 +101,13 @@ const auctionHistorySchema = new mongoose.Schema(
     },
     
     // ========== WINNER TRACKING ==========
-    
+
     // Whether user won this auction (rank 1, 2, or 3)
     isWinner: {
       type: Boolean,
       default: false,
     },
-    
+
     // User's final rank (1-3 for winners, null for non-winners)
     finalRank: {
       type: Number,
@@ -115,107 +115,107 @@ const auctionHistorySchema = new mongoose.Schema(
       min: 1,
       max: 3,
     },
-    
+
     // Prize amount won (0 for non-winners)
     prizeAmountWon: {
       type: Number,
       default: 0,
     },
-    
+
     // Whether user was eliminated
     isEliminated: {
       type: Boolean,
       default: false,
     },
-    
+
     // Round in which user was eliminated
     eliminatedInRound: {
       type: Number,
       default: null,
     },
-    
+
     // Auction status when this record was created/updated
     auctionStatus: {
       type: String,
       enum: ['JOINED', 'IN_PROGRESS', 'COMPLETED'],
       default: 'JOINED',
     },
-    
+
     // When user joined the auction
     joinedAt: {
       type: Date,
       default: Date.now,
     },
-    
+
     // When auction was completed
     completedAt: {
       type: Date,
       default: null,
     },
-    
+
     // ========== PRIZE CLAIM FIELDS (FOR RANK 1 WINNER) ==========
-    
+
     // UPI ID for prize transfer (only for rank 1 winner)
     claimUpiId: {
       type: String,
       default: null,
     },
-    
+
     // Remaining product fees to be paid to claim prize
     remainingProductFees: {
       type: Number,
       default: 0,
     },
-    
+
     // Bid amount placed in the last round before completion (amount winner needs to pay)
     lastRoundBidAmount: {
       type: Number,
       default: 0,
     },
-    
+
     // Whether remaining fees have been paid
     remainingFeesPaid: {
       type: Boolean,
       default: false,
     },
-    
+
     // Payment reference for remaining fees
     remainingFeesPaymentRef: {
       type: String,
       default: null,
     },
-    
+
     // Prize claim status
     prizeClaimStatus: {
       type: String,
       enum: ['PENDING', 'CLAIMED', 'EXPIRED', 'NOT_APPLICABLE'],
       default: 'NOT_APPLICABLE',
     },
-    
+
     // Deadline to claim prize (30 minutes from completion for rank 1)
     claimDeadline: {
       type: Date,
       default: null,
     },
-    
+
     // When prize was claimed
     claimedAt: {
       type: Date,
       default: null,
     },
-    
+
     // Prize claim notes/remarks
     claimNotes: {
       type: String,
       default: null,
     },
-    
+
     // ✅ NEW: Track who actually claimed the prize (for other winners to see)
     claimedBy: {
       type: String,
       default: null,
     },
-    
+
     // ✅ NEW: Track which rank claimed the prize (for other winners to see)
     claimedByRank: {
       type: Number,
@@ -223,9 +223,9 @@ const auctionHistorySchema = new mongoose.Schema(
       min: 1,
       max: 3,
     },
-    
+
     // ========== PRIORITY CLAIM SYSTEM (NEW) ==========
-    
+
     // Which rank (1, 2, or 3) is currently eligible to claim
     // This starts at 1, then moves to 2 if rank 1 doesn't claim, then to 3
     currentEligibleRank: {
@@ -234,13 +234,13 @@ const auctionHistorySchema = new mongoose.Schema(
       min: 1,
       max: 3,
     },
-    
+
     // When the current rank's 30-minute claim window started
     claimWindowStartedAt: {
       type: Date,
       default: null,
     },
-    
+
     // Track which ranks have been given a chance (for logging)
     ranksOffered: {
       type: [Number],
@@ -280,7 +280,7 @@ auctionHistorySchema.statics.createEntry = async function(data) {
       auctionStatus: 'JOINED',
       joinedAt: getISTTime(), // ✅ Use IST time
     });
-    
+
     console.log(`✅ [AUCTION_HISTORY] Created entry for user ${data.username} in auction ${data.hourlyAuctionId}`);
     return entry;
   } catch (error) {
@@ -315,13 +315,13 @@ auctionHistorySchema.statics.updateBidInfo = async function(userId, hourlyAuctio
       },
       { new: true }
     );
-    
+
     // Update totalAmountSpent
     if (updated) {
       updated.totalAmountSpent = updated.entryFeePaid + updated.totalAmountBid;
       await updated.save();
     }
-    
+
     return updated;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error updating bid info:`, error);
@@ -336,13 +336,13 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
   try {
     const updates = [];
     const now = getISTTime(); // ✅ Use IST time
-    
+
     for (const winner of winners) {
       // ✅ Calculate deadline based on rank (fixed time slots from winners announcement)
       // Rank 1: 0-30 mins, Rank 2: 31-60 mins, Rank 3: 61-90 mins
       const claimWindowStart = new Date(now.getTime() + (winner.rank - 1) * 30 * 60 * 1000);
       const claimDeadline = new Date(now.getTime() + winner.rank * 30 * 60 * 1000);
-      
+
       const updateData = {
         isWinner: true,
         finalRank: winner.rank,
@@ -358,7 +358,7 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
         claimWindowStartedAt: claimWindowStart, // ✅ IST-based window start
         ranksOffered: [1], // Track that rank 1 has been offered
       };
-      
+
       // Calculate remaining fees based on rank
       if (winner.rank === 1) {
         updateData.remainingProductFees = Math.round((winner.prizeAmount || 0) * 0.1);
@@ -367,7 +367,7 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
       } else if (winner.rank === 3) {
         updateData.remainingProductFees = Math.round((winner.prizeAmount || 0) * 0.03);
       }
-      
+
       // ✅ Log times in readable IST format
       const istFormatter = new Intl.DateTimeFormat('en-IN', {
         timeZone: 'Asia/Kolkata',
@@ -379,7 +379,7 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
         second: '2-digit',
         hour12: false
       });
-      
+
       console.log(`🎯 [PRIORITY_CLAIM] Auction ${hourlyAuctionId} - Rank ${winner.rank} Winner ${winner.playerUsername}`);
       console.log(`     💰 Last round bid: ₹${winner.finalAuctionAmount || 0}`);
       console.log(`     ⏰ Completed at IST: ${istFormatter.format(now)}`);
@@ -391,7 +391,7 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
       } else if (winner.rank === 3) {
         console.log(`     ⏳ Rank 3 in waiting queue (claim window opens at 61 mins)`);
       }
-      
+
       const update = await this.findOneAndUpdate(
         { 
           userId: winner.playerId, 
@@ -402,17 +402,17 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
         },
         { new: true }
       );
-      
+
       if (update) {
         updates.push(update);
         console.log(`🏆 [AUCTION_HISTORY] Marked ${winner.playerUsername} as WINNER (Rank ${winner.rank}) in auction ${hourlyAuctionId}`);
-        
+
         // ✅ Send email notification to winners
         try {
           const user = await User.findOne({ user_id: winner.playerId });
           if (user && user.email) {
             const auctionName = update.auctionName || 'Auction';
-            
+
             if (winner.rank === 1) {
               // Send prize claim winner email to rank 1
               console.log(`📧 [EMAIL] Sending prize claim email to ${user.email} (Rank 1)`);
@@ -440,7 +440,7 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
         }
       }
     }
-    
+
     return updates;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error marking winners:`, error);
@@ -468,7 +468,7 @@ auctionHistorySchema.statics.markNonWinners = async function(hourlyAuctionId, to
         },
       }
     );
-    
+
     console.log(`✅ [AUCTION_HISTORY] Marked ${result.modifiedCount} non-winners as COMPLETED in auction ${hourlyAuctionId}`);
     console.log(`     👥 Total participants: ${totalParticipants}`);
     return result;
@@ -484,18 +484,18 @@ auctionHistorySchema.statics.markNonWinners = async function(hourlyAuctionId, to
 auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuctionId, claimData) {
   try {
     const { upiId, paymentReference } = claimData;
-    
+
     // Find the winner's history entry (any rank)
     const entry = await this.findOne({ userId, hourlyAuctionId, isWinner: true });
-    
+
     if (!entry) {
       throw new Error('Winner entry not found');
     }
-    
+
     if (entry.prizeClaimStatus !== 'PENDING') {
       throw new Error(`Prize claim is not pending. Current status: ${entry.prizeClaimStatus}`);
     }
-    
+
     // Check if deadline has passed (compare IST times)
     const now = getISTTime(); // ✅ Use IST time
     if (entry.claimDeadline && now > entry.claimDeadline) {
@@ -510,7 +510,7 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
       );
       throw new Error('Prize claim deadline has expired');
     }
-    
+
     // Update with claim information
     const updated = await this.findOneAndUpdate(
       { userId, hourlyAuctionId },
@@ -528,9 +528,9 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
       },
       { new: true }
     );
-    
+
     console.log(`🎁 [AUCTION_HISTORY] Prize claimed by ${entry.username} (Rank ${entry.finalRank}) for auction ${hourlyAuctionId}`);
-    
+
     // ✅ Send confirmation email
     try {
       const user = await User.findOne({ user_id: userId });
@@ -548,7 +548,7 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
       console.error(`❌ [EMAIL] Error sending confirmation email:`, emailError.message);
       // Don't fail the operation if email fails
     }
-    
+
     return updated;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error submitting prize claim:`, error);
@@ -562,7 +562,7 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
 auctionHistorySchema.statics.expireUnclaimedPrizes = async function() {
   try {
     const now = getISTTime(); // ✅ Use IST time
-    
+
     const result = await this.updateMany(
       {
         prizeClaimStatus: 'PENDING',
@@ -575,11 +575,11 @@ auctionHistorySchema.statics.expireUnclaimedPrizes = async function() {
         },
       }
     );
-    
+
     if (result.modifiedCount > 0) {
       console.log(`⏰ [AUCTION_HISTORY] Expired ${result.modifiedCount} unclaimed prizes`);
     }
-    
+
     return result;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error expiring unclaimed prizes:`, error);
@@ -593,25 +593,25 @@ auctionHistorySchema.statics.expireUnclaimedPrizes = async function() {
 auctionHistorySchema.statics.getUserHistory = async function(userId, filters = {}) {
   try {
     const query = { userId };
-    
+
     // Apply filters
     if (filters.isWinner !== undefined) {
       query.isWinner = filters.isWinner;
     }
-    
+
     if (filters.startDate) {
       query.auctionDate = { $gte: new Date(filters.startDate) };
     }
-    
+
     if (filters.endDate) {
       if (!query.auctionDate) query.auctionDate = {};
       query.auctionDate.$lte = new Date(filters.endDate);
     }
-    
+
     const history = await this.find(query)
       .sort({ auctionDate: -1, TimeSlot: -1 })
       .lean();
-    
+
     return history;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error getting user history:`, error);
@@ -621,6 +621,7 @@ auctionHistorySchema.statics.getUserHistory = async function(userId, filters = {
 
 /**
  * Static method: Get user statistics
+ * totalSpent = entryFees of all auctions joined + lastRoundBidAmount (only for won+claimed auctions)
  */
 auctionHistorySchema.statics.getUserStats = async function(userId) {
   try {
@@ -636,12 +637,26 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
           totalLosses: {
             $sum: { $cond: ['$isWinner', 0, 1] }
           },
-          totalSpent: { $sum: '$totalAmountSpent' },
+          // Total entry fees from all auctions joined
+          totalEntryFees: { $sum: '$entryFeePaid' },
+          // Sum of lastRoundBidAmount ONLY for auctions where user won AND claimed prize
+          totalFinalRoundBidsForClaimedWins: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$isWinner', true] },
+                  { $eq: ['$prizeClaimStatus', 'CLAIMED'] }
+                ]},
+                '$lastRoundBidAmount',
+                0
+              ]
+            }
+          },
           totalWon: { $sum: '$prizeAmountWon' },
         },
       },
     ]);
-    
+
     if (stats.length === 0) {
       return {
         totalAuctions: 0,
@@ -653,14 +668,20 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
         netGain: 0,
       };
     }
-    
+
     const result = stats[0];
+    // totalSpent = entry fees of all auctions + final round bids only for won+claimed auctions
+    result.totalSpent = (result.totalEntryFees || 0) + (result.totalFinalRoundBidsForClaimedWins || 0);
     result.winRate = result.totalAuctions > 0 
       ? Math.round((result.totalWins / result.totalAuctions) * 100) 
       : 0;
     result.netGain = result.totalWon - result.totalSpent;
-    
+
+    // Clean up intermediate fields
     delete result._id;
+    delete result.totalEntryFees;
+    delete result.totalFinalRoundBidsForClaimedWins;
+
     return result;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error getting user stats:`, error);
@@ -680,20 +701,20 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
       isWinner: true,
       prizeClaimStatus: 'PENDING'
     }).sort({ finalRank: 1 });
-    
+
     if (winners.length === 0) {
       console.log(`⏭️ [PRIORITY_CLAIM] No pending winners for auction ${hourlyAuctionId}`);
       return null;
     }
-    
+
     // Get current eligible rank (should be same for all winners)
     const currentEligibleRank = winners[0].currentEligibleRank || 1;
     const nextRank = currentEligibleRank + 1;
-    
+
     // Check if there's a next rank (max is 3)
     if (nextRank > 3) {
       console.log(`⏭️ [PRIORITY_CLAIM] All ranks exhausted for auction ${hourlyAuctionId}. Marking as EXPIRED.`);
-      
+
       // Expire all pending claims
       await this.updateMany(
         { hourlyAuctionId, prizeClaimStatus: 'PENDING' },
@@ -704,16 +725,16 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
           }
         }
       );
-      
+
       return null;
     }
-    
+
     // Check if next rank winner exists
     const nextRankWinner = winners.find(w => w.finalRank === nextRank);
-    
+
     if (!nextRankWinner) {
       console.log(`⏭️ [PRIORITY_CLAIM] No rank ${nextRank} winner exists for auction ${hourlyAuctionId}. Marking remaining as EXPIRED.`);
-      
+
       // Expire all pending claims
       await this.updateMany(
         { hourlyAuctionId, prizeClaimStatus: 'PENDING' },
@@ -724,14 +745,14 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
           }
         }
       );
-      
+
       return null;
     }
-    
+
     // ✅ FIX: Only update currentEligibleRank
     // Do NOT update claimWindowStartedAt - keep original fixed time slots
     const now = getISTTime(); // ✅ Use IST time
-    
+
     // ✅ Format for logging
     const istFormatter = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -743,14 +764,14 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
       second: '2-digit',
       hour12: false
     });
-    
+
     console.log(`⏭️ [PRIORITY_CLAIM] Advancing auction ${hourlyAuctionId} from rank ${currentEligibleRank} to rank ${nextRank}`);
     console.log(`     ❌ Rank ${currentEligibleRank} failed to claim within 30 minutes`);
     console.log(`     ✅ Rank ${nextRank} (${nextRankWinner.username}) now eligible to claim`);
     console.log(`     ⏰ Current time IST: ${istFormatter.format(now)}`);
     console.log(`     ⏰ Rank ${nextRank} window start IST: ${istFormatter.format(nextRankWinner.claimWindowStartedAt)}`);
     console.log(`     ⏰ Rank ${nextRank} deadline IST: ${istFormatter.format(nextRankWinner.claimDeadline)}`);
-    
+
     // ✅ FIX: Only update currentEligibleRank, do NOT update claimWindowStartedAt
     const result = await this.updateMany(
       { hourlyAuctionId, isWinner: true, prizeClaimStatus: 'PENDING' },
@@ -765,9 +786,9 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
         }
       }
     );
-    
+
     console.log(`✅ [PRIORITY_CLAIM] Updated ${result.modifiedCount} winner records for auction ${hourlyAuctionId}`);
-    
+
     // ✅ Send email notification to next rank winner
     try {
       const user = await User.findOne({ user_id: nextRankWinner.userId });
@@ -785,7 +806,7 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
       console.error(`❌ [EMAIL] Error sending email to rank ${nextRank} winner:`, emailError.message);
       // Don't fail the operation if email fails
     }
-    
+
     return {
       previousRank: currentEligibleRank,
       currentRank: nextRank,
@@ -807,7 +828,7 @@ auctionHistorySchema.statics.processClaimQueues = async function() {
   try {
     // ✅ Get current IST time for comparison
     const now = getISTTime(); // ✅ Use IST time consistently
-    
+
     // ✅ Format for logging
     const istFormatter = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
@@ -819,9 +840,9 @@ auctionHistorySchema.statics.processClaimQueues = async function() {
       second: '2-digit',
       hour12: false
     });
-    
+
     console.log(`⏰ [PRIORITY_CLAIM] Processing claim queues at IST: ${istFormatter.format(now)}`);
-    
+
     // ✅ Find auctions where the CURRENT eligible rank's window has expired
     // Since all times are now stored in IST, we can directly compare with IST time
     const expiredClaims = await this.aggregate([
@@ -861,29 +882,29 @@ auctionHistorySchema.statics.processClaimQueues = async function() {
         }
       }
     ]);
-    
+
     if (expiredClaims.length === 0) {
       return { processed: 0, advanced: 0 };
     }
-    
+
     console.log(`⏰ [PRIORITY_CLAIM] Processing ${expiredClaims.length} auctions with expired claim windows`);
-    
+
     let advancedCount = 0;
-    
+
     for (const auction of expiredClaims) {
       console.log(`⏰ [PRIORITY_CLAIM] Rank ${auction.currentEligibleRank} window expired for auction ${auction._id}`);
       console.log(`     Completed at IST: ${istFormatter.format(auction.completedAt)}`);
       console.log(`     Deadline IST: ${istFormatter.format(auction.currentRankDeadline)}`);
       console.log(`     Current time IST: ${istFormatter.format(now)}`);
-      
+
       const result = await this.advanceClaimQueue(auction._id);
       if (result) {
         advancedCount++;
       }
     }
-    
+
     console.log(`✅ [PRIORITY_CLAIM] Processed ${expiredClaims.length} auctions, advanced ${advancedCount} to next rank`);
-    
+
     return {
       processed: expiredClaims.length,
       advanced: advancedCount
