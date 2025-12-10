@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
+import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
 interface HeaderProps {
   user?: {
+    id?: string;
     username: string;
     totalWins: number;
     totalAuctions: number;
@@ -16,6 +18,56 @@ interface HeaderProps {
 
 export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hasNewHistory, setHasNewHistory] = useState(false);
+
+  // Check for new auction history entries
+  useEffect(() => {
+    if (!user?.id) {
+      setHasNewHistory(false);
+      return;
+    }
+
+    const checkNewHistory = async () => {
+      try {
+        const lastViewedTime = localStorage.getItem(`auction_history_last_viewed_${user.id}`);
+        const lastViewedTimestamp = lastViewedTime ? parseInt(lastViewedTime, 10) : 0;
+
+        const queryString = buildQueryString({ userId: user.id });
+        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
+        
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.length > 0) {
+          // Check if any entry was created or updated after last viewed time
+          const hasNew = result.data.some((entry: any) => {
+            const entryTime = new Date(entry.updatedAt || entry.createdAt || entry.joinedAt).getTime();
+            return entryTime > lastViewedTimestamp;
+          });
+          setHasNewHistory(hasNew);
+        } else {
+          setHasNewHistory(false);
+        }
+      } catch (error) {
+        console.error('Error checking auction history:', error);
+      }
+    };
+
+    checkNewHistory();
+    // Poll every 30 seconds
+    const interval = setInterval(checkNewHistory, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Mark history as viewed when navigating to history page
+  const handleNavigateToHistory = () => {
+    if (user?.id) {
+      localStorage.setItem(`auction_history_last_viewed_${user.id}`, Date.now().toString());
+      setHasNewHistory(false);
+    }
+    onNavigate?.('history');
+  };
 
   const overlayVariants = {
     hidden: {
@@ -218,6 +270,25 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
+                    {/* Auction History Link with Red Dot */}
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={handleNavigateToHistory}
+                        variant="ghost"
+                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all relative"
+                        size="sm"
+                      >
+                        <History className="w-4 h-4 mr-1.5" />
+                        Auction History
+                        {hasNewHistory && (
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                          </span>
+                        )}
+                      </Button>
+                    </motion.div>
+
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         onClick={() => onNavigate?.('rules')}
@@ -484,13 +555,22 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                       <motion.div variants={menuItemVariants}>
                         <button
-                          onClick={() => { onNavigate?.('history'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          onClick={() => { handleNavigateToHistory(); setMobileMenuOpen(false); }}
+                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group relative"
                         >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors relative">
                             <History className="w-5 h-5 text-purple-600" />
+                            {hasNewHistory && (
+                              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                              </span>
+                            )}
                           </div>
                           <span className="font-medium text-purple-900">Auction History</span>
+                          {hasNewHistory && (
+                            <span className="ml-auto text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">New</span>
+                          )}
                         </button>
                       </motion.div>
 
