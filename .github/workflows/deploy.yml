@@ -26,9 +26,9 @@ jobs:
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: 145.79.211.27
-          username: u425470620.dream60.com
+          server: ftp.dream60.com
+          username: u425470620.Dream60
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           local-dir: ./dist/
-          server-dir: public_html/test/
+          server-dir: /home/u425470620/domains/dream60.com/
