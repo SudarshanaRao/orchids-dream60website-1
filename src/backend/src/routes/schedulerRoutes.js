@@ -15,6 +15,7 @@ const {
   markAuctionWinners,
   getUserAuctionHistory,
   getAuctionDetails,
+  getHourlyAuctionById,
 } = require('../controllers/schedulerController');
 
 /**
@@ -708,5 +709,120 @@ router.get('/user-auction-history', getUserAuctionHistory);
  *         description: Internal server error
  */
 router.get('/auction-details', getAuctionDetails);
+
+/**
+ * @swagger
+ * /scheduler/hourly-auction/{hourlyAuctionId}:
+ *   get:
+ *     summary: Get total data of a particular hourly auction
+ *     description: |
+ *       Returns complete hourly auction data including all participants, rounds, winners, and summary statistics.
+ *       
+ *       **What it returns:**
+ *       - Complete auction document with all fields
+ *       - Summary statistics (total participants, bids, revenue, prize distributed)
+ *       - Round-by-round breakdown with stats
+ *       - Winner information
+ *       
+ *       **Use this endpoint to:**
+ *       - Get complete data of a specific hourly auction
+ *       - View auction analytics and statistics
+ *       - Admin dashboard auction details
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: path
+ *         name: hourlyAuctionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Hourly auction UUID
+ *         example: "9be58e75-ab01-45fa-bf5a-7dd6340afd82"
+ *     responses:
+ *       200:
+ *         description: Hourly auction data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   description: Complete hourly auction document
+ *                 summary:
+ *                   type: object
+ *                   properties:
+ *                     hourlyAuctionId:
+ *                       type: string
+ *                     hourlyAuctionCode:
+ *                       type: string
+ *                       example: "HA000001"
+ *                     auctionName:
+ *                       type: string
+ *                       example: "Dream Auction 1"
+ *                     status:
+ *                       type: string
+ *                       enum: [UPCOMING, LIVE, COMPLETED, CANCELLED]
+ *                     timeSlot:
+ *                       type: string
+ *                       example: "10:00"
+ *                     prizeValue:
+ *                       type: number
+ *                       example: 10000
+ *                     entryFee:
+ *                       type: number
+ *                       example: 100
+ *                     totalParticipants:
+ *                       type: number
+ *                       example: 50
+ *                     totalBids:
+ *                       type: number
+ *                       example: 200
+ *                     totalWinners:
+ *                       type: number
+ *                       example: 3
+ *                     totalRevenue:
+ *                       type: number
+ *                       example: 5000
+ *                     totalPrizeDistributed:
+ *                       type: number
+ *                       example: 10000
+ *                     currentRound:
+ *                       type: number
+ *                       example: 4
+ *                     totalRounds:
+ *                       type: number
+ *                       example: 4
+ *                     roundStats:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           roundNumber:
+ *                             type: number
+ *                           status:
+ *                             type: string
+ *                           totalParticipants:
+ *                             type: number
+ *                           qualifiedCount:
+ *                             type: number
+ *                           highestBid:
+ *                             type: number
+ *                           lowestBid:
+ *                             type: number
+ *                     winners:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       400:
+ *         description: Missing hourlyAuctionId parameter
+ *       404:
+ *         description: Hourly auction not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/hourly-auction/:hourlyAuctionId', getHourlyAuctionById);
 
 module.exports = router;

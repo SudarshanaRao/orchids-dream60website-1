@@ -1345,6 +1345,94 @@ const getAuctionDetails = async (req, res) => {
   }
 };
 
+/**
+ * Get total data of a particular hourly auction by ID
+ * GET /scheduler/hourly-auction/:hourlyAuctionId
+ * Returns complete hourly auction data including participants, rounds, winners, etc.
+ */
+const getHourlyAuctionById = async (req, res) => {
+  try {
+    const { hourlyAuctionId } = req.params;
+    
+    if (!hourlyAuctionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'hourlyAuctionId is required',
+      });
+    }
+    
+    // Find the hourly auction by ID
+    const auction = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
+    
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hourly auction not found',
+      });
+    }
+    
+    // Calculate summary statistics
+    const totalParticipants = auction.participants?.length || 0;
+    const totalBids = auction.totalBids || 0;
+    const totalWinners = auction.winners?.length || 0;
+    
+    // Calculate round statistics
+    const roundStats = auction.rounds?.map(round => ({
+      roundNumber: round.roundNumber,
+      status: round.status,
+      totalParticipants: round.playersData?.length || 0,
+      qualifiedCount: round.qualifiedPlayers?.length || 0,
+      highestBid: round.playersData?.length > 0 
+        ? Math.max(...round.playersData.map(p => p.auctionPlacedAmount || 0)) 
+        : 0,
+      lowestBid: round.playersData?.length > 0 
+        ? Math.min(...round.playersData.map(p => p.auctionPlacedAmount || 0)) 
+        : 0,
+      startedAt: round.startedAt,
+      completedAt: round.completedAt,
+    })) || [];
+    
+    // Calculate total revenue from entry fees
+    const totalRevenue = totalParticipants * (auction.EntryFee || 0);
+    
+    // Calculate total prize amount distributed
+    const totalPrizeDistributed = auction.winners?.reduce((sum, w) => sum + (w.prizeAmount || 0), 0) || 0;
+    
+    return res.status(200).json({
+      success: true,
+      data: auction,
+      summary: {
+        hourlyAuctionId: auction.hourlyAuctionId,
+        hourlyAuctionCode: auction.hourlyAuctionCode,
+        auctionName: auction.auctionName,
+        status: auction.Status,
+        timeSlot: auction.TimeSlot,
+        auctionDate: auction.auctionDate,
+        prizeValue: auction.prizeValue,
+        entryFee: auction.EntryFee,
+        totalParticipants,
+        totalBids,
+        totalWinners,
+        totalRevenue,
+        totalPrizeDistributed,
+        currentRound: auction.currentRound,
+        totalRounds: auction.roundCount,
+        roundStats,
+        winners: auction.winners || [],
+        startedAt: auction.startedAt,
+        completedAt: auction.completedAt,
+      },
+    });
+  } catch (error) {
+    console.error('❌ [GET_HOURLY_AUCTION] Error fetching hourly auction:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -1364,4 +1452,5 @@ module.exports = {
   markAuctionWinners,
   getUserAuctionHistory,
   getAuctionDetails,
+  getHourlyAuctionById,
 };
