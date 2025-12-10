@@ -46,8 +46,6 @@ const emailTemplateSchema = new mongoose.Schema(
   }
 );
 
-// Index for faster queries
-emailTemplateSchema.index({ template_id: 1 });
 emailTemplateSchema.index({ category: 1, isActive: 1 });
 emailTemplateSchema.index({ createdBy: 1 });
 

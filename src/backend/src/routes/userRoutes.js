@@ -155,7 +155,7 @@ const ensureUserId = (req, res, next) => {
  * @swagger
  * /auth/users:
  *   get:
- *     summary: GET ALL USERS
+ *     summary: Get all users
  *     description: |
  *       Returns all non-deleted users in the system.
  *       No authentication or parameters required.
@@ -209,7 +209,7 @@ router.get('/users', getAllUsers);
  * @swagger
  * /auth/me:
  *   get:
- *     summary: GET CURRENT USER'S FULL DETAILS
+ *     summary: Get current user full details
  *     description: |
  *       Fetches complete user details including profile information and statistics.
  *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.
@@ -280,7 +280,7 @@ router.get('/me', ensureUserId, getMe);
  * @swagger
  * /auth/me/profile:
  *   get:
- *     summary: GET CURRENT USER'S PROFILE INFO
+ *     summary: Get current user profile info
  *     description: |
  *       Fetches user profile information (lighter version of /auth/me).
  *       Provide `user_id` as a query parameter, request body, URL param, or X-User-Id header.
@@ -329,16 +329,17 @@ router.get('/me/profile', ensureUserId, getProfile);
  * @swagger
  * /auth/me/preferences:
  *   put:
- *     summary: UPDATE USER NOTIFICATION PREFERENCES
+ *     summary: Update user notification preferences
  *     description: |
  *       Updates user's notification preferences.
  *       All notification settings are optional - only provided fields will be updated.
  *       
- *       **Preference options:**
- *       - emailNotifications: Receive email notifications
- *       - smsNotifications: Receive SMS notifications
- *       - bidAlerts: Get alerts when auction bids are placed
- *       - winNotifications: Get notified when you win auctions
+ *       **Preference options available:**
+ *       
+ *       - emailNotifications - Receive email notifications
+ *       - smsNotifications - Receive SMS notifications
+ *       - bidAlerts - Get alerts when auction bids are placed
+ *       - winNotifications - Get notified when you win auctions
  *       
  *       **Use this endpoint to:**
  *       - Allow users to customize their notification settings
@@ -384,7 +385,7 @@ router.put('/me/preferences', ensureUserId, updatePreferences);
  * @swagger
  * /auth/me:
  *   delete:
- *     summary: SOFT DELETE USER ACCOUNT
+ *     summary: Soft delete user account
  *     description: |
  *       Performs a soft delete on user account (marks as deleted but doesn't remove from database).
  *       User data is retained for audit purposes but account becomes inaccessible.
@@ -462,7 +463,7 @@ router.delete('/me', ensureUserId, deleteMe);
  * @swagger
  * /auth/updateUserDetails:
  *   put:
- *     summary: UPDATE USER'S MOBILE OR EMAIL
+ *     summary: Update user mobile or email
  *     description: |
  *       Updates user's mobile number or email address.
  *       Use flags to specify which field to update.
