@@ -66,7 +66,7 @@ interface PrizeShowcaseProps {
       type: 'entry' | 'round';
       entryFee?: number;
       hasPaid?: boolean;
-    }>;
+    }> ;
   };
   onPayEntry?: (boxId: number, entryFee: number) => void;
   onPaymentFailure?: (entryFee: number, errorMessage: string) => void;
@@ -106,18 +106,16 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
   };
 
   // ✅ UPDATED: Calculate auction end time from rounds data - use last round's completedAt
-  const calculateAuctionEndTime = (rounds: Round[]) => {
+  // This function is now pure and doesn't call setState
+  const calculateAuctionEndTime = (rounds: Round[], currentFallbackTime: Date | null): Date => {
     console.log('🔍 [CALCULATE END TIME] Starting calculation with rounds:', rounds.length);
     
     if (!rounds || rounds.length === 0) {
       console.log('⚠️ [CALCULATE END TIME] No rounds data, using fallback');
-      // ✅ CRITICAL FIX: Use stored fallback time instead of recalculating
-      if (!fallbackEndTime) {
-        const newFallbackTime = new Date(getCurrentServerTime() + 60 * 60 * 1000);
-        setFallbackEndTime(newFallbackTime);
-        return newFallbackTime;
+      if (currentFallbackTime) {
+        return currentFallbackTime;
       }
-      return fallbackEndTime;
+      return new Date(getCurrentServerTime() + 60 * 60 * 1000);
     }
 
     // ✅ Find the last round (round 4) and use its completedAt time
@@ -156,12 +154,10 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
     
     // Fallback: use stored fallback time
     console.log('⚠️ [CALCULATE END TIME] No completedAt found, using fallback');
-    if (!fallbackEndTime) {
-      const newFallbackTime = new Date(getCurrentServerTime() + 60 * 60 * 1000);
-      setFallbackEndTime(newFallbackTime);
-      return newFallbackTime;
+    if (currentFallbackTime) {
+      return currentFallbackTime;
     }
-    return fallbackEndTime;
+    return new Date(getCurrentServerTime() + 60 * 60 * 1000);
   };
 
   // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
@@ -175,13 +171,11 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
 
     // ✅ FIX: If data is loading but we already have data, just wait for new data
     if (isLoadingLiveAuction && hasInitiallyLoaded) {
-      // Don't change any state - keep showing existing data
       return;
     }
 
     // ✅ FIX: Don't clear state if data is temporarily undefined during refetch
     if (!liveAuctionData) {
-      // Only show "No Live Auction" if we don't have existing data
       if (liveAuctions.length === 0 && hasInitiallyLoaded) {
         setNoLiveAuction(true);
         setIsLoading(false);
@@ -192,16 +186,14 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
     console.log('📊 [PRIZE SHOWCASE] Received live auction data from parent');
     setNoLiveAuction(false);
     setIsLoading(false);
-    setHasInitiallyLoaded(true); // ✅ Mark as loaded after first data
+    setHasInitiallyLoaded(true);
 
     const a = liveAuctionData;
 
-    // ✅ CRITICAL FIX: Update participants count separately without affecting loading state
     const participantsList = a.participants || [];
     setParticipants(participantsList);
     setParticipantsCount(participantsList.length);
 
-    // Check if current user is in participants list
     const userId = localStorage.getItem('user_id');
     if (userId) {
       const userInParticipants = participantsList.some(
@@ -209,7 +201,6 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
       );
       setIsUserParticipating(userInParticipants);
       
-      // Notify parent component about participation status
       if (onUserParticipationChange) {
         onUserParticipationChange(userInParticipants);
       }
@@ -236,14 +227,19 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
     if (isNewAuction && a.rounds && a.rounds.length > 0) {
       console.log('🔄 [PRIZE SHOWCASE] New auction detected, calculating end time');
       setCurrentAuctionId(a.hourlyAuctionId);
-      const endTime = calculateAuctionEndTime(a.rounds);
+      const endTime = calculateAuctionEndTime(a.rounds, fallbackEndTime);
       setAuctionEndTime(endTime);
-      // Reset fallback time for new auction
-      setFallbackEndTime(null);
+      // Set fallback time for this auction if we had to calculate a fallback
+      if (!a.rounds || a.rounds.length === 0 || !a.rounds[a.rounds.length - 1]?.completedAt) {
+        setFallbackEndTime(endTime);
+      } else {
+        setFallbackEndTime(null);
+      }
     } else if (!isNewAuction) {
       console.log('⏭️ [PRIZE SHOWCASE] Same auction, keeping existing end time');
     }
-  }, [liveAuctionData, onUserParticipationChange, isLoadingLiveAuction, hasInitiallyLoaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveAuctionData, isLoadingLiveAuction, hasInitiallyLoaded]);
 
   // ✅ Update join window status from serverTime
   useEffect(() => {
