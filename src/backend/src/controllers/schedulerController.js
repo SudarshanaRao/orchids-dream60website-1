@@ -1436,6 +1436,11 @@ const markAuctionWinners = async (req, res) => {
 /**
  * Get user's auction history from AuctionHistory model
  * GET /scheduler/user-auction-history?userId=xxx
+ * 
+ * ✅ UPDATED: totalAmountSpent per auction is now calculated as:
+ * - If NOT won: entryFee only
+ * - If won but NOT claimed: entryFee only
+ * - If won AND claimed: entryFee + lastRoundBidAmount (final round bid only)
  */
 const getUserAuctionHistory = async (req, res) => {
   try {
@@ -1454,14 +1459,28 @@ const getUserAuctionHistory = async (req, res) => {
     // Get user's statistics
     const stats = await AuctionHistory.getUserStats(userId);
     
-    // ✅ Include priority claim fields in response
-    const enrichedHistory = history.map(entry => ({
-      ...entry,
-      // Priority claim system fields
-      currentEligibleRank: entry.currentEligibleRank || null,
-      claimWindowStartedAt: entry.claimWindowStartedAt || null,
-      ranksOffered: entry.ranksOffered || [],
-    }));
+    // ✅ UPDATED: Calculate correct totalAmountSpent for each auction entry
+    // Logic: If won AND claimed, totalSpent = entryFee + lastRoundBidAmount
+    //        Otherwise, totalSpent = entryFee only
+    const enrichedHistory = history.map(entry => {
+      // Calculate correct totalSpent for this auction
+      let calculatedTotalSpent = entry.entryFeePaid || 0;
+      
+      // Only add lastRoundBidAmount if user won AND claimed the prize
+      if (entry.isWinner && entry.prizeClaimStatus === 'CLAIMED') {
+        calculatedTotalSpent += (entry.lastRoundBidAmount || 0);
+      }
+      
+      return {
+        ...entry,
+        // Override totalAmountSpent with correct calculation
+        totalAmountSpent: calculatedTotalSpent,
+        // Priority claim system fields
+        currentEligibleRank: entry.currentEligibleRank || null,
+        claimWindowStartedAt: entry.claimWindowStartedAt || null,
+        ranksOffered: entry.ranksOffered || [],
+      };
+    });
     
     return res.status(200).json({
       success: true,
@@ -1481,6 +1500,11 @@ const getUserAuctionHistory = async (req, res) => {
 /**
  * Get detailed auction data for view details page
  * GET /scheduler/auction-details?hourlyAuctionId=xxx&userId=xxx
+ * 
+ * ✅ UPDATED: totalAmountSpent is now calculated as:
+ * - If NOT won: entryFee only
+ * - If won but NOT claimed: entryFee only
+ * - If won AND claimed: entryFee + lastRoundBidAmount (final round bid only)
  */
 const getAuctionDetails = async (req, res) => {
   try {
@@ -1559,9 +1583,18 @@ const getAuctionDetails = async (req, res) => {
       };
     }
     
+    // ✅ UPDATED: Calculate correct totalAmountSpent
+    // Logic: If won AND claimed, totalSpent = entryFee + lastRoundBidAmount
+    //        Otherwise, totalSpent = entryFee only
+    let calculatedTotalSpent = userHistory.entryFeePaid || 0;
+    if (userHistory.isWinner && userHistory.prizeClaimStatus === 'CLAIMED') {
+      calculatedTotalSpent += (userHistory.lastRoundBidAmount || 0);
+    }
+    
     return res.status(200).json({
       success: true,
       data: {
+        hourlyAuction: auction, // Include full auction data for prize claim status checking
         auction: {
           hourlyAuctionId: auction.hourlyAuctionId,
           hourlyAuctionCode: auction.hourlyAuctionCode,
@@ -1575,7 +1608,7 @@ const getAuctionDetails = async (req, res) => {
         userParticipation: {
           entryFeePaid: userHistory.entryFeePaid,
           totalAmountBid: userHistory.totalAmountBid,
-          totalAmountSpent: userHistory.totalAmountSpent,
+          totalAmountSpent: calculatedTotalSpent, // ✅ Use correct calculation
           roundsParticipated: userHistory.roundsParticipated,
           totalBidsPlaced: userHistory.totalBidsPlaced,
           isWinner: userHistory.isWinner,
