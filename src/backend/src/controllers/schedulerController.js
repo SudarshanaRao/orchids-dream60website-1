@@ -39,6 +39,31 @@ const getISTTime = () => {
 };
 
 /**
+ * ✅ Helper function to get IST date at start of day (00:00:00)
+ * Used for comparing auction dates
+ */
+const getISTDateStart = () => {
+  const now = new Date();
+  
+  // IST is UTC+5:30
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istTimestamp = now.getTime() + istOffset;
+  const istDate = new Date(istTimestamp);
+  
+  // Extract IST date components
+  const year = istDate.getUTCFullYear();
+  const month = istDate.getUTCMonth();
+  const day = istDate.getUTCDate();
+  
+  // Create start of day in IST (stored as UTC for MongoDB comparison)
+  const result = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  
+  console.log(`📅 [IST-DATE-START] IST Date: ${year}-${month+1}-${day}, Start of day: ${result.toISOString()}`);
+  
+  return result;
+};
+
+/**
  * ✅ Helper function to create IST date from components
  * @param {Number} year - Full year (e.g., 2024)
  * @param {Number} month - Month (0-11, where 0 = January)
@@ -218,6 +243,7 @@ const syncHourlyStatusToDailyConfig = async (hourlyAuctionId, newStatus) => {
  * ✅ FIXED: Reset all daily and hourly auctions by setting isActive to false
  * This runs at 00:00 AM (midnight) before creating new auctions
  * ✅ CRITICAL FIX: Does NOT delete old auctions - only marks them as inactive/completed
+ * ✅ CRITICAL FIX: Uses IST date for proper comparison
  * This preserves all historical data including participants, bids, winners, etc.
  */
 const resetDailyAuctions = async () => {
@@ -235,16 +261,17 @@ const resetDailyAuctions = async () => {
       };
     }
     
-    // ✅ CRITICAL FIX: Only mark previous days' auctions as inactive - DO NOT DELETE
-    // This preserves all participant data, bids, winners, etc.
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // ✅ CRITICAL FIX: Use IST date for comparison, not local server time
+    const todayIST = getISTDateStart();
     
-    // Update all PAST daily auctions - set isActive to false (not today's)
+    console.log(`🔄 [RESET] Today's IST date (start): ${todayIST.toISOString()}`);
+    
+    // ✅ CRITICAL FIX: Only mark PAST daily auctions as inactive - DO NOT touch today's
+    // This preserves all participant data, bids, winners, etc.
     const dailyResult = await DailyAuction.updateMany(
       { 
         isActive: true,
-        auctionDate: { $lt: today } // Only update auctions BEFORE today
+        auctionDate: { $lt: todayIST } // Only update auctions BEFORE today (IST)
       },
       { 
         $set: { 
@@ -256,27 +283,38 @@ const resetDailyAuctions = async () => {
     
     console.log(`✅ [RESET] Marked ${dailyResult.modifiedCount} past daily auctions as inactive (preserved data)`);
     
-    // Update all PAST hourly auctions - set status to COMPLETED (not today's)
+    // ✅ CRITICAL FIX: Only update PAST hourly auctions - DO NOT touch today's
+    // Also exclude already COMPLETED auctions to preserve their state
     const hourlyResult = await HourlyAuction.updateMany(
       { 
-        Status: { $in: ['LIVE', 'UPCOMING'] },
-        auctionDate: { $lt: today } // Only update auctions BEFORE today
+        Status: { $in: ['LIVE', 'UPCOMING'] }, // Only update non-completed auctions
+        auctionDate: { $lt: todayIST } // Only update auctions BEFORE today (IST)
       },
       { 
         $set: { 
           Status: 'COMPLETED',
-          completedAt: new Date()
+          completedAt: getISTTime() // Use IST time for completion timestamp
         } 
       }
     );
     
     console.log(`✅ [RESET] Marked ${hourlyResult.modifiedCount} past hourly auctions as COMPLETED (preserved data)`);
     
+    // ✅ NEW: Log what auctions were NOT modified (today's auctions)
+    const todaysDaily = await DailyAuction.countDocuments({ auctionDate: { $gte: todayIST }, isActive: true });
+    const todaysHourly = await HourlyAuction.countDocuments({ auctionDate: { $gte: todayIST }, Status: { $in: ['LIVE', 'UPCOMING', 'COMPLETED'] } });
+    
+    console.log(`📊 [RESET] Today's auctions preserved: ${todaysDaily} daily, ${todaysHourly} hourly`);
+    
     return {
       success: true,
       message: 'All past daily and hourly auctions marked as completed (data preserved)',
       dailyAuctionsUpdated: dailyResult.modifiedCount,
       hourlyAuctionsUpdated: hourlyResult.modifiedCount,
+      todaysAuctionsPreserved: {
+        daily: todaysDaily,
+        hourly: todaysHourly
+      }
     };
   } catch (error) {
     console.error('❌ [RESET] Error resetting auctions:', error);
@@ -292,6 +330,7 @@ const resetDailyAuctions = async () => {
  * ✅ FIXED: Create daily auction from active master auction for TODAY
  * This runs automatically at 12:00 AM (midnight) every day AFTER resetting old auctions
  * Creates 1 DailyAuction for TODAY with all statuses set to UPCOMING
+ * ✅ CRITICAL FIX: Uses IST date for proper date handling
  * ✅ CRITICAL FIX: Does NOT delete existing auctions - creates new ones only if not exist
  */
 const createDailyAuction = async () => {
@@ -322,16 +361,15 @@ const createDailyAuction = async () => {
     
     console.log(`✅ [SCHEDULER] Found active master auction: ${activeMasterAuction.master_id}`);
     
-    // Get TODAY's date (current day, start of day)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // ✅ CRITICAL FIX: Get TODAY's date in IST (start of day)
+    const todayIST = getISTDateStart();
     
-    console.log(`📅 [SCHEDULER] Creating daily auction for TODAY: ${today.toDateString()}`);
+    console.log(`📅 [SCHEDULER] Creating daily auction for TODAY (IST): ${todayIST.toISOString()}`);
     
     // ✅ CRITICAL FIX: Check if daily auction for today ALREADY exists
     const existingDailyAuction = await DailyAuction.findOne({
       masterId: activeMasterAuction.master_id,
-      auctionDate: today,
+      auctionDate: todayIST,
       isActive: true
     });
     
@@ -352,7 +390,7 @@ const createDailyAuction = async () => {
           message: 'Daily auction already exists. Created missing hourly auctions.',
           dailyAuction: existingDailyAuction,
           hourlyAuctions: hourlyResult,
-          date: today.toISOString(),
+          date: todayIST.toISOString(),
           wasExisting: true,
         };
       }
@@ -361,7 +399,7 @@ const createDailyAuction = async () => {
         success: true,
         message: 'Daily auction and hourly auctions already exist for today',
         dailyAuction: existingDailyAuction,
-        date: today.toISOString(),
+        date: todayIST.toISOString(),
         wasExisting: true,
       };
     }
@@ -389,7 +427,7 @@ const createDailyAuction = async () => {
     const dailyAuctionData = {
       masterId: activeMasterAuction.master_id,
       dailyAuctionId: newDailyAuctionId, 
-      auctionDate: today, // TODAY's date
+      auctionDate: todayIST, // ✅ Use IST date
       createdBy: activeMasterAuction.createdBy,
       isActive: true,
       totalAuctionsPerDay: activeMasterAuction.totalAuctionsPerDay,
@@ -410,14 +448,14 @@ const createDailyAuction = async () => {
     // ✅ Pass the pre-generated hourlyAuctionIds
     const hourlyAuctionResult = await createHourlyAuctions(dailyAuction);
     
-    console.log(`🎉 [SCHEDULER] Daily auction creation completed for TODAY (${today.toDateString()}).`);
+    console.log(`🎉 [SCHEDULER] Daily auction creation completed for TODAY.`);
     
     return {
       success: true,
-      message: `Daily auction and hourly auctions created successfully for today (${today.toDateString()})`,
+      message: `Daily auction and hourly auctions created successfully for today`,
       dailyAuction: dailyAuction,
       hourlyAuctions: hourlyAuctionResult,
-      date: today.toISOString(),
+      date: todayIST.toISOString(),
       wasExisting: false,
     };
   } catch (error) {

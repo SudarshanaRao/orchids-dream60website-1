@@ -98,9 +98,11 @@ const WinnerSchema = new mongoose.Schema(
  */
 const hourlyAuctionSchema = new mongoose.Schema(
   {
+    // ✅ CRITICAL FIX: hourlyAuctionId should be REQUIRED and set from dailyAuctionConfig
+    // Do NOT use default randomUUID() as it causes inconsistency across collections
     hourlyAuctionId: {
       type: String,
-      default: () => randomUUID(),
+      required: true, // ✅ Make it required - must be passed from createHourlyAuctions
       index: true,
       unique: true,
     },

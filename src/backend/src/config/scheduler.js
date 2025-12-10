@@ -28,6 +28,27 @@ const getISTTime = () => {
 };
 
 /**
+ * ✅ Helper function to get IST date at start of day (00:00:00)
+ * Used for comparing auction dates
+ */
+const getISTDateStart = () => {
+  const now = new Date();
+  
+  // IST is UTC+5:30
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istTimestamp = now.getTime() + istOffset;
+  const istDate = new Date(istTimestamp);
+  
+  // Extract IST date components
+  const year = istDate.getUTCFullYear();
+  const month = istDate.getUTCMonth();
+  const day = istDate.getUTCDate();
+  
+  // Create start of day in IST (stored as UTC for MongoDB comparison)
+  return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+};
+
+/**
  * Helper function to mark winners in AuctionHistory after auction completion
  * AND ensure all participants are recorded in auction history
  * @param {Object} auction - HourlyAuction document with winners populated
@@ -382,7 +403,7 @@ const calculateEarlyWinners = (auction, qualifiedPlayerIds, completedRound) => {
  */
 const calculateRound4Winners = (auction) => {
   console.log('🏆 [WINNERS] Starting Round 4 winner calculation...');
-  
+
   // Get round 4 data
   const round4 = auction.rounds.find(r => r.roundNumber === 4);
   if (!round4 || !round4.playersData || round4.playersData.length === 0) {
@@ -682,6 +703,25 @@ const autoActivateAuctions = async () => {
         // This prevents re-activating auctions that completed early (≤3 qualified players)
         if (local.Status === 'COMPLETED') {
           console.log(`  ⏭️ [AUTO-ACTIVATE] Skipping ${local.hourlyAuctionCode || local.hourlyAuctionId} - Already COMPLETED`);
+          continue;
+        }
+
+        // ✅ CRITICAL FIX: Skip auctions from PREVIOUS days
+        // This prevents resetting yesterday's auctions to UPCOMING/LIVE
+        const todayIST = getISTDateStart();
+        const auctionDate = new Date(local.auctionDate);
+        auctionDate.setHours(0, 0, 0, 0);
+        
+        if (auctionDate.getTime() < todayIST.getTime()) {
+          // Auction is from a previous day - mark as COMPLETED if not already
+          if (local.Status !== 'COMPLETED') {
+            local.Status = 'COMPLETED';
+            local.completedAt = getISTTime();
+            await local.save();
+            console.log(`  ⏭️ [AUTO-ACTIVATE] Skipping ${local.hourlyAuctionCode || local.hourlyAuctionId} - Previous day auction, marked as COMPLETED`);
+          } else {
+            console.log(`  ⏭️ [AUTO-ACTIVATE] Skipping ${local.hourlyAuctionCode || local.hourlyAuctionId} - Previous day auction`);
+          }
           continue;
         }
 

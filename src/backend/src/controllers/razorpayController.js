@@ -495,11 +495,12 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
     }
 
     // ✅ 7. Create AuctionHistory entry for tracking user's auction participation
+    // ✅ CRITICAL FIX: Use hourlyAuction.hourlyAuctionId from database to ensure consistency
     try {
       await AuctionHistory.createEntry({
         userId: payment.userId,
         username: actualUsername, // ✅ Use actual username
-        hourlyAuctionId: payment.auctionId,
+        hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Use from database, not payment
         dailyAuctionId: hourlyAuction.dailyAuctionId,
         auctionDate: hourlyAuction.auctionDate,
         auctionName: hourlyAuction.auctionName,
@@ -511,7 +512,7 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
       console.log('✅ [AUCTION_HISTORY] Entry created for user:', {
         userId: payment.userId,
         username: actualUsername, // ✅ Log actual username
-        auctionId: payment.auctionId,
+        hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Log the correct ID
         auctionCode: hourlyAuction.hourlyAuctionCode,
       });
     } catch (historyError) {
@@ -525,7 +526,7 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
       data: {
         payment,
         joined: true,
-        hourlyAuctionId: payment.auctionId,
+        hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Use from database
         hourlyAuctionCode: hourlyAuction.hourlyAuctionCode,
         totalParticipants: hourlyAuction.totalParticipants,
         username: actualUsername, // ✅ Return actual username
