@@ -91,12 +91,22 @@ export const usePrizeClaimPayment = () => {
         // ✅ Use actual user data from backend response if available, otherwise fallback to provided userDetails
         const actualUserDetails = orderData.data.userInfo || userDetails;
         
+        // ✅ CRITICAL: Use backend email/upiId if frontend doesn't have it
+        const finalEmail = actualUserDetails.email || userDetails.email;
+        const finalUpiId = userDetails.upiId || actualUserDetails.email || finalEmail;
+        
         console.log('✅ [PRIZE_CLAIM_RAZORPAY_PREFILL] Using user data:', {
           name: actualUserDetails.name,
-          email: actualUserDetails.email,
+          email: finalEmail,
           contact: actualUserDetails.contact,
+          upiId: finalUpiId,
           source: orderData.data.userInfo ? 'backend' : 'frontend'
         });
+
+        // ✅ Validate that we have email from somewhere (backend or frontend)
+        if (!finalEmail) {
+          throw new Error('Email not found. Please update your profile with a valid email address.');
+        }
 
         // 2. Razorpay checkout options
         const options: RazorpayOrderOptions = {
@@ -110,10 +120,9 @@ export const usePrizeClaimPayment = () => {
           handler: async (response: PaymentResponse) => {
             try {
               // 3. Verify payment on backend
-              // ✅ CRITICAL FIX: Always use the original userDetails.upiId
-              // ✅ VALIDATION: Ensure upiId exists before sending verification
-              if (!userDetails.upiId) {
-                throw new Error('UPI ID is required for prize claim verification');
+              // ✅ CRITICAL FIX: Use finalUpiId which is guaranteed to have a value
+              if (!finalUpiId) {
+                throw new Error('UPI ID/Email is required for prize claim verification');
               }
               
               const verifyResponse = await fetch(
@@ -128,7 +137,7 @@ export const usePrizeClaimPayment = () => {
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_signature: response.razorpay_signature,
                     username: actualUserDetails.name,
-                    upiId: userDetails.upiId, // ✅ Use original userDetails.upiId (not actualUserDetails)
+                    upiId: finalUpiId, // ✅ Use finalUpiId which has backend fallback
                   }),
                 }
               );
@@ -166,8 +175,8 @@ export const usePrizeClaimPayment = () => {
 
           prefill: {
             name: actualUserDetails.name,
-            email: actualUserDetails.email,
-            contact: actualUserDetails.contact,
+            email: finalEmail,
+            contact: actualUserDetails.contact || '9999999999', // ✅ Fallback for mobile
           },
 
           theme: {

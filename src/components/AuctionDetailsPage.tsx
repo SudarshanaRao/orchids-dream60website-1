@@ -80,40 +80,51 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     userMobile: localStorage.getItem('user_mobile') || '',
   });
 
-  // ✅ Fetch user data from backend if email is missing
+  // ✅ SIMPLIFIED: No need to fetch user data on mount - the hook will use backend userInfo
+  // This is kept for caching purposes only - not required for prize claim
   useEffect(() => {
     const fetchUserData = async () => {
-      if ((!userInfo.userEmail || !userInfo.userMobile) && userInfo.userId) {
+      // Only fetch if we don't have email AND have a userId
+      if (!userInfo.userEmail && userInfo.userId) {
         try {
+          console.log('📧 [AUCTION DETAILS] Attempting to cache user data for userId:', userInfo.userId);
+          
           const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`, {
             credentials: 'include',
           });
           
           if (response.ok) {
             const result = await response.json();
-            if (result.success && result.data) {
-              const mobile = result.data.mobile || result.data.phone || result.data.contact || '';
-              const name = result.data.name || userInfo.userName;
-              const email = result.data.email || userInfo.userEmail;
+            
+            // Handle both response formats: { data: {...} } and { user: {...} }
+            const userData = result.data || result.user || result.profile;
+            
+            if (result.success && userData) {
+              const mobile = userData.mobile || userData.phone || userData.contact || '';
+              const name = userData.username || userData.name || userInfo.userName;
+              const email = userData.email || '';
               
-              // Update state
-              setUserInfo(prev => ({
-                ...prev,
-                userName: name,
-                userEmail: email,
-                userMobile: mobile,
-              }));
-              
-              // Also update localStorage for future use
-              if (mobile) localStorage.setItem('user_mobile', mobile);
-              if (name) localStorage.setItem('user_name', name);
-              if (email) localStorage.setItem('user_email', email);
-              
-              console.log('✅ [AUCTION DETAILS] User data fetched from auth/me API:', { name, email, mobile });
+              if (email || mobile || name) {
+                // Update state
+                setUserInfo(prev => ({
+                  ...prev,
+                  userName: name || prev.userName,
+                  userEmail: email || prev.userEmail,
+                  userMobile: mobile || prev.userMobile,
+                }));
+                
+                // Cache to localStorage for future use
+                if (mobile) localStorage.setItem('user_mobile', mobile);
+                if (name) localStorage.setItem('user_name', name);
+                if (email) localStorage.setItem('user_email', email);
+                
+                console.log('✅ [AUCTION DETAILS] User data cached:', { name, email, mobile });
+              }
             }
           }
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          // Silent fail - the hook will use backend userInfo as fallback
+          console.log('📧 [AUCTION DETAILS] Could not cache user data (non-blocking):', error);
         }
       }
     };
@@ -380,42 +391,17 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
       return;
     }
 
-    // ✅ FIXED: Mobile is now optional - only validate email
-    if (!userInfo.userEmail) {
-      toast.error('Email not found. Please update your profile.');
-      return;
-    }
+    // ✅ SIMPLIFIED: Use whatever user data we have from localStorage
+    // The hook will use backend userInfo as fallback for email/contact
+    const currentUserEmail = userInfo.userEmail || '';
+    const currentUserMobile = userInfo.userMobile || '';
+    const currentUserName = userInfo.userName || 'User';
 
-    // ✅ FIXED: Get mobile number (optional - use placeholder if not available)
-    let userMobile = userInfo.userMobile;
-    
-    // ✅ NEW: If no mobile, try to fetch from API but don't block payment
-    if (!userMobile) {
-      console.log('📱 Mobile number not found. Fetching from server in background...');
-      
-      try {
-        const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`);
-        if (response.ok) {
-          const result = await response.json();
-          const mobile = result.data?.mobile || result.data?.phone || result.data?.contact;
-          
-          if (mobile) {
-            userMobile = mobile;
-            setUserInfo(prev => ({ ...prev, userMobile: mobile }));
-            localStorage.setItem('user_mobile', mobile);
-            console.log('✅ Mobile number retrieved:', mobile);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch mobile:', error);
-      }
-      
-      // ✅ Use placeholder if mobile still not available
-      if (!userMobile) {
-        userMobile = '9999999999'; // Placeholder for payment gateway
-        console.log('⚠️ Using placeholder mobile number for payment');
-      }
-    }
+    console.log('📧 [CLAIM] Starting prize claim with user data:', {
+      email: currentUserEmail || '(will use backend)',
+      mobile: currentUserMobile || '(will use backend)',
+      name: currentUserName,
+    });
 
     setIsProcessing(true);
 
@@ -426,19 +412,18 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
           hourlyAuctionId: auction.hourlyAuctionId,
           amount: auction.lastRoundBidAmount,
           currency: 'INR',
-          username: userInfo.userName,
+          username: currentUserName,
         },
         {
-          name: userInfo.userName,
-          email: userInfo.userEmail,
-          contact: userMobile, // ✅ Use fetched or placeholder mobile number
-          upiId: userInfo.userEmail,
+          name: currentUserName,
+          email: currentUserEmail, // ✅ Hook will use backend email if this is empty
+          contact: currentUserMobile, // ✅ Hook will use backend contact if this is empty
+          upiId: currentUserEmail, // ✅ Hook will use backend email if this is empty
         },
         async (response) => {
           console.log('Prize claim payment successful:', response);
           
           // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
-          // The response from verification already contains all claim data
           console.log('✅ Prize claim data received from verification:', response.data);
           
           // ✅ Update local state immediately - no page reload
@@ -446,13 +431,13 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
             ...prev,
             prizeClaimStatus: 'CLAIMED',
             claimedAt: Date.now(),
-            claimedBy: userInfo.userName,
-            claimUpiId: userInfo.userEmail,
+            claimedBy: currentUserName,
+            claimUpiId: response.data?.upiId || currentUserEmail,
             claimedByRank: auction.finalRank
           }));
           
           toast.success('🎉 Prize Claimed Successfully!', {
-            description: `Amazon voucher details will be sent to ${userInfo.userEmail}`,
+            description: `Amazon voucher details will be sent to your registered email`,
             duration: 5000,
           });
           

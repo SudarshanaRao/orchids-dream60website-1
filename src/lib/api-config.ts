@@ -37,7 +37,10 @@ export const API_ENDPOINTS = {
     updatePassword: `${API_BASE_URL}/auth/update-password`,
     deleteAccount: `${API_BASE_URL}/auth/me`,
     adminLogin: `${API_BASE_URL}/admin/login`,
-    me: `${API_BASE_URL}/auth/me`,
+    me: {
+      base: `${API_BASE_URL}/auth/me`,
+      profile: `${API_BASE_URL}/auth/me`,
+    },
     profile: `${API_BASE_URL}/auth/me/profile`,
   },
   
