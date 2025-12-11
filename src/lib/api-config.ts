@@ -25,6 +25,11 @@ export const API_ENDPOINTS = {
   // Utility
   serverTime: `${API_BASE_URL}/utility/server-time`,
   
+  // Contact
+  contact: {
+    sendMessage: `${API_BASE_URL}/contact/send-message`,
+  },
+  
   // Authentication
   auth: {
     login: `${API_BASE_URL}/auth/login`,

@@ -7,6 +7,8 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import { API_ENDPOINTS } from '../lib/api-config';
 
 interface ContactProps {
   onBack: () => void;
@@ -20,6 +22,7 @@ export function Contact({ onBack }: ContactProps) {
     category: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -28,16 +31,52 @@ export function Contact({ onBack }: ContactProps) {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Message sent successfully! We\'ll get back to you within 24 hours.');
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      category: '',
-      message: ''
-    });
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.category || !formData.message) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.contact.sendMessage, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          category: formData.category,
+          message: formData.message,
+          recipientEmail: 'pandu.sudha2003@gmail.com'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Message sent successfully! We\'ll get back to you within 24 hours.');
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          category: '',
+          message: ''
+        });
+      } else {
+        throw new Error(data.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again or contact support@dream60.com directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -249,9 +288,19 @@ export function Contact({ onBack }: ContactProps) {
                     <Button 
                       type="submit" 
                       className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600 py-3"
+                      disabled={isSubmitting}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Message
+                      {isSubmitting ? (
+                        <div className="flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Sending...
+                        </div>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Send Message
+                        </>
+                      )}
                     </Button>
                   </form>
                 </CardContent>
