@@ -86,6 +86,7 @@
         "zod": "^3.23.8"
     },
     "devDependencies": {
+        "@babel/parser": "^7.28.5",
         "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.9.0",
         "@tailwindcss/postcss": "^4.1.13",
@@ -106,5 +107,9 @@
         "typescript": "^5.5.3",
         "typescript-eslint": "^8.0.1",
         "vite": "^5.4.1"
+    },
+    "optionalDependencies": {
+        "@esbuild/win32-x64": "^0.27.1",
+        "@rollup/rollup-win32-x64-msvc": "^4.53.3"
     }
 }
