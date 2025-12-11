@@ -725,7 +725,7 @@ const App = () => {
 
         if (!userId || !username) return; // No valid session
 
-        // ✅ Restore user from localStorage without API call
+        // ✅ Restore user from localStorage first (for immediate UI)
         const user = mapUserData({
           user_id: userId,
           username: username,
@@ -734,6 +734,10 @@ const App = () => {
 
         setCurrentUser(user);
         console.log('✅ Session restored from localStorage');
+        
+        // ✅ CRITICAL FIX: Immediately fetch fresh user data from API to get stats
+        console.log('🔄 Fetching fresh user stats from API...');
+        fetchAndSetUser(userId);
       } catch (error) {
         console.error("Session restore error:", error);
         localStorage.removeItem("user_id");
@@ -743,28 +747,16 @@ const App = () => {
     };
 
     checkExistingSession();
-  }, [currentPage]);
+  }, []); // ✅ FIX: Only run ONCE on mount, not on every currentPage change
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  // ✅ NEW: Fetch user data from API when user is logged in (only once per session)
-  useEffect(() => {
-    if (currentUser?.id && !hasFetchedUserDataRef.current) {
-      console.log('🔄 User logged in - fetching updated user data from API');
-      hasFetchedUserDataRef.current = true;
-      fetchAndSetUser(currentUser.id);
-    }
-  }, [currentUser?.id]);
-
-  // ✅ NEW: Refresh user data when navigating back to game page (homepage)
-  useEffect(() => {
-    if (currentPage === 'game' && currentUser?.id) {
-      console.log('🔄 Navigated to homepage - refreshing user data from API');
-      fetchAndSetUser(currentUser.id);
-    }
-  }, [currentPage]);
+  // ✅ NOTE: fetchAndSetUser is called directly in:
+  // 1. checkExistingSession (session restore)
+  // 2. handleLogin (new login)
+  // No need for additional useEffects to trigger it
 
   // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
@@ -1343,11 +1335,18 @@ const App = () => {
       // ✅ Reset user data fetch flag to allow fresh fetch
       hasFetchedUserDataRef.current = false;
       
-      // ✅ User data is already passed from LoginForm, no need for additional API call
+      // ✅ User data is already passed from LoginForm - set immediately for UI
       const mappedUser = mapUserData(user);
       setCurrentUser(mappedUser);
       
       console.log('✅ User logged in successfully:', mappedUser.username);
+      
+      // ✅ CRITICAL FIX: Fetch fresh user stats from API to get totalWins/totalLosses
+      const userId = user.user_id || user.id;
+      if (userId) {
+        console.log('🔄 [LOGIN] Fetching fresh user stats from API...');
+        fetchAndSetUser(userId);
+      }
 
       // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee
       // This prevents showing incorrect "Outbid Now" buttons before data is refreshed
