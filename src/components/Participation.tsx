@@ -13,31 +13,56 @@ export function Participation({ onBack }: ParticipationProps) {
     <div className="min-h-screen bg-white relative overflow-hidden">
       
 
-      {/* Header */}
+      {/* Header with Logo */}
       <motion.header 
-        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm relative z-10"
+        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center space-x-4">
-            <Button
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Game
+              </Button>
+              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+              <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">How to Participate</h1>
+            </div>
+            
+            {/* Logo */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
               onClick={onBack}
-              variant="ghost"
-              size="sm"
-              className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Game
-            </Button>
-            <div className="w-px h-6 bg-purple-300"></div>
-            <h1 className="text-2xl font-bold text-purple-800">How to Participate</h1>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+              </div>
+            </div>
           </div>
         </div>
       </motion.header>
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 relative z-10">
+        {/* Mobile Title */}
+        <motion.h1 
+          className="sm:hidden text-2xl font-bold text-purple-800 mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          How to Participate
+        </motion.h1>
+
         <motion.div 
           className="max-w-4xl mx-auto space-y-4 sm:space-y-6"
           initial={{ opacity: 0, y: 20 }}

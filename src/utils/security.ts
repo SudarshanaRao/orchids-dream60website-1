@@ -26,29 +26,7 @@ function disableDevTools() {
     }
   };
 
-  const detectDebugger = () => {
-    const start = performance.now();
-    debugger;
-    const end = performance.now();
-    if (end - start > 100) {
-      showBlockedMessage();
-    }
-  };
-
-  const detectConsoleOpen = () => {
-    const element = new Image();
-    Object.defineProperty(element, 'id', {
-      get: function() {
-        showBlockedMessage();
-        return '';
-      }
-    });
-    console.log('%c', element);
-  };
-
   setInterval(detectDevTools, 1000);
-  setInterval(detectDebugger, 2000);
-  setInterval(detectConsoleOpen, 3000);
 
   (function() {
     const devtools = { open: false, orientation: '' };
@@ -138,10 +116,6 @@ function disableInspectShortcuts() {
 }
 
 function detectDevToolsExtensions() {
-  const showBlockedMessage = () => {
-    document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:linear-gradient(135deg, #53317B 0%, #6B3FA0 50%, #8456BC 100%);"><div style="text-align:center;color:white;"><h1 style="font-size:2rem;margin-bottom:1rem;">Access Denied</h1><p style="opacity:0.9;">Developer tools are not allowed on this website.</p><p style="opacity:0.7;margin-top:1rem;">Please close DevTools and refresh the page.</p></div></div>';
-  };
-
   const checkForExtensions = () => {
     if (typeof (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined') {
       const hook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
@@ -149,22 +123,6 @@ function detectDevToolsExtensions() {
         hook.inject = function() {};
         hook.onCommitFiberRoot = function() {};
         hook.onCommitFiberUnmount = function() {};
-      }
-    }
-
-    if (typeof (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined') {
-      showBlockedMessage();
-    }
-
-    const extensionIndicators = [
-      '__REDUX_DEVTOOLS_EXTENSION__',
-      '__REDUX_DEVTOOLS_EXTENSION_COMPOSE__',
-      'chrome',
-    ];
-
-    for (const indicator of extensionIndicators) {
-      if (indicator === 'chrome' && (window as any).chrome?.runtime?.id) {
-        continue;
       }
     }
   };

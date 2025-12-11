@@ -235,7 +235,7 @@ export function Footer({ onNavigate }: FooterProps) {
               </motion.div>
               <div>
                 <span className="text-purple-800 font-bold text-base sm:text-lg bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">Dream60</span>
-                <p className="text-purple-600 text-xs sm:text-sm">The Ultimate Auction Game</p>
+                <p className="text-purple-600 text-xs sm:text-sm">The Ultimate Auction Play</p>
               </div>
             </motion.div>
             
