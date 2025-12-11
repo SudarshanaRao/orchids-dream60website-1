@@ -774,12 +774,15 @@ const App = () => {
       // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
       
-      toast.info(`Round ${currentRound} Started`, {
-        description: 'Auction data refreshed with latest information',
-        duration: 3000,
-      });
+      // ✅ UPDATED: Only show round started toast if winners NOT announced
+      if (!currentAuction.winnersAnnounced) {
+        toast.info(`Round ${currentRound} Started`, {
+          description: 'Auction data refreshed with latest information',
+          duration: 3000,
+        });
+      }
     }
-  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound, currentAuction.winnersAnnounced]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -1998,7 +2001,7 @@ const App = () => {
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
             {serverTime && getCurrentAuctionSlot(serverTime) && (
-              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
+              <div className={`text-white rounded-2xl p-4 sm:p-6 shadow-lg ${currentAuction.winnersAnnounced ? 'bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600' : 'bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]'}`}>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -2009,14 +2012,23 @@ const App = () => {
                       </div>
                     </div>
                   </div>
-                  <div className={`backdrop-blur-sm rounded-xl px-4 py-2 ${currentAuction.winnersAnnounced ? 'bg-green-500/30' : 'bg-white/20'}`}>
-                    <div className="text-xs sm:text-sm opacity-90">
-                      {currentAuction.winnersAnnounced ? '🏆 Status' : 'Active Round'}
+                  {currentAuction.winnersAnnounced ? (
+                    <div className="backdrop-blur-sm bg-white/25 rounded-xl px-4 py-2 border border-white/30">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🏆</span>
+                        <div>
+                          <div className="text-xs sm:text-sm opacity-90">Auction Completed</div>
+                          <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
+                        </div>
+                      </div>
+                      <div className="text-xs mt-1 opacity-80 text-center">Next auction starts at the next hour</div>
                     </div>
-                    <div className="text-lg sm:text-xl font-bold">
-                      {currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}
+                  ) : (
+                    <div className="backdrop-blur-sm bg-white/20 rounded-xl px-4 py-2">
+                      <div className="text-xs sm:text-sm opacity-90">Active Round</div>
+                      <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
