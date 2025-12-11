@@ -6,8 +6,8 @@ import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-
 import { toast } from 'sonner';
+import { API_ENDPOINTS } from '../lib/api-config';
 
 interface SupportProps {
   onBack: () => void;
@@ -17,22 +17,52 @@ export function Support({ onBack }: SupportProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
+  const [ticketName, setTicketName] = useState('');
+  const [ticketEmail, setTicketEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!ticketName || !ticketEmail || !ticketSubject || !ticketMessage) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
     setIsSubmitting(true);
     
-    // Simulate submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast.success('Support ticket submitted successfully! We\'ll get back to you within 24 hours.', {
-      duration: 4000,
-    });
-    
-    setTicketSubject('');
-    setTicketMessage('');
-    setIsSubmitting(false);
+    try {
+      const response = await fetch(API_ENDPOINTS.contact.sendMessage, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: ticketName,
+          email: ticketEmail,
+          subject: ticketSubject,
+          category: 'support',
+          message: ticketMessage
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Support ticket submitted successfully! We\'ll get back to you within 24 hours.');
+        setTicketName('');
+        setTicketEmail('');
+        setTicketSubject('');
+        setTicketMessage('');
+      } else {
+        throw new Error(data.message || 'Failed to submit ticket');
+      }
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+      toast.error('Failed to submit ticket. Please try again or contact support@dream60.com directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const faqData = [
@@ -318,6 +348,30 @@ export function Support({ onBack }: SupportProps) {
                 </div>
 
                 <form onSubmit={handleSubmitTicket} className="space-y-3 sm:space-y-4">
+                  <div>
+                    <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Name</label>
+                    <Input
+                      type="text"
+                      value={ticketName}
+                      onChange={(e) => setTicketName(e.target.value)}
+                      placeholder="Your full name"
+                      className="bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Email</label>
+                    <Input
+                      type="email"
+                      value={ticketEmail}
+                      onChange={(e) => setTicketEmail(e.target.value)}
+                      placeholder="your.email@example.com"
+                      className="bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all"
+                      required
+                    />
+                  </div>
+                  
                   <div>
                     <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Subject</label>
                     <Input

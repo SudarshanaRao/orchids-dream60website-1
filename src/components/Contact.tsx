@@ -52,8 +52,7 @@ export function Contact({ onBack }: ContactProps) {
           email: formData.email,
           subject: formData.subject,
           category: formData.category,
-          message: formData.message,
-          recipientEmail: 'pandu.sudha2003@gmail.com'
+          message: formData.message
         }),
       });
 

@@ -7,7 +7,7 @@ const { sendCustomEmail } = require('../utils/emailService');
  */
 const sendContactMessage = async (req, res) => {
   try {
-    const { name, email, subject, category, message, recipientEmail } = req.body;
+    const { name, email, subject, category, message } = req.body;
 
     // Validate required fields
     if (!name || !email || !subject || !category || !message) {
@@ -26,8 +26,8 @@ const sendContactMessage = async (req, res) => {
       });
     }
 
-    // Default recipient email (support team)
-    const supportEmail = recipientEmail || 'pandu.sudha2003@gmail.com';
+    // Recipient email - Dream60 official support
+    const supportEmail = 'dream60.official@gmail.com';
 
     // Category labels for display
     const categoryLabels = {
