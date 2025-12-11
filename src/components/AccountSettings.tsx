@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -504,79 +504,61 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       
-
-      {/* Header */}
-      <motion.div
-        className="bg-white/70 backdrop-blur-xl border-b border-purple-200/50 shadow-lg shadow-purple-500/5 relative z-10"
-        initial={{ opacity: 0, y: -40 }}
+      {/* Header with Logo - matching Support page style */}
+      <motion.header 
+        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Shine effect */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"
-          initial={{ x: '-100%' }}
-          animate={{ x: '200%' }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatDelay: 4,
-            ease: "easeInOut"
-          }}
-        />
-
-        <div className="container mx-auto px-4 py-6 relative">
-          <motion.button
-            onClick={onBack}
-            className="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-all group"
-            whileHover={{ x: -5 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              animate={{ x: [-2, 0, -2] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <ArrowLeft className="w-5 h-5 group-hover:text-purple-700" />
-            </motion.div>
-            <span className="font-medium">Back to Auction</span>
-          </motion.button>
-
-          <motion.div
-            className="mt-4 flex items-center gap-2 sm:gap-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            <motion.div
-              className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30 flex-shrink-0"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{
-                delay: 0.2,
-                type: "spring",
-                stiffness: 200,
-                damping: 15
-              }}
-              whileHover={{
-                scale: 1.05,
-                rotate: 5,
-                transition: { duration: 0.2 }
-              }}
-            >
-              <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </motion.div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent truncate">
-                Account Settings
-              </h1>
-              <p className="text-xs sm:text-sm text-purple-600/80 truncate">Manage your info & preferences</p>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Game
+              </Button>
+              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+              <div className="hidden sm:flex items-center space-x-2">
+                <User className="w-5 h-5 text-purple-600" />
+                <h1 className="text-lg font-bold text-purple-800">Account Settings</h1>
+              </div>
             </div>
-          </motion.div>
+            
+            {/* Logo */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={onBack}
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+              </div>
+            </div>
+          </div>
         </div>
+      </motion.header>
+
+      {/* Mobile Title */}
+      <motion.div 
+        className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <User className="w-5 h-5 text-purple-600" />
+        <h1 className="text-xl font-bold text-purple-800">Account Settings</h1>
       </motion.div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 max-w-4xl relative z-10">
+      <main className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-8 max-w-4xl relative z-10">
         <div className="space-y-4 sm:space-y-5 md:space-y-6">
           {/* Profile Section */}
 

@@ -246,7 +246,7 @@ export function Contact({ onBack }: ContactProps) {
                         <SelectTrigger className="bg-white border-purple-300 text-purple-800 focus:border-purple-500 focus:ring-purple-500">
                           <SelectValue placeholder="Choose your inquiry type" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white border border-purple-200 shadow-lg">
                           <SelectItem value="account">Account & Login Issues</SelectItem>
                           <SelectItem value="auction">Auction Questions</SelectItem>
                           <SelectItem value="payment">Payment & Billing</SelectItem>
