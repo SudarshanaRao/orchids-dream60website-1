@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { AnimatedBackground } from './AnimatedBackground';
+
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
@@ -129,7 +129,7 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-3 sm:p-4 py-6 relative overflow-hidden">
-      <AnimatedBackground />
+      
 
       <motion.div
         className="w-full max-w-md space-y-5 sm:space-y-6 relative z-10"

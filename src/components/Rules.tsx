@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
-import { AnimatedBackground } from './AnimatedBackground';
+
 
 interface RulesProps {
   onBack: () => void;
@@ -12,7 +12,7 @@ interface RulesProps {
 export function Rules({ onBack }: RulesProps) {
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      <AnimatedBackground />
+      
       
       {/* Header */}
       <motion.header 

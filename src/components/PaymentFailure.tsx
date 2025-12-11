@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { XCircle, Home, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import { Button } from './ui/button';
 
+
 interface PaymentFailureProps {
   amount: number;
   errorMessage?: string;
@@ -19,8 +20,10 @@ export function PaymentFailure({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 opacity-40" />
+      {/* Animated Background */}
+      <div className="absolute inset-0 opacity-40">
+        
+      </div>
       
       {/* Backdrop */}
       <motion.div 

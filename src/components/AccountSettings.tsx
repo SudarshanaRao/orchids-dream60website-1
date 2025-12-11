@@ -317,7 +317,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
-        <AnimatedBackground />
+        
         <div className="flex items-center justify-center min-h-screen relative z-10 px-4">
           <motion.div
             className="text-center space-y-6"
@@ -468,7 +468,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   if (userDataError) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
-        <AnimatedBackground />
+        
         <div className="flex items-center justify-center min-h-screen relative z-10 px-4">
           <motion.div
             className="text-center space-y-4 max-w-md"
@@ -503,7 +503,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      <AnimatedBackground />
+      
 
       {/* Header */}
       <motion.div

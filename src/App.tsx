@@ -701,6 +701,26 @@ const App = () => {
     fetchInitialLiveAuction();
   }, []); // Run once on mount
 
+  // ✅ AUTO-REFRESH: Refresh page at exact hourly times (1:00, 2:00, etc.) when auction starts
+  useEffect(() => {
+    const checkAndRefreshAtHourlyTime = () => {
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      
+      // Refresh when it's exactly :00 minutes (start of an hour)
+      if (minutes === 0 && seconds < 5) {
+        console.log('🔄 Auction starting - Refreshing page at', now.toLocaleTimeString());
+        window.location.reload();
+      }
+    };
+    
+    // Check every second for the exact moment
+    const intervalId = setInterval(checkAndRefreshAtHourlyTime, 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Check for existing session on app initialization
   useEffect(() => {
     const checkExistingSession = async () => {

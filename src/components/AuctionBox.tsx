@@ -551,7 +551,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
             </motion.div>
 
             {/* Timer Display */}
-            {timeUntilOpen && !winnersAnnounced && (
+            {timeUntilOpen && !winnersAnnounced && isUserQualified !== false && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}

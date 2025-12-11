@@ -6,7 +6,7 @@ import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { AnimatedBackground } from './AnimatedBackground';
+
 import { toast } from 'sonner';
 
 interface SupportProps {
@@ -130,7 +130,7 @@ export function Support({ onBack }: SupportProps) {
   return (
     <div className="min-h-screen relative">
       {/* Animated Background */}
-      <AnimatedBackground />
+      
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 relative z-10">
         {/* Header */}

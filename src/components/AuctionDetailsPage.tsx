@@ -6,7 +6,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { motion } from 'motion/react';
-import { AnimatedBackground } from './AnimatedBackground';
 import { toast } from 'sonner';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
@@ -492,7 +491,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      <AnimatedBackground />
+      
       
       {/* Premium Header */}
       <motion.div 

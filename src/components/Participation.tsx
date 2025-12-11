@@ -3,13 +3,16 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { motion } from 'motion/react';
 
+
 interface ParticipationProps {
   onBack: () => void;
 }
 
 export function Participation({ onBack }: ParticipationProps) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 relative overflow-hidden">
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      
+
       {/* Header */}
       <motion.header 
         className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm relative z-10"

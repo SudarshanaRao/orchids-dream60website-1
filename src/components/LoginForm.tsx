@@ -118,10 +118,9 @@ export function LoginForm({
 
 
 
-
     return (
         <div className="min-h-screen bg-white flex items-center justify-center p-3 sm:p-4 relative overflow-hidden">
-            <AnimatedBackground />
+            
 
             <motion.div
                 className="w-full max-w-md space-y-5 sm:space-y-6 relative z-10"
