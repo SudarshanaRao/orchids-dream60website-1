@@ -423,14 +423,27 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
                   </div>
                 </div>
 
-                {/* Time Left Until Auction Ends */}
-                {!isLoading && auctionEndTime && (
+                {/* Time Left Until Auction Ends - Hide if winners announced */}
+                {!isLoading && auctionEndTime && !liveAuctionData?.winnersAnnounced && (
                   <div className="group/stat relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-xl blur group-hover/stat:blur-md transition-all"></div>
                     <div className="relative backdrop-blur-xl bg-white/70 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 border border-red-200/40 shadow-sm inline-flex items-center space-x-1.5 sm:space-x-2">
                       <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
                       <span className="text-sm sm:text-base md:text-lg font-bold font-mono bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent tracking-tight">
                         {timeLeft}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Winners Announced Badge */}
+                {!isLoading && liveAuctionData?.winnersAnnounced && (
+                  <div className="group/stat relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-emerald-600/10 rounded-xl blur group-hover/stat:blur-md transition-all"></div>
+                    <div className="relative backdrop-blur-xl bg-gradient-to-r from-green-50/90 to-emerald-50/90 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 border border-green-300/50 shadow-sm inline-flex items-center space-x-1.5 sm:space-x-2">
+                      <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
+                      <span className="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">
+                        Winners Announced
                       </span>
                     </div>
                   </div>

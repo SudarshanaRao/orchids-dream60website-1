@@ -80,12 +80,14 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     userMobile: localStorage.getItem('user_mobile') || '',
   });
 
-  // ✅ Fetch user data from backend if mobile is missing
+  // ✅ Fetch user data from backend if email is missing
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!userInfo.userMobile && userInfo.userId) {
+      if ((!userInfo.userEmail || !userInfo.userMobile) && userInfo.userId) {
         try {
-          const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`);
+          const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`, {
+            credentials: 'include',
+          });
           
           if (response.ok) {
             const result = await response.json();
@@ -106,10 +108,12 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
               if (mobile) localStorage.setItem('user_mobile', mobile);
               if (name) localStorage.setItem('user_name', name);
               if (email) localStorage.setItem('user_email', email);
+              
+              console.log('✅ [AUCTION DETAILS] User data fetched from auth/me API:', { name, email, mobile });
             }
           }
         } catch (error) {
-          // Silently handle error - mobile is optional
+          console.error('Error fetching user data:', error);
         }
       }
     };
@@ -948,6 +952,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
   </div>
 )}
 
+
                         </div>
                       </div>
                     </div>
@@ -1016,6 +1021,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     </span>
   </div>
 )}
+
 
                         </div>
                       </div>
@@ -1086,6 +1092,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
   </div>
 )}
 
+
                         </div>
                       </div>
                     </div>
@@ -1154,6 +1161,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     </span>
   </div>
 )}
+
 
                         </div>
                       </div>

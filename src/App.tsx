@@ -2009,9 +2009,13 @@ const App = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                    <div className="text-xs sm:text-sm opacity-90">Active Round</div>
-                    <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
+                  <div className={`backdrop-blur-sm rounded-xl px-4 py-2 ${currentAuction.winnersAnnounced ? 'bg-green-500/30' : 'bg-white/20'}`}>
+                    <div className="text-xs sm:text-sm opacity-90">
+                      {currentAuction.winnersAnnounced ? '🏆 Status' : 'Active Round'}
+                    </div>
+                    <div className="text-lg sm:text-xl font-bold">
+                      {currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}
+                    </div>
                   </div>
                 </div>
               </div>

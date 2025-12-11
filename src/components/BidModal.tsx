@@ -210,7 +210,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex h-[100vh] sm:items-center sm:justify-center sm:p-4">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] sm:items-center sm:justify-center sm:p-4 overflow-y-auto">
         {/* Animated Background */}
         <AnimatedBackground />
         
@@ -226,11 +226,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
 
         {/* Modal Container */}
         <motion.div
-          className="relative z-10 w-full max-h-screen overflow-y-auto sm:w-auto sm:min-w-[28rem] sm:max-w-md"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#9333ea #f3e8ff'
-          }}
+          className="relative z-10 w-full min-h-screen sm:min-h-0 sm:w-auto sm:min-w-[28rem] sm:max-w-md sm:my-auto"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
