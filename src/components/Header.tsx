@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft } from 'lucide-react';
+import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
@@ -9,6 +9,7 @@ interface HeaderProps {
     id?: string;
     username: string;
     totalWins: number;
+    totalLosses: number;
     totalAuctions: number;
   } | null;
   onNavigate?: (page: string) => void;
@@ -249,9 +250,9 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         whileHover={{ rotate: 360 }}
                         transition={{ duration: 0.6 }}
                       >
-                        <Trophy className="w-4 h-4 text-purple-600" />
+                        <Trophy className="w-4 h-4 text-green-600" />
                       </motion.div>
-                      <span className="text-sm font-medium text-purple-700">{user.totalWins} Wins</span>
+                      <span className="text-sm font-medium text-green-700">{user.totalWins} Wins</span>
                     </motion.div>
                     <div className="w-px h-5 bg-purple-300"></div>
                     <motion.div
@@ -262,9 +263,9 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         animate={{ rotate: [0, 10, -10, 0] }}
                         transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                       >
-                        <Coins className="w-4 h-4 text-purple-600" />
+                        <XCircle className="w-4 h-4 text-red-500" />
                       </motion.div>
-                      <span className="text-sm font-medium text-purple-700">{user.totalAuctions} Joined</span>
+                      <span className="text-sm font-medium text-red-600">{user.totalLosses ?? 0} Losses</span>
                     </motion.div>
                   </motion.div>
 
@@ -501,8 +502,8 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                             {user.totalWins} Wins
                           </span>
                           <span className="flex items-center">
-                            <Coins className="w-3 h-3 mr-1" />
-                            {user.totalAuctions} Joined
+                            <XCircle className="w-3 h-3 mr-1" />
+                            {user.totalLosses ?? 0} Losses
                           </span>
                         </div>
                       </div>
