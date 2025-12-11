@@ -1,0 +1,1 @@
+const { execSync } = require('child_process'); const content = execSync('git show HEAD:src/components/AuctionHistory.tsx', { encoding: 'utf8' }); require('fs').writeFileSync('src/components/AuctionHistory.tsx', content);  

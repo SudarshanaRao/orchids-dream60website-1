@@ -267,11 +267,6 @@ const AuctionCard = ({
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
           setTimeLeft(`Opens in ${minutes}m ${seconds}s`);
           return;
-        } else {
-          // ✅ NEW: Window time has passed but still in waiting queue (backend 1 min delay)
-          // Show "Claim Window Soon" instead of falling through to 30 min deadline timer
-          setTimeLeft('Claim Window Soon');
-          return;
         }
       }
       
