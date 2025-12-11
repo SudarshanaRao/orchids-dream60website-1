@@ -1234,7 +1234,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
                   className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Game
+                  Back to Home
                 </Button>
                 <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
                 <div className="hidden sm:flex items-center space-x-2">
@@ -1308,7 +1308,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
                   className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Game
+                  Back to Home
                 </Button>
                 <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
                 <div className="hidden sm:flex items-center space-x-2">
@@ -1382,7 +1382,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <div className="hidden sm:flex items-center space-x-2">

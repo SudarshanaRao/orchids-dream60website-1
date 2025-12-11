@@ -98,7 +98,7 @@ export function Contact({ onBack }: ContactProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Contact Dream60</h1>
@@ -314,7 +314,7 @@ export function Contact({ onBack }: ContactProps) {
                 <CardHeader>
                   <CardTitle className="text-purple-800 flex items-center space-x-2">
                     <Building2 className="w-6 h-6 text-purple-600" />
-                    <span>Dream60 Gaming Inc.</span>
+                    <span>Dream60 Inc.</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -348,7 +348,7 @@ export function Contact({ onBack }: ContactProps) {
                       <p className="font-semibold text-purple-800">Global Presence</p>
                       <p className="text-purple-700 text-sm">
                         Serving India<br />
-                        Licensed & regulated gaming platform
+                        Licensed & regulated auction platform
                       </p>
                     </div>
                   </div>

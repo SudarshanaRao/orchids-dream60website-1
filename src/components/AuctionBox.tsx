@@ -48,7 +48,7 @@ interface AuctionBoxProps {
 
 export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboard, userHasPaidEntry, userBidAmount, isUserQualified, winnersAnnounced, currentRound, serverTime, hourlyAuctionId }: AuctionBoxProps) {
   const [timeUntilOpen, setTimeUntilOpen] = useState('');
-  const [showGameplayInfo, setShowGameplayInfo] = useState(false);
+  const [showRoundInfo, setShowRoundInfo] = useState(false);
   // ✅ Track box identity to detect when auction/round changes
   const [boxIdentity, setBoxIdentity] = useState<string>('');
 
@@ -90,8 +90,8 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     return timeRange;
   };
 
-  // Get gameplay explanation for the round
-  const getGameplayExplanation = () => {
+  // Get round explanation for the round
+  const getRoundExplanation = () => {
     const roundNum = box.roundNumber || 1;
     
     // Round-specific strategies and tips
@@ -107,7 +107,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
         focus: 'Only 9 players remain - stakes are higher, be strategic'
       },
       3: {
-        strategy: 'Mid-game advantage! Use insights from previous rounds to identify winning ranges.',
+        strategy: 'Mid-round advantage! Use insights from previous rounds to identify winning ranges.',
         tip: 'Psychology matters - think what others might avoid',
         focus: 'Top 3 advance from 9 players - precision is crucial'
       },
@@ -131,7 +131,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     const roundData = roundStrategies[roundNum as keyof typeof roundStrategies] || roundStrategies[1];
     
     return {
-      title: `Round ${roundNum} Gameplay`,
+      title: `Round ${roundNum} Details`,
       description: roundNum === 6 ? 'The final showdown for the grand prize!' : `Strategic insights for Round ${roundNum}`,
       rules: [
         {
@@ -449,10 +449,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowGameplayInfo(true);
+                    setShowRoundInfo(true);
                   }}
                   className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-100/50 hover:bg-purple-200/60 backdrop-blur-sm text-purple-700 flex items-center justify-center shadow-md transition-all"
-                  title="View gameplay rules"
+                  title="View round rules"
                 >
                   <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
                 </motion.button>
@@ -913,24 +913,24 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
         </CardContent>
       </Card>
 
-      {/* Gameplay Information Dialog */}
+      {/* Round Information Dialog */}
       {box.type === 'round' && (
-        <Dialog open={showGameplayInfo} onOpenChange={setShowGameplayInfo}>
+        <Dialog open={showRoundInfo} onOpenChange={setShowRoundInfo}>
           <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-br from-purple-50 via-violet-50 to-purple-50 border-2 border-purple-300 p-4 sm:p-6" onClick={(e) => e.stopPropagation()}>
             <DialogHeader className="space-y-2">
               <DialogTitle className="text-lg sm:text-xl font-bold text-purple-900 flex items-center gap-2">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0">
                   <Info className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <span className="leading-tight">{getGameplayExplanation().title}</span>
+                <span className="leading-tight">{getRoundExplanation().title}</span>
               </DialogTitle>
               <DialogDescription className="text-purple-700 text-sm sm:text-base">
-                {getGameplayExplanation().description}
+                {getRoundExplanation().description}
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-2.5 sm:space-y-3 mt-3 sm:mt-4">
-              {getGameplayExplanation().rules.map((rule, index) => (
+              {getRoundExplanation().rules.map((rule, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -953,7 +953,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
             <div className="mt-3 sm:mt-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-lg p-2.5 sm:p-3">
               <p className="text-[11px] sm:text-xs text-amber-900 text-center font-medium leading-relaxed">
-                🎯 <strong>Focus:</strong> {getGameplayExplanation().proTip}
+                🎯 <strong>Focus:</strong> {getRoundExplanation().proTip}
               </p>
             </div>
           </DialogContent>

@@ -30,7 +30,7 @@ export function TermsAndConditions({ onBack }: TermsAndConditionsProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <div className="hidden sm:flex items-center space-x-2">
@@ -107,12 +107,12 @@ export function TermsAndConditions({ onBack }: TermsAndConditionsProps) {
               </CardContent>
             </Card>
 
-            {/* 2. Game Rules */}
+            {/* 2. Auction Rules */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
                 <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
                   <Shield className="w-5 h-5 text-purple-600" />
-                  <span>2. Game Rules and Mechanics</span>
+                  <span>2. Auction Rules and Mechanics</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">

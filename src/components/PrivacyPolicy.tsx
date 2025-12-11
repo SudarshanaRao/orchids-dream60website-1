@@ -30,7 +30,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <div className="hidden sm:flex items-center space-x-2">
@@ -99,10 +99,10 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
             </CardHeader>
             <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
               <p>
-                Finpages tech private limited operates the portal in India, which offers fantasy stock trading games through the web-portal Dream60 app. and partner website(s) and mobile application(s) (collectively referred to as the "Portal") (Finpages tech private limited, its affiliates, group companies, parent and subsidiary shall collectively be referred to herein as "Dream60" or "we" or "our").
+                Finpages tech private limited operates the portal in India, which offers live auction services through the web-portal Dream60 app. and partner website(s) and mobile application(s) (collectively referred to as the "Portal") (Finpages tech private limited, its affiliates, group companies, parent and subsidiary shall collectively be referred to herein as "Dream60" or "we" or "our").
               </p>
               <p>
-                Any person utilizing the Portal ("User" or "you" or "your") or any of its features including participation in the various contests and games ("Game" or "Services") being conducted on the Portal shall be bound by the terms of this privacy policy ("Privacy Policy" or "Policy").
+                Any person utilizing the Portal ("User" or "you" or "your") or any of its features including participation in the various contests and auctions ("Auction" or "Services") being conducted on the Portal shall be bound by the terms of this privacy policy ("Privacy Policy" or "Policy").
               </p>
               <p>
                 All capitalized terms not defined herein shall have the meaning ascribed to them in the terms and conditions of the Portal ("Term").
@@ -165,10 +165,10 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
             </CardHeader>
             <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
               <p>
-                While providing any information via the Portal, including but not limited to Personal Information as mentioned herein above, you expressly consent to Dream60, our affiliates and our group companies (including its marketing channels and business partners) to contact you through SMS, call and/or e-mail and to follow up with regard to the Services / Games provided through the Portal, for imparting product knowledge, offering promotional offers running on the Portals & various other offers/services by our affiliates, our group companies and business partners.
+                While providing any information via the Portal, including but not limited to Personal Information as mentioned herein above, you expressly consent to Dream60, our affiliates and our group companies (including its marketing channels and business partners) to contact you through SMS, call and/or e-mail and to follow up with regard to the Services / Auctions provided through the Portal, for imparting product knowledge, offering promotional offers running on the Portals & various other offers/services by our affiliates, our group companies and business partners.
               </p>
               <p>
-                In the course of providing the Services, Users may invite other existing Users or other users ("Invited Users") to participate in any of the Services by through any social media platform including without limitation, Facebook, WhatsApp, Instagram etc. Dream60 may thereafter use this information to contact the Invited User and invite such user to register with Dream60 (if such Invited User is not an existing User) and participate in the Game in relation to which such person was invited by the User. The participation of the Invited User in any of the Game shall be subject to the terms of this Privacy Policy and the Terms and Conditions for the use of the Portal. The User hereby represents that the Invited Users have consented and agreed to such disclosure of their information with us, our affiliates and our group companies. User may also choose to invite their friends by syncing their phonebook and inviting them directly from the Portal to play the Game and utilize the Services.
+                In the course of providing the Services, Users may invite other existing Users or other users ("Invited Users") to participate in any of the Services by through any social media platform including without limitation, Facebook, WhatsApp, Instagram etc. Dream60 may thereafter use this information to contact the Invited User and invite such user to register with Dream60 (if such Invited User is not an existing User) and participate in the Auction in relation to which such person was invited by the User. The participation of the Invited User in any of the Auctions shall be subject to the terms of this Privacy Policy and the Terms and Conditions for the use of the Portal. The User hereby represents that the Invited Users have consented and agreed to such disclosure of their information with us, our affiliates and our group companies. User may also choose to invite their friends by syncing their phonebook and inviting them directly from the Portal to participate in the Auctions and utilize the Services.
               </p>
               <p>
                 You may withdraw your consent to submit any or all Personal Information or decline to provide any permissions on its Portal as covered above at any time. In case, you choose to do so then your access to the Portal may be limited, or we might not be able to provide the services to you. You may withdraw your consent by writing to Helpdesk.
@@ -244,7 +244,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                 By using the Portal, you hereby expressly agree and grant consent to the collection, use and storage of this information by Dream60. Dream60 reserves the right to share, disclose and transfer information collected hereunder with its own affiliates and group companies.
               </p>
               <p>
-                In the event Dream60 sells or transfers all or a portion of its business assets, consumer information may be one of the business assets that are shared, disclosed or transferred as part of the transaction. You hereby expressly grant consent and permission to Dream60 for disclosure and transfer of information to such third parties. Dream60 may share information as provided by you and data concerning usage of the Services and participation in the Game with its commercial partners for the purpose of facilitating user engagement, for marketing and promotional purposes and other related purposes
+                In the event Dream60 sells or transfers all or a portion of its business assets, consumer information may be one of the business assets that are shared, disclosed or transferred as part of the transaction. You hereby expressly grant consent and permission to Dream60 for disclosure and transfer of information to such third parties. Dream60 may share information as provided by you and data concerning usage of the Services and participation in the Auctions with its commercial partners for the purpose of facilitating user engagement, for marketing and promotional purposes and other related purposes
               </p>
               <p>
                 Dream60 may also share such information with affiliates, our group companies and third parties in limited circumstances, including for the purpose complying with legal process, preventing fraud or imminent harm, and ensuring the security of our network and services. However, we do not share any information with third parties for soliciting products and services offered by them.

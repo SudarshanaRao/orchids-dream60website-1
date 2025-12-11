@@ -30,7 +30,7 @@ export function Participation({ onBack }: ParticipationProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">How to Participate</h1>
@@ -404,7 +404,7 @@ export function Participation({ onBack }: ParticipationProps) {
             <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
               <h3 className="text-lg sm:text-xl font-bold text-purple-800">Ready to Start Winning?</h3>
               <p className="text-sm sm:text-base text-purple-600">
-                Join thousands of players in the most exciting online auction game!
+                Join thousands of players in the most exciting online auction platform!
               </p>
               <Button 
                 onClick={onBack}

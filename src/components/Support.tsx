@@ -66,7 +66,7 @@ export function Support({ onBack }: SupportProps) {
         },
         {
           question: 'What happens if I bid but lose?',
-          answer: 'All bids are final and non-refundable. This is part of the auction game format. Only the final highest bidder wins the prize.'
+          answer: 'All bids are final and non-refundable. This is part of the auction format. Only the final highest bidder wins the prize.'
         },
         {
           question: 'How do I know if I\'ve won?',
@@ -146,7 +146,7 @@ export function Support({ onBack }: SupportProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
               <div className="hidden sm:flex items-center space-x-2">

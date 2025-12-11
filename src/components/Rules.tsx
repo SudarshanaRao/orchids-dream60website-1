@@ -31,10 +31,10 @@ export function Rules({ onBack }: RulesProps) {
                 className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Game
+                Back to Home
               </Button>
               <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
-              <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Game Rules</h1>
+              <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Auction Rules</h1>
             </div>
             
             {/* Logo */}
@@ -61,7 +61,7 @@ export function Rules({ onBack }: RulesProps) {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          Game Rules
+          Auction Rules
         </motion.h1>
         
         <motion.div 
@@ -80,7 +80,7 @@ export function Rules({ onBack }: RulesProps) {
             </CardHeader>
             <CardContent className="text-purple-700 space-y-3 sm:space-y-4 text-sm sm:text-base">
               <p>
-                Dream60 is an exciting online auction game where you compete against other players in 60-minute auctions. 
+                Dream60 is an exciting online auction platform where you compete against other players in 60-minute auctions. 
                 Each auction features 6 boxes with valuable prizes, and smart bidding strategy is key to winning!
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
@@ -206,7 +206,7 @@ export function Rules({ onBack }: RulesProps) {
             <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
               <CardTitle className="text-base sm:text-lg md:text-xl text-blue-800 flex items-center space-x-2">
                 <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                <span>Detailed Game Mechanics</span>
+                <span>Detailed Auction Mechanics</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">

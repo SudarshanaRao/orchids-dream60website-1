@@ -1338,7 +1338,7 @@ const App = () => {
     window.history.pushState({}, '', url);
   };
 
-  const handleBackToGame = () => {
+  const handleBackToHome = () => {
     setCurrentPage('game');
     window.history.pushState({}, '', '/');
     setSelectedLeaderboard(null);
@@ -1758,7 +1758,7 @@ const App = () => {
           <Sonner />
           <Leaderboard
             roundNumber={selectedLeaderboard.roundNumber}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -1774,7 +1774,7 @@ const App = () => {
           <AuctionLeaderboard
             hourlyAuctionId={selectedAuctionLeaderboard.hourlyAuctionId}
             userId={currentUser?.id}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -1788,7 +1788,7 @@ const App = () => {
           <Sonner />
           <AccountSettings
             user={currentUser}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
             onNavigate={handleNavigate}
             onDeleteAccount={() => {
               try {
@@ -1875,7 +1875,7 @@ const App = () => {
           <Sonner />
           <AuctionHistory
             user={currentUser}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
             onViewDetails={(auction) => {
               setSelectedAuctionDetails(auction);
               localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
@@ -1895,7 +1895,7 @@ const App = () => {
           <LoginForm
             onLogin={handleLogin}
             onSwitchToSignup={handleSwitchToSignup}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
             onNavigate={handleNavigate}
           />
         </TooltipProvider>
@@ -1911,7 +1911,7 @@ const App = () => {
           <SignupForm
             onSignup={handleSignup}
             onSwitchToLogin={handleSwitchToLogin}
-            onBack={handleBackToGame}
+            onBack={handleBackToHome}
             onNavigate={handleNavigate}
           />
         </TooltipProvider>
@@ -1924,7 +1924,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Rules onBack={handleBackToGame} />
+          <Rules onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1946,7 +1946,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Participation onBack={handleBackToGame} />
+          <Participation onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1957,7 +1957,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <TermsAndConditions onBack={handleBackToGame} />
+          <TermsAndConditions onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1968,7 +1968,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <PrivacyPolicy onBack={handleBackToGame} />
+          <PrivacyPolicy onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1979,7 +1979,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Support onBack={handleBackToGame} />
+          <Support onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1990,7 +1990,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Contact onBack={handleBackToGame} />
+          <Contact onBack={handleBackToHome} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -2022,7 +2022,7 @@ const App = () => {
               <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
   bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
   bg-clip-text text-transparent">
-  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
+  The ultimate 60-minute auction experience. Enter, bid, and win amazing prizes in our hourly auctions!
 </p>
 
               {!currentUser && (
