@@ -1,11 +1,12 @@
 import  { useState } from 'react';
-import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, Users, Headphones, Shield, Globe, Zap, Building2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, Users, Headphones, Shield, Globe, Zap, Building2, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
+import { motion } from 'motion/react';
 
 interface ContactProps {
   onBack: () => void;
@@ -29,7 +30,6 @@ export function Contact({ onBack }: ContactProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
     alert('Message sent successfully! We\'ll get back to you within 24 hours.');
     setFormData({
       name: '',
@@ -42,26 +42,56 @@ export function Contact({ onBack }: ContactProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm">
+      {/* Header with Logo */}
+      <motion.header 
+        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center space-x-4">
-            <Button
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Game
+              </Button>
+              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+              <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Contact Dream60</h1>
+            </div>
+            
+            {/* Logo */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
               onClick={onBack}
-              variant="ghost"
-              size="sm"
-              className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Game
-            </Button>
-            <div className="w-px h-6 bg-purple-300"></div>
-            <h1 className="text-2xl font-bold text-purple-800">Contact Dream60</h1>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+              </div>
+            </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        {/* Mobile Title */}
+        <motion.h1 
+          className="sm:hidden text-2xl font-bold text-purple-800 mb-6"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          Contact Dream60
+        </motion.h1>
+
         <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
           {/* Hero Section */}
           <div className="text-center px-2">
@@ -244,10 +274,10 @@ export function Contact({ onBack }: ContactProps) {
                     <div>
                       <p className="font-semibold text-purple-800">Global Headquarters</p>
                       <p className="text-purple-700 text-sm">
-                        1247 Innovation Boulevard<br />
-                        Suite 350, Tech District<br />
-                        San Francisco, CA 94107<br />
-                        United States
+                        Finpages Tech Private Limited,<br />
+                        #709, Gowra Fountainhead,<br />
+                        Hitech City, Madhapur,<br />
+                        Pin: 500081.
                       </p>
                     </div>
                   </div>
@@ -255,11 +285,10 @@ export function Contact({ onBack }: ContactProps) {
                   <div className="flex items-start space-x-3">
                     <Phone className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-purple-800">Phone Numbers</p>
+                      <p className="font-semibold text-purple-800">Contact</p>
                       <p className="text-purple-700 text-sm">
-                        US/Canada: +1 (555) 123-DREAM<br />
-                        International: +1 (555) 123-3732<br />
-                        Emergency (Auction Issues): Live Chat Only
+                        Email: support@dream60.com<br />
+                        For urgent auction issues: Live Chat Only
                       </p>
                     </div>
                   </div>
@@ -269,9 +298,8 @@ export function Contact({ onBack }: ContactProps) {
                     <div>
                       <p className="font-semibold text-purple-800">Global Presence</p>
                       <p className="text-purple-700 text-sm">
-                        Serving 50+ countries<br />
-                        Licensed & regulated gaming platform<br />
-                        ISO 27001 certified security
+                        Serving India<br />
+                        Licensed & regulated gaming platform
                       </p>
                     </div>
                   </div>
@@ -315,49 +343,6 @@ export function Contact({ onBack }: ContactProps) {
                       * Response times are based on business hours (Mon-Sun, 24/7 for critical issues)
                     </p>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-purple-800 flex items-center space-x-2">
-                    <MessageSquare className="w-6 h-6 text-purple-600" />
-                    <span>Quick Actions</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-green-300 text-green-700 hover:bg-green-500 hover:text-white transition-all"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Start Live Chat
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-blue-300 text-blue-700 hover:bg-blue-500 hover:text-white transition-all"
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email: support@dream60.com
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-purple-300 text-purple-700 hover:bg-purple-500 hover:text-white transition-all"
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Join Discord Community
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start border-orange-300 text-orange-700 hover:bg-orange-500 hover:text-white transition-all"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Report Security Issue
-                  </Button>
                 </CardContent>
               </Card>
             </div>

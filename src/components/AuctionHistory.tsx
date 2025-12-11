@@ -1339,13 +1339,29 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
 
         <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
           <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-xl transition-all mb-2 sm:mb-3 border border-white/20 text-xs sm:text-sm"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>Back</span>
-            </button>
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-xl transition-all border border-white/20 text-xs sm:text-sm"
+              >
+                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Back</span>
+              </button>
+              
+              {/* Logo */}
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={onBack}
+              >
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <h2 className="text-base font-bold text-white">Dream60</h2>
+                  <p className="text-[10px] text-white/70">Live Auction Play</p>
+                </div>
+              </div>
+            </div>
             
             <div className="flex items-center gap-2 sm:gap-3">
               <motion.div

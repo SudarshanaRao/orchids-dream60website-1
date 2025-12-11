@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
 import { toast } from 'sonner';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import jsPDF from 'jspdf';
 
 interface LeaderboardEntry {
   rank: number;
@@ -102,23 +103,117 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
     const round = rounds.find(r => r.roundNumber === roundNumber);
     if (!round) return;
 
-    const csvContent = [
-      ['Rank', 'Username', 'Bid Amount', 'Bid Time', 'Qualified'].join(','),
-      ...round.leaderboard.map(entry => [
-        entry.rank,
-        entry.playerUsername,
-        entry.bidAmount,
-        new Date(entry.bidTime).toLocaleString('en-IN'),
-        entry.isQualified ? 'Yes' : 'No'
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${auction?.hourlyAuctionCode || 'auction'}_round${roundNumber}_leaderboard.csv`;
-    link.click();
-    toast.success(`Round ${roundNumber} leaderboard downloaded`);
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    
+    doc.setFillColor(250, 245, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, 'F');
+    
+    doc.setFillColor(107, 63, 160);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`DREAM60 - ${auction?.auctionName || 'Auction'}`, pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Round ${roundNumber} Leaderboard`, pageWidth / 2, 25, { align: 'center' });
+    
+    let yPos = 45;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(15, yPos, pageWidth - 30, 25, 3, 3, 'F');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(107, 63, 160);
+    doc.setFont('helvetica', 'bold');
+    
+    doc.text('Total Players:', 20, yPos + 10);
+    doc.text(`${round.totalParticipants}`, 55, yPos + 10);
+    
+    doc.text('Qualified:', 100, yPos + 10);
+    doc.text(`${round.qualifiedCount}`, 125, yPos + 10);
+    
+    doc.text('Status:', 150, yPos + 10);
+    doc.text(`${round.status}`, 170, yPos + 10);
+    
+    yPos += 35;
+    
+    doc.setFillColor(147, 51, 234);
+    doc.rect(15, yPos, pageWidth - 30, 10, 'F');
+    
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rank', 20, yPos + 7);
+    doc.text('Username', 45, yPos + 7);
+    doc.text('Bid Amount', 120, yPos + 7);
+    doc.text('Qualified', 170, yPos + 7);
+    
+    yPos += 10;
+    
+    round.leaderboard.forEach((entry, idx) => {
+      if (yPos > pageHeight - 35) {
+        doc.addPage();
+        doc.setFillColor(250, 245, 255);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+        yPos = 20;
+      }
+      
+      if (idx % 2 === 0) {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+      } else {
+        doc.setFillColor(250, 245, 255);
+        doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+      }
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', entry.rank <= 3 ? 'bold' : 'normal');
+      
+      if (entry.rank <= 3) {
+        const rankColors = [[147, 51, 234], [126, 34, 206], [107, 33, 168]];
+        doc.setTextColor(...rankColors[entry.rank - 1]);
+      } else {
+        doc.setTextColor(75, 85, 99);
+      }
+      
+      doc.text(entry.rank.toString(), 25, yPos + 6);
+      
+      doc.setTextColor(31, 41, 55);
+      const username = entry.playerUsername.length > 25 ? entry.playerUsername.substring(0, 25) + '...' : entry.playerUsername;
+      doc.text(username + (entry.isCurrentUser ? ' (You)' : ''), 45, yPos + 6);
+      
+      doc.setTextColor(107, 63, 160);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Rs ${entry.bidAmount.toLocaleString('en-IN')}`, 120, yPos + 6);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(entry.isQualified ? 34 : 185, entry.isQualified ? 197 : 28, entry.isQualified ? 94 : 28);
+      doc.text(entry.isQualified ? 'Yes' : 'No', 175, yPos + 6);
+      
+      yPos += 8;
+    });
+    
+    doc.setFillColor(107, 63, 160);
+    doc.rect(0, pageHeight - 25, pageWidth, 25, 'F');
+    
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('All rights reserved to dream60.com', pageWidth / 2, pageHeight - 17, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text('Terms and conditions applicable', pageWidth / 2, pageHeight - 12, { align: 'center' });
+    
+    doc.setFontSize(7);
+    doc.text(`Generated on ${new Date().toLocaleString('en-IN')}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    
+    doc.save(`Dream60_${auction?.hourlyAuctionCode || 'Auction'}_Round${roundNumber}_Leaderboard.pdf`);
+    toast.success(`Round ${roundNumber} leaderboard downloaded as PDF`);
   };
 
   const getRankIcon = (rank: number) => {
@@ -161,11 +256,59 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50">
+      {/* Header with Logo */}
+      <motion.header 
+        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={onBack}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Auctions
+              </Button>
+              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+              <div className="hidden sm:flex items-center space-x-2">
+                <BarChart2 className="w-5 h-5 text-purple-600" />
+                <h1 className="text-lg font-bold text-purple-800">Auction Leaderboard</h1>
+              </div>
+            </div>
+            
+            {/* Logo */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={onBack}
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
       <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <Button onClick={onBack} variant="ghost" className="mb-6 text-purple-700 hover:text-purple-900">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Auctions
-        </Button>
+        {/* Mobile Title */}
+        <motion.div 
+          className="flex sm:hidden items-center space-x-2 mb-4"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <BarChart2 className="w-5 h-5 text-purple-600" />
+          <h1 className="text-xl font-bold text-purple-800">Auction Leaderboard</h1>
+        </motion.div>
 
         {/* Auction Header */}
         {auction && (
