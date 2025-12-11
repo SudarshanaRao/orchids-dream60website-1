@@ -189,7 +189,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
                 >
-                  Live Auction Game
+                  Live Auction Play
                 </motion.p>
 
               </div>
@@ -481,7 +481,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                     </motion.div>
                     <div>
                       <h2 className="text-2xl font-bold text-white">Dream60</h2>
-                      <p className="text-xs text-purple-200">Live Auction Game</p>
+                      <p className="text-xs text-purple-200">Live Auction Play</p>
                     </div>
                   </motion.div>
 

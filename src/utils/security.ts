@@ -1,11 +1,8 @@
-const isProduction = import.meta.env.PROD;
-
 export function initSecurityMeasures() {
-  if (!isProduction) return;
-
   disableDevTools();
   disableTextSelection();
   disableInspectShortcuts();
+  detectDevToolsExtensions();
 }
 
 function disableDevTools() {
@@ -16,16 +13,73 @@ function disableDevTools() {
 
   document.addEventListener('contextmenu', disableContextMenu);
 
+  const showBlockedMessage = () => {
+    document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:linear-gradient(135deg, #53317B 0%, #6B3FA0 50%, #8456BC 100%);"><div style="text-align:center;color:white;"><h1 style="font-size:2rem;margin-bottom:1rem;">Access Denied</h1><p style="opacity:0.9;">Developer tools are not allowed on this website.</p><p style="opacity:0.7;margin-top:1rem;">Please close DevTools and refresh the page.</p></div></div>';
+  };
+
   const detectDevTools = () => {
     const widthThreshold = window.outerWidth - window.innerWidth > 160;
     const heightThreshold = window.outerHeight - window.innerHeight > 160;
     
     if (widthThreshold || heightThreshold) {
-      document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h1>DevTools Detected - Access Denied</h1></div>';
+      showBlockedMessage();
     }
   };
 
+  const detectDebugger = () => {
+    const start = performance.now();
+    debugger;
+    const end = performance.now();
+    if (end - start > 100) {
+      showBlockedMessage();
+    }
+  };
+
+  const detectConsoleOpen = () => {
+    const element = new Image();
+    Object.defineProperty(element, 'id', {
+      get: function() {
+        showBlockedMessage();
+        return '';
+      }
+    });
+    console.log('%c', element);
+  };
+
   setInterval(detectDevTools, 1000);
+  setInterval(detectDebugger, 2000);
+  setInterval(detectConsoleOpen, 3000);
+
+  (function() {
+    const devtools = { open: false, orientation: '' };
+    const threshold = 160;
+    
+    const emitEvent = (isOpen: boolean, orientation: string) => {
+      if (isOpen) {
+        showBlockedMessage();
+      }
+    };
+
+    setInterval(() => {
+      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+      const orientation = widthThreshold ? 'vertical' : 'horizontal';
+
+      if (!(heightThreshold && widthThreshold) && (widthThreshold || heightThreshold)) {
+        if (!devtools.open || devtools.orientation !== orientation) {
+          emitEvent(true, orientation);
+        }
+        devtools.open = true;
+        devtools.orientation = orientation;
+      } else {
+        if (devtools.open) {
+          emitEvent(false, '');
+        }
+        devtools.open = false;
+        devtools.orientation = '';
+      }
+    }, 500);
+  })();
 }
 
 function disableTextSelection() {
@@ -63,7 +117,68 @@ function disableInspectShortcuts() {
       e.preventDefault();
       return false;
     }
+
+    if (e.ctrlKey && (e.key === 'S' || e.key === 's')) {
+      e.preventDefault();
+      return false;
+    }
+
+    if (e.ctrlKey && (e.key === 'P' || e.key === 'p')) {
+      e.preventDefault();
+      return false;
+    }
   });
+
+  document.addEventListener('keypress', (e: KeyboardEvent) => {
+    if (e.key === 'F12' || (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
+      e.preventDefault();
+      return false;
+    }
+  });
+}
+
+function detectDevToolsExtensions() {
+  const showBlockedMessage = () => {
+    document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:linear-gradient(135deg, #53317B 0%, #6B3FA0 50%, #8456BC 100%);"><div style="text-align:center;color:white;"><h1 style="font-size:2rem;margin-bottom:1rem;">Access Denied</h1><p style="opacity:0.9;">Developer tools are not allowed on this website.</p><p style="opacity:0.7;margin-top:1rem;">Please close DevTools and refresh the page.</p></div></div>';
+  };
+
+  const checkForExtensions = () => {
+    if (typeof (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined') {
+      const hook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+      if (hook.isDisabled !== true) {
+        hook.inject = function() {};
+        hook.onCommitFiberRoot = function() {};
+        hook.onCommitFiberUnmount = function() {};
+      }
+    }
+
+    if (typeof (window as any).__VUE_DEVTOOLS_GLOBAL_HOOK__ !== 'undefined') {
+      showBlockedMessage();
+    }
+
+    const extensionIndicators = [
+      '__REDUX_DEVTOOLS_EXTENSION__',
+      '__REDUX_DEVTOOLS_EXTENSION_COMPOSE__',
+      'chrome',
+    ];
+
+    for (const indicator of extensionIndicators) {
+      if (indicator === 'chrome' && (window as any).chrome?.runtime?.id) {
+        continue;
+      }
+    }
+  };
+
+  checkForExtensions();
+  setInterval(checkForExtensions, 2000);
+
+  const toString = Function.prototype.toString;
+  Function.prototype.toString = function() {
+    if (this === Function.prototype.toString) {
+      return 'function toString() { [native code] }';
+    }
+    return toString.call(this);
+  };
 }
 
 export function obfuscateData(data: any): string {

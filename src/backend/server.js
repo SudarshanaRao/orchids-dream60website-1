@@ -225,7 +225,6 @@ app.get('/', (req, res) => {
   res.status(200).json({
     message: 'Welcome to Dream60 Backend API 🚀',
     environment: process.env.NODE_ENV || 'development',
-    documentation: '/api-docs',
     database: isConnected() ? 'Connected' : 'Disconnected',
   });
 });

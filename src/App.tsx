@@ -23,6 +23,7 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { AdvertisementPopup } from './components/AdvertisementPopup';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -658,6 +659,9 @@ const App = () => {
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
   // ✅ NEW: Track if we're currently fetching live auction data
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+  
+  // Advertisement popup state
+  const [showAdvertisementPopup, setShowAdvertisementPopup] = useState<boolean>(false);
 
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
@@ -1411,6 +1415,11 @@ const App = () => {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
+      
+      // Show advertisement popup after a few seconds
+      setTimeout(() => {
+        setShowAdvertisementPopup(true);
+      }, 3000);
     } catch (error) {
       console.error("Error while login:", error);
     }
@@ -1426,6 +1435,11 @@ const App = () => {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
+      
+      // Show advertisement popup after a few seconds
+      setTimeout(() => {
+        setShowAdvertisementPopup(true);
+      }, 3000);
     } catch (error) {
       console.error("Error while signup:", error);
     }
@@ -2170,6 +2184,12 @@ const App = () => {
               onClose={() => setShowBidSuccess(null)}
             />
           )}
+
+          {/* Advertisement Popup */}
+          <AdvertisementPopup
+            isOpen={showAdvertisementPopup}
+            onClose={() => setShowAdvertisementPopup(false)}
+          />
         </div>
       </TooltipProvider>
     </QueryClientProvider>
