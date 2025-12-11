@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
@@ -350,6 +350,9 @@ const App = () => {
     createdAt: string;
     updatedAt: string;
   } | null>(null);
+
+  // ✅ Track if user data has been fetched from API (prevents infinite loops)
+  const hasFetchedUserDataRef = useRef(false);
 
   // ✅ Helper function to map API user data to local state
   const mapUserData = (userData: any) => {
@@ -746,10 +749,11 @@ const App = () => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  // ✅ NEW: Fetch user data from API when user is logged in
+  // ✅ NEW: Fetch user data from API when user is logged in (only once per session)
   useEffect(() => {
-    if (currentUser?.id) {
+    if (currentUser?.id && !hasFetchedUserDataRef.current) {
       console.log('🔄 User logged in - fetching updated user data from API');
+      hasFetchedUserDataRef.current = true;
       fetchAndSetUser(currentUser.id);
     }
   }, [currentUser?.id]);
@@ -760,7 +764,7 @@ const App = () => {
       console.log('🔄 Navigated to homepage - refreshing user data from API');
       fetchAndSetUser(currentUser.id);
     }
-  }, [currentPage, currentUser?.id]);
+  }, [currentPage]);
 
   // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
@@ -1336,6 +1340,9 @@ const App = () => {
 
   const handleLogin = async (user: any) => {
     try {
+      // ✅ Reset user data fetch flag to allow fresh fetch
+      hasFetchedUserDataRef.current = false;
+      
       // ✅ User data is already passed from LoginForm, no need for additional API call
       const mappedUser = mapUserData(user);
       setCurrentUser(mappedUser);
@@ -1459,6 +1466,9 @@ const App = () => {
     }
 
     setCurrentUser(null);
+    
+    // ✅ Reset user data fetch flag on logout
+    hasFetchedUserDataRef.current = false;
     
     // ✅ Reset auction state when logging out
     setCurrentAuction(prev => ({
