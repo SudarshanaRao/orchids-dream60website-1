@@ -20,6 +20,41 @@ interface HeaderProps {
 export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasNewHistory, setHasNewHistory] = useState(false);
+  const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>({ totalWins: 0, totalLosses: 0 });
+
+  // Fetch user stats from backend API
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        // Get user_id from localStorage
+        const userId = localStorage.getItem('user_id');
+        if (!userId) return;
+
+        const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
+        if (!response.ok) return;
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Use stats.totalWins and stats.totalLosses from the response
+          const stats = result.data.stats || {};
+          setUserStats({
+            totalWins: stats.totalWins ?? result.data.totalWins ?? 0,
+            totalLosses: stats.totalLosses ?? result.data.totalLosses ?? 0,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    if (user?.id) {
+      fetchUserStats();
+      // Refresh stats every 60 seconds
+      const interval = setInterval(fetchUserStats, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.id]);
 
   // Check for new auction history entries
   useEffect(() => {
@@ -252,7 +287,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                       >
                         <Trophy className="w-4 h-4 text-green-600" />
                       </motion.div>
-                      <span className="text-sm font-medium text-green-700">{user.totalWins} Wins</span>
+                      <span className="text-sm font-medium text-green-700">{userStats.totalWins} Wins</span>
                     </motion.div>
                     <div className="w-px h-5 bg-purple-300"></div>
                     <motion.div
@@ -265,7 +300,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                       >
                         <XCircle className="w-4 h-4 text-red-500" />
                       </motion.div>
-                      <span className="text-sm font-medium text-red-600">{user.totalLosses ?? 0} Losses</span>
+                      <span className="text-sm font-medium text-red-600">{userStats.totalLosses ?? 0} Losses</span>
                     </motion.div>
                   </motion.div>
 
@@ -499,11 +534,11 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         <div className="flex items-center space-x-3 text-xs text-purple-200">
                           <span className="flex items-center">
                             <Trophy className="w-3 h-3 mr-1" />
-                            {user.totalWins} Wins
+                            {userStats.totalWins} Wins
                           </span>
                           <span className="flex items-center">
                             <XCircle className="w-3 h-3 mr-1" />
-                            {user.totalLosses ?? 0} Losses
+                            {userStats.totalLosses ?? 0} Losses
                           </span>
                         </div>
                       </div>
