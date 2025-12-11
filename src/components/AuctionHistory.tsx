@@ -215,6 +215,19 @@ const AuctionCard = ({
     const now = Date.now();
     const beforeDeadline = !localAuction.claimDeadline || now < localAuction.claimDeadline;
     
+    // ✅ CRITICAL FIX: Check if we're still in the backend delay period (1 min)
+    // If claim window just started (within 1 min), don't show claim form yet
+    if (isMyRankEligible && localAuction.claimWindowStartedAt) {
+      const windowStart = localAuction.claimWindowStartedAt;
+      let diff = windowStart - now;
+      diff = diff - (330 * 60 * 1000);
+      
+      // If within 1 minute of window start time (backend delay), return false
+      if (diff <= 0 && diff > -(60 * 1000)) {
+        return false; // Still in "Claim Window Soon" period
+      }
+    }
+    
     return isMyRankEligible && beforeDeadline;
   };
 
@@ -228,6 +241,23 @@ const AuctionCard = ({
     }
     
     return false;
+  };
+
+  // ✅ NEW: Check if we're in the "Claim Window Soon" period (1 min backend delay)
+  const isInClaimWindowSoonPeriod = () => {
+    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return false;
+    if (!localAuction.claimWindowStartedAt || !localAuction.finalRank || !localAuction.currentEligibleRank) return false;
+    
+    // Only show for the user whose turn it's supposed to be
+    if (localAuction.finalRank !== localAuction.currentEligibleRank) return false;
+    
+    const now = Date.now();
+    const windowStart = localAuction.claimWindowStartedAt;
+    let diff = windowStart - now;
+    diff = diff - (330 * 60 * 1000);
+    
+    // If within 1 minute of window start time (backend delay period)
+    return diff <= 0 && diff > -(60 * 1000);
   };
 
   // Get rank suffix and emoji
@@ -270,6 +300,20 @@ const AuctionCard = ({
         } else {
           // ✅ NEW: Window time has passed but still in waiting queue (backend 1 min delay)
           // Show "Claim Window Soon" instead of falling through to 30 min deadline timer
+          setTimeLeft('Claim Window Soon');
+          return;
+        }
+      }
+      
+      // ✅ CRITICAL FIX: Check if currentEligibleRank hasn't been updated yet (backend 1 min delay)
+      // When it's supposed to be user's turn but backend hasn't updated currentEligibleRank yet
+      if (localAuction.finalRank && localAuction.currentEligibleRank && localAuction.claimWindowStartedAt) {
+        const windowStart = localAuction.claimWindowStartedAt;
+        let diff = windowStart - now;
+        diff = diff - (330 * 60 * 1000);
+        
+        // If window time has passed within 1 minute, show "Claim Window Soon"
+        if (diff <= 0 && diff > -(60 * 1000)) {
           setTimeLeft('Claim Window Soon');
           return;
         }
@@ -784,6 +828,36 @@ const AuctionCard = ({
                     <div className="bg-white/60 rounded-lg p-2 border border-blue-200">
                       <p className="text-[10px] text-blue-700 leading-relaxed">
                         💡 You'll be able to claim if previous {localAuction.finalRank === 2 ? 'winner' : 'winners'} don't claim within their 30-minute window{localAuction.finalRank === 3 ? 's' : ''}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ✅ NEW: Claim Window Soon Banner - Show during 1 min backend delay */}
+                {localAuction.prizeClaimStatus === 'PENDING' && isInClaimWindowSoonPeriod() && (
+                  <div className="p-2 sm:p-3 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-400 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between bg-white/60 rounded-lg p-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center animate-pulse">
+                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] sm:text-xs font-semibold text-amber-900">
+                            {getRankEmoji(localAuction.finalRank || 1)} Claim Window Opening Soon
+                          </p>
+                          <p className="text-[8px] sm:text-[10px] text-amber-700">Your turn to claim is almost here!</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-2 bg-amber-100/60 rounded-lg p-2 border border-amber-200">
+                      <div className="animate-spin w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full"></div>
+                      <span className="font-bold text-sm text-amber-800">Claim Window Soon</span>
+                    </div>
+
+                    <div className="bg-white/60 rounded-lg p-2 border border-amber-200">
+                      <p className="text-[10px] text-amber-700 leading-relaxed text-center">
+                        ⏳ Please wait a moment. The claim button will appear shortly.
                       </p>
                     </div>
                   </div>
