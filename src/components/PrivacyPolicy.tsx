@@ -2,7 +2,6 @@ import { ArrowLeft, Shield, Eye, Lock, Database, Server, Globe, AlertCircle, Fil
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { motion } from 'motion/react';
-import { AnimatedBackground } from './AnimatedBackground';
 
 interface PrivacyPolicyProps {
   onBack: () => void;
@@ -10,9 +9,7 @@ interface PrivacyPolicyProps {
 
 export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      <AnimatedBackground />
-
+    <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 relative overflow-hidden">
       {/* Header */}
       <motion.header 
         className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm relative z-10"

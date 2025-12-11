@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { AnimatedBackground } from "./AnimatedBackground";
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from "@/lib/api-config";
 
@@ -115,6 +114,7 @@ export function LoginForm({
     setIsLoading(false);
   }
 };
+
 
 
 

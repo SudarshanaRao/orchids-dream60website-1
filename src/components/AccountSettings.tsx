@@ -13,7 +13,6 @@ import { ChangePasswordModal } from './ChangePasswordModal';
 // import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { toast } from 'sonner';
 // import { motion } from 'motion/react';
-import { AnimatedBackground } from './AnimatedBackground';
 import { motion, Variants } from "framer-motion";
 import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
 
@@ -814,6 +813,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                     whileHover={{ rotate: 360 }}
                     transition={{ duration: 0.6 }}
                   >
+
 
                     <Gavel className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                   </motion.div>

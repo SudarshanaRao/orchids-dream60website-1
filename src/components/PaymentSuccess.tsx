@@ -1,8 +1,6 @@
-
 import { motion } from 'motion/react';
 import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star } from 'lucide-react';
 import { Button } from './ui/button';
-import { AnimatedBackground } from './AnimatedBackground';
 
 interface PaymentSuccessProps {
   amount: number;
@@ -21,10 +19,8 @@ export function PaymentSuccess({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Animated Background */}
-      <div className="absolute inset-0 opacity-40">
-        <AnimatedBackground />
-      </div>
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 opacity-40" />
       
       {/* Backdrop */}
       <motion.div 

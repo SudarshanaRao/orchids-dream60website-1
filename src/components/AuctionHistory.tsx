@@ -3,8 +3,7 @@ import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { motion } from 'motion/react';
-import { AnimatedBackground } from './AnimatedBackground';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -1216,9 +1215,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <AnimatedBackground />
-        
+      <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 relative overflow-hidden">
         <div className="relative z-10">
           <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
             <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
@@ -1262,9 +1259,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <AnimatedBackground />
-        
+      <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 relative overflow-hidden">
         <div className="relative z-10">
           <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
             <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
@@ -1308,11 +1303,9 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
   }
 
   return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      <AnimatedBackground />
-      
+    <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-purple-100/50 relative overflow-hidden">
       {/* Compact Header */}
-      <motion.div 
+      <motion.div
         className="relative z-10 overflow-hidden"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
