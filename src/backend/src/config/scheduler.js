@@ -633,9 +633,9 @@ const autoActivateAuctions = async () => {
     const currentMinute = Number(serverTime.minute);
     console.log(`⏰ [AUTO-ACTIVATE] Server Time: ${serverTime.time} (${serverTime.date}) - Hour: ${currentHour}, Minute: ${currentMinute}`);
 
-    // Only operate between 9..20 (inclusive). 20 (8 PM slot) ends at 21:00.
-    if (currentHour < 9 || currentHour >= 21) {
-      console.log(`⏸️ [AUTO-ACTIVATE] Outside operating hours (9 AM - 9 PM). Current hour: ${currentHour}`);
+    // Only operate between 9..22 (inclusive). 22 (10 PM slot) ends at 23:00.
+    if (currentHour < 9 || currentHour >= 23) {
+      console.log(`⏸️ [AUTO-ACTIVATE] Outside operating hours (9 AM - 11 PM). Current hour: ${currentHour}`);
       return;
     }
 
@@ -668,8 +668,8 @@ const autoActivateAuctions = async () => {
           continue;
         }
 
-        // Only consider slots between 9 and 20 inclusive
-        if (slotHour < 9 || slotHour > 20) {
+        // Only consider slots between 9 and 22 inclusive
+        if (slotHour < 9 || slotHour > 22) {
           continue;
         }
 
