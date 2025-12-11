@@ -4,6 +4,9 @@ import App from "./App.tsx";
 import './styles/globals.css';
 import { Toaster } from 'sonner';
 import { BrowserRouter } from 'react-router-dom';
+import { initSecurityMeasures } from './utils/security';
+
+initSecurityMeasures();
 
 if (typeof window !== "undefined") {
   const sendToParent = (data: any) => {

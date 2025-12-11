@@ -902,7 +902,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     <span className="text-xs sm:text-sm">
                       {status === 'open' && box.type === 'entry' && 'Pay Entry Fee'}
                       {status === 'open' && box.type === 'round' && 'Place Your Bid'}
-                      {status === 'bidding' && 'Outbid Now'}
+                      {status === 'bidding' && 'Place Bid'}
                     </span>
                     <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>

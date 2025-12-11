@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, IndianRupee, AlertTriangle, Gavel, Zap, Trophy, DollarSign, TrendingUp, Award, Target, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { AnimatedBackground } from './AnimatedBackground';
 import { toast } from 'sonner';
 
 interface Box {
@@ -211,12 +210,9 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex h-[100dvh] sm:items-center sm:justify-center sm:p-4 overflow-y-auto">
-        {/* Animated Background */}
-        <AnimatedBackground />
-        
-        {/* Backdrop Overlay - FIXED: Covers entire screen consistently */}
+        {/* Backdrop Overlay - Solid dark background covering entire screen */}
         <motion.div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-xl z-0"
+          className="fixed inset-0 bg-black/80 backdrop-blur-xl z-0"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
