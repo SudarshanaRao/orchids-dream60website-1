@@ -1217,30 +1217,58 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
         
-        
-        <div className="relative z-10">
-          <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
-            <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
-              <button
-                onClick={onBack}
-                className="flex items-center gap-1 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-xl transition-all mb-2 sm:mb-3 border border-white/20 text-xs sm:text-sm"
-              >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Back</span>
-              </button>
-              
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-2xl border border-white/30 sm:border-2">
-                  <Trophy className="w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+        {/* Header with Logo - matching Support page style */}
+        <motion.header 
+          className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={onBack}
+                  variant="ghost"
+                  size="sm"
+                  className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Game
+                </Button>
+                <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+                <div className="hidden sm:flex items-center space-x-2">
+                  <Trophy className="w-6 h-6 text-purple-600" />
+                  <h1 className="text-xl sm:text-2xl font-bold text-purple-800">Auction History</h1>
                 </div>
-                <div>
-                  <h1 className="text-base sm:text-2xl md:text-3xl font-bold">Auction History</h1>
-                  <p className="text-white/80 text-[10px] sm:text-sm mt-0.5">Your bidding journey</p>
+              </div>
+              
+              {/* Logo */}
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={onBack}
+              >
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                  <p className="text-[10px] text-purple-600">Live Auction Play</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.header>
+
+        {/* Mobile Title */}
+        <motion.div 
+          className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Trophy className="w-5 h-5 text-purple-600" />
+          <h1 className="text-xl font-bold text-purple-800">Auction History</h1>
+        </motion.div>
 
         <main className="container mx-auto px-3 sm:px-4 py-6 relative z-10">
           <div className="flex items-center justify-center min-h-[400px]">
@@ -1263,30 +1291,58 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
         
-        
-        <div className="relative z-10">
-          <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
-            <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
-              <button
-                onClick={onBack}
-                className="flex items-center gap-1 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-xl transition-all mb-2 sm:mb-3 border border-white/20 text-xs sm:text-sm"
-              >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Back</span>
-              </button>
-              
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-2xl border border-white/30 sm:border-2">
-                  <Trophy className="w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+        {/* Header with Logo - matching Support page style */}
+        <motion.header 
+          className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={onBack}
+                  variant="ghost"
+                  size="sm"
+                  className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Game
+                </Button>
+                <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+                <div className="hidden sm:flex items-center space-x-2">
+                  <Trophy className="w-6 h-6 text-purple-600" />
+                  <h1 className="text-xl sm:text-2xl font-bold text-purple-800">Auction History</h1>
                 </div>
-                <div>
-                  <h1 className="text-base sm:text-2xl md:text-3xl font-bold">Auction History</h1>
-                  <p className="text-white/80 text-[10px] sm:text-sm mt-0.5">Your bidding journey</p>
+              </div>
+              
+              {/* Logo */}
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={onBack}
+              >
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                  <p className="text-[10px] text-purple-600">Live Auction Play</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.header>
+
+        {/* Mobile Title */}
+        <motion.div 
+          className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Trophy className="w-5 h-5 text-purple-600" />
+          <h1 className="text-xl font-bold text-purple-800">Auction History</h1>
+        </motion.div>
 
         <main className="container mx-auto px-3 sm:px-4 py-6 relative z-10">
           <Card className="border-2 border-red-200 bg-red-50">
@@ -1309,81 +1365,57 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       
-      
-      {/* Compact Header */}
-      <motion.div 
-        className="relative z-10 overflow-hidden"
+      {/* Header with Logo - matching Support page style */}
+      <motion.header 
+        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl opacity-20"
-            style={{
-              background: 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
-              top: '-40%',
-              right: '-10%',
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              x: [0, 20, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
-
-        <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
-          <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <button
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
                 onClick={onBack}
-                className="flex items-center gap-1 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-xl transition-all border border-white/20 text-xs sm:text-sm"
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
               >
-                <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Back</span>
-              </button>
-              
-              {/* Logo */}
-              <div 
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={onBack}
-              >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg border border-white/30">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <h2 className="text-base font-bold text-white">Dream60</h2>
-                  <p className="text-[10px] text-white/70">Live Auction Play</p>
-                </div>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Game
+              </Button>
+              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+              <div className="hidden sm:flex items-center space-x-2">
+                <Trophy className="w-6 h-6 text-purple-600" />
+                <h1 className="text-xl sm:text-2xl font-bold text-purple-800">Auction History</h1>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-3">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ 
-                  delay: 0.2,
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 15
-                }}
-                className="w-8 h-8 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-xl flex items-center justify-center shadow-2xl border border-white/30 sm:border-2"
-              >
-                <Trophy className="w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-              </motion.div>
-              <div>
-                <h1 className="text-base sm:text-2xl md:text-3xl font-bold">Auction History</h1>
-                <p className="text-white/80 text-[10px] sm:text-sm mt-0.5">Your bidding journey</p>
+            {/* Logo */}
+            <div 
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={onBack}
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                <p className="text-[10px] text-purple-600">Live Auction Play</p>
               </div>
             </div>
           </div>
         </div>
+      </motion.header>
+
+      {/* Mobile Title */}
+      <motion.div 
+        className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Trophy className="w-5 h-5 text-purple-600" />
+        <h1 className="text-xl font-bold text-purple-800">Auction History</h1>
       </motion.div>
 
       {/* Main Content */}
