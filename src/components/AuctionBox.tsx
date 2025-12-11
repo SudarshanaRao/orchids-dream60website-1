@@ -27,7 +27,7 @@ interface Box {
     username: string;
     bid: number;
     timestamp: Date;
-  }>;
+  }> ;
   highestBidFromAPI?: number; // Rank 1 bid amount from live API
   prizeAmount?: number; // Prize for this specific round
 }
@@ -551,7 +551,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
             </motion.div>
 
             {/* Timer Display */}
-            {timeUntilOpen && (
+            {timeUntilOpen && !winnersAnnounced && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
