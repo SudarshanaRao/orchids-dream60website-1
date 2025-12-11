@@ -19,6 +19,7 @@ const utilityRoutes = require('./src/routes/utilityRoutes');
 const userHistoryRoutes = require('./src/routes/userHistory');
 const prizeClaimRoutes = require('./src/routes/prizeClaim');
 const emailRoutes = require('./src/routes/emailRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
 
 const app = express();
 
@@ -161,6 +162,7 @@ app.use('/api/razorpay', razorpayRoutes);
 app.use('/utility', utilityRoutes);
 app.use('/user', userHistoryRoutes);
 app.use('/prize-claim', prizeClaimRoutes);
+app.use('/contact', contactRoutes);
 
 // --------------------
 // MongoDB Connection
