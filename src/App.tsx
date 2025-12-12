@@ -663,6 +663,11 @@ const App = () => {
   // Advertisement popup state
   const [showAdvertisementPopup, setShowAdvertisementPopup] = useState<boolean>(false);
 
+  const isJoinWindowOpen = serverTime ? serverTime.minute < 15 : true;
+  const showAuctionGrid = isJoinWindowOpen || currentAuction.userHasPaidEntry;
+  const displayUser = currentUser || { username: 'Guest' };
+  const showJoinClosedNotice = currentUser && !currentAuction.userHasPaidEntry && !isJoinWindowOpen;
+
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
     const fetchInitialLiveAuction = async () => {
@@ -2106,58 +2111,60 @@ const App = () => {
               onUserParticipationChange={handleUserParticipationChange}
             />
 
-            {currentUser ? (
-              <>
-                {/* Auction Grid */}
-                <AuctionGrid
-                  auction={{
-                    boxes: currentAuction.boxes as any,
-                    prizeValue: currentAuction.prizeValue,
-                    userBidsPerRound: currentAuction.userBidsPerRound,
-                    userHasPaidEntry: currentAuction.userHasPaidEntry,
-                    userQualificationPerRound: currentAuction.userQualificationPerRound,
-                    winnersAnnounced: currentAuction.winnersAnnounced,
-                    userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
-                    hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
-                  }}
-                  user={currentUser}
-                  onShowLeaderboard={handleShowLeaderboard}
-                  onBid={handlePlaceBid}
-                  serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                />
+            {showAuctionGrid && (
+              <AuctionGrid
+                auction={{
+                  boxes: currentAuction.boxes as any,
+                  prizeValue: currentAuction.prizeValue,
+                  userBidsPerRound: currentAuction.userBidsPerRound,
+                  userHasPaidEntry: currentAuction.userHasPaidEntry,
+                  userQualificationPerRound: currentAuction.userQualificationPerRound,
+                  winnersAnnounced: currentAuction.winnersAnnounced,
+                  userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
+                  hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
+                }}
+                user={displayUser}
+                onShowLeaderboard={handleShowLeaderboard}
+                onBid={handlePlaceBid}
+                serverTime={serverTime}
+                isJoinWindowOpen={isJoinWindowOpen}
+              />
+            )}
 
-                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
-              </>
-            ) : (
-              <>
-                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
-                {/* Guest View - Show login prompt instead of auction  */}
-                <div className="text-center py-8 sm:py-12 md:py-16 px-4">
-                  <div className="max-w-2xl mx-auto space-y-6">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
-                    <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
-                      Create your free account and start bidding on amazing prizes with direct payment!
-                    </p>
-                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
-                      <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
-                          <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">6x</div>
-                          <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">₹3,50,000+</div>
-                          <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
-                        </div>
+            {showJoinClosedNotice && (
+              <div className="mt-4 rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur-md p-4 shadow-lg text-center text-purple-800 font-semibold">
+                Join window closed. Auction boxes are visible only to participants.
+              </div>
+            )}
+
+            <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+
+            {!currentUser && (
+              <div className="text-center py-8 sm:py-12 md:py-16 px-4">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
+                  <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
+                    Create your free account and start bidding on amazing prizes with direct payment!
+                  </p>
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
+                    <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
+                    <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
+                        <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
+                      </div>
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-purple-700">6x</div>
+                        <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
+                      </div>
+                      <div>
+                        <div className="text-xl sm:text-2xl font-bold text-purple-700">₹3,50,000+</div>
+                        <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </main>
 

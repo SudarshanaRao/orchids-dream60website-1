@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';
-import { Lock, IndianRupee, Zap } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 interface Box {
   id: number;
@@ -41,9 +41,10 @@ interface AuctionGridProps {
   onBid: (boxId: number, amount: number) => void;
   onShowLeaderboard?: (roundNumber: number, leaderboard: any[], opensAt?: Date, closesAt?: Date) => void;
   serverTime?: { timestamp: number } | null; // ✅ Add server time prop
+  isJoinWindowOpen: boolean;
 }
 
-export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTime }: AuctionGridProps) {
+export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTime, isJoinWindowOpen }: AuctionGridProps) {
   const [selectedBox, setSelectedBox] = useState<Box | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
 
@@ -64,6 +65,8 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   };
 
   const roundBoxes = auction.boxes.filter(box => box.type === 'round');
+  const canShowBoxes = isJoinWindowOpen || auction.userHasPaidEntry;
+  const showGuestPreview = isJoinWindowOpen && !auction.userHasPaidEntry;
 
   return (
     <>
@@ -124,60 +127,73 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
           transition={{ duration: 0.5, delay: 0.2 }}
           className="space-y-4 sm:space-y-5"
         >
-          {/* Auction Boxes Grid - Only show for participants */}
-          {auction.userHasPaidEntry ? (
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.1
-                  }
-                }
-              }}
-            >
-              {roundBoxes.map((box) => (
+          {canShowBoxes ? (
+            <>
+              {showGuestPreview && (
                 <motion.div
-                  key={box.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: {
-                        duration: 0.5
-                      }
-                    }
-                  }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur-md p-4 shadow-lg"
                 >
-                  <AuctionBox
-                    box={box}
-                    onClick={() => handleBoxClick(box)}
-                    isUserHighestBidder={box.bidder === user.username}
-                    onShowLeaderboard={onShowLeaderboard}
-                    userHasPaidEntry={auction.userHasPaidEntry}
-                    userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
-                    isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
-                    winnersAnnounced={auction.winnersAnnounced}
-                    serverTime={serverTime}
-                    hourlyAuctionId={auction.hourlyAuctionId} 
-                  />
+                  <div className="flex items-center gap-2 text-purple-800 font-semibold text-sm sm:text-base">
+                    <Lock className="w-4 h-4" />
+                    <span>Join within the first 15 minutes to participate. Boxes are preview-only until you pay the entry fee.</span>
+                  </div>
                 </motion.div>
-              ))}
-            </motion.div>
+              )}
+
+              <motion.div 
+                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.1
+                    }
+                  }
+                }}
+              >
+                {roundBoxes.map((box) => (
+                  <motion.div
+                    key={box.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { 
+                        opacity: 1, 
+                        y: 0,
+                        transition: {
+                          duration: 0.5
+                        }
+                      }
+                    }}
+                  >
+                    <AuctionBox
+                      box={box}
+                      onClick={() => handleBoxClick(box)}
+                      isUserHighestBidder={box.bidder === user.username}
+                      onShowLeaderboard={onShowLeaderboard}
+                      userHasPaidEntry={auction.userHasPaidEntry}
+                      userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
+                      isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
+                      winnersAnnounced={auction.winnersAnnounced}
+                      serverTime={serverTime}
+                      hourlyAuctionId={auction.hourlyAuctionId} 
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </>
           ) : (
-            /* Non-participant message - Auction boxes hidden */
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
               className="relative overflow-hidden bg-gradient-to-br from-purple-50/90 via-violet-50/80 to-purple-100/90 backdrop-blur-xl border-2 border-purple-200/60 rounded-2xl p-6 sm:p-8 md:p-12 shadow-xl"
             >
-              {/* Animated Background for locked state */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute w-64 h-64 rounded-full blur-3xl opacity-20"
@@ -217,7 +233,6 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
               </div>
 
               <div className="relative flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6">
-                {/* Lock Icon */}
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
@@ -246,47 +261,14 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                   />
                 </motion.div>
 
-                {/* Title */}
                 <div className="space-y-2">
                   <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">
-                    Auction Rounds Locked
+                    Join Window Closed
                   </h3>
                   <p className="text-sm sm:text-base md:text-lg text-purple-700 max-w-md mx-auto">
-                    Pay the entry fee to unlock all auction rounds and start bidding for amazing prizes!
+                    Auction boxes are visible only to participants after the first 15 minutes of the hour.
                   </p>
                 </div>
-
-                {/* Entry Fee Info */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl px-6 py-4 border border-purple-200/60 shadow-lg">
-                  <div className="flex items-center justify-center gap-2 text-purple-700 mb-2">
-                    <IndianRupee className="w-5 h-5" />
-                    <span className="text-sm font-medium">Entry Fee Required</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-purple-600">
-                    Once you pay the entry fee, you'll have access to all {roundBoxes.length} bidding rounds
-                  </p>
-                </div>
-
-                {/* Benefits List */}
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-                  <div className="flex items-center gap-2 bg-purple-100/80 px-3 py-1.5 rounded-full">
-                    <Zap className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs sm:text-sm font-medium text-purple-800">Access All Rounds</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-purple-100/80 px-3 py-1.5 rounded-full">
-                    <Zap className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs sm:text-sm font-medium text-purple-800">Win Amazing Prizes</span>
-                  </div>
-                  <div className="flex items-center gap-2 bg-purple-100/80 px-3 py-1.5 rounded-full">
-                    <Zap className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs sm:text-sm font-medium text-purple-800">Live Leaderboard</span>
-                  </div>
-                </div>
-
-                {/* CTA Hint */}
-                <p className="text-xs text-purple-500 mt-2">
-                  Click "Join Auction" above to participate
-                </p>
               </div>
             </motion.div>
           )}
