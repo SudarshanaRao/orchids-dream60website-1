@@ -120,6 +120,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   };
 
 
+
   const menuVariants = {
     hidden: {
       scale: 0.95,
@@ -274,9 +275,10 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
             >
               {user ? (
                 <>
-                  {/* User Stats */}
-                  <motion.div
-                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5"
+                  {/* User Stats - Clickable */}
+                  <motion.button
+                    onClick={handleNavigateToHistory}
+                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5 hover:bg-purple-50/80 transition-all cursor-pointer"
                     whileHover={{ scale: 1.02, y: -2 }}
                     transition={{ duration: 0.2 }}
                   >
@@ -305,29 +307,10 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                       </motion.div>
                       <span className="text-sm font-medium text-red-600">{userStats.totalLosses ?? 0} Losses</span>
                     </motion.div>
-                  </motion.div>
+                  </motion.button>
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
-                    {/* Auction History Link with Red Dot */}
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={handleNavigateToHistory}
-                        variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all relative"
-                        size="sm"
-                      >
-                        <History className="w-4 h-4 mr-1.5" />
-                        Auction History
-                        {hasNewHistory && (
-                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                          </span>
-                        )}
-                      </Button>
-                    </motion.div>
-
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         onClick={() => onNavigate?.('rules')}
