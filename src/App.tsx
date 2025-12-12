@@ -32,6 +32,7 @@ import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { subscribeToPushNotifications } from '@/lib/pushNotifications';
 
 // ✅ Create QueryClient instance
 const queryClient = new QueryClient();
@@ -236,7 +237,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-const App = () => {
+export function App() {
   // ✅ Add server time state
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
@@ -752,6 +753,15 @@ const App = () => {
     if (currentUser?.id) {
       console.log('🔄 User logged in - fetching updated user data from API');
       fetchAndSetUser(currentUser.id);
+      
+      // Subscribe to push notifications
+      subscribeToPushNotifications(currentUser.id).then(success => {
+        if (success) {
+          console.log('✅ User subscribed to push notifications');
+        } else {
+          console.log('⚠️ Failed to subscribe to push notifications');
+        }
+      });
     }
   }, [currentUser?.id]);
 
@@ -777,12 +787,15 @@ const App = () => {
       // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
       
-      toast.info(`Round ${currentRound} Started`, {
-        description: 'Auction data refreshed with latest information',
-        duration: 3000,
-      });
+      // Only show toast if winners are announced
+      if (currentAuction.winnersAnnounced) {
+        toast.info('Winners Announced', {
+          description: 'Check the auction details to see the winners',
+          duration: 5000,
+        });
+      }
     }
-  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound, currentAuction.winnersAnnounced]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -2138,6 +2151,4 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
-
-export default App;export { App };
+}

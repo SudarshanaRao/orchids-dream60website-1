@@ -83,6 +83,15 @@ export const API_ENDPOINTS = {
     prizeClaimVerifyPayment: `${API_BASE_URL}/api/razorpay/prize-claim/verify-payment`,
     billingPortal: `${API_BASE_URL}/api/billing-portal`,
   },
+  
+  // Push Notifications
+  pushNotification: {
+    vapidPublicKey: `${API_BASE_URL}/push-notification/vapid-public-key`,
+    subscribe: `${API_BASE_URL}/push-notification/subscribe`,
+    unsubscribe: `${API_BASE_URL}/push-notification/unsubscribe`,
+    sendToUser: `${API_BASE_URL}/push-notification/send-to-user`,
+    sendToAll: `${API_BASE_URL}/push-notification/send-to-all`,
+  },
 };
 
 // Helper function to build query string

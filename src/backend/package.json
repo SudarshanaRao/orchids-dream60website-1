@@ -1,5 +1,5 @@
 {
-  "name": "dream60_backend", 
+  "name": "dream60_backend",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -37,6 +37,7 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^8.3.2",
+    "web-push": "^3.6.7",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {
