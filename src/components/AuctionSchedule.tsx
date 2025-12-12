@@ -155,13 +155,34 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           // ✅ Check participation for completed auctions if user is logged in
           if (user?.id) {
             const completedAuctions = auctions.filter((a: any) => a.status === 'completed' && a.hourlyAuctionId);
+            console.log('🔍 [AUCTION SCHEDULE] Checking participation for completed auctions:', {
+              userId: user.id,
+              completedAuctionsCount: completedAuctions.length,
+              completedAuctions: completedAuctions.map((a: any) => ({ 
+                time: a.time, 
+                status: a.status, 
+                hourlyAuctionId: a.hourlyAuctionId 
+              }))
+            });
+            
             const participationPromises = completedAuctions.map(async (auction: any) => {
               try {
                 const queryString = buildQueryString({ hourlyAuctionId: auction.hourlyAuctionId, userId: user.id });
-                const res = await fetch(`${API_ENDPOINTS.scheduler.checkParticipation}${queryString}`);
+                const url = `${API_ENDPOINTS.scheduler.checkParticipation}${queryString}`;
+                console.log('🔍 [AUCTION SCHEDULE] Checking participation API:', url);
+                const res = await fetch(url);
                 const result = await res.json();
+                console.log('✅ [AUCTION SCHEDULE] Participation result:', { 
+                  hourlyAuctionId: auction.hourlyAuctionId, 
+                  time: auction.time,
+                  isParticipant: result.isParticipant 
+                });
                 return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: result.isParticipant || false };
-              } catch {
+              } catch (error) {
+                console.error('❌ [AUCTION SCHEDULE] Participation check failed:', { 
+                  hourlyAuctionId: auction.hourlyAuctionId, 
+                  error 
+                });
                 return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: false };
               }
             });
@@ -171,6 +192,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             participationResults.forEach(({ hourlyAuctionId, isParticipant }) => {
               newParticipationMap[hourlyAuctionId] = isParticipant;
             });
+            console.log('📊 [AUCTION SCHEDULE] Final participation map:', newParticipationMap);
             setParticipationMap(newParticipationMap);
           }
           
@@ -293,7 +315,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-         {[
+        ={[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },
