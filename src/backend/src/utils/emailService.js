@@ -47,6 +47,12 @@ const getPrimaryClientUrl = () => {
 };
 
 const buildEmailTemplate = ({ primaryClientUrl, title, subtitle, bodyHtml, termsUrl }) => {
+  const baseUrl = primaryClientUrl;
+  const termsHref = termsUrl || `${baseUrl}/terms`;
+  const privacyHref = `${baseUrl}/privacy`;
+  const supportHref = `${baseUrl}/support`;
+  const contactHref = `${baseUrl}/contact`;
+
   return `
     <!DOCTYPE html>
     <html>
@@ -59,7 +65,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, subtitle, bodyHtml, terms
       <div class="card">
         <div class="header">
           <div class="brand">
-            <div class="logo"><img src="${primaryClientUrl}/logo.svg" alt="Dream60" /></div>
+            <div class="logo"><img src="${baseUrl}/logo.svg" alt="Dream60" /></div>
             <div>
               <div class="brand-name">Dream60</div>
               <div class="brand-tagline">${subtitle}</div>
@@ -69,9 +75,15 @@ const buildEmailTemplate = ({ primaryClientUrl, title, subtitle, bodyHtml, terms
         </div>
         <div class="content">${bodyHtml}</div>
         <div class="footer">
-          <a href="mailto:${process.env.EMAIL_USER}">Contact support</a>
+          <a href="mailto:${process.env.EMAIL_USER}">Support</a>
           <span class="divider">•</span>
-          <a href="${termsUrl}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+          <a href="${supportHref}" target="_blank" rel="noopener">Help Center</a>
+          <span class="divider">•</span>
+          <a href="${contactHref}" target="_blank" rel="noopener">Contact</a>
+          <span class="divider">•</span>
+          <a href="${termsHref}" target="_blank" rel="noopener">Terms</a>
+          <span class="divider">•</span>
+          <a href="${privacyHref}" target="_blank" rel="noopener">Privacy</a>
         </div>
       </div>
     </body>
@@ -305,6 +317,144 @@ const sendWaitingQueueEmail = async (email, details) => {
   }
 };
 
+const sendPasswordChangeEmail = async (email, username) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.warn('⚠️ Email credentials not configured. Skipping email send.');
+      return { success: false, message: 'Email service not configured' };
+    }
+
+    const transporter = createTransporter();
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
+    const resetUrl = `${primaryClientUrl}/forgot-password`;
+
+    const bodyHtml = `
+      <p class="title">Your password was updated</p>
+      <p class="text">Hi ${username}, your Dream60 password has just been changed.</p>
+      <div class="panel"><div class="label">If this wasn't you</div><div class="value">Reset immediately and contact support.</div></div>
+      <a href="${resetUrl}" class="cta" target="_blank" rel="noopener">Reset password</a>
+      <p class="text" style="margin-top:12px;">Need help? Reply to this email or reach us from the Help Center.</p>
+    `;
+
+    const mailOptions = {
+      from: `"Dream60" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Dream60 password changed',
+      html: buildEmailTemplate({ primaryClientUrl, title: 'Security alert', subtitle: 'Password change confirmation', bodyHtml, termsUrl }),
+      text: `Hi ${username}, your Dream60 password was changed. If this wasn't you, reset it now: ${resetUrl}. Support: ${process.env.EMAIL_USER}. Terms: ${termsUrl}`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Password change email sent successfully:', info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      message: 'Password change email sent successfully',
+    };
+  } catch (error) {
+    console.error('❌ Password change email error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to send password change email',
+    };
+  }
+};
+
+const sendWinnersAnnouncementEmail = async (email, details) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.warn('⚠️ Email credentials not configured. Skipping email send.');
+      return { success: false, message: 'Email service not configured' };
+    }
+
+    const transporter = createTransporter();
+    const { username, auctionName, prizeAmount, rank } = details;
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
+
+    const bodyHtml = `
+      <p class="title">Results for ${auctionName}</p>
+      <p class="text">Congratulations ${username}, here are your results.</p>
+      <div class="grid">
+        <div class="stat"><div class="label">Your Rank</div><div class="value">#${rank}</div></div>
+        <div class="stat"><div class="label">Prize</div><div class="value">₹${prizeAmount.toLocaleString('en-IN')}</div></div>
+        <div class="stat"><div class="label">Status</div><div class="value">Winner</div></div>
+      </div>
+      <a href="${primaryClientUrl}/dashboard" class="cta" target="_blank" rel="noopener">View results</a>
+    `;
+
+    const mailOptions = {
+      from: `"Dream60" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: `Dream60 Results: ${auctionName}`,
+      html: buildEmailTemplate({ primaryClientUrl, title: 'Winners announced', subtitle: 'Auction completed', bodyHtml, termsUrl }),
+      text: `Hi ${username}, winners are announced for ${auctionName}. Your rank: ${rank}. Prize: ₹${prizeAmount.toLocaleString('en-IN')}. Dashboard: ${primaryClientUrl}/dashboard. Terms: ${termsUrl}`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Winners announcement email sent successfully:', info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      message: 'Winners announcement email sent successfully',
+    };
+  } catch (error) {
+    console.error('❌ Winners announcement email error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to send winners announcement email',
+    };
+  }
+};
+
+const sendSupportReceiptEmail = async (email, details) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.warn('⚠️ Email credentials not configured. Skipping email send.');
+      return { success: false, message: 'Email service not configured' };
+    }
+
+    const transporter = createTransporter();
+    const { username, topic, ticketId } = details;
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
+
+    const bodyHtml = `
+      <p class="title">We received your request</p>
+      <p class="text">Hi ${username || 'there'}, thanks for reaching out about ${topic || 'your issue'}.</p>
+      <div class="panel"><div class="label">Ticket ID</div><div class="value">${ticketId || 'Pending'}</div></div>
+      <p class="text">Our support team will respond shortly. You can reply to this email with more details.</p>
+      <a href="${primaryClientUrl}/support" class="cta" target="_blank" rel="noopener">Track support</a>
+    `;
+
+    const mailOptions = {
+      from: `"Dream60" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Dream60 support ticket received',
+      html: buildEmailTemplate({ primaryClientUrl, title: 'Support request', subtitle: 'We are on it', bodyHtml, termsUrl }),
+      text: `Hi ${username || 'there'}, we received your request about ${topic || 'your issue'}. Ticket: ${ticketId || 'Pending'}. Track at ${primaryClientUrl}/support. Terms: ${termsUrl}`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Support receipt email sent successfully:', info.messageId);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+      message: 'Support receipt email sent successfully',
+    };
+  } catch (error) {
+    console.error('❌ Support receipt email error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to send support receipt email',
+    };
+  }
+};
+
 /**
  * Send Custom Email
  * @param {string|Array<string>} recipients - Email address(es)
@@ -355,5 +505,8 @@ module.exports = {
   sendWelcomeEmail,
   sendPrizeClaimWinnerEmail,
   sendWaitingQueueEmail,
+  sendPasswordChangeEmail,
+  sendWinnersAnnouncementEmail,
+  sendSupportReceiptEmail,
   sendCustomEmail,
 };
