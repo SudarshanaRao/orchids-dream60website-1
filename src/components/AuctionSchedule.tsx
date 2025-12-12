@@ -293,7 +293,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-          {[
+         ={[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },
@@ -469,38 +469,26 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                           <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
                         </div>
                       </div>
-                      
-                      {/* View Leaderboard Button - Only for participants */}
-                      {auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
-                        <Button
-                          onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                          size="sm"
-                          className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
-                        >
-                          <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                          View Leaderboard
-                        </Button>
-                      )}
                     </motion.div>
                   )}
-                    
-                    {/* View Leaderboard for completed auctions without winner but user participated */}
-                    {auction.status === 'completed' && !auction.winner && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 flex items-center justify-end"
+                      
+                  {/* View Leaderboard for ALL completed auctions where user participated */}
+                  {auction.status === 'completed' && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 flex items-center justify-end"
+                    >
+                      <Button
+                        onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
                       >
-                        <Button
-                          onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                          size="sm"
-                          className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
-                        >
-                          <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                          View Leaderboard
-                        </Button>
-                      </motion.div>
-                    )}
+                        <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                        View Leaderboard
+                      </Button>
+                    </motion.div>
+                  )}
                     
                     {/* Active auction CTA */}
                     {auction.status === 'active' && (
