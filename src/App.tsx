@@ -34,4 +34,3 @@ import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
-
