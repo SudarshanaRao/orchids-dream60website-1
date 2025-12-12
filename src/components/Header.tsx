@@ -274,9 +274,10 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
             >
               {user ? (
                 <>
-                  {/* User Stats */}
+                  {/* User Stats - Clickable to navigate to history */}
                   <motion.div
-                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5"
+                    onClick={handleNavigateToHistory}
+                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5 cursor-pointer relative"
                     whileHover={{ scale: 1.02, y: -2 }}
                     transition={{ duration: 0.2 }}
                   >
@@ -305,29 +306,16 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                       </motion.div>
                       <span className="text-sm font-medium text-red-600">{userStats.totalLosses ?? 0} Losses</span>
                     </motion.div>
+                    {hasNewHistory && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                    )}
                   </motion.div>
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
-                    {/* Auction History Link with Red Dot */}
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={handleNavigateToHistory}
-                        variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all relative"
-                        size="sm"
-                      >
-                        <History className="w-4 h-4 mr-1.5" />
-                        Auction History
-                        {hasNewHistory && (
-                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                          </span>
-                        )}
-                      </Button>
-                    </motion.div>
-
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         onClick={() => onNavigate?.('rules')}
@@ -526,7 +514,8 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                   {/* User Info or Welcome */}
                   {user && (
                     <motion.div
-                      className="mt-4 flex items-center justify-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20"
+                      onClick={handleNavigateToHistory}
+                      className="mt-4 flex items-center justify-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20 cursor-pointer hover:bg-white/15 transition-colors"
                       variants={menuItemVariants}
                     >
                       <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -545,6 +534,12 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                           </span>
                         </div>
                       </div>
+                      {hasNewHistory && (
+                        <span className="flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                      )}
                     </motion.div>
                   )}
                 </div>
