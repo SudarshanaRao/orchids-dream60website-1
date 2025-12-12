@@ -1,4 +1,6 @@
+// ✅ Updated initial import statements
 import { useState, useEffect } from 'react';
+
 import { Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
@@ -637,7 +639,7 @@ const App = () => {
         boxes: [entryBox1, entryBox2, ...roundBoxes],
       }));
     }
-  }, [serverTime]); // Run when server time first loads
+  }, [serverTime]);
 
   const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
@@ -692,7 +694,7 @@ const App = () => {
     };
     
     fetchInitialLiveAuction();
-  }, []); // Run once on mount
+  }, []);
 
   // Check for existing session on app initialization
   useEffect(() => {
@@ -967,7 +969,7 @@ const App = () => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [serverTime]); // ✅ Add serverTime as dependency
+  }, [serverTime]);
 
   // Fetch current hourly auction ID when user is logged in and has paid entry
   useEffect(() => {
@@ -1278,7 +1280,7 @@ const App = () => {
     
     const interval = setInterval(fetchCurrentAuctionId, pollInterval);
     return () => clearInterval(interval);
-  }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
+  }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -1348,7 +1350,7 @@ const App = () => {
                 (p: any) => p.playerId === mappedUser.id
               );
               userHasPaid = !!userParticipant;
-              console.log(`✅ [LOGIN] Entry fee status: ${userHasPaid ? 'PAID' : 'NOT PAID'}`);
+              console.log(`✅ [LOGIN] Entry fee status: ${userHasPaid ? 'PAID' : 'NOT PAID'}`); 
             }
             
             // ✅ Set initial auction state with correct entry fee status
@@ -1379,7 +1381,7 @@ const App = () => {
           userQualificationPerRound: {},
         }));
       }
-
+      
       // ✅ Set flag to trigger polling refresh
       setJustLoggedIn(true);
       
@@ -1429,7 +1431,7 @@ const App = () => {
       localStorage.removeItem("rzp_device_id");
       localStorage.removeItem("rzp_stored_checkout_id");
       
-      // Clear any other Razorpay keys that might exist (they follow rzp_* pattern)
+      // Clear any other Razorpay keys
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('rzp_')) {
           localStorage.removeItem(key);
@@ -1966,7 +1968,7 @@ const App = () => {
               )}
             </div>
 
-            {/* Current Auction Time Slot Banner */}
+            {/* Current Auction Time Slot Banner */} 
             {/* ✅ Only show banner after server time is loaded and winners are NOT announced */}
             {serverTime && getCurrentAuctionSlot(serverTime) && !liveAuctionData?.winnersAnnounced && (
               <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
@@ -1976,7 +1978,7 @@ const App = () => {
                     <div>
                       <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
                       <div className="text-xl sm:text-2xl font-bold">
-                        {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                        {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} 
                       </div>
                     </div>
                   </div>
