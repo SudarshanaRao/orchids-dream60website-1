@@ -22,7 +22,6 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { AdvertisementPopup } from './components/AdvertisementPopup';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -32,7 +31,6 @@ import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { subscribeToPushNotifications } from '@/lib/pushNotifications';
 
 // ✅ Create QueryClient instance
 const queryClient = new QueryClient();
@@ -237,7 +235,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-export function App() {
+const App = () => {
   // ✅ Add server time state
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
@@ -450,10 +448,6 @@ export function App() {
     entryFee: number;
     errorMessage: string;
   } | null>(null);
-
-  const [showAdvertisement, setShowAdvertisement] = useState(false);
-
-  const [auctionsData, setAuctionsData] = useState<Auction[]>([]);
 
   const [showBidSuccess, setShowBidSuccess] = useState<{
     amount: number;
@@ -753,15 +747,6 @@ export function App() {
     if (currentUser?.id) {
       console.log('🔄 User logged in - fetching updated user data from API');
       fetchAndSetUser(currentUser.id);
-      
-      // Subscribe to push notifications
-      subscribeToPushNotifications(currentUser.id).then(success => {
-        if (success) {
-          console.log('✅ User subscribed to push notifications');
-        } else {
-          console.log('⚠️ Failed to subscribe to push notifications');
-        }
-      });
     }
   }, [currentUser?.id]);
 
@@ -787,15 +772,12 @@ export function App() {
       // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
       
-      // Only show toast if winners are announced
-      if (currentAuction.winnersAnnounced) {
-        toast.info('Winners Announced', {
-          description: 'Check the auction details to see the winners',
-          duration: 5000,
-        });
-      }
+      toast.info(`Round ${currentRound} Started`, {
+        description: 'Auction data refreshed with latest information',
+        duration: 3000,
+      });
     }
-  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound, currentAuction.winnersAnnounced]);
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -1406,9 +1388,6 @@ export function App() {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
-      
-      // Show advertisement popup on login
-      setShowAdvertisement(true);
     } catch (error) {
       console.error("Error while login:", error);
     }
@@ -1941,7 +1920,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-background" onContextMenu={(e) => e.preventDefault()}>
+        <div className="min-h-screen bg-background">
           <Sonner />
           
           <Header
@@ -1999,17 +1978,8 @@ export function App() {
                     </div>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                    {currentAuction.winnersAnnounced ? (
-                      <>
-                        <div className="text-xs sm:text-sm opacity-90">Status</div>
-                        <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-xs sm:text-sm opacity-90">Active Round</div>
-                        <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
-                      </>
-                    )}
+                    <div className="text-xs sm:text-sm opacity-90">Active Round</div>
+                    <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
                   </div>
                 </div>
               </div>
@@ -2141,14 +2111,10 @@ export function App() {
               onClose={() => setShowBidSuccess(null)}
             />
           )}
-
-          {/* Advertisement Popup */}
-          <AdvertisementPopup
-            isOpen={showAdvertisement}
-            onClose={() => setShowAdvertisement(false)}
-          />
         </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
+
+export default App;
