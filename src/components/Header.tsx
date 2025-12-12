@@ -373,7 +373,7 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
-                        onClick={() => onNavigate?.('play-guide')}
+                        onClick={() => onNavigate?.('participation')}
                         variant="ghost"
                         className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
                         size="sm"

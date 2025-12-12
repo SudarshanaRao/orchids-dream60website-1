@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192x192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dream60 - Premium Auction Game</title>
+    <meta name="description" content="Join Dream60 - The ultimate 60-minute auction game. Win amazing prizes every hour!" />
+    
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6B3FA0" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://dev-api.dream60.com" />
+    <link rel="dns-prefetch" href="https://dev-api.dream60.com" />
+    
+    <script>
+      // Disable right-click
+      document.addEventListener('contextmenu', (e) => e.preventDefault());
+    </script>
+    <script type="module" crossorigin src="/assets/index-DaeSl4dv.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BFTLynVf.css">
+    <script>(() => {
+            try {
+              const logOverlay = () => {
+                const el = document.querySelector('vite-error-overlay');
+                if (!el) return;
+                const root = (el.shadowRoot || el);
+                let text = '';
+                try { text = root.textContent || ''; } catch (_) {}
+                if (text && text.trim()) {
+                  const msg = text.trim();
+                  // Use console.error to surface clearly in DevTools
+                  console.error('[Vite Overlay]', msg);
+                  // Also mirror to parent iframe with structured payload
+                  try {
+                    if (window.parent && window.parent !== window) {
+                      window.parent.postMessage({
+                        type: 'ERROR_CAPTURED',
+                        error: {
+                          message: msg,
+                          stack: undefined,
+                          filename: undefined,
+                          lineno: undefined,
+                          colno: undefined,
+                          source: 'vite.overlay',
+                        },
+                        timestamp: Date.now(),
+                      }, '*');
+                    }
+                  } catch (_) {}
+                }
+              };
+
+              const obs = new MutationObserver(() => logOverlay());
+              obs.observe(document.documentElement, { childList: true, subtree: true });
+
+              window.addEventListener('DOMContentLoaded', logOverlay);
+              // Attempt immediately as overlay may already exist
+              logOverlay();
+            } catch (e) {
+              console.warn('[Vite Overlay logger failed]', e);
+            }
+          })();</script>
+  </head>
+  <body oncontextmenu="return false;">
+    <div id="root"></div>
+  </body>
+</html>
