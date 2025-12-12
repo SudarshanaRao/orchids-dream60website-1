@@ -610,6 +610,68 @@ const deleteMasterAuctionAdmin = async (req, res) => {
   }
 };
 
+/**
+ * Delete Daily Auction Slot (Admin)
+ */
+const deleteDailyAuctionSlot = async (req, res) => {
+  try {
+    // Verify admin access
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Admin user_id required.',
+      });
+    }
+
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || adminUser.userType !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.',
+      });
+    }
+
+    const { master_id, auction_number } = req.params;
+
+    const masterAuction = await MasterAuction.findOne({ master_id });
+
+    if (!masterAuction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Master auction not found',
+      });
+    }
+
+    const auctionIndex = masterAuction.dailyAuctionConfig.findIndex(
+      (config) => config.auctionNumber === parseInt(auction_number)
+    );
+
+    if (auctionIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction slot not found',
+      });
+    }
+
+    masterAuction.dailyAuctionConfig.splice(auctionIndex, 1);
+    masterAuction.totalAuctionsPerDay = masterAuction.dailyAuctionConfig.length;
+    masterAuction.modifiedBy = adminUser.user_id;
+
+    await masterAuction.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Auction slot deleted successfully',
+      data: masterAuction,
+    });
+  } catch (err) {
+    console.error('Delete Daily Auction Slot Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getUserStatistics,
@@ -619,4 +681,5 @@ module.exports = {
   getAllMasterAuctionsAdmin,
   updateMasterAuctionAdmin,
   deleteMasterAuctionAdmin,
+  deleteDailyAuctionSlot,
 };

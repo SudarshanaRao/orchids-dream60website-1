@@ -174,6 +174,32 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     }
   };
 
+  const handleDeleteAuctionSlot = async (masterId: string, auctionNumber: number) => {
+    if (!confirm(`Are you sure you want to delete auction slot #${auctionNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://dev-api.dream60.com/admin/master-auctions/${masterId}/slots/${auctionNumber}?user_id=${adminUser.user_id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Auction slot deleted successfully');
+        fetchMasterAuctions();
+      } else {
+        toast.error(data.message || 'Failed to delete auction slot');
+      }
+    } catch (error) {
+      console.error('Error deleting auction slot:', error);
+      toast.error('Failed to delete auction slot');
+    }
+  };
+
   const handleCloseAuctionModal = () => {
     setShowCreateAuction(false);
     setEditingAuction(null);
@@ -602,8 +628,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                           auction.isActive
                             ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
                             : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                        }`}
-                      >
+                        }`}>
                         {auction.isActive ? '● Active' : '○ Inactive'}
                       </span>
                       <button
@@ -650,63 +675,45 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                             key={config.auctionNumber}
                             className="group bg-white rounded-lg overflow-hidden border border-purple-200 shadow-sm hover:shadow-md hover:border-purple-400 transition-all duration-300"
                           >
-                            <div className="flex flex-col sm:flex-row">
-                              {/* Image Section */}
-                              <div className="relative w-full sm:w-32 h-24 sm:h-auto flex-shrink-0">
-                                {config.imageUrl ? (
-                                  <div className="relative h-full bg-gradient-to-br from-purple-100 to-purple-200 overflow-hidden">
-                                    <img
-                                      src={config.imageUrl}
-                                      alt={config.auctionName}
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
+                            {/* Content Section */}
+                            <div className="flex-1 p-3">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                {/* Left: Name & Time */}
+                                <div className="flex-1">
+                                  <h5 className="font-bold text-base text-purple-900 mb-1">
+                                    {config.auctionName}
+                                  </h5>
+                                  <div className="flex items-center gap-2 text-purple-600 mb-2">
+                                    <Clock className="w-3 h-3" />
+                                    <span className="font-semibold text-sm">{config.TimeSlot}</span>
                                   </div>
-                                ) : (
-                                  <div className="relative h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                                    <Trophy className="w-8 h-8 text-purple-400" />
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                      config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
+                                      config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                                      config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
+                                      'bg-red-100 text-red-700'
+                                    }`}>
+                                      {config.Status}
+                                    </span>
                                   </div>
-                                )}
-                                <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
-                                  #{config.auctionNumber}
                                 </div>
-                              </div>
 
-                              {/* Content Section */}
-                              <div className="flex-1 p-3">
-                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                  {/* Left: Name & Time */}
-                                  <div className="flex-1">
-                                    <h5 className="font-bold text-base text-purple-900 mb-1">
-                                      {config.auctionName}
-                                    </h5>
-                                    <div className="flex items-center gap-2 text-purple-600 mb-2">
-                                      <Clock className="w-3 h-3" />
-                                      <span className="font-semibold text-sm">{config.TimeSlot}</span>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                        config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
-                                        config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
-                                        config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
-                                        'bg-red-100 text-red-700'
-                                      }`}>
-                                        {config.Status}
-                                      </span>
-                                    </div>
+                                {/* Right: Prize Value & Delete Button */}
+                                <div className="flex items-center gap-3">
+                                  <div className="text-left">
+                                    <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
+                                    <p className="text-lg font-bold text-purple-900">
+                                      ₹{config.prizeValue.toLocaleString()}
+                                    </p>
                                   </div>
-
-                                  {/* Right: Prize Value */}
-                                  <div className="flex items-center gap-3 sm:flex-col sm:items-end">
-                                    <div className="text-left sm:text-right">
-                                      <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
-                                      <p className="text-lg font-bold text-purple-900">
-                                        ₹{config.prizeValue.toLocaleString()}
-                                      </p>
-                                    </div>
-                                  </div>
+                                  <button
+                                    onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
+                                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                    title="Delete auction slot"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -717,7 +724,6 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                   )}
                 </div>
               ))}
-
               {masterAuctions.length === 0 && (
                 <div className="bg-gradient-to-br from-white via-purple-50/30 to-white rounded-xl shadow-lg p-12 border-2 border-purple-300 text-center">
                   <div className="bg-purple-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">

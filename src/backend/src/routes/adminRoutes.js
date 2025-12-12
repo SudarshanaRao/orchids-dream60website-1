@@ -10,6 +10,7 @@ const {
   getAllMasterAuctionsAdmin,
   updateMasterAuctionAdmin,
   deleteMasterAuctionAdmin,
+  deleteDailyAuctionSlot,
 } = require('../controllers/adminController');
 
 /**
@@ -519,5 +520,45 @@ router.get('/master-auctions/all-with-config', getAllMasterAuctionsWithConfig);
  */
 router.put('/master-auctions/:master_id', updateMasterAuctionAdmin);
 router.delete('/master-auctions/:master_id', deleteMasterAuctionAdmin);
+
+/**
+ * @swagger
+ * /admin/master-auctions/{master_id}/slots/{auction_number}:
+ *   delete:
+ *     summary: DELETE AUCTION SLOT (ADMIN)
+ *     description: Delete a specific auction slot from master auction's dailyAuctionConfig (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: master_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Master auction ID
+ *       - name: auction_number
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Auction number to delete
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     responses:
+ *       200:
+ *         description: Auction slot deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied - Admin privileges required
+ *       404:
+ *         description: Master auction or auction slot not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/master-auctions/:master_id/slots/:auction_number', deleteDailyAuctionSlot);
 
 module.exports = router;
