@@ -652,7 +652,19 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
               ]
             }
           },
-          totalWon: { $sum: '$prizeAmountWon' },
+          // CRITICAL: Only sum prize amounts for CLAIMED prizes
+          totalWon: {
+            $sum: {
+              $cond: [
+                { $and: [
+                  { $eq: ['$isWinner', true] },
+                  { $eq: ['$prizeClaimStatus', 'CLAIMED'] }
+                ]},
+                '$prizeAmountWon',
+                0
+              ]
+            }
+          },
         },
       },
     ]);

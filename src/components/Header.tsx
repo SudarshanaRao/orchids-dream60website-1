@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle } from 'lucide-react';
+import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
@@ -21,6 +21,39 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasNewHistory, setHasNewHistory] = useState(false);
   const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>({ totalWins: 0, totalLosses: 0 });
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  // PWA Install prompt handler
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallButton(false);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setShowInstallButton(false);
+    }
+    
+    setDeferredPrompt(null);
+  };
 
   // Fetch user stats from backend API
   useEffect(() => {
@@ -311,6 +344,21 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
+                    {/* PWA Install Button - Only on large screens */}
+                    {showInstallButton && (
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          onClick={handleInstallClick}
+                          variant="ghost"
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                          size="sm"
+                        >
+                          <Download className="w-4 h-4 mr-1.5" />
+                          Install App
+                        </Button>
+                      </motion.div>
+                    )}
+
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
                         onClick={() => onNavigate?.('rules')}
@@ -325,13 +373,13 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
-                        onClick={() => onNavigate?.('participation')}
+                        onClick={() => onNavigate?.('play-guide')}
                         variant="ghost"
                         className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
                         size="sm"
                       >
                         <Shield className="w-4 h-4 mr-1.5" />
-                        Participation
+                        Play Guide
                       </Button>
                     </motion.div>
 
@@ -346,6 +394,23 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                       </Button>
                     </motion.div>
                   </div>
+
+                  {/* Logout Button - Only on large screens */}
+                  <motion.div
+                    whileHover={{ scale: 1.05, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="hidden xl:block"
+                  >
+                    <Button
+                      onClick={onLogout}
+                      variant="ghost"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50/80 transition-all"
+                      size="sm"
+                    >
+                      <LogOut className="w-4 h-4 mr-1.5" />
+                      Logout
+                    </Button>
+                  </motion.div>
 
                   {/* User Profile Button */}
                   <motion.button
@@ -550,6 +615,18 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                       <motion.div variants={menuItemVariants}>
                         <button
+                          onClick={() => { onNavigate?.('play-guide'); setMobileMenuOpen(false); }}
+                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                        >
+                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                            <Shield className="w-5 h-5 text-purple-600" />
+                          </div>
+                          <span className="font-medium text-purple-900">Play Guide</span>
+                        </button>
+                      </motion.div>
+
+                      <motion.div variants={menuItemVariants}>
+                        <button
                           onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
                           className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
                         >
@@ -631,6 +708,18 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                             <FileText className="w-5 h-5 text-purple-600" />
                           </div>
                           <span className="font-medium text-purple-900">Rules</span>
+                        </button>
+                      </motion.div>
+
+                      <motion.div variants={menuItemVariants}>
+                        <button
+                          onClick={() => { onNavigate?.('play-guide'); setMobileMenuOpen(false); }}
+                          className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                        >
+                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                            <Shield className="w-5 h-5 text-purple-600" />
+                          </div>
+                          <span className="font-medium text-purple-900">Play Guide</span>
                         </button>
                       </motion.div>
 

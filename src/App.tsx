@@ -634,8 +634,11 @@ const App = () => {
         id: `auction-${currentHour}`,
         startTime,
         endTime,
-        auctionHour: currentHour,
         currentRound: getCurrentRoundByTime(serverTime),
+        auctionHour: currentHour,
+        userHasPaidEntry: false,
+        userBidsPerRound: {},
+        userQualificationPerRound: {},
         boxes: [entryBox1, entryBox2, ...roundBoxes],
       }));
     }
@@ -1866,7 +1869,7 @@ const App = () => {
     );
   }
 
-  if (currentPage === 'participation') {
+  if (currentPage === 'participation' || currentPage === 'play-guide') {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -1969,7 +1972,7 @@ const App = () => {
             </div>
 
             {/* Current Auction Time Slot Banner */} 
-            {/* ✅ Only show banner after server time is loaded and winners are NOT announced */}
+            {/* ✅ Only show banner after server time is loaded and winners are NOT announced */} 
             {serverTime && getCurrentAuctionSlot(serverTime) && !liveAuctionData?.winnersAnnounced && (
               <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
