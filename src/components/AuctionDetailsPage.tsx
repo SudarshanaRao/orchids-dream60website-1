@@ -1239,7 +1239,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                               <div>
                                 <h3 className="font-bold text-purple-900 text-sm sm:text-base mb-1">Round {round.roundNumber}</h3>
                                 <Badge variant="outline" className="text-[10px] sm:text-xs bg-purple-100/80 text-purple-700 border-purple-300">
-                                  {round.status}
+                                  {auction.winnersAnnounced && !round.userBid ? 'Winners Announced' : round.status}
                                 </Badge>
                               </div>
                             </div>
@@ -1348,7 +1348,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
             )}
 
             {/* Net Profit Card for Winners */}
-            {auction.isWinner && auction.lastRoundBidAmount && (
+            {auction.isWinner && auction.lastRoundBidAmount && auction.prizeClaimStatus === 'CLAIMED' && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

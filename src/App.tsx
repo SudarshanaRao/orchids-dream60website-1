@@ -1393,6 +1393,9 @@ const App = () => {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
+      
+      // Show advertisement popup on login
+      setShowAdvertisement(true);
     } catch (error) {
       console.error("Error while login:", error);
     }
@@ -1983,8 +1986,17 @@ const App = () => {
                     </div>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                    <div className="text-xs sm:text-sm opacity-90">Active Round</div>
-                    <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
+                    {currentAuction.winnersAnnounced ? (
+                      <>
+                        <div className="text-xs sm:text-sm opacity-90">Status</div>
+                        <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-xs sm:text-sm opacity-90">Active Round</div>
+                        <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
