@@ -776,17 +776,34 @@ const App = () => {
     // Check if round has changed
     if (currentRound !== previousRound) {
       console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
+      
+      // ✅ CRITICAL FIX: Only show toast if this is NOT the first load (previousRound !== 0)
+      // This prevents showing "Round Started" on page reload
+      if (previousRound !== 0) {
+        // Check if winners are announced
+        const winnersAnnounced = currentAuction.boxes.some(
+          box => box.type === 'round' && (box as RoundBox).winnersAnnounced
+        );
+        
+        if (winnersAnnounced) {
+          toast.success('Winners Announced!', {
+            description: 'Final results are now available. Check the leaderboard.',
+            duration: 5000,
+          });
+        } else {
+          toast.info(`Round ${currentRound} Started`, {
+            description: 'Auction data refreshed with latest information',
+            duration: 3000,
+          });
+        }
+      }
+      
       setPreviousRound(currentRound);
       
       // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
-      
-      toast.info(`Round ${currentRound} Started`, {
-        description: 'Auction data refreshed with latest information',
-        duration: 3000,
-      });
     }
-  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound, currentAuction.boxes]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
