@@ -11,12 +11,17 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.EMAIL_PORT || '587'),
-    secure: false, // true for 465, false for other ports
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
   });
+};
+
+const getPrimaryClientUrl = () => {
+  const raw = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://test.dream60.com';
+  return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
 /**
@@ -27,124 +32,63 @@ const createTransporter = () => {
  */
 const sendOtpEmail = async (email, otp) => {
   try {
-    // Skip email sending if credentials are not configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('⚠️ Email credentials not configured. Skipping email send.');
       return { success: false, message: 'Email service not configured' };
     }
 
     const transporter = createTransporter();
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Your Dream60 OTP Code',
+      subject: 'Dream60: Your One-Time Password',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 40px auto;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            }
-            .header {
-              background: rgba(255, 255, 255, 0.1);
-              padding: 30px;
-              text-align: center;
-              color: white;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 28px;
-              font-weight: 600;
-            }
-            .content {
-              background: white;
-              padding: 40px 30px;
-              text-align: center;
-            }
-            .otp-box {
-              background: linear-gradient(135deg, #e6dbfb 0%, #c8b3e5 100%);
-              border: 3px solid #6b3fa0;
-              border-radius: 10px;
-              padding: 25px;
-              margin: 30px 0;
-              display: inline-block;
-            }
-            .otp-code {
-              font-size: 42px;
-              font-weight: bold;
-              color: #6b3fa0;
-              letter-spacing: 8px;
-              margin: 0;
-            }
-            .message {
-              font-size: 16px;
-              color: #555;
-              margin: 20px 0;
-            }
-            .warning {
-              font-size: 14px;
-              color: #d4183d;
-              margin-top: 20px;
-              font-weight: 500;
-            }
-            .footer {
-              background: #f9f9f9;
-              padding: 20px;
-              text-align: center;
-              font-size: 13px;
-              color: #777;
-            }
-            .footer a {
-              color: #6b3fa0;
-              text-decoration: none;
-            }
+            * { box-sizing: border-box; }
+            body { background: #f5f5f7; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+            .card { max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            .header { padding: 24px 24px 16px; border-bottom: 1px solid #e2e8f0; }
+            .brand { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: #4b0082; }
+            .subtitle { margin: 4px 0 0; color: #475569; font-size: 14px; }
+            .content { padding: 24px; }
+            .code { display: inline-block; padding: 14px 20px; font-size: 28px; font-weight: 700; color: #111827; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; letter-spacing: 6px; }
+            .note { margin: 16px 0 8px; font-size: 14px; color: #0f172a; }
+            .small { font-size: 13px; color: #475569; margin-top: 8px; }
+            .footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569; background: #f8fafc; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            .footer a { color: #4b0082; text-decoration: none; font-weight: 600; }
+            .divider { color: #cbd5e1; }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="card">
             <div class="header">
-              <h1>🎰 Dream60</h1>
+              <div class="brand">Dream60</div>
+              <p class="subtitle">Secure verification code</p>
             </div>
             <div class="content">
-              <p class="message">
-                You requested a password reset. Use the OTP code below to verify your identity:
-              </p>
-              <div class="otp-box">
-                <p class="otp-code">${otp}</p>
-              </div>
-              <p class="message">
-                This OTP is valid for <strong>10 minutes</strong>.
-              </p>
-              <p class="warning">
-                ⚠️ If you didn't request this, please ignore this email or contact support.
-              </p>
+              <p>Use this one-time password to continue.</p>
+              <div class="code">${otp}</div>
+              <p class="note">Valid for 10 minutes.</p>
+              <p class="small">If you did not request this code, you can safely ignore this email.</p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-              <p>Need help? <a href="mailto:${process.env.EMAIL_USER}">Contact Support</a></p>
+              <a href="mailto:${process.env.EMAIL_USER}">Contact support</a>
+              <span class="divider">•</span>
+              <a href="${termsUrl}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `Your Dream60 OTP code is: ${otp}\n\nThis code is valid for 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
+      text: `Your one-time password is ${otp}. It is valid for 10 minutes. If you did not request it, ignore this email. Support: ${process.env.EMAIL_USER}. Terms: ${termsUrl}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -172,124 +116,72 @@ const sendOtpEmail = async (email, otp) => {
  */
 const sendWelcomeEmail = async (email, username) => {
   try {
-    // Skip email sending if credentials are not configured
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('⚠️ Email credentials not configured. Skipping email send.');
       return { success: false, message: 'Email service not configured' };
     }
 
     const transporter = createTransporter();
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Welcome to Dream60! 🎉',
+      subject: 'Welcome to Dream60',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 40px auto;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            }
-            .header {
-              background: rgba(255, 255, 255, 0.1);
-              padding: 40px 30px;
-              text-align: center;
-              color: white;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 32px;
-              font-weight: 600;
-            }
-            .content {
-              background: white;
-              padding: 40px 30px;
-            }
-            .welcome-text {
-              font-size: 18px;
-              color: #333;
-              margin-bottom: 20px;
-            }
-            .feature-list {
-              background: #f9f9f9;
-              border-left: 4px solid #6b3fa0;
-              padding: 20px;
-              margin: 20px 0;
-            }
-            .feature-list li {
-              margin: 10px 0;
-              font-size: 15px;
-            }
-            .cta-button {
-              display: inline-block;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              color: white;
-              text-decoration: none;
-              padding: 15px 40px;
-              border-radius: 8px;
-              font-weight: 600;
-              margin: 20px 0;
-            }
-            .footer {
-              background: #f9f9f9;
-              padding: 20px;
-              text-align: center;
-              font-size: 13px;
-              color: #777;
-            }
+            * { box-sizing: border-box; }
+            body { background: #f5f5f7; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+            .card { max-width: 640px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            .header { padding: 24px 24px 12px; border-bottom: 1px solid #e2e8f0; }
+            .brand { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: #4b0082; }
+            .subtitle { margin: 6px 0 0; color: #475569; font-size: 14px; }
+            .content { padding: 24px; }
+            .section { margin-bottom: 16px; }
+            .list { padding: 0; margin: 12px 0; list-style: none; }
+            .list li { padding: 8px 0; font-size: 14px; color: #0f172a; }
+            .cta { display: inline-block; margin-top: 12px; padding: 12px 20px; background: #4b0082; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 600; }
+            .footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569; background: #f8fafc; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            .footer a { color: #4b0082; text-decoration: none; font-weight: 600; }
+            .divider { color: #cbd5e1; }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="card">
             <div class="header">
-              <h1>🎰 Welcome to Dream60!</h1>
+              <div class="brand">Dream60</div>
+              <p class="subtitle">Welcome, ${username}</p>
             </div>
             <div class="content">
-              <p class="welcome-text">
-                Hi <strong>${username}</strong>,
-              </p>
-              <p class="welcome-text">
-                Welcome to Dream60! We're excited to have you join our auction gaming community.
-              </p>
-              <div class="feature-list">
-                <p><strong>Get started with these features:</strong></p>
-                <ul>
-                  <li>🎯 Participate in exciting auctions</li>
-                  <li>🏆 Win amazing prizes</li>
-                  <li>💰 Track your wins and earnings</li>
-                  <li>📊 View detailed statistics</li>
+              <div class="section">
+                <p>Thank you for joining Dream60. Your account is ready to use.</p>
+              </div>
+              <div class="section">
+                <p style="font-weight:600; margin: 0 0 8px;">What you can do next:</p>
+                <ul class="list">
+                  <li>Enter live auctions and compete for prizes.</li>
+                  <li>Track your entries, bids, and winnings in one place.</li>
+                  <li>Receive timely updates on auction windows.</li>
                 </ul>
               </div>
-              <p style="text-align: center;">
-                <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}" class="cta-button">Start Playing Now</a>
-              </p>
+              <a href="${primaryClientUrl}" class="cta" target="_blank" rel="noopener">Go to Dream60</a>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-              <p>Need help? <a href="mailto:${process.env.EMAIL_USER}">Contact Support</a></p>
+              <a href="mailto:${process.env.EMAIL_USER}">Contact support</a>
+              <span class="divider">•</span>
+              <a href="${termsUrl}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `Hi ${username},\n\nWelcome to Dream60! We're excited to have you join our auction gaming community.\n\nGet started now at: ${process.env.CLIENT_URL || 'http://localhost:3000'}\n\nBest regards,\nDream60 Team`,
+      text: `Hi ${username}, welcome to Dream60. Visit ${primaryClientUrl} to start. Support: ${process.env.EMAIL_USER}. Terms: ${termsUrl}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -323,182 +215,76 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
     }
 
     const transporter = createTransporter();
-
     const { username, auctionName, prizeAmount, claimDeadline, upiId } = details;
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: '🎉 Congratulations! You Won the Auction - Claim Your Prize Now!',
+      subject: 'Dream60 Prize Confirmation',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 40px auto;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            }
-            .header {
-              background: rgba(255, 255, 255, 0.1);
-              padding: 40px 30px;
-              text-align: center;
-              color: white;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 32px;
-              font-weight: 600;
-            }
-            .trophy {
-              font-size: 60px;
-              margin-bottom: 10px;
-            }
-            .content {
-              background: white;
-              padding: 40px 30px;
-            }
-            .prize-box {
-              background: linear-gradient(135deg, #e6dbfb 0%, #c8b3e5 100%);
-              border: 3px solid #6b3fa0;
-              border-radius: 10px;
-              padding: 25px;
-              margin: 30px 0;
-              text-align: center;
-            }
-            .prize-amount {
-              font-size: 36px;
-              font-weight: bold;
-              color: #6b3fa0;
-              margin: 10px 0;
-            }
-            .deadline-box {
-              background: #fff3cd;
-              border-left: 4px solid #ffc107;
-              padding: 15px;
-              margin: 20px 0;
-              border-radius: 5px;
-            }
-            .deadline-box strong {
-              color: #d4183d;
-            }
-            .info-item {
-              display: flex;
-              justify-content: space-between;
-              padding: 10px 0;
-              border-bottom: 1px solid #eee;
-            }
-            .info-label {
-              font-weight: 600;
-              color: #6b3fa0;
-            }
-            .cta-button {
-              display: inline-block;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              color: white;
-              text-decoration: none;
-              padding: 15px 40px;
-              border-radius: 8px;
-              font-weight: 600;
-              margin: 20px 0;
-              text-align: center;
-            }
-            .footer {
-              background: #f9f9f9;
-              padding: 20px;
-              text-align: center;
-              font-size: 13px;
-              color: #777;
-            }
+            * { box-sizing: border-box; }
+            body { background: #f5f5f7; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+            .card { max-width: 680px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            .header { padding: 24px 24px 12px; border-bottom: 1px solid #e2e8f0; }
+            .brand { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: #4b0082; }
+            .subtitle { margin: 6px 0 0; color: #475569; font-size: 14px; }
+            .content { padding: 24px; }
+            .highlight { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin: 16px 0; }
+            .amount { font-size: 24px; font-weight: 700; color: #111827; margin: 8px 0; }
+            .label { font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; }
+            .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
+            .info div { padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+            .deadline { margin: 16px 0; padding: 14px 16px; border: 1px solid #f59e0b; background: #fffbeb; border-radius: 10px; color: #92400e; }
+            .cta { display: inline-block; margin-top: 12px; padding: 12px 20px; background: #4b0082; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 600; }
+            .footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569; background: #f8fafc; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            .footer a { color: #4b0082; text-decoration: none; font-weight: 600; }
+            .divider { color: #cbd5e1; }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="card">
             <div class="header">
-              <div class="trophy">🏆</div>
-              <h1>YOU WON!</h1>
+              <div class="brand">Dream60</div>
+              <p class="subtitle">Prize confirmation</p>
             </div>
             <div class="content">
-              <p style="font-size: 18px;">
-                Hi <strong>${username}</strong>,
-              </p>
-              <p>
-                Congratulations! You are the <strong>FIRST WINNER</strong> of the auction!
-              </p>
-              <div class="prize-box">
-                <div style="font-size: 16px; color: #6b3fa0; margin-bottom: 10px;">You've Won</div>
-                <div class="prize-amount">₹${prizeAmount.toLocaleString('en-IN')}</div>
-                <div style="font-size: 14px; color: #555; margin-top: 10px;">${auctionName}</div>
+              <p>Hi ${username},</p>
+              <p>Congratulations on winning the auction. Please review the prize details below.</p>
+              <div class="highlight">
+                <div class="label">Prize Amount</div>
+                <div class="amount">₹${prizeAmount.toLocaleString('en-IN')}</div>
+                <div style="margin-top:8px; color:#475569;">${auctionName}</div>
               </div>
-              
-              <div class="deadline-box">
-                <strong>⏰ IMPORTANT:</strong> You have <strong>30 minutes</strong> to claim your prize!<br>
-                <strong>Deadline:</strong> ${new Date(claimDeadline).toLocaleString('en-IN', { 
-                  dateStyle: 'medium', 
-                  timeStyle: 'short' 
-                })}
+              <div class="deadline">
+                Claim within 30 minutes. Deadline: ${new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
               </div>
-
-              <div style="margin: 20px 0;">
-                <div class="info-item">
-                  <span class="info-label">Prize Amount:</span>
-                  <span>₹${prizeAmount.toLocaleString('en-IN')}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Auction:</span>
-                  <span>${auctionName}</span>
-                </div>
-                ${upiId ? `
-                <div class="info-item">
-                  <span class="info-label">UPI ID:</span>
-                  <span>${upiId}</span>
-                </div>
-                ` : ''}
+              <div class="info">
+                <div><span class="label">Auction</span><br />${auctionName}</div>
+                <div><span class="label">Prize</span><br />₹${prizeAmount.toLocaleString('en-IN')}</div>
+                ${upiId ? `<div><span class="label">UPI ID</span><br />${upiId}</div>` : ''}
               </div>
-
-              ${!upiId ? `
-              <p style="color: #d4183d; font-weight: 600;">
-                ⚠️ Please log in to the platform and submit your UPI ID to complete the prize claim process.
-              </p>
-              ` : `
-              <p style="color: #22c55e; font-weight: 600;">
-                ✅ Your prize claim has been submitted. The prize will be transferred to your UPI ID within 24-48 hours.
-              </p>
-              `}
-
-              <p style="text-align: center;">
-                <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard" class="cta-button">
-                  ${!upiId ? 'Claim Prize Now' : 'View Dashboard'}
-                </a>
-              </p>
-
-              <p style="font-size: 14px; color: #777;">
-                If you don't claim within the deadline, the prize will be offered to the next rank winner.
-              </p>
+              ${!upiId ? '<p style="color:#b91c1c; font-weight:600; margin:12px 0 0;">Add your UPI ID in your dashboard to receive the prize.</p>' : '<p style="color:#15803d; font-weight:600; margin:12px 0 0;">We will transfer the prize to your UPI ID within 24-48 hours.</p>'}
+              <a href="${primaryClientUrl}/dashboard" class="cta" target="_blank" rel="noopener">${!upiId ? 'Claim prize' : 'View dashboard'}</a>
+              <p style="margin-top:16px; color:#475569; font-size:13px;">If the claim window closes, the prize moves to the next eligible participant.</p>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-              <p>Need help? <a href="mailto:${process.env.EMAIL_USER}">Contact Support</a></p>
+              <a href="mailto:${process.env.EMAIL_USER}">Contact support</a>
+              <span class="divider">•</span>
+              <a href="${termsUrl}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `Congratulations ${username}! You won ₹${prizeAmount.toLocaleString('en-IN')} in the ${auctionName} auction!\n\nYou have 30 minutes to claim your prize. Deadline: ${new Date(claimDeadline).toLocaleString('en-IN')}\n\n${!upiId ? 'Please log in to claim your prize: ' + (process.env.CLIENT_URL || 'http://localhost:3000') : 'Your prize will be transferred to ' + upiId + ' within 24-48 hours.'}`,
+      text: `Hi ${username}, you won ₹${prizeAmount.toLocaleString('en-IN')} in ${auctionName}. Claim by ${new Date(claimDeadline).toLocaleString('en-IN')}. ${!upiId ? 'Add your UPI ID in your dashboard.' : 'Prize will be sent to ' + upiId + ' within 24-48 hours.'} Dashboard: ${primaryClientUrl}/dashboard. Terms: ${termsUrl}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -532,161 +318,70 @@ const sendWaitingQueueEmail = async (email, details) => {
     }
 
     const transporter = createTransporter();
-
     const { username, auctionName, rank, prizeAmount } = details;
+    const primaryClientUrl = getPrimaryClientUrl();
+    const termsUrl = `${primaryClientUrl}/terms`;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `🎊 You're in Position ${rank} - Waiting Queue for ${auctionName}`,
+      subject: `Dream60 Auction Update: Position ${rank}`,
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 0;
-            }
-            .container {
-              max-width: 600px;
-              margin: 40px auto;
-              background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-              border-radius: 12px;
-              overflow: hidden;
-              box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            }
-            .header {
-              background: rgba(255, 255, 255, 0.1);
-              padding: 40px 30px;
-              text-align: center;
-              color: white;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 28px;
-              font-weight: 600;
-            }
-            .medal {
-              font-size: 60px;
-              margin-bottom: 10px;
-            }
-            .content {
-              background: white;
-              padding: 40px 30px;
-            }
-            .rank-box {
-              background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
-              border: 3px solid #ffc107;
-              border-radius: 10px;
-              padding: 25px;
-              margin: 30px 0;
-              text-align: center;
-            }
-            .rank-number {
-              font-size: 48px;
-              font-weight: bold;
-              color: #f59e0b;
-              margin: 10px 0;
-            }
-            .info-box {
-              background: #f0f9ff;
-              border-left: 4px solid #3b82f6;
-              padding: 15px;
-              margin: 20px 0;
-              border-radius: 5px;
-            }
-            .info-item {
-              display: flex;
-              justify-content: space-between;
-              padding: 10px 0;
-              border-bottom: 1px solid #eee;
-            }
-            .info-label {
-              font-weight: 600;
-              color: #6b3fa0;
-            }
-            .footer {
-              background: #f9f9f9;
-              padding: 20px;
-              text-align: center;
-              font-size: 13px;
-              color: #777;
-            }
+            * { box-sizing: border-box; }
+            body { background: #f5f5f7; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #0f172a; }
+            .card { max-width: 680px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            .header { padding: 24px 24px 12px; border-bottom: 1px solid #e2e8f0; }
+            .brand { font-weight: 700; font-size: 20px; letter-spacing: 0.5px; color: #4b0082; }
+            .subtitle { margin: 6px 0 0; color: #475569; font-size: 14px; }
+            .content { padding: 24px; }
+            .panel { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin: 16px 0; }
+            .label { font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; }
+            .value { font-size: 24px; font-weight: 700; color: #111827; margin-top: 6px; }
+            .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 16px 0; }
+            .info div { padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+            .cta { display: inline-block; margin-top: 12px; padding: 12px 20px; background: #4b0082; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 600; }
+            .footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #475569; background: #f8fafc; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            .footer a { color: #4b0082; text-decoration: none; font-weight: 600; }
+            .divider { color: #cbd5e1; }
           </style>
         </head>
         <body>
-          <div class="container">
+          <div class="card">
             <div class="header">
-              <div class="medal">${rank === 2 ? '🥈' : '🥉'}</div>
-              <h1>You're in the Waiting Queue!</h1>
+              <div class="brand">Dream60</div>
+              <p class="subtitle">Auction update</p>
             </div>
             <div class="content">
-              <p style="font-size: 18px;">
-                Hi <strong>${username}</strong>,
-              </p>
-              <p>
-                Congratulations on your excellent performance! You secured <strong>${rank === 2 ? 'Second' : 'Third'} Position</strong> in the auction.
-              </p>
-              <div class="rank-box">
-                <div style="font-size: 16px; color: #f59e0b; margin-bottom: 10px;">Your Position</div>
-                <div class="rank-number">#${rank}</div>
-                <div style="font-size: 14px; color: #555; margin-top: 10px;">Waiting Queue</div>
+              <p>Hi ${username},</p>
+              <p>You are currently in position ${rank} for this auction. If the current winner does not claim in time, the prize moves to you.</p>
+              <div class="panel">
+                <div class="label">Your Position</div>
+                <div class="value">#${rank}</div>
+                <div style="margin-top:8px; color:#475569;">Waiting queue for prize allocation</div>
               </div>
-              
-              <div class="info-box">
-                <strong>📋 What This Means:</strong><br>
-                You're in the <strong>priority waiting queue</strong>. If the current winner (Rank ${rank - 1}) doesn't claim their prize within 30 minutes, the prize opportunity will advance to you!
+              <div class="info">
+                <div><span class="label">Auction</span><br />${auctionName}</div>
+                <div><span class="label">Potential Prize</span><br />₹${prizeAmount.toLocaleString('en-IN')}</div>
               </div>
-
-              <div style="margin: 20px 0;">
-                <div class="info-item">
-                  <span class="info-label">Auction:</span>
-                  <span>${auctionName}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Your Rank:</span>
-                  <span>#${rank}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Potential Prize:</span>
-                  <span>₹${prizeAmount.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-
-              <p style="font-size: 14px; color: #555;">
-                <strong>💡 Next Steps:</strong><br>
-                • Stay tuned for notifications<br>
-                • Keep your UPI ID ready<br>
-                • Check your dashboard regularly<br>
-                • You'll be notified if the prize advances to your rank
-              </p>
-
-              <p style="text-align: center; margin-top: 30px;">
-                <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%); color: white; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-weight: 600;">
-                  View Dashboard
-                </a>
-              </p>
-
-              <p style="font-size: 14px; color: #777; text-align: center; margin-top: 20px;">
-                Thank you for participating in Dream60 auctions!
-              </p>
+              <p style="margin:12px 0 0; color:#0f172a;">Stay signed in and keep your payment details ready. We will notify you if the prize advances to your position.</p>
+              <a href="${primaryClientUrl}/dashboard" class="cta" target="_blank" rel="noopener">View dashboard</a>
             </div>
             <div class="footer">
-              <p>© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-              <p>Need help? <a href="mailto:${process.env.EMAIL_USER}">Contact Support</a></p>
+              <a href="mailto:${process.env.EMAIL_USER}">Contact support</a>
+              <span class="divider">•</span>
+              <a href="${termsUrl}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
             </div>
           </div>
         </body>
         </html>
       `,
-      text: `Hi ${username}, You secured Position #${rank} in the ${auctionName} auction!\n\nYou're in the priority waiting queue. If Rank ${rank - 1} doesn't claim within 30 minutes, the prize opportunity (₹${prizeAmount.toLocaleString('en-IN')}) will advance to you!\n\nStay tuned for notifications. View your dashboard: ${process.env.CLIENT_URL || 'http://localhost:3000'}/dashboard`,
+      text: `Hi ${username}, you are in position ${rank} for ${auctionName}. Potential prize: ₹${prizeAmount.toLocaleString('en-IN')}. We will notify you if the prize advances to you. Dashboard: ${primaryClientUrl}/dashboard. Terms: ${termsUrl}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
