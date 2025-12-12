@@ -148,6 +148,32 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     setShowCreateAuction(true);
   };
 
+  const handleDeleteAuction = async (masterId: string) => {
+    if (!confirm('Are you sure you want to delete this master auction? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://dev-api.dream60.com/admin/master-auctions/${masterId}?user_id=${adminUser.user_id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Master auction deleted successfully');
+        fetchMasterAuctions();
+      } else {
+        toast.error(data.message || 'Failed to delete master auction');
+      }
+    } catch (error) {
+      console.error('Error deleting master auction:', error);
+      toast.error('Failed to delete master auction');
+    }
+  };
+
   const handleCloseAuctionModal = () => {
     setShowCreateAuction(false);
     setEditingAuction(null);
@@ -572,7 +598,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className={`px-4 py-2 rounded-full font-bold text-sm shadow-md ${
+                        className={`px-4 py-2 rounded-full font-bold text-sm shadow-md ${ // Modified classes for active/inactive indicator
                           auction.isActive
                             ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
                             : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
@@ -586,6 +612,13 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                         title="Edit auction"
                       >
                         <Edit className="w-5 h-5 text-purple-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAuction(auction.master_id)}
+                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                        title="Delete auction"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-600" />
                       </button>
                     </div>
                   </div>
