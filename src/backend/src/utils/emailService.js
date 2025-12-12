@@ -4,28 +4,171 @@ require('dotenv').config();
 
 const brandStyles = `
   * { box-sizing: border-box; }
-  body { background: #f3ecff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px; color: #120c1c; }
-  .card { max-width: 700px; margin: 0 auto; background: #ffffff; border: 1px solid #e6e0f5; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 45px rgba(104, 51, 168, 0.14); }
-  .header { padding: 20px 24px; border-bottom: 1px solid #ece7fb; background: linear-gradient(135deg, #f7f2ff, #f0e8ff); }
-  .brand { display: flex; align-items: center; gap: 12px; }
-  .logo { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #53317B, #6B3FA0, #8456BC); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(83, 49, 123, 0.25); }
-  .logo img { width: 30px; height: 30px; }
-  .brand-name { font-weight: 800; font-size: 18px; color: #3a2257; letter-spacing: 0.3px; }
-  .brand-tagline { font-size: 12px; color: #6f5b8f; margin-top: 2px; }
-  .tag { display: inline-flex; align-items: center; gap: 8px; background: #efe6ff; color: #5a2d91; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 999px; margin-top: 14px; }
-  .content { padding: 24px; background: #ffffff; }
-  .title { font-size: 20px; font-weight: 800; color: #2b1c42; margin: 0 0 12px; }
-  .text { font-size: 15px; color: #3a3150; line-height: 1.6; margin: 0 0 12px; }
-  .panel { background: #f8f5ff; border: 1px solid #e7def9; border-radius: 12px; padding: 16px; margin: 16px 0; }
-  .otp { display: inline-block; padding: 14px 22px; font-size: 32px; font-weight: 800; letter-spacing: 10px; color: #2b1c42; background: #f3edff; border: 1px solid #e0d5fa; border-radius: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.6); }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
-  .stat { background: #f8f5ff; border: 1px solid #e7def9; border-radius: 12px; padding: 12px; }
-  .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: #6f5b8f; margin-bottom: 6px; }
-  .value { font-size: 18px; font-weight: 800; color: #27183f; }
-  .cta { display: inline-block; margin-top: 12px; padding: 13px 20px; background: linear-gradient(135deg, #6B3FA0, #8456BC); color: #ffffff; text-decoration: none; border-radius: 12px; font-weight: 700; box-shadow: 0 12px 30px rgba(104, 51, 168, 0.24); }
-  .footer { padding: 16px 24px; border-top: 1px solid #ece7fb; background: #f8f5ff; font-size: 13px; color: #62507f; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .footer a { color: #5c2f92; font-weight: 700; text-decoration: none; }
-  .divider { color: #c7b8e6; }
+  body { 
+    background: linear-gradient(135deg, #f8f4ff 0%, #f0e8ff 50%, #f4efff 100%); 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+    margin: 0; 
+    padding: 32px 16px; 
+    color: #1a0d2e; 
+  }
+  .card { 
+    max-width: 640px; 
+    margin: 0 auto; 
+    background: #ffffff; 
+    border: 2px solid #e9deff; 
+    border-radius: 20px; 
+    overflow: hidden; 
+    box-shadow: 0 24px 60px rgba(107, 63, 160, 0.16), 0 8px 20px rgba(107, 63, 160, 0.08); 
+  }
+  .header { 
+    padding: 28px 32px; 
+    border-bottom: 2px solid #f0e8ff; 
+    background: linear-gradient(135deg, #faf7ff 0%, #f3edff 50%, #f7f4ff 100%); 
+  }
+  .brand { 
+    display: flex; 
+    align-items: center; 
+    gap: 16px; 
+    margin-bottom: 14px;
+  }
+  .logo { 
+    width: 52px; 
+    height: 52px; 
+    border-radius: 16px; 
+    background: linear-gradient(135deg, #6B3FA0 0%, #8456BC 50%, #9F7ACB 100%); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    box-shadow: 0 12px 32px rgba(107, 63, 160, 0.32), 0 4px 12px rgba(107, 63, 160, 0.16); 
+  }
+  .logo img { 
+    width: 34px; 
+    height: 34px; 
+  }
+  .brand-name { 
+    font-weight: 900; 
+    font-size: 22px; 
+    color: #2b1c42; 
+    letter-spacing: -0.3px; 
+    line-height: 1.2;
+  }
+  .brand-tagline { 
+    font-size: 13px; 
+    color: #7960a0; 
+    margin-top: 4px; 
+    font-weight: 500;
+  }
+  .tag { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 8px; 
+    background: linear-gradient(135deg, #f0e8ff 0%, #efe6ff 100%); 
+    color: #5a2d91; 
+    font-weight: 800; 
+    font-size: 12px; 
+    padding: 8px 16px; 
+    border-radius: 999px; 
+    box-shadow: 0 4px 12px rgba(90, 45, 145, 0.12);
+    border: 1px solid #e6deff;
+  }
+  .content { 
+    padding: 32px; 
+    background: #ffffff; 
+  }
+  .title { 
+    font-size: 24px; 
+    font-weight: 900; 
+    color: #1a0d2e; 
+    margin: 0 0 16px; 
+    line-height: 1.3;
+    letter-spacing: -0.5px;
+  }
+  .text { 
+    font-size: 16px; 
+    color: #3d2e5b; 
+    line-height: 1.7; 
+    margin: 0 0 16px; 
+  }
+  .panel { 
+    background: linear-gradient(135deg, #faf8ff 0%, #f5f2ff 100%); 
+    border: 2px solid #ede5ff; 
+    border-radius: 16px; 
+    padding: 20px 24px; 
+    margin: 20px 0; 
+    box-shadow: 0 4px 16px rgba(107, 63, 160, 0.06);
+  }
+  .otp { 
+    display: inline-block; 
+    padding: 18px 28px; 
+    font-size: 36px; 
+    font-weight: 900; 
+    letter-spacing: 12px; 
+    color: #2b1c42; 
+    background: linear-gradient(135deg, #ffffff 0%, #f8f5ff 100%); 
+    border: 3px solid #e0d5fa; 
+    border-radius: 16px; 
+    box-shadow: 0 8px 24px rgba(107, 63, 160, 0.12), inset 0 2px 0 rgba(255,255,255,0.9); 
+  }
+  .grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+    gap: 14px; 
+    margin: 20px 0; 
+  }
+  .stat { 
+    background: linear-gradient(135deg, #faf8ff 0%, #f5f2ff 100%); 
+    border: 2px solid #ede5ff; 
+    border-radius: 14px; 
+    padding: 16px; 
+    box-shadow: 0 4px 12px rgba(107, 63, 160, 0.05);
+  }
+  .label { 
+    font-size: 11px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.8px; 
+    color: #8268a8; 
+    margin-bottom: 8px; 
+    font-weight: 700;
+  }
+  .value { 
+    font-size: 20px; 
+    font-weight: 900; 
+    color: #1a0d2e; 
+    line-height: 1.3;
+  }
+  .cta { 
+    display: inline-block; 
+    margin-top: 16px; 
+    padding: 16px 28px; 
+    background: linear-gradient(135deg, #6B3FA0 0%, #8456BC 50%, #9F7ACB 100%); 
+    color: #ffffff; 
+    text-decoration: none; 
+    border-radius: 14px; 
+    font-weight: 800; 
+    font-size: 15px;
+    box-shadow: 0 16px 36px rgba(107, 63, 160, 0.32), 0 4px 12px rgba(107, 63, 160, 0.16); 
+    transition: all 0.3s ease;
+  }
+  .footer { 
+    padding: 20px 32px; 
+    border-top: 2px solid #f0e8ff; 
+    background: linear-gradient(135deg, #faf8ff 0%, #f5f2ff 100%); 
+    font-size: 13px; 
+    color: #6b5487; 
+    display: flex; 
+    gap: 12px; 
+    align-items: center; 
+    flex-wrap: wrap; 
+  }
+  .footer a { 
+    color: #6B3FA0; 
+    font-weight: 700; 
+    text-decoration: none; 
+  }
+  .divider { 
+    color: #d1c2ea; 
+    font-weight: 300;
+  }
 `;
 
 // Create reusable transporter
