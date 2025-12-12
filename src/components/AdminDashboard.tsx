@@ -18,10 +18,11 @@ import {
   Edit,
   X,
   Mail,
+  Bell, // Added import for push notifications
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminEmailManagement } from './AdminEmailManagement';
-import { AdminPushNotifications } from './AdminPushNotifications'; // Added import for push notifications
+import { AdminPushNotifications } from './AdminPushNotifications';
 
 interface AdminUser {
   user_id: string;
@@ -100,7 +101,7 @@ interface CombinedUser {
 
 
 export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'emails'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'emails' | 'notifications'>('overview');
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [masterAuctions, setMasterAuctions] = useState<MasterAuction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -337,6 +338,18 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             >
               <Mail className="w-5 h-5 inline-block mr-2" />
               Email Management
+            </button>
+            {/* Added Notifications tab */}
+            <button
+              onClick={() => setActiveTab('notifications')}
+              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                activeTab === 'notifications'
+                  ? 'text-purple-700 border-b-2 border-purple-700'
+                  : 'text-purple-500 hover:text-purple-700'
+              }`}
+            >
+              <Bell className="w-5 h-5 inline-block mr-2" />
+              Push Notifications
             </button>
           </div>
         </div>
@@ -751,15 +764,19 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           </div>
         )}
 
+        {/* Email & Notifications Tabs */}
         {activeTab === 'emails' && (
-          <AdminEmailManagement adminUserId={adminUser.user_id} />
-          // The code snippets mentioned the addition of AdminPushNotifications
-          // But the initial code only includes AdminEmailManagement for the email tab,
-          // and the requested change is to include AdminPushNotifications as well.
-          // Let's add it accordingly, perhaps after AdminEmailManagement.
+          <>
+            <AdminEmailManagement adminUserId={adminUser.user_id} />
+            {/* Added AdminPushNotifications component for notifications tab */}
+            <AdminPushNotifications />
+          </>
+        )}
+
+        {activeTab === 'notifications' && (
+          <AdminPushNotifications />
         )}
       </main>
-
       {/* Create/Edit Master Auction Modal */}
       {showCreateAuction && (
         <CreateMasterAuctionModal
