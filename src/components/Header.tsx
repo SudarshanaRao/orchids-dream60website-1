@@ -607,33 +607,9 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                           className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
                         >
                           <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <FileText className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Rules</span>
-                        </button>
-                      </motion.div>
-
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { onNavigate?.('play-guide'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                             <Shield className="w-5 h-5 text-purple-600" />
                           </div>
                           <span className="font-medium text-purple-900">Play Guide</span>
-                        </button>
-                      </motion.div>
-
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <Shield className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Participation</span>
                         </button>
                       </motion.div>
 
