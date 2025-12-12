@@ -61,18 +61,7 @@ const markWinnersInHistory = async (auction) => {
     const totalParticipants = auction.participants?.length || auction.totalParticipants || 0;
     console.log(`     👥 [HISTORY] Total participants in auction: ${totalParticipants}`);
     
-    // ✅ CRITICAL FIX: Only create/update auction history entries if round 1 is completed
-    const round1 = auction.rounds?.find(r => r.roundNumber === 1);
-    const round1Completed = round1 && round1.status === 'COMPLETED';
-    
-    if (!round1Completed) {
-      console.log(`     ⏳ [HISTORY] Round 1 not completed yet - skipping auction history creation`);
-      return;
-    }
-    
-    console.log(`     ✅ [HISTORY] Round 1 completed - processing auction history entries`);
-    
-    // STEP 1: Ensure ALL participants have auction history entries (only AFTER round 1 completion)
+    // STEP 1: Ensure ALL participants have auction history entries
     if (Array.isArray(auction.participants) && auction.participants.length > 0) {
       console.log(`     👥 [HISTORY] Ensuring history entries for ${auction.participants.length} participants`);
       
@@ -106,14 +95,7 @@ const markWinnersInHistory = async (auction) => {
             existingEntry.totalBidsPlaced = participant.totalBidsPlaced || 0;
             existingEntry.isEliminated = participant.isEliminated || false;
             existingEntry.eliminatedInRound = participant.eliminatedInRound || null;
-            
-            // ✅ CRITICAL FIX: Update auctionStatus based on winners announcement
-            if (auction.winnersAnnounced) {
-              existingEntry.auctionStatus = 'COMPLETED';
-            } else {
-              existingEntry.auctionStatus = 'IN_PROGRESS';
-            }
-            
+            existingEntry.auctionStatus = 'IN_PROGRESS';
             await existingEntry.save();
             console.log(`        🔄 [HISTORY] Updated entry for ${participant.playerUsername}`);
           }
@@ -123,7 +105,7 @@ const markWinnersInHistory = async (auction) => {
       }
     }
     
-    // STEP 2: Mark winners with prize claim details (only if winners are announced)
+    // STEP 2: Mark winners with prize claim details
     if (!auction.winners || auction.winners.length === 0) {
       console.log(`     ⚠️ [HISTORY] No winners to mark for auction ${auction.hourlyAuctionCode}`);
       
@@ -993,13 +975,6 @@ const autoActivateAuctions = async () => {
                 roundsUpdated = true;
                 console.log(`     ✓ Round ${rn} marked COMPLETED for ${local.hourlyAuctionId} - ${rankedPlayers.length} participants, ${qualifiedPlayerIds.length} qualified`);
                 console.log(`     ✓ Qualified player IDs:`, qualifiedPlayerIds);
-                
-                // ✅ NEW: After completing ANY round, update auction history entries
-                // This ensures history is created/updated after round 1 completion
-                if (rn >= 1) {
-                  console.log(`     📋 [HISTORY-UPDATE] Triggering history update after Round ${rn} completion`);
-                  await markWinnersInHistory(local);
-                }
               }
             } else if (rn === targetRound) {
               // current round -> ACTIVE
