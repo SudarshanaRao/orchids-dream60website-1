@@ -25,36 +25,39 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   // Fetch user stats from backend API
   useEffect(() => {
     const fetchUserStats = async () => {
-      try {
-        // Get user_id from localStorage
-        const userId = localStorage.getItem('user_id');
-        if (!userId) return;
+      const userId = user?.id || localStorage.getItem('user_id');
+      if (!userId) return;
 
-        const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
+      try {
+        const queryString = buildQueryString({ userId });
+        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
         if (!response.ok) return;
 
         const result = await response.json();
-        
-        if (result.success && result.data) {
-          // Use stats.totalWins and stats.totalLosses from the response
-          const stats = result.data.stats || {};
-          setUserStats({
-            totalWins: stats.totalWins ?? result.data.totalWins ?? 0,
-            totalLosses: stats.totalLosses ?? result.data.totalLosses ?? 0,
-          });
-        }
+        const stats = result.stats || result.data?.stats || {};
+
+        setUserStats({
+          totalWins: stats.totalWins ?? user?.totalWins ?? 0,
+          totalLosses: stats.totalLosses ?? user?.totalLosses ?? 0,
+        });
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching user stats:', error);
       }
     };
 
-    if (user?.id) {
-      fetchUserStats();
-      // Refresh stats every 60 seconds
-      const interval = setInterval(fetchUserStats, 60000);
-      return () => clearInterval(interval);
+    fetchUserStats();
+    const interval = setInterval(fetchUserStats, 60000);
+    return () => clearInterval(interval);
+  }, [user?.id, user?.totalWins, user?.totalLosses]);
+
+  useEffect(() => {
+    if (user?.totalWins !== undefined || user?.totalLosses !== undefined) {
+      setUserStats({
+        totalWins: user?.totalWins ?? 0,
+        totalLosses: user?.totalLosses ?? 0,
+      });
     }
-  }, [user?.id]);
+  }, [user?.totalWins, user?.totalLosses]);
 
   // Check for new auction history entries
   useEffect(() => {

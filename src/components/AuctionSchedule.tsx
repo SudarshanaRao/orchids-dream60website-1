@@ -227,6 +227,10 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
     return true;
   });
 
+  const sortedAuctions = activeFilter === 'completed'
+    ? [...filteredAuctions].sort((a, b) => (b.hour * 60 + b.minute) - (a.hour * 60 + a.minute))
+    : filteredAuctions;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-gradient-to-r from-purple-400 to-purple-500 text-white border-0';
@@ -334,7 +338,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
         
       {/* Auctions List */}
       <div className="space-y-3">
-        {filteredAuctions.length === 0 ? (
+        {sortedAuctions.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -356,7 +360,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             </div>
           </motion.div>
         ) : (
-          filteredAuctions.map((auction, index) => (
+          sortedAuctions.map((auction, index) => (
             <motion.div
               key={auction.hour}
               initial={{ opacity: 0, x: -20 }}

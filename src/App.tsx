@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
@@ -16,14 +16,12 @@ import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
-import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { AdvertisementPopup } from './components/AdvertisementPopup';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -337,7 +335,6 @@ const App = () => {
     isDeleted: boolean;
     totalAuctions: number;
     totalWins: number;
-    totalLosses: number;
     totalAmountSpent: number;
     totalAmountWon: number;
     userType: string;
@@ -352,9 +349,6 @@ const App = () => {
     updatedAt: string;
   } | null>(null);
 
-  // ✅ Track if user data has been fetched from API (prevents infinite loops)
-  const hasFetchedUserDataRef = useRef(false);
-
   // ✅ Helper function to map API user data to local state
   const mapUserData = (userData: any) => {
     return {
@@ -366,7 +360,6 @@ const App = () => {
       // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
       totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
       totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
-      totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
       totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
       totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
       userType: userData.userType || 'PLAYER',
@@ -420,7 +413,6 @@ const App = () => {
   } | null>(null);
 
   const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
-  const [selectedAuctionLeaderboard, setSelectedAuctionLeaderboard] = useState<any | null>(null);
 
   // ✅ Restore selected auction details from localStorage on mount
   useEffect(() => {
@@ -659,14 +651,10 @@ const App = () => {
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
   // ✅ NEW: Track if we're currently fetching live auction data
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
-  
-  // Advertisement popup state
-  const [showAdvertisementPopup, setShowAdvertisementPopup] = useState<boolean>(false);
 
   const isJoinWindowOpen = serverTime ? serverTime.minute < 15 : true;
   const showAuctionGrid = isJoinWindowOpen || currentAuction.userHasPaidEntry;
   const displayUser = currentUser || { username: 'Guest' };
-  const showJoinClosedNotice = currentUser && !currentAuction.userHasPaidEntry && !isJoinWindowOpen;
 
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
@@ -706,26 +694,6 @@ const App = () => {
     fetchInitialLiveAuction();
   }, []); // Run once on mount
 
-  // ✅ AUTO-REFRESH: Refresh page at exact hourly times (1:00, 2:00, etc.) when auction starts
-  useEffect(() => {
-    const checkAndRefreshAtHourlyTime = () => {
-      const now = new Date();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-      
-      // Refresh when it's exactly :00 minutes (start of an hour)
-      if (minutes === 0 && seconds < 5) {
-        console.log('🔄 Auction starting - Refreshing page at', now.toLocaleTimeString());
-        window.location.reload();
-      }
-    };
-    
-    // Check every second for the exact moment
-    const intervalId = setInterval(checkAndRefreshAtHourlyTime, 1000);
-    
-    return () => clearInterval(intervalId);
-  }, []);
-
   // Check for existing session on app initialization
   useEffect(() => {
     const checkExistingSession = async () => {
@@ -754,7 +722,7 @@ const App = () => {
 
         if (!userId || !username) return; // No valid session
 
-        // ✅ Restore user from localStorage first (for immediate UI)
+        // ✅ Restore user from localStorage without API call
         const user = mapUserData({
           user_id: userId,
           username: username,
@@ -763,10 +731,6 @@ const App = () => {
 
         setCurrentUser(user);
         console.log('✅ Session restored from localStorage');
-        
-        // ✅ CRITICAL FIX: Immediately fetch fresh user data from API to get stats
-        console.log('🔄 Fetching fresh user stats from API...');
-        fetchAndSetUser(userId);
       } catch (error) {
         console.error("Session restore error:", error);
         localStorage.removeItem("user_id");
@@ -776,16 +740,27 @@ const App = () => {
     };
 
     checkExistingSession();
-  }, []); // ✅ FIX: Only run ONCE on mount, not on every currentPage change
+  }, [currentPage]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  // ✅ NOTE: fetchAndSetUser is called directly in:
-  // 1. checkExistingSession (session restore)
-  // 2. handleLogin (new login)
-  // No need for additional useEffects to trigger it
+  // ✅ NEW: Fetch user data from API when user is logged in
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log('🔄 User logged in - fetching updated user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentUser?.id]);
+
+  // ✅ NEW: Refresh user data when navigating back to game page (homepage)
+  useEffect(() => {
+    if (currentPage === 'game' && currentUser?.id) {
+      console.log('🔄 Navigated to homepage - refreshing user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentPage, currentUser?.id]);
 
   // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
@@ -801,15 +776,12 @@ const App = () => {
       // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
       
-      // ✅ UPDATED: Only show round started toast if winners NOT announced
-      if (!currentAuction.winnersAnnounced) {
-        toast.info(`Round ${currentRound} Started`, {
-          description: 'Auction data refreshed with latest information',
-          duration: 3000,
-        });
-      }
+      toast.info(`Round ${currentRound} Started`, {
+        description: 'Auction data refreshed with latest information',
+        duration: 3000,
+      });
     }
-  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound, currentAuction.winnersAnnounced]);
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -1308,16 +1280,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-  const handleNavigate = (page: string, data?: any) => {
+  const handleNavigate = (page: string) => {
     setCurrentPage(page);
-    
-    // ✅ Handle auction-leaderboard navigation with data
-    if (page === 'leaderboard' && data?.hourlyAuctionId) {
-      setSelectedAuctionLeaderboard({ hourlyAuctionId: data.hourlyAuctionId });
-      setCurrentPage('auction-leaderboard');
-      window.history.pushState({}, '', '/auction-leaderboard');
-      return;
-    }
     
     // ✅ Update browser URL to match the page
     const urlMap: { [key: string]: string } = {
@@ -1334,7 +1298,6 @@ const App = () => {
       'profile': '/profile',
       'history': '/history',
       'leaderboard': '/leaderboard',
-      'auction-leaderboard': '/auction-leaderboard',
       'admin-login': '/admin',
       'admin-dashboard': '/admin'
     };
@@ -1343,12 +1306,11 @@ const App = () => {
     window.history.pushState({}, '', url);
   };
 
-  const handleBackToHome = () => {
+  const handleBackToGame = () => {
     setCurrentPage('game');
     window.history.pushState({}, '', '/');
     setSelectedLeaderboard(null);
     setSelectedAuctionDetails(null);
-    setSelectedAuctionLeaderboard(null);
   };
 
   const handleShowLeaderboard = (
@@ -1361,21 +1323,11 @@ const App = () => {
 
   const handleLogin = async (user: any) => {
     try {
-      // ✅ Reset user data fetch flag to allow fresh fetch
-      hasFetchedUserDataRef.current = false;
-      
-      // ✅ User data is already passed from LoginForm - set immediately for UI
+      // ✅ User data is already passed from LoginForm, no need for additional API call
       const mappedUser = mapUserData(user);
       setCurrentUser(mappedUser);
       
       console.log('✅ User logged in successfully:', mappedUser.username);
-      
-      // ✅ CRITICAL FIX: Fetch fresh user stats from API to get totalWins/totalLosses
-      const userId = user.user_id || user.id;
-      if (userId) {
-        console.log('🔄 [LOGIN] Fetching fresh user stats from API...');
-        fetchAndSetUser(userId);
-      }
 
       // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee
       // This prevents showing incorrect "Outbid Now" buttons before data is refreshed
@@ -1440,11 +1392,6 @@ const App = () => {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
-      
-      // Show advertisement popup after a few seconds
-      setTimeout(() => {
-        setShowAdvertisementPopup(true);
-      }, 3000);
     } catch (error) {
       console.error("Error while login:", error);
     }
@@ -1460,11 +1407,6 @@ const App = () => {
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
-      
-      // Show advertisement popup after a few seconds
-      setTimeout(() => {
-        setShowAdvertisementPopup(true);
-      }, 3000);
     } catch (error) {
       console.error("Error while signup:", error);
     }
@@ -1504,9 +1446,6 @@ const App = () => {
     }
 
     setCurrentUser(null);
-    
-    // ✅ Reset user data fetch flag on logout
-    hasFetchedUserDataRef.current = false;
     
     // ✅ Reset auction state when logging out
     setCurrentAuction(prev => ({
@@ -1587,10 +1526,6 @@ const App = () => {
     // ✅ CRITICAL FIX: Trigger IMMEDIATE refetch of auction data after payment (no delay)
     console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
     setForceRefetchTrigger(prev => prev + 1);
-
-    // ✅ Refresh user data from API to update header stats (wins/joined counts)
-    console.log('🔄 Refreshing user data to update header stats...');
-    fetchAndSetUser(currentUser.id);
 
     setShowEntrySuccess(null);
   };
@@ -1763,23 +1698,7 @@ const App = () => {
           <Sonner />
           <Leaderboard
             roundNumber={selectedLeaderboard.roundNumber}
-            onBack={handleBackToHome}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // ✅ NEW: Auction Leaderboard page (for completed auctions)
-  if (currentPage === 'auction-leaderboard' && selectedAuctionLeaderboard) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AuctionLeaderboard
-            hourlyAuctionId={selectedAuctionLeaderboard.hourlyAuctionId}
-            userId={currentUser?.id}
-            onBack={handleBackToHome}
+            onBack={handleBackToGame}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -1793,7 +1712,7 @@ const App = () => {
           <Sonner />
           <AccountSettings
             user={currentUser}
-            onBack={handleBackToHome}
+            onBack={handleBackToGame}
             onNavigate={handleNavigate}
             onDeleteAccount={() => {
               try {
@@ -1880,7 +1799,7 @@ const App = () => {
           <Sonner />
           <AuctionHistory
             user={currentUser}
-            onBack={handleBackToHome}
+            onBack={handleBackToGame}
             onViewDetails={(auction) => {
               setSelectedAuctionDetails(auction);
               localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
@@ -1900,7 +1819,7 @@ const App = () => {
           <LoginForm
             onLogin={handleLogin}
             onSwitchToSignup={handleSwitchToSignup}
-            onBack={handleBackToHome}
+            onBack={handleBackToGame}
             onNavigate={handleNavigate}
           />
         </TooltipProvider>
@@ -1916,7 +1835,7 @@ const App = () => {
           <SignupForm
             onSignup={handleSignup}
             onSwitchToLogin={handleSwitchToLogin}
-            onBack={handleBackToHome}
+            onBack={handleBackToGame}
             onNavigate={handleNavigate}
           />
         </TooltipProvider>
@@ -1929,7 +1848,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Rules onBack={handleBackToHome} />
+          <Rules onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1951,7 +1870,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Participation onBack={handleBackToHome} />
+          <Participation onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1962,7 +1881,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <TermsAndConditions onBack={handleBackToHome} />
+          <TermsAndConditions onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1973,7 +1892,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <PrivacyPolicy onBack={handleBackToHome} />
+          <PrivacyPolicy onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1984,7 +1903,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Support onBack={handleBackToHome} />
+          <Support onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1995,7 +1914,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Contact onBack={handleBackToHome} />
+          <Contact onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -2027,7 +1946,7 @@ const App = () => {
               <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
   bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
   bg-clip-text text-transparent">
-  The ultimate 60-minute auction experience. Enter, bid, and win amazing prizes in our hourly auctions!
+  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
 </p>
 
               {!currentUser && (
@@ -2051,7 +1970,7 @@ const App = () => {
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
             {serverTime && getCurrentAuctionSlot(serverTime) && (
-              <div className={`text-white rounded-2xl p-4 sm:p-6 shadow-lg ${currentAuction.winnersAnnounced ? 'bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600' : 'bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]'}`}>
+              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -2062,23 +1981,10 @@ const App = () => {
                       </div>
                     </div>
                   </div>
-                  {currentAuction.winnersAnnounced ? (
-                    <div className="backdrop-blur-sm bg-white/25 rounded-xl px-4 py-2 border border-white/30">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">🏆</span>
-                        <div>
-                          <div className="text-xs sm:text-sm opacity-90">Auction Completed</div>
-                          <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
-                        </div>
-                      </div>
-                      <div className="text-xs mt-1 opacity-80 text-center">Next auction starts at the next hour</div>
-                    </div>
-                  ) : (
-                    <div className="backdrop-blur-sm bg-white/20 rounded-xl px-4 py-2">
-                      <div className="text-xs sm:text-sm opacity-90">Active Round</div>
-                      <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
-                    </div>
-                  )}
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                    <div className="text-xs sm:text-sm opacity-90">Active Round</div>
+                    <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2131,13 +2037,7 @@ const App = () => {
               />
             )}
 
-            {showJoinClosedNotice && (
-              <div className="mt-4 rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur-md p-4 shadow-lg text-center text-purple-800 font-semibold">
-                Join window closed. Auction boxes are visible only to participants.
-              </div>
-            )}
-
-            <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+            <AuctionSchedule user={currentUser} />
 
             {!currentUser && (
               <div className="text-center py-8 sm:py-12 md:py-16 px-4">
@@ -2211,12 +2111,6 @@ const App = () => {
               onClose={() => setShowBidSuccess(null)}
             />
           )}
-
-          {/* Advertisement Popup */}
-          <AdvertisementPopup
-            isOpen={showAdvertisementPopup}
-            onClose={() => setShowAdvertisementPopup(false)}
-          />
         </div>
       </TooltipProvider>
     </QueryClientProvider>

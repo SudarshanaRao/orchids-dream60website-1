@@ -1,6 +1,5 @@
 export function initSecurityMeasures() {
   disableInspectShortcuts();
-  disableDevTools();
 }
 
 function disableDevTools() {
