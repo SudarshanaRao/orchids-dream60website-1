@@ -130,13 +130,41 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       const data = await response.json();
 
       if (data.success) {
-        toast.success(`Notification sent to ${data.successfulSends} users!`);
+        // Show detailed success message with user information
+        const recipientInfo = data.recipients ? 
+          data.recipients.map((r: any) => `${r.username} (${r.email})`).join(', ') : 
+          `${data.successfulSends} users`;
+        
+        toast.success(
+          `Notification sent successfully!`,
+          {
+            description: data.recipients && data.recipients.length > 0 ? 
+              `Sent to: ${data.recipients.map((r: any) => r.username).join(', ')}` : 
+              `Sent to ${data.successfulSends} subscribed users`,
+            duration: 8000,
+          }
+        );
+
+        // Log detailed recipient information
+        console.log('📧 Push Notification Sent Successfully:');
+        console.log(`   Title: ${notificationData.title}`);
+        console.log(`   Total Recipients: ${data.successfulSends || 0}`);
+        if (data.recipients && data.recipients.length > 0) {
+          console.log('   Recipients:');
+          data.recipients.forEach((recipient: any, index: number) => {
+            console.log(`   ${index + 1}. ${recipient.username} (${recipient.email}) - ${recipient.deviceType}`);
+          });
+        }
+
         // Reset form
         setNotificationData({
           title: '',
           body: '',
           url: '/'
         });
+
+        // Refresh subscription stats to show updated data
+        fetchSubscriptionStats();
       } else {
         toast.error(data.message || 'Failed to send notifications');
       }
