@@ -245,9 +245,16 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
   useEffect(() => {
     if (!serverTime) return;
     
+    // ✅ CRITICAL FIX: If user has already paid entry fee, join window should always be "open" for them
+    // This prevents showing "Join Window Closed" message after payment
+    if (isUserParticipating || currentPrize.userHasPaidEntry) {
+      setIsJoinWindowOpen(true);
+      return;
+    }
+    
     const isWithinJoinWindow = serverTime.minute < 15;
     setIsJoinWindowOpen(isWithinJoinWindow);
-  }, [serverTime]);
+  }, [serverTime, isUserParticipating, currentPrize.userHasPaidEntry]);
 
   // ✅ Update countdown timer every second using server time
   useEffect(() => {

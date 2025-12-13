@@ -718,49 +718,139 @@ export default function App() {
     }
   }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
-  useEffect(() => {
-    const fetchBasicAuctionInfo = async () => {
-      if (!currentUser?.id || currentAuction.userHasPaidEntry) return;
-      
-      if (!justLoggedIn) return;
-      
-      try {
-        console.log('🔄 Fetching basic auction info after login...');
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        if (!response.ok) return;
-        
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          const liveAuction = result.data;
-          
-          console.log('📊 [LOGIN REFRESH] Basic auction info loaded:', {
-            'Prize Name': liveAuction.auctionName,
-            'Prize Value': liveAuction.prizeValue,
-            'Total Participants': liveAuction.participants?.length || 0
-          });
-          
-          setCurrentAuction(prev => ({
-            ...prev,
-            prize: liveAuction.auctionName || prev.prize,
-            prizeValue: liveAuction.prizeValue || prev.prizeValue,
-            totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
-          }));
-          
-          setJustLoggedIn(false);
-        }
-      } catch (error) {
-        console.error('Error fetching basic auction info:', error);
-        setJustLoggedIn(false);
-      }
-    };
-    
-    fetchBasicAuctionInfo();
-  }, [currentUser?.id, justLoggedIn, currentAuction.userHasPaidEntry]);
+  // Admin routes
+  if (currentPage === 'admin-login') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AdminLogin
+            onLogin={(admin) => {
+              setAdminUser(admin);
+              setCurrentPage('admin-dashboard');
+            }}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
-  // Rest of the component continues...
-  // [Remaining code from temp_app_restore.txt - lines 827-2120]
-  
+  if (currentPage === 'admin-dashboard' && adminUser) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AdminDashboard 
+            adminUser={adminUser} 
+            onLogout={() => {
+              localStorage.removeItem('admin_user_id');
+              localStorage.removeItem('admin_email');
+              setAdminUser(null);
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'login') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <LoginForm
+            onLogin={(user) => {
+              const mappedUser = mapUserData(user);
+              setCurrentUser(mappedUser);
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onSwitchToSignup={() => {
+              setCurrentPage('signup');
+              window.history.pushState({}, '', '/signup');
+            }}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onNavigate={(page) => {
+              setCurrentPage(page);
+              const urlMap: { [key: string]: string } = {
+                'game': '/',
+                'login': '/login',
+                'signup': '/signup',
+                'forgot': '/forgot-password'
+              };
+              const url = urlMap[page] || '/';
+              window.history.pushState({}, '', url);
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'signup') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <SignupForm
+            onSignup={(user) => {
+              const mappedUser = mapUserData(user);
+              setCurrentUser(mappedUser);
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onSwitchToLogin={() => {
+              setCurrentPage('login');
+              window.history.pushState({}, '', '/login');
+            }}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onNavigate={(page) => {
+              setCurrentPage(page);
+              const urlMap: { [key: string]: string } = {
+                'game': '/',
+                'login': '/login',
+                'signup': '/signup',
+                'forgot': '/forgot-password'
+              };
+              const url = urlMap[page] || '/';
+              window.history.pushState({}, '', url);
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'forgot') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <ForgotPasswordPage 
+            onBack={() => {
+              setCurrentPage('login');
+              window.history.pushState({}, '', '/login');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Continuing with rest of App.tsx logic...
+  // Main game page rendering
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

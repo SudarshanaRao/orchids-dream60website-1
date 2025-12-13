@@ -151,14 +151,6 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
                     </>
                   )}
                 </Button>
-                
-                <Button
-                  onClick={handleDismiss}
-                  variant="ghost"
-                  className="text-white hover:bg-white/20"
-                >
-                  Not Now
-                </Button>
               </div>
             </div>
           </div>
