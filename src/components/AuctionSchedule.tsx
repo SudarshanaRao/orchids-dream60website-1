@@ -105,12 +105,15 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
         const data = await response.json();
         
         if (response.ok && data.success && data.data?.dailyAuctionConfig) {
+          // Map API data to schedule format
           const auctions = data.data.dailyAuctionConfig.map((auction: AuctionConfig, index: number) => {
+            // ✅ Parse TimeSlot - backend sends in IST format (HH:MM)
             const [auctionHour, auctionMinute] = auction.TimeSlot.split(':').map(Number);
             const hour12 = auctionHour > 12 ? auctionHour - 12 : (auctionHour === 0 ? 12 : auctionHour);
             const period = auctionHour >= 12 ? 'PM' : 'AM';
             const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
             
+            // Map API Status to internal status
             let status = 'upcoming';
             let winner = null;
             
@@ -118,7 +121,9 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'active';
             } else if (auction.Status === 'COMPLETED') {
               status = 'completed';
+              // ✅ Use real winner data from API instead of hardcoded values
               if (auction.topWinners && auction.topWinners.length > 0) {
+                // Get rank 1 winner (the top winner)
                 const topWinner = auction.topWinners.find((w: any) => w.rank === 1);
                 if (topWinner && topWinner.playerUsername) {
                   winner = topWinner.playerUsername;
@@ -141,13 +146,13 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                 image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
               },
               winner,
-              roundCount: auction.roundCount || 4,
-              totalParticipants: auction.totalParticipants || 0
+              roundCount: auction.roundCount || 4 // Get from backend or default to 4
             };
           });
           
           setScheduleData(auctions);
           
+          // ✅ Check participation for completed auctions if user is logged in
           if (user?.id) {
             const completedAuctions = auctions.filter((a: any) => a.status === 'completed' && a.hourlyAuctionId);
             console.log('🔍 [AUCTION SCHEDULE] Checking participation for completed auctions:', {
@@ -191,7 +196,9 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             setParticipationMap(newParticipationMap);
           }
           
+          // ✅ Calculate dynamic schedule statistics
           if (auctions.length > 0) {
+            // Find earliest and latest time slots
             const sortedByTime = [...auctions].sort((a, b) => {
               const timeA = a.hour * 60 + a.minute;
               const timeB = b.hour * 60 + b.minute;
@@ -201,8 +208,9 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             const earliest = sortedByTime[0];
             const latest = sortedByTime[sortedByTime.length - 1];
             
+            // Get boxes per auction (2 entry boxes + round count bidding boxes)
             const firstAuction = auctions[0];
-            const totalBoxes = 2 + (firstAuction.roundCount || 4);
+            const totalBoxes = 2 + (firstAuction.roundCount || 4); // 2 entry boxes + bidding boxes
             
             setScheduleStats({
               totalAuctions: auctions.length,
@@ -224,31 +232,13 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
 
     fetchAuctionSchedule();
     
-    const calculateNextRefreshTime = () => {
-      const now = getCurrentIST();
-      const currentMinute = now.getMinutes();
-      const currentSecond = now.getSeconds();
-      
-      const minutesUntilNext15 = 15 - (currentMinute % 15);
-      const msUntilNext = (minutesUntilNext15 * 60 - currentSecond) * 1000;
-      
-      console.log(`⏰ [AUCTION SCHEDULE] Next refresh in ${minutesUntilNext15} minutes`);
-      
-      return msUntilNext;
-    };
-    
-    const timeoutId = setTimeout(() => {
+    // ✅ Refresh every minute to keep status updated with IST time
+    const refreshInterval = setInterval(() => {
       fetchAuctionSchedule();
-      
-      const intervalId = setInterval(() => {
-        fetchAuctionSchedule();
-      }, 15 * 60 * 1000);
-      
-      return () => clearInterval(intervalId);
-    }, calculateNextRefreshTime());
+    }, 60000); // Refresh every 60 seconds
     
-    return () => clearTimeout(timeoutId);
-  }, [user?.id]);
+    return () => clearInterval(refreshInterval);
+  }, [currentHour, user?.id]);
 
   // Filter auctions based on active filter
   const filteredAuctions = scheduleData.filter(auction => {
@@ -325,7 +315,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-          {[
+        {[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },
@@ -485,84 +475,22 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                     </div>
                   </div>
                   
-                  {/* Winner Container for completed auctions with participants who joined */}
-                  {auction.status === 'completed' && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                  {/* Winner info for completed auctions */}
+                  {auction.winner && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center justify-between gap-3 bg-gradient-to-r from-purple-50/80 via-violet-50/80 to-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/60"
-                    >
-                      {/* Winner Details - Left */}
-                      {auction.winner && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-                            <Trophy className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-purple-700">Winner</div>
-                            <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Total Participants - Middle */}
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div className="text-xs text-violet-700">Participants</div>
-                          <div className="text-sm font-bold text-violet-900">
-                            {auction.totalParticipants > 0 ? auction.totalParticipants : '0'}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Leaderboard Button - Right */}
-                      <Button
-                        onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                        size="sm"
-                        className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
-                      >
-                        <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                        View Leaderboard
-                      </Button>
-                    </motion.div>
-                  )}
-                  
-                  {/* Participant count only for completed auctions where user did NOT participate */}
-                  {auction.status === 'completed' && (!auction.hourlyAuctionId || !participationMap[auction.hourlyAuctionId]) && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center justify-between gap-2 bg-violet-50/80 backdrop-blur-sm rounded-2xl p-2 border border-violet-200/60"
+                      className="mt-3 flex items-center justify-between gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center">
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
+                          <Trophy className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <div className="text-xs text-violet-700">Total Participants</div>
-                          <div className="text-sm font-bold text-violet-900">
-                            {auction.totalParticipants > 0 ? auction.totalParticipants : '0 participants'}
-                          </div>
+                          <div className="text-xs text-purple-700">Winner</div>
+                          <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
                         </div>
                       </div>
-                      {auction.winner && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-                            <Trophy className="w-4 h-4 text-white" />
-                          </div>
-                          <div>
-                            <div className="text-xs text-purple-700">Winner</div>
-                            <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
-                          </div>
-                        </div>
-                      )}
                     </motion.div>
                   )}
                       
@@ -583,26 +511,26 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                       </Button>
                     </motion.div>
                   )}
-                  
-                  {/* Active auction CTA */}
-                  {auction.status === 'active' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
-                    >
-                      <motion.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 1, repeat: Infinity }}
+                    
+                    {/* Active auction CTA */}
+                    {auction.status === 'active' && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
                       >
-                        <Zap className="w-5 h-5 text-violet-600" />
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                        >
+                          <Zap className="w-5 h-5 text-violet-600" />
+                        </motion.div>
+                        <div>
+                          <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
+                          <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
+                        </div>
                       </motion.div>
-                      <div>
-                        <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
-                        <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
-                      </div>
-                    </motion.div>
-                  )}
+                    )}
                 </div>
               </div>
             </motion.div>
