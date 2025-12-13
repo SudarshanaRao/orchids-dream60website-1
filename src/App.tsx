@@ -594,6 +594,42 @@ export default function App() {
     }
   }, [serverTime]);
 
+  // ✅ NEW: Dynamically update round box isOpen status based on server time
+  useEffect(() => {
+    if (!serverTime) return;
+    
+    const updateRoundBoxStatus = () => {
+      const now = new Date(serverTime.timestamp);
+      
+      setCurrentAuction(prev => {
+        const updatedBoxes = prev.boxes.map(box => {
+          if (box.type === 'round' && box.opensAt && box.closesAt) {
+            const isOpen = now >= box.opensAt && now < box.closesAt;
+            
+            console.log(`🔓 [APP.TSX] Round ${box.roundNumber} isOpen check:`, {
+              'Round': box.roundNumber,
+              'Opens At (UTC)': box.opensAt.toUTCString(),
+              'Closes At (UTC)': box.closesAt.toUTCString(),
+              'Current Time (UTC)': now.toUTCString(),
+              'Is After Opens At': now >= box.opensAt,
+              'Is Before Closes At': now < box.closesAt,
+              'Final isOpen': isOpen
+            });
+            
+            return { ...box, isOpen };
+          }
+          return box;
+        });
+        
+        return { ...prev, boxes: updatedBoxes };
+      });
+    };
+    
+    updateRoundBoxStatus();
+    const interval = setInterval(updateRoundBoxStatus, 1000);
+    return () => clearInterval(interval);
+  }, [serverTime]);
+
   const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [previousRound, setPreviousRound] = useState<number>(1);
