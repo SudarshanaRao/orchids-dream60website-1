@@ -364,19 +364,61 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
 
           {/* Content container */}
           <div className="relative backdrop-blur-md bg-white/30 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/60 shadow-2xl">
-            <div className="text-center py-12 sm:py-16">
+            <div className="text-center py-8 sm:py-12">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
-                No Live Auction
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-3 sm:mb-4">
+                No Live Auctions Running Currently
               </h3>
-              <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-4 sm:mb-6 max-w-md mx-auto">
-                There are currently no active auctions. New auctions start every hour at the beginning of the hour.
+              <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-6 sm:mb-8 max-w-md mx-auto">
+                Please come back during our auction hours to participate and win amazing prizes!
               </p>
-              <div className="flex items-center justify-center gap-2 text-purple-600">
-                <Clock className="w-5 h-5" />
-                <span className="text-sm sm:text-base">Check back soon for the next auction!</span>
+              
+              {/* Auction Schedule Box */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/80 rounded-2xl p-4 sm:p-6 border-2 border-purple-200 shadow-lg max-w-2xl mx-auto">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                  <h4 className="text-lg sm:text-xl font-bold text-purple-900">Auction Schedule</h4>
+                </div>
+                
+                <div className="space-y-3 text-left">
+                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
+                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-purple-900 text-sm sm:text-base">Daily Auction Hours</p>
+                      <p className="text-purple-700 text-xs sm:text-sm">9:00 AM - 10:00 PM (IST)</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
+                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <Trophy className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-purple-900 text-sm sm:text-base">Frequency</p>
+                      <p className="text-purple-700 text-xs sm:text-sm">14 premium auctions daily • Every hour on the hour</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
+                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <Gift className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-purple-900 text-sm sm:text-base">What to Expect</p>
+                      <p className="text-purple-700 text-xs sm:text-sm">6 boxes per auction • 4 bidding rounds • Amazing prizes worth up to ₹3,50,000</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-purple-300">
+                  <p className="text-xs sm:text-sm text-purple-600 font-medium">
+                    💡 Tip: Join within the first 15 minutes of each hour to participate in that auction!
+                  </p>
+                </div>
               </div>
             </div>
           </div>
