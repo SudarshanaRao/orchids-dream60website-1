@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from "./App.tsx";
+import { App } from "./App.tsx";
 import './styles/globals.css';
 import { Toaster } from 'sonner';
 import { BrowserRouter } from 'react-router-dom';

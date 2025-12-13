@@ -25,3 +25,5 @@ import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { PushNotificationPermission } from './components/PushNotificationPermission';
 import { AmazonVoucherModal } from './components/AmazonVoucherModal';
 import { toast } from 'sonner';
+
+export function App() {
