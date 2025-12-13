@@ -10,6 +10,7 @@
   "scope": "/",
   "lang": "en",
   "categories": ["entertainment", "shopping"],
+  "permissions": ["notifications"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -86,8 +87,16 @@
       "description": "Browse live auctions",
       "url": "/?page=auctions",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Account",
+      "short_name": "Account",
+      "description": "View account settings",
+      "url": "/profile",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "gcm_sender_id": "103953800507"
 }

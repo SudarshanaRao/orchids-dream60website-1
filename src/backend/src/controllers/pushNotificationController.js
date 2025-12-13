@@ -244,7 +244,7 @@ const sendToUser = async (req, res) => {
 // Send push notification to all participants of current auction
 const sendToAllParticipants = async (req, res) => {
   try {
-    const { title, body, url } = req.body;
+    const { title, body, url, image, requireInteraction, tag, silent } = req.body;
     
     if (!title || !body) {
       return res.status(400).json({
@@ -253,9 +253,10 @@ const sendToAllParticipants = async (req, res) => {
       });
     }
     
+    // Get all active subscriptions with user details
     const subscriptions = await PushSubscription.find({
       isActive: true
-    }).populate('userId', 'username email');
+    }).populate('userId', 'username email user_id userCode');
     
     if (subscriptions.length === 0) {
       return res.status(404).json({
@@ -266,16 +267,38 @@ const sendToAllParticipants = async (req, res) => {
     
     // Configure web-push
     webpush.setVapidDetails(
-      `mailto:${process.env.EMAIL_USER}`,
+      process.env.VAPID_SUBJECT || `mailto:${process.env.EMAIL_USER}`,
       process.env.VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     );
     
+    // Create professional notification payload
     const payload = JSON.stringify({
       title,
       body,
-      url: url || '/'
+      url: url || '/',
+      image: image || null,
+      tag: tag || 'dream60-notification',
+      requireInteraction: requireInteraction || false,
+      silent: silent || false,
+      timestamp: Date.now(),
+      // Action buttons
+      actions: [
+        {
+          action: 'open',
+          title: '🎯 Open',
+          icon: '/icons/icon-96x96.png'
+        },
+        {
+          action: 'close',
+          title: '❌ Dismiss',
+          icon: '/icons/icon-72x72.png'
+        }
+      ]
     });
+    
+    // Send notifications and track results
+    const recipientResults = [];
     
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
@@ -288,33 +311,79 @@ const sendToAllParticipants = async (req, res) => {
                 auth: sub.keys.auth
               }
             },
-            payload
+            payload,
+            {
+              TTL: 86400, // 24 hours
+              urgency: 'high',
+              vapidDetails: {
+                subject: process.env.VAPID_SUBJECT || `mailto:${process.env.EMAIL_USER}`,
+                publicKey: process.env.VAPID_PUBLIC_KEY,
+                privateKey: process.env.VAPID_PRIVATE_KEY
+              }
+            }
           );
           
           // Update last used
           sub.lastUsed = new Date();
           await sub.save();
           
+          // Track successful recipient
+          recipientResults.push({
+            success: true,
+            username: sub.userId?.username || 'Unknown',
+            email: sub.userId?.email || 'Unknown',
+            userCode: sub.userId?.userCode || 'Unknown',
+            userId: sub.userId?.user_id || 'Unknown',
+            deviceType: sub.deviceType,
+            endpoint: sub.endpoint.substring(0, 50) + '...'
+          });
+          
           return { success: true, endpoint: sub.endpoint, username: sub.userId?.username };
         } catch (error) {
-          // Deactivate subscription if it's no longer valid
+          // Deactivate subscription if it's no longer valid (410 Gone)
           if (error.statusCode === 410) {
             sub.isActive = false;
             await sub.save();
           }
+          
+          // Track failed recipient
+          recipientResults.push({
+            success: false,
+            username: sub.userId?.username || 'Unknown',
+            email: sub.userId?.email || 'Unknown',
+            userCode: sub.userId?.userCode || 'Unknown',
+            userId: sub.userId?.user_id || 'Unknown',
+            deviceType: sub.deviceType,
+            error: error.message || 'Unknown error',
+            statusCode: error.statusCode || 'Unknown'
+          });
+          
           return { success: false, endpoint: sub.endpoint, username: sub.userId?.username, error: error.message };
         }
       })
     );
     
     const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failedCount = subscriptions.length - successCount;
+    
+    // Filter successful recipients
+    const successfulRecipients = recipientResults.filter(r => r.success);
+    const failedRecipients = recipientResults.filter(r => !r.success);
+    
+    console.log(`✅ Push Notification Sent:`);
+    console.log(`   Title: ${title}`);
+    console.log(`   Success: ${successCount}/${subscriptions.length}`);
+    console.log(`   Failed: ${failedCount}`);
     
     res.json({
       success: true,
       message: `Notification sent to ${successCount} out of ${subscriptions.length} subscribers`,
       totalSubscriptions: subscriptions.length,
       successfulSends: successCount,
-      failedSends: subscriptions.length - successCount
+      failedSends: failedCount,
+      // Return recipient information for admin tracking
+      recipients: successfulRecipients,
+      failedRecipients: failedRecipients.length > 0 ? failedRecipients : undefined
     });
   } catch (error) {
     console.error('Error sending push notifications to all:', error);
