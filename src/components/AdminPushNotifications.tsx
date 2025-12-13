@@ -26,6 +26,20 @@ interface SubscriptionStats {
   webUsers: SubscriptionUser[];
 }
 
+interface User {
+  username: string;
+  mobile: string;
+  email: string;
+  user_id: string;
+  userCode: string;
+  preferences: {
+    emailNotifications: boolean;
+    smsNotifications: boolean;
+    bidAlerts: boolean;
+    winNotifications: boolean;
+  };
+}
+
 export function AdminPushNotifications() {
   const [notificationData, setNotificationData] = useState({
     title: '',
@@ -35,10 +49,35 @@ export function AdminPushNotifications() {
   const [isSending, setIsSending] = useState(false);
   const [stats, setStats] = useState<SubscriptionStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [usersWithBidAlerts, setUsersWithBidAlerts] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
   useEffect(() => {
     fetchSubscriptionStats();
+    fetchUsersWithBidAlerts();
   }, []);
+
+  const fetchUsersWithBidAlerts = async () => {
+    try {
+      setIsLoadingUsers(true);
+      const response = await fetch('https://dev-api.dream60.com/auth/users');
+      const data = await response.json();
+
+      if (data.success && data.users) {
+        // Filter users who have bidAlerts enabled
+        const alertUsers = data.users.filter((user: User) => user.preferences?.bidAlerts === true);
+        setUsersWithBidAlerts(alertUsers);
+        console.log(`✅ Found ${alertUsers.length} users with bidAlerts enabled`);
+      } else {
+        toast.error('Failed to load users');
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
 
   const fetchSubscriptionStats = async () => {
     try {
@@ -202,6 +241,37 @@ export function AdminPushNotifications() {
           </>
         ) : (
           <p className="text-sm text-gray-600 text-center py-4">Failed to load statistics</p>
+        )}
+      </div>
+
+      {/* Users with Bid Alerts Enabled */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-orange-200">
+        <h3 className="text-lg font-bold text-orange-900 mb-4 flex items-center gap-2">
+          <Bell className="w-5 h-5" />
+          Users Opted-In for Bid Alerts ({usersWithBidAlerts.length})
+        </h3>
+        <p className="text-sm text-orange-600 mb-4">
+          These users have enabled "Bid Alerts" in their preferences and will receive notifications when they have an active device subscription.
+        </p>
+        
+        {isLoadingUsers ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-700" />
+          </div>
+        ) : usersWithBidAlerts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+            {usersWithBidAlerts.map((user) => (
+              <div key={user.user_id} className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                <p className="font-semibold text-sm text-gray-900">{user.username}</p>
+                <p className="text-xs text-gray-600">{user.email}</p>
+                <p className="text-xs text-gray-500 mt-1">Mobile: {user.mobile}</p>
+                <p className="text-xs text-orange-700 mt-1 font-semibold">✓ Bid Alerts Enabled</p>
+                <p className="text-xs text-gray-500">Code: {user.userCode}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-orange-600 text-center py-4">No users have enabled bid alerts yet</p>
         )}
       </div>
 

@@ -48,6 +48,17 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const [selectedBox, setSelectedBox] = useState<Box | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
 
+  // ✅ Add null safety check for auction and boxes
+  if (!auction || !auction.boxes) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <p className="text-gray-600">Loading auction data...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleBoxClick = (box: Box) => {
     if (box.isOpen && !(box.type === 'entry' && box.hasPaid)) {
       setSelectedBox(box);
