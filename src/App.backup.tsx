@@ -632,8 +632,11 @@ const App = () => {
         id: `auction-${currentHour}`,
         startTime,
         endTime,
-        auctionHour: currentHour,
         currentRound: getCurrentRoundByTime(serverTime),
+        auctionHour: currentHour,
+        userHasPaidEntry: false,
+        userBidsPerRound: {},
+        userQualificationPerRound: {},
         boxes: [entryBox1, entryBox2, ...roundBoxes],
       }));
     }
@@ -659,29 +662,26 @@ const App = () => {
       
       try {
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        
-        if (!response.ok) {
-          console.log('⚠️ No live auction available');
+        const result = await response.json();
+        // ✅ UPDATED: Handle both HTTP errors and API response with success: false
+        if (!response.ok || !result.success || !result.data) {
+          console.log('⚠️ No live auction available:', result.message || 'API returned error');
+          setLiveAuctionData(null);
           setIsLoadingLiveAuction(false);
           return;
         }
-        
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          console.log('✅ Initial live auction data loaded');
-          setLiveAuctionData(result.data);
-          
-          // Update basic auction info
-          setCurrentAuction(prev => ({
-            ...prev,
-            prize: result.data.auctionName || prev.prize,
-            prizeValue: result.data.prizeValue || prev.prizeValue,
-            totalParticipants: result.data.participants?.length || prev.totalParticipants,
-          }));
-        }
+        console.log('✅ Initial live auction data loaded');
+        setLiveAuctionData(result.data);
+        // Update basic auction info
+        setCurrentAuction(prev => ({
+          ...prev,
+          prize: result.data.auctionName || prev.prize,
+          prizeValue: result.data.prizeValue || prev.prizeValue,
+          totalParticipants: result.data.participants?.length || prev.totalParticipants,
+        }));
       } catch (error) {
         console.error('Error fetching initial live auction:', error);
+        setLiveAuctionData(null);
       } finally {
         setIsLoadingLiveAuction(false);
       }
@@ -984,9 +984,15 @@ const App = () => {
         if (!response.ok) return;
         
         const result = await response.json();
-        
+        // ✅ UPDATED: Handle both HTTP errors and API response with success: false
+        if (!response.ok || !result.success || !result.data) {
+          console.log('⚠️ No live auction available:', result.message || 'API returned error');
+          setLiveAuctionData(null);
+          setIsLoadingLiveAuction(false);
+          return;
+        }
         // Extract hourlyAuctionId from the response
-        if (result.success && result.data?.hourlyAuctionId) {
+        if (result.data?.hourlyAuctionId) {
           setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
           console.log('✅ Live auction ID set:', result.data.hourlyAuctionId);
           
@@ -1041,7 +1047,6 @@ const App = () => {
             userParticipant = liveAuction.participants.find(
               (participant: any) => participant.playerId === currentUser.id
             );
-            
             if (userParticipant) {
               console.log(`👤 Found user in participants:`, {
                 username: userParticipant.playerUsername,
@@ -1059,14 +1064,12 @@ const App = () => {
                 const userBid = round.playersData.find(
                   (player: any) => player.playerId === currentUser.id
                 );
-                
                 if (userBid && userBid.auctionPlacedAmount) {
                   userBidsMap[round.roundNumber] = userBid.auctionPlacedAmount;
                   console.log(`✅ Found existing bid in Round ${round.roundNumber}: ₹${userBid.auctionPlacedAmount}`);
                 }
               }
             });
-            
             // ✅ Second pass: Set qualification status for each round
             liveAuction.rounds.forEach((round: any) => {
               // Round 1: Always eligible if entry fee is paid
@@ -1074,7 +1077,6 @@ const App = () => {
                 userQualificationMap[1] = true;
                 console.log(`✅ Round 1: User is eligible (entry fee paid)`);
               }
-              
               // Rounds 2, 3, 4: Check if user is eliminated
               if (round.roundNumber > 1) {
                 // ✅ CRITICAL: If user is eliminated, mark ALL future rounds as not qualified
@@ -1101,14 +1103,11 @@ const App = () => {
                 const roundData = liveAuction.rounds?.find(
                   (r: any) => r.roundNumber === roundBox.roundNumber
                 );
-                
                 let updatedBox = { ...roundBox };
-                
                 // ✅ NEW: Set winnersAnnounced flag from live auction
                 if (liveAuction.winnersAnnounced) {
                   updatedBox.winnersAnnounced = true;
                 }
-                
                 // ✅ DYNAMIC MIN BID CALCULATION based on previous round's highest bid and cutoff percentage
                 if (roundBox.roundNumber === 1) {
                   // ✅ CRITICAL FIX: Use entry fee from API instead of local state
@@ -1120,23 +1119,19 @@ const App = () => {
                   const previousRoundData = liveAuction.rounds?.find(
                     (r: any) => r.roundNumber === previousRoundNumber
                   );
-                  
                   if (previousRoundData && previousRoundData.playersData && previousRoundData.playersData.length > 0) {
                     // Find the highest bid from previous round
                     const highestBidInPreviousRound = Math.max(
                       ...previousRoundData.playersData.map((p: any) => p.auctionPlacedAmount)
                     );
-                    
                     // Get cutoff percentage for current round
                     const currentRoundConfig = liveAuction.roundConfig?.find(
                       (rc: any) => rc.round === roundBox.roundNumber
                     );
                     const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
-                    
                     // Calculate min bid: highest bid - (highest bid * cutoff percentage / 100)
                     const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
                     updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
-                    
                     console.log(`✅ Round ${roundBox.roundNumber} minBid calculation:`, {
                       'Previous Round': previousRoundNumber,
                       'Highest Bid in Previous Round': `₹${highestBidInPreviousRound}`,
@@ -1153,7 +1148,6 @@ const App = () => {
                     console.log(`⚠️ Round ${roundBox.roundNumber} minBid fallback = ₹${updatedBox.minBid} (no previous round data)`);
                   }
                 }
-                
                 // ✅ CRITICAL FIX: Do NOT convert API times - they're already in the correct format
                 // The backend sends times like "13:45:00.000Z" which should display as 1:45 PM (not converted)
                 if (roundData) {
@@ -1189,7 +1183,6 @@ const App = () => {
                     const opensAt = new Date(roundData.startedAt);
                     updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
                   }
-                  
                   // Update status based on actual round data
                   if (roundData.status === 'COMPLETED') {
                     updatedBox.status = 'completed';
@@ -1201,7 +1194,6 @@ const App = () => {
                     updatedBox.isOpen = false;
                   }
                 }
-                
                 if (roundData && roundData.playersData && roundData.playersData.length > 0) {
                   // Sort by bid amount (descending) and timestamp (ascending for ties)
                   const sortedPlayers = [...roundData.playersData].sort((a: any, b: any) => {
@@ -1210,28 +1202,22 @@ const App = () => {
                     }
                     return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
                   });
-                  
                   const highestBidder = sortedPlayers[0];
-                  
                   // Find rank 1 player (highest bid)
                   const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
                   const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
-                  
                   updatedBox = {
                     ...updatedBox,
                     currentBid: highestBidder.auctionPlacedAmount,
                     bidder: highestBidder.playerUsername,
                     highestBidFromAPI: highestBidFromAPI, // Store the rank 1 bid from API
                   };
-                  
                   console.log(`✅ Round ${roundBox.roundNumber} highest bid from API: ₹${highestBidFromAPI}`);
                 }
-                
                 return updatedBox;
               }
               return box;
             });
-            
             return {
               ...prev,
               // ✅ CRITICAL FIX: Use correct field names from API response
@@ -1325,7 +1311,6 @@ const App = () => {
       try {
         console.log('🔄 [LOGIN] Fetching live auction data to verify entry fee status...');
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        
         if (response.ok) {
           const result = await response.json();
           
@@ -1343,7 +1328,7 @@ const App = () => {
             }
             
             // ✅ Set initial auction state with correct entry fee status
-            setCurrentAuction(prev => ({
+            setCurrentAuction(prev => ( {
               ...prev,
               userHasPaidEntry: userHasPaid,
               userBidsPerRound: {},
@@ -1352,7 +1337,6 @@ const App = () => {
               prizeValue: liveAuction.prizeValue || prev.prizeValue,
               totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
             }));
-            
             // Store live auction data
             setLiveAuctionData(liveAuction);
             if (liveAuction.hourlyAuctionId) {
@@ -1370,7 +1354,6 @@ const App = () => {
           userQualificationPerRound: {},
         }));
       }
-
       // ✅ Set flag to trigger polling refresh
       setJustLoggedIn(true);
       
@@ -1430,15 +1413,13 @@ const App = () => {
       // ✅ CRITICAL FIX: Clear session storage flags to allow page reload for next user
       sessionStorage.removeItem('hasReloadedHistory');
       sessionStorage.removeItem('hasReloadedDetails');
-      
       console.log('✅ User session, Razorpay data, and session storage flags cleared');
     } catch (error) {
       console.error("Error clearing user session:", error);
     }
 
     setCurrentUser(null);
-    
-    // ✅ Reset auction state when logging out
+    // Reset auction state when logging out
     setCurrentAuction(prev => ({
       ...prev,
       userHasPaidEntry: false,
@@ -1456,10 +1437,8 @@ const App = () => {
         return box;
       })
     }));
-    
     // ✅ Clear hourly auction ID
     setCurrentHourlyAuctionId(null);
-    
     setCurrentPage("game");
     window.history.pushState({}, '', '/');
   };
@@ -1712,30 +1691,24 @@ const App = () => {
                 localStorage.removeItem("user_name");
                 localStorage.removeItem("user_email");
                 localStorage.removeItem("user_mobile");
-                
                 // Clear additional user fields
                 localStorage.removeItem("email");
                 localStorage.removeItem("username");
-                
                 // Clear all Razorpay session data
                 localStorage.removeItem("rzp_checkout_anon_id");
                 localStorage.removeItem("rzp_device_id");
                 localStorage.removeItem("rzp_stored_checkout_id");
-                
                 // Clear any other Razorpay keys
                 Object.keys(localStorage).forEach(key => {
                   if (key.startsWith('rzp_')) {
                     localStorage.removeItem(key);
                   }
                 });
-                
                 console.log('✅ Account deleted - all user and Razorpay data cleared');
               } catch (error) {
                 console.error("Error clearing session:", error);
               }
-
               setCurrentUser(null);
-              
               // Reset auction state
               setCurrentAuction(prev => ({
                 ...prev,
@@ -1754,7 +1727,6 @@ const App = () => {
                   return box;
                 })
               }));
-              
               setCurrentHourlyAuctionId(null);
               setCurrentPage("login");
             }}
@@ -1783,7 +1755,6 @@ const App = () => {
         </QueryClientProvider>
       );
     }
-
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -1982,7 +1953,7 @@ const App = () => {
 
             {/* Prize Showcase */}
             <PrizeShowcase
-              currentPrize={currentAuction as any}
+              currentPrize={currentAuction}
               isLoggedIn={!!currentUser}
               serverTime={serverTime} // ✅ Pass server time from parent
               liveAuctionData={liveAuctionData} // ✅ Pass live auction data from parent
