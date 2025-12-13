@@ -705,7 +705,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                               Priority Claim System Active
                             </p>
                             <p className="text-xs text-blue-700 mb-2">
-                              Currently: <span className="font-bold">{getRankSuffix(auction.currentEligibleRank || 1)} place winner</span> has 30 minutes to claim the prize.
+                              Currently: <span className="font-bold">{getRankSuffix(auction.currentEligibleRank || 1)} place winner</span> has 15 minutes to claim the prize.
                             </p>
                           </div>
                         </div>
@@ -713,7 +713,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                         <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
                           <p className="text-xs text-blue-800 font-medium mb-1">⏰ How it works:</p>
                           <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
-                            <li>Each winner gets 30 minutes to claim</li>
+                            <li>Each winner gets 15 minutes to claim</li>
                             <li>If they don't claim, next winner gets their turn</li>
                             <li>You're #{getQueuePosition()} in the waiting queue</li>
                             <li>You'll be notified when it's your turn</li>
@@ -1173,7 +1173,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                           {getRankEmoji(auction.finalRank || 1)} Your Claim Window Expired
                         </p>
                         <p className="text-xs text-red-700">
-                          30-minute deadline passed. Prize may have been offered to the next winner in queue.
+                          15-minute deadline passed. Prize may have been offered to the next winner in queue.
                         </p>
                       </div>
                     </div>

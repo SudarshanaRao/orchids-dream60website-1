@@ -786,8 +786,8 @@ const AuctionCard = ({
                         </p>
                         <p className="text-[8px] sm:text-[10px] text-red-700">
                           {localAuction.finalRank === 1 
-                            ? '30-minute deadline passed. Prize may be offered to 2nd place winner.'
-                            : '30-minute deadline passed. Prize not claimed.'
+                            ? '15-minute deadline passed. Prize may be offered to 2nd place winner.'
+                            : '15-minute deadline passed. Prize not claimed.'
                           }
                         </p>
                       </div>
@@ -826,7 +826,7 @@ const AuctionCard = ({
 
                     <div className="bg-white/60 rounded-lg p-2 border border-blue-200">
                       <p className="text-[10px] text-blue-700 leading-relaxed">
-                        💡 You'll be able to claim if previous {localAuction.finalRank === 2 ? 'winner' : 'winners'} don't claim within their 30-minute window{localAuction.finalRank === 3 ? 's' : ''}.
+                        💡 You'll be able to claim if previous {localAuction.finalRank === 2 ? 'winner' : 'winners'} don't claim within their 15-minute window{localAuction.finalRank === 3 ? 's' : ''}.
                       </p>
                     </div>
                   </div>
@@ -1436,7 +1436,7 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-purple-900 text-[10px] sm:text-xs md:text-sm mb-0.5 sm:mb-1">How Dream60 Auctions Work</h3>
                   <p className="text-[9px] sm:text-[10px] md:text-xs text-purple-700 leading-relaxed">
-                    Each auction has <span className="font-semibold">4 rounds (15 min each)</span>. Entry fee payment in <span className="font-semibold">Boxes 1 & 2</span> unlocks bidding in <span className="font-semibold">Boxes 3 & 4</span>. Winners must pay their final round bid amount within 30 minutes to claim their prize.
+                    Each auction has <span className="font-semibold">4 rounds (15 min each)</span>. Entry fee payment in <span className="font-semibold">Boxes 1 & 2</span> unlocks bidding in <span className="font-semibold">Boxes 3 & 4</span>. Winners must pay their final round bid amount within 15 minutes to claim their prize.
                   </p>
                 </div>
               </div>
