@@ -22,6 +22,7 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { PushNotificationPermission } from './components/PushNotificationPermission';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -2111,6 +2112,9 @@ const App = () => {
               onClose={() => setShowBidSuccess(null)}
             />
           )}
+
+          {/* Push Notification Permission Banner */}
+          <PushNotificationPermission userId={currentUser?.id} />
         </div>
       </TooltipProvider>
     </QueryClientProvider>

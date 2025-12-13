@@ -52,8 +52,8 @@ const subscribe = async (req, res) => {
       });
     }
     
-    // Check if user exists
-    const user = await User.findById(userId);
+    // Check if user exists using user_id (UUID format)
+    const user = await User.findOne({ user_id: userId });
     if (!user) {
       return res.status(404).json({
         success: false,

@@ -325,7 +325,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-        {[
+       ={[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },
@@ -505,7 +505,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                   )}
                   
                   {/* Participant count for completed auctions */}
-                  {auction.status === 'completed' && auction.totalParticipants > 0 && (
+                  {auction.status === 'completed' && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -519,7 +519,9 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                         </div>
                         <div>
                           <div className="text-xs text-violet-700">Total Participants</div>
-                          <div className="text-sm font-bold text-violet-900">{auction.totalParticipants}</div>
+                          <div className="text-sm font-bold text-violet-900">
+                            {auction.totalParticipants > 0 ? auction.totalParticipants : '0 participants'}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
