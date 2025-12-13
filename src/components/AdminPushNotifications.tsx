@@ -55,6 +55,8 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [usersWithBidAlerts, setUsersWithBidAlerts] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [allSubscribedUsers, setAllSubscribedUsers] = useState<SubscriptionUser[]>([]);
 
   useEffect(() => {
     fetchSubscriptionStats();
@@ -100,6 +102,9 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
       if (data.success) {
         setStats(data.data);
+        // Combine PWA and Web users into a single array
+        const allUsers = [...data.data.pwaUsers, ...data.data.webUsers];
+        setAllSubscribedUsers(allUsers);
       } else {
         toast.error(data.message || 'Failed to load subscription stats');
       }
@@ -108,6 +113,86 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       toast.error('Failed to load subscription stats');
     } finally {
       setIsLoadingStats(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.size === allSubscribedUsers.length) {
+      // Deselect all
+      setSelectedUsers(new Set());
+    } else {
+      // Select all
+      const allUserIds = new Set(allSubscribedUsers.map(u => u.userId));
+      setSelectedUsers(allUserIds);
+    }
+  };
+
+  const handleToggleUser = (userId: string) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleSendToSelected = async () => {
+    if (!notificationData.title || !notificationData.body) {
+      toast.error('Please fill in title and message');
+      return;
+    }
+
+    if (selectedUsers.size === 0) {
+      toast.error('Please select at least one user');
+      return;
+    }
+
+    try {
+      setIsSending(true);
+      const response = await fetch(`${API_ENDPOINTS.pushNotification.sendToAll}/selected`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...notificationData,
+          userIds: Array.from(selectedUsers)
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(
+          `Notification sent successfully!`,
+          {
+            description: `Sent to ${selectedUsers.size} selected user(s)`,
+            duration: 5000,
+          }
+        );
+
+        console.log('📧 Push Notification Sent to Selected Users:');
+        console.log(`   Title: ${notificationData.title}`);
+        console.log(`   Total Recipients: ${selectedUsers.size}`);
+
+        // Reset form and selections
+        setNotificationData({
+          title: '',
+          body: '',
+          url: '/'
+        });
+        setSelectedUsers(new Set());
+
+        fetchSubscriptionStats();
+      } else {
+        toast.error(data.message || 'Failed to send notifications');
+      }
+    } catch (error) {
+      console.error('Error sending push notifications:', error);
+      toast.error('Failed to send notifications');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -191,7 +276,21 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
       {/* Subscription Statistics */}
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-        <h3 className="text-lg font-bold text-purple-900 mb-4">Subscription Statistics</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-purple-900">Select Recipients</h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="selectAll"
+              checked={selectedUsers.size === allSubscribedUsers.length && allSubscribedUsers.length > 0}
+              onChange={handleSelectAll}
+              className="w-4 h-4 text-purple-700 rounded border-purple-300 focus:ring-purple-500"
+            />
+            <label htmlFor="selectAll" className="text-sm font-semibold text-purple-900 cursor-pointer">
+              Select All ({selectedUsers.size}/{allSubscribedUsers.length})
+            </label>
+          </div>
+        </div>
         
         {isLoadingStats ? (
           <div className="flex items-center justify-center py-8">
@@ -232,13 +331,32 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                     <p className="text-sm text-green-600 text-center py-4">No PWA subscriptions yet</p>
                   ) : (
                     stats.pwaUsers.map((user) => (
-                      <div key={user.subscriptionId} className="bg-white rounded-lg p-3 border border-green-200">
-                        <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
-                        <p className="text-xs text-gray-600">{user.email}</p>
-                        <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
-                        <p className="text-xs text-green-600 mt-1">
-                          Last used: {new Date(user.lastUsed).toLocaleDateString()}
-                        </p>
+                      <div 
+                        key={user.subscriptionId} 
+                        onClick={() => handleToggleUser(user.userId)}
+                        className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                          selectedUsers.has(user.userId) 
+                            ? 'border-green-500 bg-green-50 ring-2 ring-green-300' 
+                            : 'border-green-200 hover:bg-green-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.has(user.userId)}
+                            onChange={() => handleToggleUser(user.userId)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-4 h-4 text-green-700 rounded border-green-300 focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                            <p className="text-xs text-gray-600">{user.email}</p>
+                            <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                            <p className="text-xs text-green-600 mt-1">
+                              Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}
@@ -256,13 +374,32 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                     <p className="text-sm text-blue-600 text-center py-4">No web subscriptions yet</p>
                   ) : (
                     stats.webUsers.map((user) => (
-                      <div key={user.subscriptionId} className="bg-white rounded-lg p-3 border border-blue-200">
-                        <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
-                        <p className="text-xs text-gray-600">{user.email}</p>
-                        <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          Last used: {new Date(user.lastUsed).toLocaleDateString()}
-                        </p>
+                      <div 
+                        key={user.subscriptionId} 
+                        onClick={() => handleToggleUser(user.userId)}
+                        className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                          selectedUsers.has(user.userId) 
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
+                            : 'border-blue-200 hover:bg-blue-50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.has(user.userId)}
+                            onChange={() => handleToggleUser(user.userId)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-4 h-4 text-blue-700 rounded border-blue-300 focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                            <p className="text-xs text-gray-600">{user.email}</p>
+                            <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                            <p className="text-xs text-blue-600 mt-1">
+                              Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}
@@ -379,7 +516,24 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           )}
 
           {/* Send Button */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={handleSendToSelected}
+              disabled={isSending || !notificationData.title || !notificationData.body || selectedUsers.size === 0}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-800 text-white rounded-lg font-semibold hover:from-orange-700 hover:to-orange-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Send to Selected ({selectedUsers.size})
+                </>
+              )}
+            </button>
             <button
               onClick={handleSendToAll}
               disabled={isSending || !notificationData.title || !notificationData.body}
@@ -393,7 +547,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  Send to All Subscribers
+                  Send to All Users
                 </>
               )}
             </button>

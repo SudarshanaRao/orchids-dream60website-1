@@ -767,6 +767,108 @@ export default function App() {
     return () => clearInterval(interval);
   }, [currentUser?.id, forceRefetchTrigger]);
 
+  const handlePlaceBid = async (boxId: number, amount: number) => {
+    if (isPlacingBid) return;
+    
+    if (!currentUser) {
+      toast.error('Please login to place a bid');
+      setCurrentPage('login');
+      return;
+    }
+
+    if (!currentAuction.userHasPaidEntry) {
+      toast.error('Please pay the entry fee first to participate in the auction');
+      return;
+    }
+
+    if (!currentHourlyAuctionId) {
+      toast.error('No active auction found. Please try again.');
+      return;
+    }
+
+    const roundBox = currentAuction.boxes.find(b => b.id === boxId && b.type === 'round') as RoundBox | undefined;
+    if (!roundBox) {
+      toast.error('Invalid round selected');
+      return;
+    }
+
+    // Check if user already placed bid in this round
+    if (currentAuction.userBidsPerRound[roundBox.roundNumber]) {
+      toast.error('You have already placed a bid in this round. You can only bid once per round.');
+      return;
+    }
+
+    // Validate bid amount against previous round
+    if (roundBox.roundNumber > 1) {
+      const previousRoundBid = currentAuction.userBidsPerRound[roundBox.roundNumber - 1];
+      if (previousRoundBid && amount <= previousRoundBid) {
+        toast.error(`Your bid must be higher than your previous round bid of ₹${previousRoundBid.toLocaleString()}`);
+        return;
+      }
+    }
+
+    setIsPlacingBid(true);
+
+    try {
+      const response = await fetch(API_ENDPOINTS.scheduler.placeBid, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          playerId: currentUser.id,
+          playerUsername: currentUser.username,
+          auctionValue: amount,
+          hourlyAuctionId: currentHourlyAuctionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.message || 'Failed to place bid');
+        return;
+      }
+
+      // Success
+      toast.success('Bid Placed Successfully!', {
+        description: `Your bid of ₹${amount.toLocaleString()} has been placed in Round ${roundBox.roundNumber}!`,
+      });
+
+      // Update local state
+      setCurrentAuction(prev => {
+        const updatedBoxes = prev.boxes.map(b => {
+          if (b.id === boxId && b.type === 'round') {
+            const rb = b as RoundBox;
+            return {
+              ...rb,
+              currentBid: amount,
+              bidder: currentUser.username,
+            };
+          }
+          return b;
+        });
+
+        const updatedUserBids = {
+          ...prev.userBidsPerRound,
+          [roundBox.roundNumber]: amount,
+        };
+
+        return {
+          ...prev,
+          boxes: updatedBoxes,
+          userBidsPerRound: updatedUserBids,
+        };
+      });
+
+    } catch (error) {
+      console.error('Error placing bid:', error);
+      toast.error('Failed to place bid. Please try again.');
+    } finally {
+      setIsPlacingBid(false);
+    }
+  };
+
   // Admin routes
   if (currentPage === 'admin-login') {
     return (
@@ -829,15 +931,14 @@ export default function App() {
               window.history.pushState({}, '', '/admin');
             }}
             onNavigate={(page) => {
-              setCurrentPage(page);
-              const urlMap: { [key: string]: string } = {
-                'game': '/admin',
+              const urlMap = {
+                'game': '/',
                 'login': '/login',
                 'signup': '/signup',
-                'forgot': '/forgot-password'
               };
-              const url = urlMap[page] || '/admin';
+              const url = urlMap[page] || '/';
               window.history.pushState({}, '', url);
+              setCurrentPage(page);
             }}
           />
         </TooltipProvider>
@@ -866,15 +967,14 @@ export default function App() {
               window.history.pushState({}, '', '/admin');
             }}
             onNavigate={(page) => {
-              setCurrentPage(page);
-              const urlMap: { [key: string]: string } = {
-                'game': '/admin',
+              const urlMap = {
+                'game': '/',
                 'login': '/login',
                 'signup': '/signup',
-                'forgot': '/forgot-password'
               };
-              const url = urlMap[page] || '/admin';
+              const url = urlMap[page] || '/';
               window.history.pushState({}, '', url);
+              setCurrentPage(page);
             }}
           />
         </TooltipProvider>
@@ -1073,26 +1173,24 @@ export default function App() {
           <Header
             user={currentUser}
             onNavigate={(page) => {
-              setCurrentPage(page);
-              const urlMap: { [key: string]: string } = {
-                'game': '/admin',
+              const urlMap = {
+                'game': '/',
                 'login': '/login',
                 'signup': '/signup',
-                'forgot': '/forgot-password',
-                'rules': '/rules',
-                'participation': '/participation',
                 'terms': '/terms',
                 'privacy': '/privacy',
                 'support': '/support',
                 'contact': '/contact',
-                'profile': '/profile',
+                'rules': '/rules',
+                'participation': '/participation',
+                'account': '/account',
                 'history': '/history',
-                'leaderboard': '/leaderboard',
                 'admin-login': '/admin',
                 'admin-dashboard': '/admin'
               };
-              const url = urlMap[page] || '/admin';
+              const url = urlMap[page] || '/';
               window.history.pushState({}, '', url);
+              setCurrentPage(page);
             }}
             onLogin={() => {
               setCurrentPage('login');
@@ -1246,26 +1344,24 @@ export default function App() {
             <AuctionSchedule user={currentUser} />
 
             <Footer onNavigate={(page) => {
-              setCurrentPage(page);
-              const urlMap: { [key: string]: string } = {
-                'game': '/admin',
+              const urlMap = {
+                'game': '/',
                 'login': '/login',
                 'signup': '/signup',
-                'forgot': '/forgot-password',
-                'rules': '/rules',
-                'participation': '/participation',
                 'terms': '/terms',
                 'privacy': '/privacy',
                 'support': '/support',
                 'contact': '/contact',
-                'profile': '/profile',
+                'rules': '/rules',
+                'participation': '/participation',
+                'account': '/account',
                 'history': '/history',
-                'leaderboard': '/leaderboard',
                 'admin-login': '/admin',
                 'admin-dashboard': '/admin'
               };
-              const url = urlMap[page] || '/admin';
+              const url = urlMap[page] || '/';
               window.history.pushState({}, '', url);
+              setCurrentPage(page);
             }} />
           </main>
           
