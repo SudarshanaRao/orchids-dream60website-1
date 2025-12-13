@@ -143,6 +143,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip service worker for Vite HMR and dev server requests
+  if ((url.hostname === 'test.dream60.com' || url.hostname === 'localhost') && 
+      url.pathname.includes('__vite')) {
+    return fetch(event.request);
+  }
+
   if (isApiRequest(request.url)) {
     event.respondWith(
       networkFirst(request, API_CACHE, 5000)

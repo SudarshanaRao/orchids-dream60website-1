@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Send, Users, Loader2, Smartphone, Monitor } from 'lucide-react';
+import { Bell, Send, Users, Loader2, Smartphone, Monitor, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
@@ -165,6 +165,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         },
         body: JSON.stringify({
           ...notificationData,
+          ...richNotificationData,
           userIds: Array.from(selectedUsers)
         })
       });
@@ -189,6 +190,14 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           title: '',
           body: '',
           url: '/'
+        });
+        setRichNotificationData({
+          icon: '/icons/icon-192x192.png',
+          image: '',
+          badge: '/icons/icon-72x72.png',
+          vibrate: [200, 100, 200],
+          requireInteraction: false,
+          actions: []
         });
         setSelectedUsers(new Set());
 
@@ -217,7 +226,10 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(notificationData)
+        body: JSON.stringify({
+          ...notificationData,
+          ...richNotificationData
+        })
       });
 
       const data = await response.json();
@@ -254,6 +266,14 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           title: '',
           body: '',
           url: '/'
+        });
+        setRichNotificationData({
+          icon: '/icons/icon-192x192.png',
+          image: '',
+          badge: '/icons/icon-72x72.png',
+          vibrate: [200, 100, 200],
+          requireInteraction: false,
+          actions: []
         });
 
         // Refresh subscription stats to show updated data
@@ -744,6 +764,193 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           >
             <p className="font-semibold text-sm text-indigo-900">New Prize</p>
             <p className="text-xs text-indigo-600 mt-1">Showcase new items</p>
+          </button>
+        </div>
+      </div>
+
+      {/* Rich Notification Templates */}
+      <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl shadow-lg p-6 border-2 border-purple-300">
+        <div className="flex items-center gap-3 mb-2">
+          <Sparkles className="w-6 h-6 text-purple-700" />
+          <h3 className="text-lg font-bold text-purple-900">Rich Notification Templates</h3>
+        </div>
+        <p className="text-sm text-purple-600 mb-4">
+          Pre-configured templates with banner images for professional notifications
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Template 1: Auction Starting */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '🎯 Auction Starting in 15 Minutes!',
+                body: 'Get ready to place your bids! The next auction round is about to begin. Join now and win amazing prizes!',
+                url: '/'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1556742400-b5b7c6a5d9e0?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-purple-400 to-violet-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1556742400-b5b7c6a5d9e0?w=800&h=400&fit=crop&q=80"
+                alt="Auction starting"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">🎯 Auction Starting Soon</p>
+                <p className="text-white/90 text-xs mt-1">15-minute countdown notification</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Template 2: Winner Announcement */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '🏆 Winner Announced!',
+                body: 'The auction has ended! Check if you won the grand prize. View the results now!',
+                url: '/history'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1533158628620-7e35717d36e8?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-amber-200 hover:border-amber-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-amber-400 to-orange-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1533158628620-7e35717d36e8?w=800&h=400&fit=crop&q=80"
+                alt="Winner announcement"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">🏆 Winner Announcement</p>
+                <p className="text-white/90 text-xs mt-1">Celebrate the winners</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Template 3: New Round Alert */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '⚡ New Round Started!',
+                body: 'Round 2 is now live! Place your bids quickly before time runs out. Higher bids win bigger prizes!',
+                url: '/'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-indigo-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&h=400&fit=crop&q=80"
+                alt="New round"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">⚡ New Round Alert</p>
+                <p className="text-white/90 text-xs mt-1">Notify users of new round</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Template 4: Bid Update */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '📈 Your Bid is Leading!',
+                body: 'Congratulations! Your bid is currently in the lead. Keep an eye on the auction to maintain your position!',
+                url: '/'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-green-400 to-emerald-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop&q=80"
+                alt="Bid update"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">📈 Bid Status Update</p>
+                <p className="text-white/90 text-xs mt-1">Inform users about their bid position</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Template 5: Last Chance */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '⏰ Last 5 Minutes!',
+                body: 'The auction is ending soon! Place your final bids now before it\'s too late. Don\'t miss out!',
+                url: '/'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-red-200 hover:border-red-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-red-400 to-rose-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&h=400&fit=crop&q=80"
+                alt="Last chance"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">⏰ Last Chance Alert</p>
+                <p className="text-white/90 text-xs mt-1">Urgency notification for ending soon</p>
+              </div>
+            </div>
+          </button>
+
+          {/* Template 6: Special Offer */}
+          <button
+            onClick={() => {
+              setNotificationData({
+                title: '🎁 Special Offer: Double Prize!',
+                body: 'This round has a special double prize pool! Join now for your chance to win 2x the rewards!',
+                url: '/'
+              });
+              setRichNotificationData({
+                ...richNotificationData,
+                image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80'
+              });
+            }}
+            className="group relative bg-white rounded-xl overflow-hidden border-2 border-pink-200 hover:border-pink-400 transition-all hover:shadow-lg"
+          >
+            <div className="aspect-[2/1] bg-gradient-to-br from-pink-400 to-purple-600 relative overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80"
+                alt="Special offer"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              <div className="absolute bottom-2 left-2 right-2">
+                <p className="text-white font-bold text-sm">🎁 Special Promotion</p>
+                <p className="text-white/90 text-xs mt-1">Highlight special offers and events</p>
+              </div>
+            </div>
           </button>
         </div>
       </div>
