@@ -182,8 +182,15 @@ const sendToUser = async (req, res) => {
     }
     
     // Configure web-push
+    const vapidSubject = process.env.VAPID_SUBJECT || `mailto:${process.env.EMAIL_USER}`;
+    
+    // Validate VAPID subject format (must be mailto: URL or https: URL)
+    if (!vapidSubject.startsWith('mailto:') && !vapidSubject.startsWith('https://')) {
+      throw new Error('VAPID subject must be a valid mailto: or https: URL');
+    }
+    
     webpush.setVapidDetails(
-      `mailto:${process.env.EMAIL_USER}`,
+      vapidSubject,
       process.env.VAPID_PUBLIC_KEY,
       process.env.VAPID_PRIVATE_KEY
     );
