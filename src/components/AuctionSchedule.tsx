@@ -141,7 +141,8 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                 image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
               },
               winner,
-              roundCount: auction.roundCount || 4
+              roundCount: auction.roundCount || 4,
+              totalParticipants: auction.totalParticipants || 0
             };
           });
           
@@ -498,6 +499,27 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                         <div>
                           <div className="text-xs text-purple-700">Winner</div>
                           <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                  
+                  {/* Participant count for completed auctions */}
+                  {auction.status === 'completed' && auction.totalParticipants > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 flex items-center justify-between gap-2 bg-violet-50/80 backdrop-blur-sm rounded-2xl p-2 border border-violet-200/60"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs text-violet-700">Total Participants</div>
+                          <div className="text-sm font-bold text-violet-900">{auction.totalParticipants}</div>
                         </div>
                       </div>
                     </motion.div>
