@@ -79,6 +79,14 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const canShowBoxes = isJoinWindowOpen || auction.userHasPaidEntry;
   const showGuestPreview = isJoinWindowOpen && !auction.userHasPaidEntry;
 
+  console.log('🎯 [AUCTION GRID] Visibility check:', {
+    isJoinWindowOpen,
+    userHasPaidEntry: auction.userHasPaidEntry,
+    canShowBoxes,
+    showGuestPreview,
+    roundBoxesCount: roundBoxes.length
+  });
+
   return (
     <>
       <div className="space-y-6 sm:space-y-8">

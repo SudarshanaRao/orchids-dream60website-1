@@ -1158,15 +1158,29 @@ export default function App() {
                 if (!currentUser) return;
                 
                 console.log('💳 Payment successful - updating userHasPaidEntry flag and triggering refresh');
+                console.log('📊 Current auction state BEFORE update:', {
+                  id: currentAuction.id,
+                  userHasPaidEntry: currentAuction.userHasPaidEntry,
+                  prize: currentAuction.prize
+                });
                 
                 // Immediately update the auction state to show boxes
-                setCurrentAuction(prev => ({
-                  ...prev,
-                  userHasPaidEntry: true
-                }));
+                setCurrentAuction(prev => {
+                  const updated = {
+                    ...prev,
+                    userHasPaidEntry: true
+                  };
+                  console.log('✅ Updated auction state:', {
+                    id: updated.id,
+                    userHasPaidEntry: updated.userHasPaidEntry,
+                    prize: updated.prize
+                  });
+                  return updated;
+                });
                 
                 // Also trigger a data refresh for server-side updates
                 setForceRefetchTrigger(prev => prev + 1);
+                console.log('🔄 Force refetch trigger incremented');
               }}
             />
 
@@ -1182,6 +1196,7 @@ export default function App() {
                 window.history.pushState({}, '', '/leaderboard');
               }}
               currentRound={currentAuction.currentRound}
+              isJoinWindowOpen={serverTime ? serverTime.minute < 15 : false}
             />
 
             <AuctionSchedule
