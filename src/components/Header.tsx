@@ -43,7 +43,20 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      // Fallback: Show manual install instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        alert('To install Dream60:\n\n1. Tap the Share button (□↑)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
+      } else if (isAndroid) {
+        alert('To install Dream60:\n\n1. Tap the menu (⋮) in your browser\n2. Tap "Install app" or "Add to Home screen"\n3. Follow the prompts to install');
+      } else {
+        alert('To install Dream60:\n\nLook for the install icon (⊕) in your browser\'s address bar, or check your browser menu for "Install" or "Add to Home Screen" option.');
+      }
+      return;
+    }
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
