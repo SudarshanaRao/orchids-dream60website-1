@@ -1047,7 +1047,7 @@ export default function App() {
           </main>
           
           {currentUser && <AmazonVoucherModal userId={currentUser.id} />}
-          {currentUser && <PushNotificationPermission userId={currentUser.id} username={currentUser.username} />}
+          {currentUser && <PushNotificationPermission userId={currentUser.id} />}
         </div>
       </TooltipProvider>
     </QueryClientProvider>

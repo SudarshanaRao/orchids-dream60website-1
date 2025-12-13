@@ -41,7 +41,7 @@ export const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
 
       // Store admin session
       localStorage.setItem('admin_user_id', data.admin.user_id);
-      // localStorage.setItem('admin_email', data.admin.email);
+      localStorage.setItem('admin_email', data.admin.email);
       
       toast.success('Admin login successful');
       onLogin(data.admin);
