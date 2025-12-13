@@ -718,6 +718,55 @@ export default function App() {
     }
   }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
+  // ✅ CRITICAL: Poll live auction data to check if user has paid entry fee
+  useEffect(() => {
+    const fetchCurrentAuctionId = async () => {
+      if (!currentUser?.id) return;
+      
+      try {
+        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const liveAuction = result.data;
+          setCurrentHourlyAuctionId(liveAuction.hourlyAuctionId);
+          console.log('✅ Live auction ID set:', liveAuction.hourlyAuctionId);
+          
+          setLiveAuctionData(liveAuction);
+          
+          // ✅ CRITICAL: Check if user is in participants array
+          let userHasPaid = false;
+          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+            const userParticipant = liveAuction.participants.find(
+              (p: any) => p.playerId === currentUser.id
+            );
+            userHasPaid = !!userParticipant;
+            console.log(`✅ User entry fee status from API: ${userHasPaid ? 'PAID' : 'NOT PAID'}`);
+          }
+          
+          // Update auction state with API data
+          setCurrentAuction(prev => ({
+            ...prev,
+            userHasPaidEntry: userHasPaid,
+            prize: liveAuction.auctionName || prev.prize,
+            prizeValue: liveAuction.prizeValue || prev.prizeValue,
+            totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching live auction:', error);
+      }
+    };
+
+    fetchCurrentAuctionId();
+    
+    // Poll every 5 seconds
+    const interval = setInterval(fetchCurrentAuctionId, 5000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id, forceRefetchTrigger]);
+
   // Admin routes
   if (currentPage === 'admin-login') {
     return (
@@ -1185,7 +1234,20 @@ export default function App() {
             />
 
             {/* ✅ CRITICAL FIX: Only show AuctionGrid if user has paid OR it's within join window */}
-            {((serverTime && serverTime.minute < 15) || currentAuction.userHasPaidEntry) && (
+            {(() => {
+              const isJoinWindow = serverTime && serverTime.minute < 15;
+              const hasPaidEntry = currentAuction.userHasPaidEntry;
+              const shouldShow = isJoinWindow || hasPaidEntry;
+              
+              console.log('🎲 [APP.TSX] AuctionGrid visibility check:', {
+                'Server Time Minute': serverTime?.minute,
+                'Is Join Window': isJoinWindow,
+                'Has Paid Entry': hasPaidEntry,
+                'Should Show AuctionGrid': shouldShow
+              });
+              
+              return shouldShow;
+            })() && (
               <AuctionGrid
                 auction={currentAuction}
                 onPlaceBid={(boxId, amount) => {
