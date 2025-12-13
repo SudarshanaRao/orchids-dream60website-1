@@ -1249,17 +1249,24 @@ export default function App() {
               return shouldShow;
             })() && (
               <AuctionGrid
-                auction={currentAuction}
-                onPlaceBid={(boxId, amount) => {
-                  console.log('Bid placed:', boxId, amount);
+                auction={{
+                  boxes: currentAuction.boxes as any,
+                  prizeValue: currentAuction.prizeValue,
+                  userBidsPerRound: currentAuction.userBidsPerRound,
+                  userHasPaidEntry: currentAuction.userHasPaidEntry,
+                  userQualificationPerRound: currentAuction.userQualificationPerRound,
+                  winnersAnnounced: currentAuction.winnersAnnounced,
+                  userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find((b: any) => b.type === 'entry' && b.hasPaid)?.entryFee,
+                  hourlyAuctionId: currentHourlyAuctionId,
                 }}
-                isLoggedIn={!!currentUser}
+                user={currentUser || { username: 'Guest' }}
                 onShowLeaderboard={(roundNumber) => {
                   setSelectedLeaderboard({ roundNumber });
                   setCurrentPage('leaderboard');
                   window.history.pushState({}, '', '/leaderboard');
                 }}
-                currentRound={currentAuction.currentRound}
+                onBid={handlePlaceBid}
+                serverTime={serverTime}
                 isJoinWindowOpen={serverTime ? serverTime.minute < 15 : false}
               />
             )}
