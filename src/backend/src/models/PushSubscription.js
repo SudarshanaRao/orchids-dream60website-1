@@ -22,6 +22,12 @@ const pushSubscriptionSchema = new mongoose.Schema({
       required: true
     }
   },
+  deviceType: {
+    type: String,
+    enum: ['PWA', 'Web'],
+    default: 'Web',
+    required: true
+  },
   userAgent: String,
   isActive: {
     type: Boolean,
@@ -38,5 +44,6 @@ const pushSubscriptionSchema = new mongoose.Schema({
 });
 
 pushSubscriptionSchema.index({ userId: 1, isActive: 1 });
+pushSubscriptionSchema.index({ deviceType: 1, isActive: 1 });
 
 module.exports = mongoose.model('PushSubscription', pushSubscriptionSchema);

@@ -1,6 +1,7 @@
 // src/controllers/adminController.js 
 const User = require('../models/user');
 const MasterAuction = require('../models/masterAuction');
+const PushSubscription = require('../models/PushSubscription');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -672,6 +673,85 @@ const deleteDailyAuctionSlot = async (req, res) => {
   }
 };
 
+/**
+ * Get Push Subscription Statistics (Admin)
+ * Returns statistics about PWA vs Web push notification subscriptions
+ */
+const getPushSubscriptionStats = async (req, res) => {
+  try {
+    // Verify admin access
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Admin user_id required.',
+      });
+    }
+
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || adminUser.userType !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.',
+      });
+    }
+
+    // Get all active subscriptions grouped by device type
+    const [pwaSubscriptions, webSubscriptions, totalActive, totalInactive] = await Promise.all([
+      PushSubscription.find({ isActive: true, deviceType: 'PWA' })
+        .populate('userId', 'username email mobile userCode')
+        .sort({ lastUsed: -1 })
+        .lean(),
+      PushSubscription.find({ isActive: true, deviceType: 'Web' })
+        .populate('userId', 'username email mobile userCode')
+        .sort({ lastUsed: -1 })
+        .lean(),
+      PushSubscription.countDocuments({ isActive: true }),
+      PushSubscription.countDocuments({ isActive: false }),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          totalActive,
+          totalInactive,
+          pwaCount: pwaSubscriptions.length,
+          webCount: webSubscriptions.length,
+        },
+        pwaUsers: pwaSubscriptions.map(sub => ({
+          subscriptionId: sub._id,
+          userId: sub.userId?._id,
+          username: sub.userId?.username,
+          email: sub.userId?.email,
+          mobile: sub.userId?.mobile,
+          userCode: sub.userId?.userCode,
+          deviceType: sub.deviceType,
+          endpoint: sub.endpoint.substring(0, 50) + '...',
+          createdAt: sub.createdAt,
+          lastUsed: sub.lastUsed,
+        })),
+        webUsers: webSubscriptions.map(sub => ({
+          subscriptionId: sub._id,
+          userId: sub.userId?._id,
+          username: sub.userId?.username,
+          email: sub.userId?.email,
+          mobile: sub.userId?.mobile,
+          userCode: sub.userId?.userCode,
+          deviceType: sub.deviceType,
+          endpoint: sub.endpoint.substring(0, 50) + '...',
+          createdAt: sub.createdAt,
+          lastUsed: sub.lastUsed,
+        })),
+      },
+    });
+  } catch (err) {
+    console.error('Get Push Subscription Stats Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getUserStatistics,
@@ -682,4 +762,5 @@ module.exports = {
   updateMasterAuctionAdmin,
   deleteMasterAuctionAdmin,
   deleteDailyAuctionSlot,
+  getPushSubscriptionStats,
 };

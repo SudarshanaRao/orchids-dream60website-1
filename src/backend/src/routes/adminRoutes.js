@@ -11,6 +11,7 @@ const {
   updateMasterAuctionAdmin,
   deleteMasterAuctionAdmin,
   deleteDailyAuctionSlot,
+  getPushSubscriptionStats,
 } = require('../controllers/adminController');
 
 /**
@@ -560,5 +561,91 @@ router.delete('/master-auctions/:master_id', deleteMasterAuctionAdmin);
  *         description: Server error
  */
 router.delete('/master-auctions/:master_id/slots/:auction_number', deleteDailyAuctionSlot);
+
+/**
+ * @swagger
+ * /admin/push-subscriptions:
+ *   get:
+ *     summary: GET PUSH SUBSCRIPTION STATISTICS (ADMIN)
+ *     description: Get statistics about PWA vs Web push notification subscriptions (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     responses:
+ *       200:
+ *         description: Push subscription statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     summary:
+ *                       type: object
+ *                       properties:
+ *                         totalActive:
+ *                           type: number
+ *                           example: 150
+ *                         totalInactive:
+ *                           type: number
+ *                           example: 25
+ *                         pwaCount:
+ *                           type: number
+ *                           example: 80
+ *                         webCount:
+ *                           type: number
+ *                           example: 70
+ *                     pwaUsers:
+ *                       type: array
+ *                       description: List of users with PWA subscriptions
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           subscriptionId:
+ *                             type: string
+ *                           userId:
+ *                             type: string
+ *                           username:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           deviceType:
+ *                             type: string
+ *                             example: PWA
+ *                     webUsers:
+ *                       type: array
+ *                       description: List of users with Web subscriptions
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           subscriptionId:
+ *                             type: string
+ *                           userId:
+ *                             type: string
+ *                           username:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                           deviceType:
+ *                             type: string
+ *                             example: Web
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied - Admin privileges required
+ *       500:
+ *         description: Server error
+ */
+router.get('/push-subscriptions', getPushSubscriptionStats);
 
 module.exports = router;

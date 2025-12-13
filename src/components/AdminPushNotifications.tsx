@@ -1,7 +1,30 @@
-import { useState } from 'react';
-import { Bell, Send, Users, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, Send, Users, Loader2, Smartphone, Monitor } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '@/lib/api-config';
+
+interface SubscriptionUser {
+  subscriptionId: string;
+  userId: string;
+  username: string;
+  email: string;
+  mobile?: string;
+  userCode: string;
+  deviceType: 'PWA' | 'Web';
+  createdAt: string;
+  lastUsed: string;
+}
+
+interface SubscriptionStats {
+  summary: {
+    totalActive: number;
+    totalInactive: number;
+    pwaCount: number;
+    webCount: number;
+  };
+  pwaUsers: SubscriptionUser[];
+  webUsers: SubscriptionUser[];
+}
 
 export function AdminPushNotifications() {
   const [notificationData, setNotificationData] = useState({
@@ -10,6 +33,41 @@ export function AdminPushNotifications() {
     url: '/'
   });
   const [isSending, setIsSending] = useState(false);
+  const [stats, setStats] = useState<SubscriptionStats | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
+  useEffect(() => {
+    fetchSubscriptionStats();
+  }, []);
+
+  const fetchSubscriptionStats = async () => {
+    try {
+      setIsLoadingStats(true);
+      const adminData = localStorage.getItem('adminData');
+      const admin = adminData ? JSON.parse(adminData) : null;
+      
+      if (!admin?.user_id) {
+        toast.error('Admin session expired');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_ENDPOINTS.admin.base}/push-subscriptions?user_id=${admin.user_id}`
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setStats(data.data);
+      } else {
+        toast.error(data.message || 'Failed to load subscription stats');
+      }
+    } catch (error) {
+      console.error('Error fetching subscription stats:', error);
+      toast.error('Failed to load subscription stats');
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   const handleSendToAll = async () => {
     if (!notificationData.title || !notificationData.body) {
@@ -59,6 +117,92 @@ export function AdminPushNotifications() {
         <p className="text-sm text-purple-600">
           Send push notifications to all subscribed users
         </p>
+      </div>
+
+      {/* Subscription Statistics */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+        <h3 className="text-lg font-bold text-purple-900 mb-4">Subscription Statistics</h3>
+        
+        {isLoadingStats ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-700" />
+          </div>
+        ) : stats ? (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+              <div className="bg-purple-50 rounded-lg p-4 border-2 border-purple-200">
+                <p className="text-sm text-purple-600 font-semibold">Total Active</p>
+                <p className="text-2xl font-bold text-purple-900">{stats.summary.totalActive}</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
+                <p className="text-sm text-green-600 font-semibold">PWA Users</p>
+                <p className="text-2xl font-bold text-green-900">{stats.summary.pwaCount}</p>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                <p className="text-sm text-blue-600 font-semibold">Web Users</p>
+                <p className="text-2xl font-bold text-blue-900">{stats.summary.webCount}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
+                <p className="text-sm text-gray-600 font-semibold">Inactive</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.summary.totalInactive}</p>
+              </div>
+            </div>
+
+            {/* Two Column Layout - PWA vs Web */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* PWA Users Column */}
+              <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <Smartphone className="w-5 h-5 text-green-700" />
+                  <h4 className="font-bold text-green-900">PWA Users ({stats.summary.pwaCount})</h4>
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {stats.pwaUsers.length === 0 ? (
+                    <p className="text-sm text-green-600 text-center py-4">No PWA subscriptions yet</p>
+                  ) : (
+                    stats.pwaUsers.map((user) => (
+                      <div key={user.subscriptionId} className="bg-white rounded-lg p-3 border border-green-200">
+                        <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                        <p className="text-xs text-gray-600">{user.email}</p>
+                        <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                        <p className="text-xs text-green-600 mt-1">
+                          Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Web Users Column */}
+              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                <div className="flex items-center gap-2 mb-4">
+                  <Monitor className="w-5 h-5 text-blue-700" />
+                  <h4 className="font-bold text-blue-900">Web Users ({stats.summary.webCount})</h4>
+                </div>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {stats.webUsers.length === 0 ? (
+                    <p className="text-sm text-blue-600 text-center py-4">No web subscriptions yet</p>
+                  ) : (
+                    stats.webUsers.map((user) => (
+                      <div key={user.subscriptionId} className="bg-white rounded-lg p-3 border border-blue-200">
+                        <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                        <p className="text-xs text-gray-600">{user.email}</p>
+                        <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-gray-600 text-center py-4">Failed to load statistics</p>
+        )}
       </div>
 
       {/* Notification Form */}

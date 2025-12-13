@@ -229,32 +229,60 @@ self.addEventListener('push', (event) => {
   if (!event.data) return;
   
   const data = event.data.json();
+  
   const options = {
     body: data.body || 'New notification from Dream60',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
-    vibrate: [100, 50, 100],
+    image: data.image || '/logo.svg',
+    vibrate: [200, 100, 200, 100, 200],
+    tag: 'dream60-notification',
+    requireInteraction: false,
+    renotify: true,
     data: {
-      url: data.url || '/'
+      url: data.url || '/',
+      timestamp: Date.now()
     },
-    actions: data.actions || []
+    actions: data.actions || [
+      {
+        action: 'open',
+        title: 'Open App',
+        icon: '/icons/icon-72x72.png'
+      },
+      {
+        action: 'close',
+        title: 'Dismiss',
+        icon: '/icons/icon-72x72.png'
+      }
+    ],
+    dir: 'ltr',
+    lang: 'en-US',
+    silent: false
   };
   
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Dream60', options)
+    self.registration.showNotification(
+      data.title || 'Dream60 Auction Play',
+      options
+    )
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
+  const action = event.action;
+  const url = event.notification.data?.url || '/';
+  
+  if (action === 'close') {
+    return;
+  }
+  
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList) => {
-        const url = event.notification.data?.url || '/';
-        
         for (const client of clientList) {
-          if (client.url === url && 'focus' in client) {
+          if (client.url.includes(url.split('?')[0]) && 'focus' in client) {
             return client.focus();
           }
         }

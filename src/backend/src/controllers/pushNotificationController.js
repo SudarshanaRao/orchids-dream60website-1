@@ -43,7 +43,7 @@ const getVAPIDPublicKey = (req, res) => {
 // Subscribe user to push notifications
 const subscribe = async (req, res) => {
   try {
-    const { userId, subscription } = req.body;
+    const { userId, subscription, deviceType } = req.body;
     
     if (!userId || !subscription) {
       return res.status(400).json({
@@ -61,6 +61,15 @@ const subscribe = async (req, res) => {
       });
     }
     
+    // Detect device type from user agent if not provided
+    let detectedDeviceType = deviceType || 'Web';
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Check if it's a PWA by checking for standalone mode indicators
+    if (userAgent.includes('Mobile') && (userAgent.includes('wv') || req.headers['x-requested-with'])) {
+      detectedDeviceType = 'PWA';
+    }
+    
     // Check if subscription already exists
     const existingSubscription = await PushSubscription.findOne({
       endpoint: subscription.endpoint
@@ -71,8 +80,9 @@ const subscribe = async (req, res) => {
       existingSubscription.keys = subscription.keys;
       existingSubscription.userId = userId;
       existingSubscription.isActive = true;
+      existingSubscription.deviceType = detectedDeviceType;
       existingSubscription.lastUsed = new Date();
-      existingSubscription.userAgent = req.headers['user-agent'];
+      existingSubscription.userAgent = userAgent;
       await existingSubscription.save();
       
       return res.json({
@@ -86,7 +96,8 @@ const subscribe = async (req, res) => {
       userId,
       endpoint: subscription.endpoint,
       keys: subscription.keys,
-      userAgent: req.headers['user-agent']
+      deviceType: detectedDeviceType,
+      userAgent: userAgent
     });
     
     await newSubscription.save();
