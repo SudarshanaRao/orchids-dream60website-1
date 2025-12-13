@@ -1184,30 +1184,25 @@ export default function App() {
               }}
             />
 
-            <AuctionGrid
-              auction={currentAuction}
-              onPlaceBid={(boxId, amount) => {
-                console.log('Bid placed:', boxId, amount);
-              }}
-              isLoggedIn={!!currentUser}
-              onShowLeaderboard={(roundNumber) => {
-                setSelectedLeaderboard({ roundNumber });
-                setCurrentPage('leaderboard');
-                window.history.pushState({}, '', '/leaderboard');
-              }}
-              currentRound={currentAuction.currentRound}
-              isJoinWindowOpen={serverTime ? serverTime.minute < 15 : false}
-            />
+            {/* ✅ CRITICAL FIX: Only show AuctionGrid if user has paid OR it's within join window */}
+            {((serverTime && serverTime.minute < 15) || currentAuction.userHasPaidEntry) && (
+              <AuctionGrid
+                auction={currentAuction}
+                onPlaceBid={(boxId, amount) => {
+                  console.log('Bid placed:', boxId, amount);
+                }}
+                isLoggedIn={!!currentUser}
+                onShowLeaderboard={(roundNumber) => {
+                  setSelectedLeaderboard({ roundNumber });
+                  setCurrentPage('leaderboard');
+                  window.history.pushState({}, '', '/leaderboard');
+                }}
+                currentRound={currentAuction.currentRound}
+                isJoinWindowOpen={serverTime ? serverTime.minute < 15 : false}
+              />
+            )}
 
-            <AuctionSchedule
-              serverTime={serverTime}
-              onShowLeaderboard={(roundNumber) => {
-                setSelectedLeaderboard({ roundNumber });
-                setCurrentPage('leaderboard');
-                window.history.pushState({}, '', '/leaderboard');
-              }}
-              currentUser={currentUser}
-            />
+            <AuctionSchedule user={currentUser} />
 
             <Footer onNavigate={(page) => {
               setCurrentPage(page);
