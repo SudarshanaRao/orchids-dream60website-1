@@ -55,7 +55,7 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
 
       const registration = await navigator.serviceWorker.ready;
 
-      const response = await fetch(`${API_ENDPOINTS.pushNotification.publicKey}`);
+      const response = await fetch(`${API_ENDPOINTS.pushNotification.vapidPublicKey}`);
       const data = await response.json();
       
       if (!data.success) {

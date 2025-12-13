@@ -22,7 +22,6 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { PushNotificationPermission } from './components/PushNotificationPermission';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -380,7 +379,7 @@ const App = () => {
   const fetchAndSetUser = async (userId: string) => {
     try {
       console.log('🔄 Fetching user data from API for userId:', userId);
-      const response = await fetch(`${API_ENDPOINTS.auth.me}?user_id=${userId}`);
+      const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
       
       if (!response.ok) {
         console.error('Failed to fetch user data:', response.statusText);
@@ -2112,9 +2111,6 @@ const App = () => {
               onClose={() => setShowBidSuccess(null)}
             />
           )}
-
-          {/* Push Notification Permission Banner */}
-          <PushNotificationPermission userId={currentUser?.id} />
         </div>
       </TooltipProvider>
     </QueryClientProvider>
