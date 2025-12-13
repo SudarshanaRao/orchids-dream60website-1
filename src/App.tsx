@@ -1157,7 +1157,15 @@ export default function App() {
               onPayEntry={(_boxId, totalEntryFee) => {
                 if (!currentUser) return;
                 
-                console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                console.log('💳 Payment successful - updating userHasPaidEntry flag and triggering refresh');
+                
+                // Immediately update the auction state to show boxes
+                setCurrentAuction(prev => ({
+                  ...prev,
+                  userHasPaidEntry: true
+                }));
+                
+                // Also trigger a data refresh for server-side updates
                 setForceRefetchTrigger(prev => prev + 1);
               }}
             />
