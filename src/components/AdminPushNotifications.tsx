@@ -40,7 +40,11 @@ interface User {
   };
 }
 
-export function AdminPushNotifications() {
+interface AdminPushNotificationsProps {
+  adminUserId?: string;
+}
+
+export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsProps) {
   const [notificationData, setNotificationData] = useState({
     title: '',
     body: '',
@@ -82,16 +86,15 @@ export function AdminPushNotifications() {
   const fetchSubscriptionStats = async () => {
     try {
       setIsLoadingStats(true);
-      const adminData = localStorage.getItem('adminData');
-      const admin = adminData ? JSON.parse(adminData) : null;
+      const adminId = adminUserId || localStorage.getItem('admin_user_id');
       
-      if (!admin?.user_id) {
+      if (!adminId) {
         toast.error('Admin session expired');
         return;
       }
 
       const response = await fetch(
-        `${API_ENDPOINTS.admin.base}/push-subscriptions?user_id=${admin.user_id}`
+        `https://dev-api.dream60.com/admin/push-subscriptions?user_id=${adminId}`
       );
       const data = await response.json();
 

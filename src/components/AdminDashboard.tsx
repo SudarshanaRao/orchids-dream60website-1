@@ -65,6 +65,7 @@ interface Statistics {
     totalAmountSpent: number;
     totalAuctions: number;
   }>;
+
   topWinners: Array<{
     user_id: string;
     username: string;
@@ -73,6 +74,7 @@ interface Statistics {
     totalWins: number;
     totalAmountWon: number;
   }>;
+
 }
 
 interface MasterAuction {
@@ -770,13 +772,11 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
         {activeTab === 'emails' && (
           <>
             <AdminEmailManagement adminUserId={adminUser.user_id} />
-            {/* Added AdminPushNotifications component for notifications tab */}
-            <AdminPushNotifications />
           </>
         )}
 
         {activeTab === 'notifications' && (
-          <AdminPushNotifications />
+          <AdminPushNotifications adminUserId={adminUser.user_id} />
         )}
       </main>
       {/* Create/Edit Master Auction Modal */}

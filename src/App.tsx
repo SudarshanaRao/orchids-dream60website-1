@@ -849,6 +849,170 @@ export default function App() {
     );
   }
 
+  if (currentPage === 'rules') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Rules 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'participation') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Participation 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'terms') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <TermsAndConditions 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'privacy') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <PrivacyPolicy 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'support') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Support 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'contact') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Contact 
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }} 
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'profile') {
+    if (!currentUser) {
+      setCurrentPage('login');
+      window.history.pushState({}, '', '/login');
+      return null;
+    }
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AccountSettings 
+            user={currentUser}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onUpdateUser={(updatedUser) => {
+              setCurrentUser(updatedUser);
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'history') {
+    if (!currentUser) {
+      setCurrentPage('login');
+      window.history.pushState({}, '', '/login');
+      return null;
+    }
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AuctionHistory 
+            userId={currentUser.id}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onViewDetails={(auctionId) => {
+              setCurrentPage('history');
+              window.history.pushState({}, '', `/history/${auctionId}`);
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'leaderboard') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Leaderboard 
+            roundNumber={selectedLeaderboard?.roundNumber}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Continuing with rest of App.tsx logic...
   // Main game page rendering
   return (
