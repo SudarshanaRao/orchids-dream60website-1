@@ -67,7 +67,7 @@ const submitPrizeClaim = async (req, res) => {
     if (historyEntry.claimDeadline && new Date() > historyEntry.claimDeadline) {
       // Mark as expired
       historyEntry.prizeClaimStatus = 'EXPIRED';
-      historyEntry.claimNotes = 'Claim deadline expired (30 minutes)';
+      historyEntry.claimNotes = 'Claim deadline expired (15 minutes)';
       await historyEntry.save();
       
       // ✅ IMMEDIATE: Advance queue to next winner without delay
@@ -183,13 +183,13 @@ async function advanceQueueImmediately(hourlyAuctionId, expiredRank) {
         $set: {
           currentEligibleRank: nextRank,
           claimWindowStartedAt: new Date(),
-          claimDeadline: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+          claimDeadline: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
         }
       }
     );
     
     if (result.modifiedCount > 0) {
-      console.log(`✅ [QUEUE_ADVANCE] Rank ${nextRank} winner can now claim (30-minute window started)`);
+      console.log(`✅ [QUEUE_ADVANCE] Rank ${nextRank} winner can now claim (15-minute window started)`);
     }
   } catch (error) {
     console.error('❌ [QUEUE_ADVANCE] Error advancing queue:', error);
@@ -231,7 +231,7 @@ const getPrizeClaimStatus = async (req, res) => {
         historyEntry.currentEligibleRank === historyEntry.finalRank) {
       
       historyEntry.prizeClaimStatus = 'EXPIRED';
-      historyEntry.claimNotes = 'Claim deadline expired (30 minutes)';
+      historyEntry.claimNotes = 'Claim deadline expired (15 minutes)';
       await historyEntry.save();
       
       // ✅ IMMEDIATE: Advance queue to next winner

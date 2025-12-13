@@ -356,7 +356,7 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
 
     const bodyHtml = `
       <p class="title">Congratulations on winning</p>
-      <p class="text">Here are your prize details. Claim within 30 minutes.</p>
+      <p class="text">Here are your prize details. Claim within 15 minutes.</p>
       <div class="panel">
         <div class="label">Prize Amount</div>
         <div class="value">₹${prizeAmount.toLocaleString('en-IN')}</div>

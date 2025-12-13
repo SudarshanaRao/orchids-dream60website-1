@@ -105,15 +105,12 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
         const data = await response.json();
         
         if (response.ok && data.success && data.data?.dailyAuctionConfig) {
-          // Map API data to schedule format
           const auctions = data.data.dailyAuctionConfig.map((auction: AuctionConfig, index: number) => {
-            // ✅ Parse TimeSlot - backend sends in IST format (HH:MM)
             const [auctionHour, auctionMinute] = auction.TimeSlot.split(':').map(Number);
             const hour12 = auctionHour > 12 ? auctionHour - 12 : (auctionHour === 0 ? 12 : auctionHour);
             const period = auctionHour >= 12 ? 'PM' : 'AM';
             const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
             
-            // Map API Status to internal status
             let status = 'upcoming';
             let winner = null;
             
@@ -121,9 +118,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'active';
             } else if (auction.Status === 'COMPLETED') {
               status = 'completed';
-              // ✅ Use real winner data from API instead of hardcoded values
               if (auction.topWinners && auction.topWinners.length > 0) {
-                // Get rank 1 winner (the top winner)
                 const topWinner = auction.topWinners.find((w: any) => w.rank === 1);
                 if (topWinner && topWinner.playerUsername) {
                   winner = topWinner.playerUsername;
@@ -146,13 +141,12 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                 image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
               },
               winner,
-              roundCount: auction.roundCount || 4 // Get from backend or default to 4
+              roundCount: auction.roundCount || 4
             };
           });
           
           setScheduleData(auctions);
           
-          // ✅ Check participation for completed auctions if user is logged in
           if (user?.id) {
             const completedAuctions = auctions.filter((a: any) => a.status === 'completed' && a.hourlyAuctionId);
             console.log('🔍 [AUCTION SCHEDULE] Checking participation for completed auctions:', {
@@ -196,9 +190,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             setParticipationMap(newParticipationMap);
           }
           
-          // ✅ Calculate dynamic schedule statistics
           if (auctions.length > 0) {
-            // Find earliest and latest time slots
             const sortedByTime = [...auctions].sort((a, b) => {
               const timeA = a.hour * 60 + a.minute;
               const timeB = b.hour * 60 + b.minute;
@@ -208,9 +200,8 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             const earliest = sortedByTime[0];
             const latest = sortedByTime[sortedByTime.length - 1];
             
-            // Get boxes per auction (2 entry boxes + round count bidding boxes)
             const firstAuction = auctions[0];
-            const totalBoxes = 2 + (firstAuction.roundCount || 4); // 2 entry boxes + bidding boxes
+            const totalBoxes = 2 + (firstAuction.roundCount || 4);
             
             setScheduleStats({
               totalAuctions: auctions.length,
@@ -232,13 +223,31 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
 
     fetchAuctionSchedule();
     
-    // ✅ Refresh every minute to keep status updated with IST time
-    const refreshInterval = setInterval(() => {
-      fetchAuctionSchedule();
-    }, 60000); // Refresh every 60 seconds
+    const calculateNextRefreshTime = () => {
+      const now = getCurrentIST();
+      const currentMinute = now.getMinutes();
+      const currentSecond = now.getSeconds();
+      
+      const minutesUntilNext15 = 15 - (currentMinute % 15);
+      const msUntilNext = (minutesUntilNext15 * 60 - currentSecond) * 1000;
+      
+      console.log(`⏰ [AUCTION SCHEDULE] Next refresh in ${minutesUntilNext15} minutes`);
+      
+      return msUntilNext;
+    };
     
-    return () => clearInterval(refreshInterval);
-  }, [currentHour, user?.id]);
+    const timeoutId = setTimeout(() => {
+      fetchAuctionSchedule();
+      
+      const intervalId = setInterval(() => {
+        fetchAuctionSchedule();
+      }, 15 * 60 * 1000);
+      
+      return () => clearInterval(intervalId);
+    }, calculateNextRefreshTime());
+    
+    return () => clearTimeout(timeoutId);
+  }, [user?.id]);
 
   // Filter auctions based on active filter
   const filteredAuctions = scheduleData.filter(auction => {
@@ -315,7 +324,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-        ={[
+        {[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },

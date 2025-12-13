@@ -8,6 +8,50 @@ import { initSecurityMeasures } from './utils/security';
 
 initSecurityMeasures();
 
+// Register service worker with update detection
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('✅ [SW] Service Worker registered:', registration);
+        
+        // Check for updates every 60 seconds
+        setInterval(() => {
+          registration.update();
+        }, 60000);
+        
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New service worker available - show update prompt
+                console.log('🔄 [SW] New version available!');
+                
+                // Show update notification
+                if (confirm('A new version of Dream60 is available! Click OK to update.')) {
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  window.location.reload();
+                }
+              }
+            });
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('❌ [SW] Service Worker registration failed:', error);
+      });
+    
+    // Listen for controller change (new SW activated)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('🔄 [SW] New service worker activated, reloading...');
+      window.location.reload();
+    });
+  });
+}
+
 if (typeof window !== "undefined") {
   const sendToParent = (data: any) => {
     try {

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'dream60-v1';
-const STATIC_CACHE = 'dream60-static-v1';
-const DYNAMIC_CACHE = 'dream60-dynamic-v1';
-const IMAGE_CACHE = 'dream60-images-v1';
-const API_CACHE = 'dream60-api-v1';
+const VERSION = '1.0.1';
+const CACHE_NAME = `dream60-v${VERSION}`;
+const STATIC_CACHE = `dream60-static-v${VERSION}`;
+const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
+const IMAGE_CACHE = `dream60-images-v${VERSION}`;
+const API_CACHE = `dream60-api-v${VERSION}`;
 
 const STATIC_ASSETS = [
   '/',

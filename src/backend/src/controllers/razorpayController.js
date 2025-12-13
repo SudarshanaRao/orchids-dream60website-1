@@ -927,8 +927,8 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
         {
           $set: {
             currentEligibleRank: nextRankToUpdate,
-            claimWindowStartedAt: new Date(), // Start their 30-minute window NOW
-            claimDeadline: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+            claimWindowStartedAt: new Date(), // Start their 15-minute window NOW
+            claimDeadline: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
           }
         }
       );

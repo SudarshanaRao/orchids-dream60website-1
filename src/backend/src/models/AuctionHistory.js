@@ -339,9 +339,9 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
 
     for (const winner of winners) {
       // ✅ Calculate deadline based on rank (fixed time slots from winners announcement)
-      // Rank 1: 0-30 mins, Rank 2: 31-60 mins, Rank 3: 61-90 mins
-      const claimWindowStart = new Date(now.getTime() + (winner.rank - 1) * 30 * 60 * 1000);
-      const claimDeadline = new Date(now.getTime() + winner.rank * 30 * 60 * 1000);
+      // Rank 1: 0-15 mins, Rank 2: 16-30 mins, Rank 3: 31-45 mins
+      const claimWindowStart = new Date(now.getTime() + (winner.rank - 1) * 15 * 60 * 1000);
+      const claimDeadline = new Date(now.getTime() + winner.rank * 15 * 60 * 1000);
 
       const updateData = {
         isWinner: true,
@@ -385,11 +385,11 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
       console.log(`     ⏰ Completed at IST: ${istFormatter.format(now)}`);
       console.log(`     ⏰ Claim window: ${istFormatter.format(claimWindowStart)} to ${istFormatter.format(claimDeadline)}`);
       if (winner.rank === 1) {
-        console.log(`     ✅ Rank 1 can claim NOW (0-30 mins)`);
+        console.log(`     ✅ Rank 1 can claim NOW (0-15 mins)`);
       } else if (winner.rank === 2) {
-        console.log(`     ⏳ Rank 2 in waiting queue (claim window opens at 31 mins)`);
+        console.log(`     ⏳ Rank 2 in waiting queue (claim window opens at 16 mins)`);
       } else if (winner.rank === 3) {
-        console.log(`     ⏳ Rank 3 in waiting queue (claim window opens at 61 mins)`);
+        console.log(`     ⏳ Rank 3 in waiting queue (claim window opens at 31 mins)`);
       }
 
       const update = await this.findOneAndUpdate(
@@ -504,7 +504,7 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
         {
           $set: {
             prizeClaimStatus: 'EXPIRED',
-            claimNotes: 'Claim deadline expired (30 minutes)',
+            claimNotes: 'Claim deadline expired (15 minutes) - Prize forfeited',
           },
         }
       );
@@ -733,7 +733,7 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
         {
           $set: {
             prizeClaimStatus: 'EXPIRED',
-            claimNotes: 'All winners (rank 1-3) failed to claim within their 30-minute windows'
+            claimNotes: 'All winners (rank 1-3) failed to claim within their 15-minute windows'
           }
         }
       );
@@ -778,7 +778,7 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
     });
 
     console.log(`⏭️ [PRIORITY_CLAIM] Advancing auction ${hourlyAuctionId} from rank ${currentEligibleRank} to rank ${nextRank}`);
-    console.log(`     ❌ Rank ${currentEligibleRank} failed to claim within 30 minutes`);
+    console.log(`     ❌ Rank ${currentEligibleRank} failed to claim within 15 minutes`);
     console.log(`     ✅ Rank ${nextRank} (${nextRankWinner.username}) now eligible to claim`);
     console.log(`     ⏰ Current time IST: ${istFormatter.format(now)}`);
     console.log(`     ⏰ Rank ${nextRank} window start IST: ${istFormatter.format(nextRankWinner.claimWindowStartedAt)}`);
@@ -869,13 +869,13 @@ auctionHistorySchema.statics.processClaimQueues = async function() {
       {
         $addFields: {
           // Calculate when current eligible rank's window expires
-          // currentEligibleRank 1 expires at completedAt + 30 mins
-          // currentEligibleRank 2 expires at completedAt + 60 mins
-          // currentEligibleRank 3 expires at completedAt + 90 mins
+          // currentEligibleRank 1 expires at completedAt + 15 mins
+          // currentEligibleRank 2 expires at completedAt + 30 mins
+          // currentEligibleRank 3 expires at completedAt + 45 mins
           currentRankDeadline: {
             $add: [
               '$completedAt',
-              { $multiply: ['$currentEligibleRank', 30 * 60 * 1000] }
+              { $multiply: ['$currentEligibleRank', 15 * 60 * 1000] }
             ]
           }
         }
