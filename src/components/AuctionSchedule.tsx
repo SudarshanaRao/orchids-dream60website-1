@@ -325,7 +325,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           transition={{ duration: 0.3 }}
           className="flex items-center gap-2 flex-wrap"
         >
-       ={[
+          {[
             { id: 'upcoming', label: 'UPCOMING', icon: PlayCircle },
             { id: 'live', label: 'LIVE', icon: Radio },
             { id: 'completed', label: 'COMPLETED', icon: Trophy },
@@ -485,27 +485,55 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                     </div>
                   </div>
                   
-                  {/* Winner info for completed auctions */}
-                  {auction.winner && (
+                  {/* Winner Container for completed auctions with participants who joined */}
+                  {auction.status === 'completed' && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center justify-between gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
+                      className="mt-3 flex items-center justify-between gap-3 bg-gradient-to-r from-purple-50/80 via-violet-50/80 to-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/60"
                     >
+                      {/* Winner Details - Left */}
+                      {auction.winner && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
+                            <Trophy className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-purple-700">Winner</div>
+                            <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Total Participants - Middle */}
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-                          <Trophy className="w-4 h-4 text-white" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-violet-600 rounded-2xl flex items-center justify-center">
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
                         </div>
                         <div>
-                          <div className="text-xs text-purple-700">Winner</div>
-                          <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
+                          <div className="text-xs text-violet-700">Participants</div>
+                          <div className="text-sm font-bold text-violet-900">
+                            {auction.totalParticipants > 0 ? auction.totalParticipants : '0'}
+                          </div>
                         </div>
                       </div>
+                      
+                      {/* Leaderboard Button - Right */}
+                      <Button
+                        onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                        size="sm"
+                        className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                      >
+                        <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                        View Leaderboard
+                      </Button>
                     </motion.div>
                   )}
                   
-                  {/* Participant count for completed auctions */}
-                  {auction.status === 'completed' && (
+                  {/* Participant count only for completed auctions where user did NOT participate */}
+                  {auction.status === 'completed' && (!auction.hourlyAuctionId || !participationMap[auction.hourlyAuctionId]) && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -524,6 +552,17 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                           </div>
                         </div>
                       </div>
+                      {auction.winner && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
+                            <Trophy className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-purple-700">Winner</div>
+                            <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                       
@@ -544,26 +583,26 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                       </Button>
                     </motion.div>
                   )}
-                    
-                    {/* Active auction CTA */}
-                    {auction.status === 'active' && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
+                  
+                  {/* Active auction CTA */}
+                  {auction.status === 'active' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
                       >
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                        >
-                          <Zap className="w-5 h-5 text-violet-600" />
-                        </motion.div>
-                        <div>
-                          <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
-                          <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
-                        </div>
+                        <Zap className="w-5 h-5 text-violet-600" />
                       </motion.div>
-                    )}
+                      <div>
+                        <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
+                        <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
             </motion.div>
