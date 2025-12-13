@@ -22,8 +22,6 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { PushNotificationPermission } from './components/PushNotificationPermission';
-import { AmazonVoucherModal } from './components/AmazonVoucherModal';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -34,8 +32,10 @@ import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
+// ✅ Create QueryClient instance
 const queryClient = new QueryClient();
 
+// ✅ unified types
 import type {
   Auction,
   AnyBox,
@@ -44,6 +44,7 @@ import type {
   BoxStatus,
 } from "./types/auction";
 
+// ✅ Server time interface
 interface ServerTime {
   timestamp: number;
   iso: string;
@@ -56,14 +57,17 @@ interface ServerTime {
   utcOffset: string;
 }
 
+// ✅ Server time offset state
 let serverTimeOffset: number = 0;
 
+// ✅ Fetch server time from API - only once on mount
 const fetchServerTime = async (): Promise<ServerTime | null> => {
   try {
     const response = await fetch(API_ENDPOINTS.serverTime);
     const data = await response.json();
     
     if (data.success && data.data) {
+      // Calculate offset between server time and local time
       const localTime = Date.now();
       serverTimeOffset = data.data.timestamp - localTime;
       console.log('✅ Server time offset calculated:', serverTimeOffset, 'ms');
@@ -76,6 +80,7 @@ const fetchServerTime = async (): Promise<ServerTime | null> => {
   }
 };
 
+// ✅ Get current server time using offset (no API call needed)
 const getCurrentServerTime = (): ServerTime => {
   const now = Date.now() + serverTimeOffset;
   const date = new Date(now);
@@ -116,12 +121,17 @@ const getCurrentRoundByTime = (serverTime: ServerTime | null) => {
 };
 
 const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: ServerTime | null) => {
+  // ✅ Create Date objects in UTC timezone (not local timezone)
   const startMinutes = (roundNumber - 1) * 15;
   const endMinutes = roundNumber * 15;
 
+  // Use server timestamp to create dates
   const baseTimestamp = serverTime ? serverTime.timestamp : Date.now();
   const baseDate = new Date(baseTimestamp);
   
+  // ✅ CRITICAL FIX: Use Date.UTC() to create dates in UTC timezone
+  // Otherwise new Date(year, month, date, hour) interprets hour in local timezone (IST)
+  // which causes 13:00 UTC to become 13:00 IST = 07:30 UTC
   const opensAt = new Date(Date.UTC(
     baseDate.getUTCFullYear(),
     baseDate.getUTCMonth(),
@@ -139,6 +149,17 @@ const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: 
     endMinutes,
     0
   ));
+
+  console.log(`🕐 [GET ROUND BOX TIMES] Creating times for Round ${roundNumber}:`, {
+    'Auction Hour (UTC)': auctionHour,
+    'Start Minutes': startMinutes,
+    'End Minutes': endMinutes,
+    'opensAt (UTC)': opensAt.toUTCString(),
+    'opensAt (ISO)': opensAt.toISOString(),
+    'closesAt (UTC)': closesAt.toUTCString(),
+    'closesAt (ISO)': closesAt.toISOString(),
+    'Display Time': `${opensAt.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })} to ${closesAt.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })}`
+  });
 
   return { opensAt, closesAt };
 };
@@ -214,8 +235,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-export default function App() {
+const App = () => {
+  // ✅ Add server time state
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+
+  // Initialize currentPage based on URL path
   const [currentPage, setCurrentPage] = useState(() => {
     const path = window.location.pathname;
 
@@ -240,6 +264,7 @@ export default function App() {
     return 'game';
   });
 
+  // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
@@ -259,6 +284,7 @@ export default function App() {
       else if (path === '/profile') setCurrentPage('profile');
       else if (path === '/history' || path.startsWith('/history/')) {
         setCurrentPage('history');
+        // ✅ If navigating back from details to history list, clear selected auction
         if (path === '/history') {
           setSelectedAuctionDetails(null);
         }
@@ -270,6 +296,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // ✅ Fetch server time ONCE on mount, then use local offset
   useEffect(() => {
     const initializeServerTime = async () => {
       const time = await fetchServerTime();
@@ -278,18 +305,21 @@ export default function App() {
       }
     };
 
+    // Initial fetch to calculate offset
     initializeServerTime();
 
+    // Update local state every second using calculated offset (no API call)
     const interval = setInterval(() => {
       setServerTime(getCurrentServerTime());
     }, 1000);
 
+    // Optionally refresh server time every 30 seconds to correct drift
     const syncInterval = setInterval(async () => {
       const time = await fetchServerTime();
       if (time) {
         setServerTime(time);
       }
-    }, 30000);
+    }, 30000); // 30 seconds
 
     return () => {
       clearInterval(interval);
@@ -319,6 +349,7 @@ export default function App() {
     updatedAt: string;
   } | null>(null);
 
+  // ✅ Helper function to map API user data to local state
   const mapUserData = (userData: any) => {
     return {
       id: userData.user_id || userData.id,
@@ -326,6 +357,7 @@ export default function App() {
       mobile: userData.mobile,
       email: userData.email,
       isDeleted: userData.isDeleted || false,
+      // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
       totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
       totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
       totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
@@ -343,6 +375,7 @@ export default function App() {
     };
   };
 
+  // ✅ NEW: Fetch user data from API and update state
   const fetchAndSetUser = async (userId: string) => {
     try {
       console.log('🔄 Fetching user data from API for userId:', userId);
@@ -359,6 +392,12 @@ export default function App() {
         console.log('✅ User data fetched from API:', result.user);
         const mappedUser = mapUserData(result.user);
         setCurrentUser(mappedUser);
+        console.log('✅ User state updated with stats:', {
+          totalAuctions: mappedUser.totalAuctions,
+          totalWins: mappedUser.totalWins,
+          totalAmountSpent: mappedUser.totalAmountSpent,
+          totalAmountWon: mappedUser.totalAmountWon,
+        });
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -375,6 +414,7 @@ export default function App() {
 
   const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
 
+  // ✅ Restore selected auction details from localStorage on mount
   useEffect(() => {
     const path = window.location.pathname;
     if (path === '/history/details' || path.startsWith('/history/details')) {
@@ -382,6 +422,7 @@ export default function App() {
       if (storedAuction) {
         try {
           const parsedAuction = JSON.parse(storedAuction);
+          // Convert date strings back to Date objects
           parsedAuction.date = new Date(parsedAuction.date);
           if (parsedAuction.claimDeadline) {
             parsedAuction.claimDeadline = new Date(parsedAuction.claimDeadline);
@@ -417,12 +458,14 @@ export default function App() {
     roundNumber: number;
   } | null>(null);
 
+  // Generate random entry fees between ₹1000-₹3500
   const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
 
+  // ✅ Only initialize currentAuction after server time is loaded
   const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
     const entryFee1 = generateRandomEntryFee();
     const entryFee2 = generateRandomEntryFee();
-    const auctionHour = 11;
+    const auctionHour = 11; // Default hour, will be updated once server time loads
     const today = new Date();
 
     const activeHour = auctionHour;
@@ -499,13 +542,13 @@ export default function App() {
 
     return {
       id: `auction-${activeHour}`,
-      title: "Loading...",
-      prize: "Loading...",
-      prizeValue: 0,
+      title: "Loading...", // ✅ Will be updated from API
+      prize: "Loading...", // ✅ Will be updated from API
+      prizeValue: 0, // ✅ Will be updated from API
       startTime,
       endTime,
       currentRound: 1,
-      totalParticipants: 0,
+      totalParticipants: 0, // ✅ Will be updated from API
       userHasPaidEntry: false,
       auctionHour: activeHour,
       userBidsPerRound: {},
@@ -514,12 +557,14 @@ export default function App() {
     };
   });
 
+  // ✅ Update auction state when server time first loads
   useEffect(() => {
     if (!serverTime) return;
     
     const currentHour = getCurrentAuctionSlot(serverTime);
     if (!currentHour) return;
     
+    // Only update if the auction hour is different from current
     if (currentAuction.auctionHour !== currentHour) {
       const entryFee1 = generateRandomEntryFee();
       const entryFee2 = generateRandomEntryFee();
@@ -592,52 +637,22 @@ export default function App() {
         boxes: [entryBox1, entryBox2, ...roundBoxes],
       }));
     }
-  }, [serverTime]);
-
-  // ✅ NEW: Dynamically update round box isOpen status based on server time
-  useEffect(() => {
-    if (!serverTime) return;
-    
-    const updateRoundBoxStatus = () => {
-      const now = new Date(serverTime.timestamp);
-      
-      setCurrentAuction(prev => {
-        const updatedBoxes = prev.boxes.map(box => {
-          if (box.type === 'round' && box.opensAt && box.closesAt) {
-            const isOpen = now >= box.opensAt && now < box.closesAt;
-            
-            console.log(`🔓 [APP.TSX] Round ${box.roundNumber} isOpen check:`, {
-              'Round': box.roundNumber,
-              'Opens At (UTC)': box.opensAt.toUTCString(),
-              'Closes At (UTC)': box.closesAt.toUTCString(),
-              'Current Time (UTC)': now.toUTCString(),
-              'Is After Opens At': now >= box.opensAt,
-              'Is Before Closes At': now < box.closesAt,
-              'Final isOpen': isOpen
-            });
-            
-            return { ...box, isOpen };
-          }
-          return box;
-        });
-        
-        return { ...prev, boxes: updatedBoxes };
-      });
-    };
-    
-    updateRoundBoxStatus();
-    const interval = setInterval(updateRoundBoxStatus, 1000);
-    return () => clearInterval(interval);
-  }, [serverTime]);
+  }, [serverTime]); // Run when server time first loads
 
   const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  // ✅ NEW: Track previous round to detect round changes
   const [previousRound, setPreviousRound] = useState<number>(1);
+  // ✅ NEW: Force refetch trigger
   const [forceRefetchTrigger, setForceRefetchTrigger] = useState<number>(0);
+  // ✅ NEW: Track if user just logged in to trigger immediate refresh
   const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
+  // ✅ NEW: Store live auction data to pass to PrizeShowcase
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
+  // ✅ NEW: Track if we're currently fetching live auction data
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
 
+  // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
     const fetchInitialLiveAuction = async () => {
       setIsLoadingLiveAuction(true);
@@ -657,6 +672,7 @@ export default function App() {
           console.log('✅ Initial live auction data loaded');
           setLiveAuctionData(result.data);
           
+          // Update basic auction info
           setCurrentAuction(prev => ({
             ...prev,
             prize: result.data.auctionName || prev.prize,
@@ -672,11 +688,13 @@ export default function App() {
     };
     
     fetchInitialLiveAuction();
-  }, []);
+  }, []); // Run once on mount
 
+  // Check for existing session on app initialization
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
+        // Check for admin session first
         const adminUserId = localStorage.getItem("admin_user_id");
         if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
           const adminEmail = localStorage.getItem("admin_email");
@@ -693,12 +711,14 @@ export default function App() {
           return;
         }
 
+        // ✅ Check for regular user session - restore from localStorage only
         const userId = localStorage.getItem("user_id");
         const username = localStorage.getItem("username");
         const email = localStorage.getItem("email");
 
-        if (!userId || !username) return;
+        if (!userId || !username) return; // No valid session
 
+        // ✅ Restore user from localStorage without API call
         const user = mapUserData({
           user_id: userId,
           username: username,
@@ -722,6 +742,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [currentPage]);
 
+  // ✅ NEW: Fetch user data from API when user is logged in
   useEffect(() => {
     if (currentUser?.id) {
       console.log('🔄 User logged in - fetching updated user data from API');
@@ -729,6 +750,7 @@ export default function App() {
     }
   }, [currentUser?.id]);
 
+  // ✅ NEW: Refresh user data when navigating back to game page (homepage)
   useEffect(() => {
     if (currentPage === 'game' && currentUser?.id) {
       console.log('🔄 Navigated to homepage - refreshing user data from API');
@@ -736,15 +758,18 @@ export default function App() {
     }
   }, [currentPage, currentUser?.id]);
 
+  // ✅ NEW: Detect round changes and trigger refetch
   useEffect(() => {
     if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
     
     const currentRound = getCurrentRoundByTime(serverTime);
     
+    // Check if round has changed
     if (currentRound !== previousRound) {
       console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
       setPreviousRound(currentRound);
       
+      // Trigger immediate refetch by incrementing the trigger
       setForceRefetchTrigger(prev => prev + 1);
       
       toast.info(`Round ${currentRound} Started`, {
@@ -754,12 +779,16 @@ export default function App() {
     }
   }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
-  // ✅ CRITICAL: Poll live auction data to check if user has paid entry fee
+  // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
-    const fetchCurrentAuctionId = async () => {
-      if (!currentUser?.id) return;
+    const fetchBasicAuctionInfo = async () => {
+      if (!currentUser?.id || currentAuction.userHasPaidEntry) return;
+      
+      // ✅ Only fetch on login event
+      if (!justLoggedIn) return;
       
       try {
+        console.log('🔄 Fetching basic auction info after login...');
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
         if (!response.ok) return;
         
@@ -767,41 +796,751 @@ export default function App() {
         
         if (result.success && result.data) {
           const liveAuction = result.data;
-          setCurrentHourlyAuctionId(liveAuction.hourlyAuctionId);
-          console.log('✅ Live auction ID set:', liveAuction.hourlyAuctionId);
           
-          setLiveAuctionData(liveAuction);
+          console.log('📊 [LOGIN REFRESH] Basic auction info loaded:', {
+            'Prize Name': liveAuction.auctionName,
+            'Prize Value': liveAuction.prizeValue,
+            'Total Participants': liveAuction.participants?.length || 0
+          });
           
-          // ✅ CRITICAL: Check if user is in participants array
-          let userHasPaid = false;
-          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
-            const userParticipant = liveAuction.participants.find(
-              (p: any) => p.playerId === currentUser.id
-            );
-            userHasPaid = !!userParticipant;
-            console.log(`✅ User entry fee status from API: ${userHasPaid ? 'PAID' : 'NOT PAID'}`);
-          }
-          
-          // Update auction state with API data
+          // Update only basic auction info
           setCurrentAuction(prev => ({
             ...prev,
-            userHasPaidEntry: userHasPaid,
             prize: liveAuction.auctionName || prev.prize,
             prizeValue: liveAuction.prizeValue || prev.prizeValue,
             totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
           }));
+          
+          // Reset flag after fetch
+          setJustLoggedIn(false);
+        }
+      } catch (error) {
+        console.error('Error fetching basic auction info:', error);
+        setJustLoggedIn(false);
+      }
+    };
+    
+    fetchBasicAuctionInfo();
+  }, [currentUser?.id, justLoggedIn, currentAuction.userHasPaidEntry]);
+
+  // Timer to automatically open boxes based on time schedule
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // ✅ Don't run timer logic if server time hasn't loaded yet
+      if (!serverTime) return;
+      
+      const currentHour = getCurrentAuctionSlot(serverTime);
+      const currentRound = getCurrentRoundByTime(serverTime);
+
+      setCurrentAuction((prev) => {
+        // Switch to new auction hour
+        if (currentHour && currentHour !== prev.auctionHour) {
+          const entryFee1 = generateRandomEntryFee();
+          const entryFee2 = generateRandomEntryFee();
+          const today = new Date(serverTime.timestamp);
+          const startTime = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+            currentHour,
+            0,
+            0
+          );
+          const endTime = new Date(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+            currentHour + 1,
+            0,
+            0
+          );
+
+          const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
+            const { opensAt, closesAt } = getRoundBoxTimes(currentHour, roundNum, serverTime);
+            return {
+              id: roundNum + 2,
+              type: "round",
+              roundNumber: roundNum,
+              isOpen: false,
+              minBid: 10,
+              currentBid: 0,
+              bidder: null,
+              opensAt,
+              closesAt,
+              leaderboard: [],
+              status: "upcoming",
+            };
+          });
+
+          const entryBox1: EntryBox = {
+            id: 1,
+            type: "entry",
+            isOpen: true,
+            entryFee: entryFee1,
+            currentBid: 0,
+            bidder: null,
+            hasPaid: false,
+            status: "upcoming",
+          };
+
+          const entryBox2: EntryBox = {
+            id: 2,
+            type: "entry",
+            isOpen: true,
+            entryFee: entryFee2,
+            currentBid: 0,
+            bidder: null,
+            hasPaid: false,
+            status: "upcoming",
+          };
+
+          return {
+            ...prev,
+            id: `auction-${currentHour}`,
+            startTime,
+            endTime,
+            currentRound,
+            auctionHour: currentHour,
+            userHasPaidEntry: false,
+            userBidsPerRound: {},
+            userQualificationPerRound: {},
+            boxes: [entryBox1, entryBox2, ...roundBoxes],
+          };
+        }
+
+        if (!prev.userHasPaidEntry) {
+          return { ...prev, currentRound };
+        }
+
+        // ✅ Use server time instead of new Date()
+        const now = new Date(serverTime.timestamp);
+
+        const updatedBoxes: AnyBox[] = prev.boxes.map((box) => {
+          if (box.type === "round") {
+            const roundBox = box as RoundBox;
+            const { opensAt, closesAt } = roundBox;
+            const isNowOpen = now >= opensAt && now < closesAt;
+            const isPast = now >= closesAt;
+            const status: BoxStatus = isPast
+              ? "completed"
+              : isNowOpen
+              ? "active"
+              : "locked";
+
+            if (
+              status === "completed" &&
+              roundBox.status !== "completed" &&
+              (!roundBox.leaderboard || roundBox.leaderboard.length === 0)
+            ) {
+              return {
+                ...roundBox,
+                isOpen: isNowOpen,
+                status,
+                leaderboard: generateDemoLeaderboard(roundBox.roundNumber),
+                currentBid: 0,
+                bidder: null,
+              };
+            }
+
+            return { ...roundBox, isOpen: isNowOpen, status };
+          }
+          return box;
+        });
+
+        const hasChanges = updatedBoxes.some((box, index) => {
+          const prevBox = prev.boxes[index] as AnyBox;
+          if (box.isOpen !== prevBox.isOpen) return true;
+          if (box.type === "round" && prevBox.type === "round") {
+            return box.status !== prevBox.status;
+          }
+          return false;
+        });
+
+        return hasChanges || prev.currentRound !== currentRound
+          ? { ...prev, boxes: updatedBoxes, currentRound }
+          : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [serverTime]); // ✅ Add serverTime as dependency
+
+  // Fetch current hourly auction ID when user is logged in and has paid entry
+  useEffect(() => {
+    const fetchCurrentAuctionId = async () => {
+      // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
+      // This ensures fresh data is loaded and no stale bids from previous users are shown
+      if (!currentUser?.id) return;
+      
+      // Only fetch if user has paid entry OR just logged in
+      if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
+      
+      // ✅ Reset justLoggedIn flag after triggering refetch
+      if (justLoggedIn) {
+        console.log('🔄 User just logged in - forcing immediate auction data refresh');
+        setJustLoggedIn(false);
+      }
+      
+      // ✅ NEW: Set loading state at the start
+      setIsLoadingLiveAuction(true);
+      
+      try {
+        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+        // Extract hourlyAuctionId from the response
+        if (result.success && result.data?.hourlyAuctionId) {
+          setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
+          console.log('✅ Live auction ID set:', result.data.hourlyAuctionId);
+          
+          // ✅ NEW: Store live auction data to pass to PrizeShowcase
+          setLiveAuctionData(result.data);
+          
+          // ✅ Check if user has already placed bids in any rounds AND elimination status
+          const liveAuction = result.data;
+          const userBidsMap: { [roundNumber: number]: number } = {};
+          const userQualificationMap: { [roundNumber: number]: boolean } = {};
+          
+          // ✅ NEW: Extract user's entry fee from participants array
+          let userEntryFeeFromAPI: number | undefined = undefined;
+          let userHasPaidEntryFromAPI = false; // ✅ NEW: Track if user has paid entry
+          
+          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+            const userParticipant = liveAuction.participants.find(
+              (participant: any) => participant.playerId === currentUser.id
+            );
+            
+            if (userParticipant) {
+              // ✅ CRITICAL FIX: If user is found in participants, they have paid entry fee
+              userHasPaidEntryFromAPI = true;
+              userEntryFeeFromAPI = userParticipant.entryFee;
+              console.log(`✅ User found in participants - entry fee paid: ₹${userEntryFeeFromAPI}`);
+            } else {
+              console.log(`⚠️ User NOT found in participants - entry fee not paid`);
+            }
+          }
+          
+          // ✅ NEW: Log raw API data for debugging
+          console.log('🔍 [LIVE AUCTION API] Raw round data from API:', {
+            'Total Rounds': liveAuction.rounds?.length || 0,
+            'Rounds': liveAuction.rounds?.map((r: any) => ({
+              roundNumber: r.roundNumber,
+              'startedAt (UTC)': r.startedAt,
+              'completedAt (UTC)': r.completedAt,
+              status: r.status
+            }))
+          });
+          
+          // ✅ CRITICAL: Update prize value and total participants from API
+          console.log('📊 [LIVE AUCTION DATA] Updating from API:', {
+            'Prize Name': liveAuction.productName,
+            'Prize Value': liveAuction.productValue,
+            'Total Participants': liveAuction.participants?.length || 0
+          });
+          
+          // ✅ CRITICAL: Find user in participants array to check isEliminated status
+          let userParticipant = null;
+          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+            userParticipant = liveAuction.participants.find(
+              (participant: any) => participant.playerId === currentUser.id
+            );
+            
+            if (userParticipant) {
+              console.log(`👤 Found user in participants:`, {
+                username: userParticipant.playerUsername,
+                isEliminated: userParticipant.isEliminated,
+                eliminatedInRound: userParticipant.eliminatedInRound,
+                currentRound: userParticipant.currentRound
+              });
+            }
+          }
+          
+          if (liveAuction.rounds && Array.isArray(liveAuction.rounds)) {
+            // ✅ First pass: Collect all user bids
+            liveAuction.rounds.forEach((round: any) => {
+              if (round.playersData && Array.isArray(round.playersData)) {
+                const userBid = round.playersData.find(
+                  (player: any) => player.playerId === currentUser.id
+                );
+                
+                if (userBid && userBid.auctionPlacedAmount) {
+                  userBidsMap[round.roundNumber] = userBid.auctionPlacedAmount;
+                  console.log(`✅ Found existing bid in Round ${round.roundNumber}: ₹${userBid.auctionPlacedAmount}`);
+                }
+              }
+            });
+            
+            // ✅ Second pass: Set qualification status for each round
+            liveAuction.rounds.forEach((round: any) => {
+              // Round 1: Always eligible if entry fee is paid
+              if (round.roundNumber === 1) {
+                userQualificationMap[1] = true;
+                console.log(`✅ Round 1: User is eligible (entry fee paid)`);
+              }
+              
+              // Rounds 2, 3, 4: Check if user is eliminated
+              if (round.roundNumber > 1) {
+                // ✅ CRITICAL: If user is eliminated, mark ALL future rounds as not qualified
+                if (userParticipant && userParticipant.isEliminated === true) {
+                  userQualificationMap[round.roundNumber] = false;
+                  console.log(`❌ Round ${round.roundNumber}: User is ELIMINATED (isEliminated=true from participants array)`);
+                } else if (userParticipant && userParticipant.isEliminated === false) {
+                  // User is NOT eliminated, they can continue
+                  userQualificationMap[round.roundNumber] = true;
+                  console.log(`✅ Round ${round.roundNumber}: User is QUALIFIED (isEliminated=false from participants array)`);
+                } else {
+                  // No participant data found - don't set qualification
+                  console.log(`⏳ Round ${round.roundNumber}: No participant data found, waiting...`);
+                }
+              }
+            });
+          }
+          
+          // Update local state with user's existing bids, qualification status, current bid leaders, highest bid from API, winnersAnnounced flag, AND user's entry fee
+          setCurrentAuction(prev => {
+            const updatedBoxes = prev.boxes.map(box => {
+              if (box.type === 'round') {
+                const roundBox = box as RoundBox;
+                const roundData = liveAuction.rounds?.find(
+                  (r: any) => r.roundNumber === roundBox.roundNumber
+                );
+                
+                let updatedBox = { ...roundBox };
+                
+                // ✅ NEW: Set winnersAnnounced flag from live auction
+                if (liveAuction.winnersAnnounced) {
+                  updatedBox.winnersAnnounced = true;
+                }
+                
+                // ✅ DYNAMIC MIN BID CALCULATION based on previous round's highest bid and cutoff percentage
+                if (roundBox.roundNumber === 1) {
+                  // ✅ CRITICAL FIX: Use entry fee from API instead of local state
+                  updatedBox.minBid = userEntryFeeFromAPI || 10;
+                  console.log(`✅ Round 1 minBid = ₹${updatedBox.minBid} (entry fee from API)`);
+                } else {
+                  // Round 2, 3, 4: Min bid = highest bid from previous round - cutoff percentage
+                  const previousRoundNumber = roundBox.roundNumber - 1;
+                  const previousRoundData = liveAuction.rounds?.find(
+                    (r: any) => r.roundNumber === previousRoundNumber
+                  );
+                  
+                  if (previousRoundData && previousRoundData.playersData && previousRoundData.playersData.length > 0) {
+                    // Find the highest bid from previous round
+                    const highestBidInPreviousRound = Math.max(
+                      ...previousRoundData.playersData.map((p: any) => p.auctionPlacedAmount)
+                    );
+                    
+                    // Get cutoff percentage for current round
+                    const currentRoundConfig = liveAuction.roundConfig?.find(
+                      (rc: any) => rc.round === roundBox.roundNumber
+                    );
+                    const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
+                    
+                    // Calculate min bid: highest bid - (highest bid * cutoff percentage / 100)
+                    const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
+                    updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
+                    
+                    console.log(`✅ Round ${roundBox.roundNumber} minBid calculation:`, {
+                      'Previous Round': previousRoundNumber,
+                      'Highest Bid in Previous Round': `₹${highestBidInPreviousRound}`,
+                      'Cutoff Percentage': `${cutoffPercentage}%`,
+                      'Cutoff Amount': `₹${cutoffAmount}`,
+                      'Calculated MinBid': `₹${updatedBox.minBid}`,
+                      'Formula': `${highestBidInPreviousRound} - (${highestBidInPreviousRound} × ${cutoffPercentage}% = ${cutoffAmount}) = ${updatedBox.minBid}`
+                    });
+                  } else {
+                    // Fallback: If no previous round data, use entry fee
+                    const entryBox = prev.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid);
+                    const userEntryFee = entryBox ? (entryBox as EntryBox).entryFee : 10;
+                    updatedBox.minBid = userEntryFee || 10;
+                    console.log(`⚠️ Round ${roundBox.roundNumber} minBid fallback = ₹${updatedBox.minBid} (no previous round data)`);
+                  }
+                }
+                
+                // ✅ CRITICAL FIX: Do NOT convert API times - they're already in the correct format
+                // The backend sends times like "13:45:00.000Z" which should display as 1:45 PM (not converted)
+                if (roundData) {
+                  if (roundData.startedAt) {
+                    // Use the time directly without timezone conversion
+                    updatedBox.opensAt = new Date(roundData.startedAt);
+                    console.log(`🕐 [SCHEDULED TIME FIX] Round ${roundBox.roundNumber} opensAt:`, {
+                      'API Value': roundData.startedAt,
+                      'Date Object': updatedBox.opensAt,
+                      'Display Time': updatedBox.opensAt.toLocaleTimeString('en-US', { 
+                        timeZone: 'UTC',
+                        hour: 'numeric', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })
+                    });
+                  }
+                  if (roundData.completedAt) {
+                    // Use the time directly without timezone conversion
+                    updatedBox.closesAt = new Date(roundData.completedAt);
+                    console.log(`🕐 [SCHEDULED TIME FIX] Round ${roundBox.roundNumber} closesAt:`, {
+                      'API Value': roundData.completedAt,
+                      'Date Object': updatedBox.closesAt,
+                      'Display Time': updatedBox.closesAt.toLocaleTimeString('en-US', { 
+                        timeZone: 'UTC',
+                        hour: 'numeric', 
+                        minute: '2-digit', 
+                        hour12: true 
+                      })
+                    });
+                  } else if (roundData.startedAt) {
+                    // If not completed, calculate closesAt as opensAt + 15 minutes
+                    const opensAt = new Date(roundData.startedAt);
+                    updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
+                  }
+                  
+                  // Update status based on actual round data
+                  if (roundData.status === 'COMPLETED') {
+                    updatedBox.status = 'completed';
+                  } else if (roundData.status === 'ACTIVE') {
+                    updatedBox.status = 'active';
+                    updatedBox.isOpen = true;
+                  } else if (roundData.status === 'PENDING') {
+                    updatedBox.status = 'upcoming';
+                    updatedBox.isOpen = false;
+                  }
+                }
+                
+                if (roundData && roundData.playersData && roundData.playersData.length > 0) {
+                  // Sort by bid amount (descending) and timestamp (ascending for ties)
+                  const sortedPlayers = [...roundData.playersData].sort((a: any, b: any) => {
+                    if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
+                      return b.auctionPlacedAmount - a.auctionPlacedAmount;
+                    }
+                    return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
+                  });
+                  
+                  const highestBidder = sortedPlayers[0];
+                  
+                  // Find rank 1 player (highest bid)
+                  const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
+                  const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
+                  
+                  updatedBox = {
+                    ...updatedBox,
+                    currentBid: highestBidder.auctionPlacedAmount,
+                    bidder: highestBidder.playerUsername,
+                    highestBidFromAPI: highestBidFromAPI, // Store the rank 1 bid from API
+                  };
+                  
+                  console.log(`✅ Round ${roundBox.roundNumber} highest bid from API: ₹${highestBidFromAPI}`);
+                }
+                
+                return updatedBox;
+              }
+              return box;
+            });
+            
+            return {
+              ...prev,
+              // ✅ CRITICAL FIX: Use correct field names from API response
+              // API uses: auctionName (not productName) and prizeValue (not productValue)
+              prize: liveAuction.auctionName || prev.prize,
+              prizeValue: liveAuction.prizeValue || prev.prizeValue,
+              totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+              boxes: updatedBoxes,
+              userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
+              userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
+              winnersAnnounced: liveAuction.winnersAnnounced || false,
+              userEntryFeeFromAPI: userEntryFeeFromAPI, // ✅ CRITICAL: Store user's entry fee from API
+              userHasPaidEntry: userHasPaidEntryFromAPI, // ✅ CRITICAL FIX: Update based on participants array
+            };
+          });
+        } else {
+          console.log('⚠️ No live auction found in response');
         }
       } catch (error) {
         console.error('Error fetching live auction:', error);
+      } finally {
+        // ✅ NEW: Set loading state to false after fetch completes
+        setIsLoadingLiveAuction(false);
       }
     };
 
     fetchCurrentAuctionId();
     
-    // Poll every 5 seconds
-    const interval = setInterval(fetchCurrentAuctionId, 5000);
+    // ✅ CRITICAL FIX: Poll every 5 seconds when round is active, 10 seconds otherwise
+    // Use a stable check that doesn't depend on boxes array reference
+    const hasActiveRound = currentAuction.boxes.some(
+      box => box.type === 'round' && box.isOpen
+    );
+    const pollInterval = hasActiveRound ? 5000 : 10000;
+    
+    const interval = setInterval(fetchCurrentAuctionId, pollInterval);
     return () => clearInterval(interval);
-  }, [currentUser?.id, forceRefetchTrigger]);
+  }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
+
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+    
+    // ✅ Update browser URL to match the page
+    const urlMap: { [key: string]: string } = {
+      'game': '/',
+      'login': '/login',
+      'signup': '/signup',
+      'forgot': '/forgot-password',
+      'rules': '/rules',
+      'participation': '/participation',
+      'terms': '/terms',
+      'privacy': '/privacy',
+      'support': '/support',
+      'contact': '/contact',
+      'profile': '/profile',
+      'history': '/history',
+      'leaderboard': '/leaderboard',
+      'admin-login': '/admin',
+      'admin-dashboard': '/admin'
+    };
+    
+    const url = urlMap[page] || '/';
+    window.history.pushState({}, '', url);
+  };
+
+  const handleBackToGame = () => {
+    setCurrentPage('game');
+    window.history.pushState({}, '', '/');
+    setSelectedLeaderboard(null);
+    setSelectedAuctionDetails(null);
+  };
+
+  const handleShowLeaderboard = (
+    roundNumber: number,
+  ) => {
+    setSelectedLeaderboard({ roundNumber });
+    setCurrentPage('leaderboard');
+    window.history.pushState({}, '', '/leaderboard');
+  };
+
+  const handleLogin = async (user: any) => {
+    try {
+      // ✅ User data is already passed from LoginForm, no need for additional API call
+      const mappedUser = mapUserData(user);
+      setCurrentUser(mappedUser);
+      
+      console.log('✅ User logged in successfully:', mappedUser.username);
+
+      // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee
+      // This prevents showing incorrect "Outbid Now" buttons before data is refreshed
+      try {
+        console.log('🔄 [LOGIN] Fetching live auction data to verify entry fee status...');
+        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            const liveAuction = result.data;
+            
+            // Check if user is in participants array
+            let userHasPaid = false;
+            if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+              const userParticipant = liveAuction.participants.find(
+                (p: any) => p.playerId === mappedUser.id
+              );
+              userHasPaid = !!userParticipant;
+              console.log(`✅ [LOGIN] Entry fee status: ${userHasPaid ? 'PAID' : 'NOT PAID'}`);
+            }
+            
+            // ✅ Set initial auction state with correct entry fee status
+            setCurrentAuction(prev => ({
+              ...prev,
+              userHasPaidEntry: userHasPaid,
+              userBidsPerRound: {},
+              userQualificationPerRound: {},
+              prize: liveAuction.auctionName || prev.prize,
+              prizeValue: liveAuction.prizeValue || prev.prizeValue,
+              totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+            }));
+            
+            // Store live auction data
+            setLiveAuctionData(liveAuction);
+            if (liveAuction.hourlyAuctionId) {
+              setCurrentHourlyAuctionId(liveAuction.hourlyAuctionId);
+            }
+          }
+        }
+      } catch (fetchError) {
+        console.error('Error fetching auction data on login:', fetchError);
+        // Still reset to safe defaults if fetch fails
+        setCurrentAuction(prev => ({
+          ...prev,
+          userHasPaidEntry: false,
+          userBidsPerRound: {},
+          userQualificationPerRound: {},
+        }));
+      }
+
+      // ✅ Set flag to trigger polling refresh
+      setJustLoggedIn(true);
+      
+      // ✅ Clear hourly auction ID to force fresh fetch in polling
+      // (commented out since we set it above if available)
+      // setCurrentHourlyAuctionId(null);
+      
+      // ✅ Force immediate refetch by incrementing trigger
+      setForceRefetchTrigger(prev => prev + 1);
+
+      setCurrentPage("game");
+      window.history.pushState({}, '', '/');
+    } catch (error) {
+      console.error("Error while login:", error);
+    }
+  };
+
+  const handleSignup = async (user: any) => {
+    try {
+      // ✅ User data is already passed from SignupForm, map and set it directly
+      const mappedUser = mapUserData(user);
+      setCurrentUser(mappedUser);
+      
+      console.log('✅ User signed up successfully:', mappedUser.username);
+
+      setCurrentPage("game");
+      window.history.pushState({}, '', '/');
+    } catch (error) {
+      console.error("Error while signup:", error);
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      // Clear user session data
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("user_name");
+      localStorage.removeItem("user_email");
+      localStorage.removeItem("user_mobile");
+      
+      // Clear additional user fields
+      localStorage.removeItem("email");
+      localStorage.removeItem("username");
+      
+      // Clear all Razorpay session data
+      localStorage.removeItem("rzp_checkout_anon_id");
+      localStorage.removeItem("rzp_device_id");
+      localStorage.removeItem("rzp_stored_checkout_id");
+      
+      // Clear any other Razorpay keys that might exist (they follow rzp_* pattern)
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('rzp_')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // ✅ CRITICAL FIX: Clear session storage flags to allow page reload for next user
+      sessionStorage.removeItem('hasReloadedHistory');
+      sessionStorage.removeItem('hasReloadedDetails');
+      
+      console.log('✅ User session, Razorpay data, and session storage flags cleared');
+    } catch (error) {
+      console.error("Error clearing user session:", error);
+    }
+
+    setCurrentUser(null);
+    
+    // ✅ Reset auction state when logging out
+    setCurrentAuction(prev => ({
+      ...prev,
+      userHasPaidEntry: false,
+      userBidsPerRound: {},
+      userQualificationPerRound: {},
+      boxes: prev.boxes.map(box => {
+        if (box.type === 'entry') {
+          return {
+            ...box,
+            hasPaid: false,
+            currentBid: 0,
+            bidder: null
+          };
+        }
+        return box;
+      })
+    }));
+    
+    // ✅ Clear hourly auction ID
+    setCurrentHourlyAuctionId(null);
+    
+    setCurrentPage("game");
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleShowLogin = () => {
+    setCurrentPage('login');
+    window.history.pushState({}, '', '/login');
+  };
+
+  const handleSwitchToSignup = () => {
+    setCurrentPage('signup');
+    window.history.pushState({}, '', '/signup');
+  };
+
+  const handleSwitchToLogin = () => {
+    setCurrentPage('login');
+    window.history.pushState({}, '', '/login');
+  };
+
+  const handleEntrySuccess = () => {
+    if (!showEntrySuccess || !currentUser) return;
+
+    toast.success('Entry Fee Paid!', {
+      description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+    });
+
+    setCurrentAuction(prev => {
+      const now = new Date();
+
+      const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
+        if (b.type === 'entry') {
+          const entry = b as EntryBox;
+          return {
+            ...entry,
+            currentBid: entry.entryFee || 0,
+            bidder: currentUser.username,
+            hasPaid: true,
+          };
+        }
+        if (b.type === 'round') {
+          const roundBox = b as RoundBox;
+          const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
+          return { ...roundBox, isOpen: isNowOpen };
+        }
+        return b;
+      });
+
+      return {
+        ...prev,
+        boxes: updatedBoxes,
+        userHasPaidEntry: true
+      };
+    });
+
+    // ✅ CRITICAL FIX: Trigger IMMEDIATE refetch of auction data after payment (no delay)
+    console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+    setForceRefetchTrigger(prev => prev + 1);
+
+    setShowEntrySuccess(null);
+  };
+
+  const handleEntryFailure = () => {
+    setShowEntryFailure(null);
+  };
+
+  const handleRetryPayment = () => {
+    setShowEntryFailure(null);
+    // User can click the Pay button again
+  };
+
+  const handleUserParticipationChange = (isParticipating: boolean) => {
+    setCurrentAuction(prev => ({
+      ...prev,
+      userHasPaidEntry: isParticipating
+    }));
+  };
 
   const handlePlaceBid = async (boxId: number, amount: number) => {
     if (isPlacingBid) return;
@@ -905,6 +1644,19 @@ export default function App() {
     }
   };
 
+  const handleAdminLogin = (admin: any) => {
+    setAdminUser(admin);
+    setCurrentPage('admin-dashboard');
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('admin_user_id');
+    localStorage.removeItem('admin_email');
+    setAdminUser(null);
+    setCurrentPage('game');
+    window.history.pushState({}, '', '/');
+  };
+
   // Admin routes
   if (currentPage === 'admin-login') {
     return (
@@ -912,13 +1664,10 @@ export default function App() {
         <TooltipProvider>
           <Sonner />
           <AdminLogin
-            onLogin={(admin) => {
-              setAdminUser(admin);
-              setCurrentPage('admin-dashboard');
-            }}
+            onLogin={handleAdminLogin}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
+              window.history.pushState({}, '', '/');
             }}
           />
         </TooltipProvider>
@@ -931,15 +1680,127 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <AdminDashboard 
-            adminUser={adminUser} 
-            onLogout={() => {
-              localStorage.removeItem('admin_user_id');
-              localStorage.removeItem('admin_email');
-              setAdminUser(null);
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
+          <AdminDashboard adminUser={adminUser} onLogout={handleAdminLogout} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  // Render different pages based on currentPage state
+  if (currentPage === 'leaderboard' && selectedLeaderboard) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Leaderboard
+            roundNumber={selectedLeaderboard.roundNumber}
+            onBack={handleBackToGame}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'profile' && currentUser) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AccountSettings
+            user={currentUser}
+            onBack={handleBackToGame}
+            onNavigate={handleNavigate}
+            onDeleteAccount={() => {
+              try {
+                // Clear user session data
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("user_name");
+                localStorage.removeItem("user_email");
+                localStorage.removeItem("user_mobile");
+                
+                // Clear additional user fields
+                localStorage.removeItem("email");
+                localStorage.removeItem("username");
+                
+                // Clear all Razorpay session data
+                localStorage.removeItem("rzp_checkout_anon_id");
+                localStorage.removeItem("rzp_device_id");
+                localStorage.removeItem("rzp_stored_checkout_id");
+                
+                // Clear any other Razorpay keys
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('rzp_')) {
+                    localStorage.removeItem(key);
+                  }
+                });
+                
+                console.log('✅ Account deleted - all user and Razorpay data cleared');
+              } catch (error) {
+                console.error("Error clearing session:", error);
+              }
+
+              setCurrentUser(null);
+              
+              // Reset auction state
+              setCurrentAuction(prev => ({
+                ...prev,
+                userHasPaidEntry: false,
+                userBidsPerRound: {},
+                userQualificationPerRound: {},
+                boxes: prev.boxes.map(box => {
+                  if (box.type === 'entry') {
+                    return {
+                      ...box,
+                      hasPaid: false,
+                      currentBid: 0,
+                      bidder: null
+                    };
+                  }
+                  return box;
+                })
+              }));
+              
+              setCurrentHourlyAuctionId(null);
+              setCurrentPage("login");
+            }}
+            onLogout={handleLogout}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'history' && currentUser) {
+    if (selectedAuctionDetails) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <AuctionDetailsPage
+              auction={selectedAuctionDetails}
+              onBack={() => {
+                setSelectedAuctionDetails(null);
+                localStorage.removeItem('selectedAuctionDetails');
+                window.history.pushState({}, '', '/history');
+              }}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AuctionHistory
+            user={currentUser}
+            onBack={handleBackToGame}
+            onViewDetails={(auction) => {
+              setSelectedAuctionDetails(auction);
+              localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
+              window.history.pushState({}, '', '/history/details');
+            }}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -952,30 +1813,10 @@ export default function App() {
         <TooltipProvider>
           <Sonner />
           <LoginForm
-            onLogin={(user) => {
-              const mappedUser = mapUserData(user);
-              setCurrentUser(mappedUser);
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onSwitchToSignup={() => {
-              setCurrentPage('signup');
-              window.history.pushState({}, '', '/signup');
-            }}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onNavigate={(page) => {
-              const urlMap = {
-                'game': '/',
-                'login': '/login',
-                'signup': '/signup',
-              };
-              const url = urlMap[page] || '/';
-              window.history.pushState({}, '', url);
-              setCurrentPage(page);
-            }}
+            onLogin={handleLogin}
+            onSwitchToSignup={handleSwitchToSignup}
+            onBack={handleBackToGame}
+            onNavigate={handleNavigate}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -988,46 +1829,10 @@ export default function App() {
         <TooltipProvider>
           <Sonner />
           <SignupForm
-            onSignup={(user) => {
-              const mappedUser = mapUserData(user);
-              setCurrentUser(mappedUser);
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onSwitchToLogin={() => {
-              setCurrentPage('login');
-              window.history.pushState({}, '', '/login');
-            }}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onNavigate={(page) => {
-              const urlMap = {
-                'game': '/',
-                'login': '/login',
-                'signup': '/signup',
-              };
-              const url = urlMap[page] || '/';
-              window.history.pushState({}, '', url);
-              setCurrentPage(page);
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  if (currentPage === 'forgot') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <ForgotPasswordPage 
-            onBack={() => {
-              setCurrentPage('login');
-              window.history.pushState({}, '', '/login');
-            }} 
+            onSignup={handleSignup}
+            onSwitchToLogin={handleSwitchToLogin}
+            onBack={handleBackToGame}
+            onNavigate={handleNavigate}
           />
         </TooltipProvider>
       </QueryClientProvider>
@@ -1039,12 +1844,18 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Rules 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <Rules onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'forgot') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <ForgotPasswordPage onBack={handleSwitchToLogin} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1055,12 +1866,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Participation 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <Participation onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1071,12 +1877,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <TermsAndConditions 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <TermsAndConditions onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1087,12 +1888,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <PrivacyPolicy 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <PrivacyPolicy onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1103,12 +1899,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Support 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <Support onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1119,87 +1910,13 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <Contact 
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }} 
-          />
+          <Contact onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
   }
 
-  if (currentPage === 'profile') {
-    if (!currentUser) {
-      setCurrentPage('login');
-      window.history.pushState({}, '', '/login');
-      return null;
-    }
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AccountSettings 
-            user={currentUser}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onUpdateUser={(updatedUser) => {
-              setCurrentUser(updatedUser);
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  if (currentPage === 'history') {
-    if (!currentUser) {
-      setCurrentPage('login');
-      window.history.pushState({}, '', '/login');
-      return null;
-    }
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AuctionHistory 
-            userId={currentUser.id}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-            onViewDetails={(auctionId) => {
-              setCurrentPage('history');
-              window.history.pushState({}, '', `/history/${auctionId}`);
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  if (currentPage === 'leaderboard') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Leaderboard 
-            roundNumber={selectedLeaderboard?.roundNumber}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/admin');
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Continuing with rest of App.tsx logic...
-  // Main game page rendering
+  // Default game page
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -1208,44 +1925,13 @@ export default function App() {
           
           <Header
             user={currentUser}
-            onNavigate={(page) => {
-              const urlMap = {
-                'game': '/',
-                'login': '/login',
-                'signup': '/signup',
-                'terms': '/terms',
-                'privacy': '/privacy',
-                'support': '/support',
-                'contact': '/contact',
-                'rules': '/rules',
-                'participation': '/participation',
-                'account': '/account',
-                'history': '/history',
-                'admin-login': '/admin',
-                'admin-dashboard': '/admin'
-              };
-              const url = urlMap[page] || '/';
-              window.history.pushState({}, '', url);
-              setCurrentPage(page);
-            }}
-            onLogin={() => {
-              setCurrentPage('login');
-              window.history.pushState({}, '', '/login');
-            }}
-            onLogout={() => {
-              localStorage.removeItem('user_id');
-              localStorage.removeItem('username');
-              setCurrentUser(null);
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/');
-            }}
-            onBack={() => {
-              setCurrentPage('game');
-              window.history.pushState({}, '', '/');
-            }}
+            onNavigate={handleNavigate}
+            onLogin={handleShowLogin}
+            onLogout={handleLogout}
           />
 
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+            {/* Hero Section */}
             <div className="text-center space-y-4 px-2 sm:px-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
   bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
@@ -1262,19 +1948,13 @@ export default function App() {
               {!currentUser && (
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
                   <button
-                    onClick={() => {
-                      setCurrentPage('login');
-                      window.history.pushState({}, '', '/login');
-                    }}
+                    onClick={handleShowLogin}
                     className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
                   >
                     Join Now & Start Playing
                   </button>
                   <button
-                    onClick={() => {
-                      setCurrentPage('signup');
-                      window.history.pushState({}, '', '/signup');
-                    }}
+                    onClick={handleSwitchToSignup}
                     className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
                   >
                     Create Account
@@ -1283,6 +1963,8 @@ export default function App() {
               )}
             </div>
 
+            {/* Current Auction Time Slot Banner */}
+            {/* ✅ Only show banner after server time is loaded */}
             {serverTime && getCurrentAuctionSlot(serverTime) && (
               <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1303,105 +1985,136 @@ export default function App() {
               </div>
             )}
 
+            {/* Prize Showcase */}
             <PrizeShowcase
               currentPrize={currentAuction as any}
               isLoggedIn={!!currentUser}
-              serverTime={serverTime}
-              liveAuctionData={liveAuctionData}
-              isLoadingLiveAuction={isLoadingLiveAuction}
+              serverTime={serverTime} // ✅ Pass server time from parent
+              liveAuctionData={liveAuctionData} // ✅ Pass live auction data from parent
+              isLoadingLiveAuction={isLoadingLiveAuction} // ✅ NEW: Pass loading state from parent
               onPayEntry={(_boxId, totalEntryFee) => {
                 if (!currentUser) return;
                 
-                console.log('💳 Payment successful - updating userHasPaidEntry flag and triggering refresh');
-                console.log('📊 Current auction state BEFORE update:', {
-                  id: currentAuction.id,
-                  userHasPaidEntry: currentAuction.userHasPaidEntry,
-                  prize: currentAuction.prize
-                });
-                
-                // Immediately update the auction state to show boxes
-                setCurrentAuction(prev => {
-                  const updated = {
-                    ...prev,
-                    userHasPaidEntry: true
-                  };
-                  console.log('✅ Updated auction state:', {
-                    id: updated.id,
-                    userHasPaidEntry: updated.userHasPaidEntry,
-                    prize: updated.prize
-                  });
-                  return updated;
-                });
-                
-                // Also trigger a data refresh for server-side updates
+                // ✅ CRITICAL FIX: Trigger IMMEDIATE refresh when payment succeeds
+                console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
                 setForceRefetchTrigger(prev => prev + 1);
-                console.log('🔄 Force refetch trigger incremented');
+                
+                setShowEntrySuccess({
+                  entryFee: totalEntryFee,
+                  boxNumber: 0
+                });
               }}
+              onPaymentFailure={(totalEntryFee, errorMessage) => {
+                setShowEntryFailure({
+                  entryFee: totalEntryFee,
+                  errorMessage
+                });
+              }}
+              onUserParticipationChange={handleUserParticipationChange}
             />
 
-            {/* ✅ CRITICAL FIX: Show AuctionGrid if user has paid entry fee */}
-            {(() => {
-              const hasPaidEntry = currentAuction.userHasPaidEntry;
-              
-              console.log('🎲 [APP.TSX] AuctionGrid visibility check:', {
-                'Server Time Minute': serverTime?.minute,
-                'Has Paid Entry': hasPaidEntry,
-                'Should Show AuctionGrid': hasPaidEntry
-              });
-              
-              return hasPaidEntry;
-            })() && (
-              <AuctionGrid
-                auction={{
-                  boxes: currentAuction.boxes as any,
-                  prizeValue: currentAuction.prizeValue,
-                  userBidsPerRound: currentAuction.userBidsPerRound,
-                  userHasPaidEntry: currentAuction.userHasPaidEntry,
-                  userQualificationPerRound: currentAuction.userQualificationPerRound,
-                  winnersAnnounced: currentAuction.winnersAnnounced,
-                  userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find((b: any) => b.type === 'entry' && b.hasPaid)?.entryFee,
-                  hourlyAuctionId: currentHourlyAuctionId,
-                }}
-                user={currentUser || { username: 'Guest' }}
-                onShowLeaderboard={(roundNumber) => {
-                  setSelectedLeaderboard({ roundNumber });
-                  setCurrentPage('leaderboard');
-                  window.history.pushState({}, '', '/leaderboard');
-                }}
-                onBid={handlePlaceBid}
-                serverTime={serverTime}
-                isJoinWindowOpen={serverTime ? serverTime.minute < 15 : false}
-              />
+            {currentUser ? (
+              <>
+                {/* Auction Grid */}
+                <AuctionGrid
+                  auction={{
+                    boxes: currentAuction.boxes as any,
+                    prizeValue: currentAuction.prizeValue,
+                    userBidsPerRound: currentAuction.userBidsPerRound,
+                    userHasPaidEntry: currentAuction.userHasPaidEntry,
+                    userQualificationPerRound: currentAuction.userQualificationPerRound,
+                    winnersAnnounced: currentAuction.winnersAnnounced,
+                    userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
+                    hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
+                  }}
+                  user={currentUser}
+                  onShowLeaderboard={handleShowLeaderboard}
+                  onBid={handlePlaceBid}
+                  serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                />
+
+                <AuctionSchedule />
+              </>
+            ) : (
+              <>
+                <AuctionSchedule />
+                {/* Guest View - Show login prompt instead of auction  */}
+                <div className="text-center py-8 sm:py-12 md:py-16 px-4">
+                  <div className="max-w-2xl mx-auto space-y-6">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
+                    <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
+                      Create your free account and start bidding on amazing prizes with direct payment!
+                    </p>
+                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
+                      <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
+                      <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
+                          <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
+                        </div>
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-purple-700">6x</div>
+                          <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
+                        </div>
+                        <div>
+                          <div className="text-xl sm:text-2xl font-bold text-purple-700">₹3,50,000+</div>
+                          <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-
-            <AuctionSchedule user={currentUser} />
-
-            <Footer onNavigate={(page) => {
-              const urlMap = {
-                'game': '/',
-                'login': '/login',
-                'signup': '/signup',
-                'terms': '/terms',
-                'privacy': '/privacy',
-                'support': '/support',
-                'contact': '/contact',
-                'rules': '/rules',
-                'participation': '/participation',
-                'account': '/account',
-                'history': '/history',
-                'admin-login': '/admin',
-                'admin-dashboard': '/admin'
-              };
-              const url = urlMap[page] || '/';
-              window.history.pushState({}, '', url);
-              setCurrentPage(page);
-            }} />
           </main>
-          
-          {currentUser && <AmazonVoucherModal userId={currentUser.id} />}
-          {currentUser && <PushNotificationPermission userId={currentUser.id} />}
+
+          <Footer onNavigate={handleNavigate} />
+
+          {/* Payment Success Modal */}
+          {showEntrySuccess && (
+            <PaymentSuccess
+              amount={showEntrySuccess.entryFee}
+              type="entry"
+              boxNumber={showEntrySuccess.boxNumber}
+              onBackToHome={() => {
+                handleEntrySuccess();
+                setCurrentPage('game');
+              }}
+              onClose={() => setShowEntrySuccess(null)}
+            />
+          )}
+
+          {/* Payment Failure Modal */}
+          {showEntryFailure && (
+            <PaymentFailure
+              amount={showEntryFailure.entryFee}
+              errorMessage={showEntryFailure.errorMessage}
+              onRetry={handleRetryPayment}
+              onBackToHome={() => {
+                handleEntryFailure();
+                setCurrentPage('game');
+              }}
+              onClose={() => setShowEntryFailure(null)}
+            />
+          )}
+
+          {/* Bid Success Modal */}
+          {showBidSuccess && (
+            <PaymentSuccess
+              amount={showBidSuccess.amount}
+              type="bid"
+              boxNumber={showBidSuccess.boxNumber}
+              onBackToHome={() => {
+                setShowBidSuccess(null);
+                setCurrentPage('game');
+              }}
+              onClose={() => setShowBidSuccess(null)}
+            />
+          )}
         </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
+
+export default App;
