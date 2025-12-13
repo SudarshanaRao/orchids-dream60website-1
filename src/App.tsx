@@ -1099,43 +1099,15 @@ export default function App() {
               window.history.pushState({}, '', '/login');
             }}
             onLogout={() => {
-              try {
-                localStorage.removeItem("user_id");
-                localStorage.removeItem("user_name");
-                localStorage.removeItem("user_email");
-                localStorage.removeItem("user_mobile");
-                localStorage.removeItem("email");
-                localStorage.removeItem("username");
-                localStorage.removeItem("rzp_checkout_anon_id");
-                localStorage.removeItem("rzp_device_id");
-                localStorage.removeItem("rzp_stored_checkout_id");
-                Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith('rzp_')) {
-                    localStorage.removeItem(key);
-                  }
-                });
-                sessionStorage.removeItem('hasReloadedHistory');
-                sessionStorage.removeItem('hasReloadedDetails');
-                console.log('✅ User session, Razorpay data, and session storage flags cleared');
-              } catch (error) {
-                console.error("Error clearing user session:", error);
-              }
+              localStorage.removeItem('user_id');
+              localStorage.removeItem('username');
               setCurrentUser(null);
-              setCurrentAuction(prev => ({
-                ...prev,
-                userHasPaidEntry: false,
-                userBidsPerRound: {},
-                userQualificationPerRound: {},
-                boxes: prev.boxes.map(box => {
-                  if (box.type === 'entry') {
-                    return { ...box, hasPaid: false, currentBid: 0, bidder: null };
-                  }
-                  return box;
-                })
-              }));
-              setCurrentHourlyAuctionId(null);
-              setCurrentPage("game");
-              window.history.pushState({}, '', '/admin');
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
+            }}
+            onBack={() => {
+              setCurrentPage('game');
+              window.history.pushState({}, '', '/');
             }}
           />
 
