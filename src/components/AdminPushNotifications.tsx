@@ -404,7 +404,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
         <h3 className="text-lg font-bold text-purple-900 mb-4">Quick Messages</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <button
             onClick={() => setNotificationData({
               title: 'Auction Starting Soon!',
@@ -451,6 +451,90 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           >
             <p className="font-semibold text-sm text-purple-900">Special Offer</p>
             <p className="text-xs text-purple-600 mt-1">Promotional message</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: 'Last Chance!',
+              body: 'Only 5 minutes left to join! Don\'t miss this amazing opportunity!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-orange-200 rounded-lg hover:bg-orange-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-orange-900">Last Chance</p>
+            <p className="text-xs text-orange-600 mt-1">Final 5 minutes alert</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '🏆 High Value Prize Alert!',
+              body: 'Premium auction with exclusive high-value prizes is now live!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-yellow-200 rounded-lg hover:bg-yellow-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-yellow-900">High Prize Alert</p>
+            <p className="text-xs text-yellow-600 mt-1">Premium auction</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '🎉 Congratulations!',
+              body: 'Check out today\'s winners and see their amazing prizes!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-green-900">Daily Winner</p>
+            <p className="text-xs text-green-600 mt-1">Celebrate winners</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '💡 Pro Tip',
+              body: 'Strategic bidding increases your chances! Join now and apply smart tactics.',
+              url: '/'
+            })}
+            className="p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-blue-900">Bidding Tips</p>
+            <p className="text-xs text-blue-600 mt-1">Strategy reminder</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '✨ Lucky Draw Alert!',
+              body: 'Special lucky draw event happening now! Everyone who joins has a chance to win bonus prizes!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-pink-200 rounded-lg hover:bg-pink-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-pink-900">Lucky Draw</p>
+            <p className="text-xs text-pink-600 mt-1">Special event</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '⚡ Flash Sale!',
+              body: 'Limited time offer! Reduced entry fees for the next auction only!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-red-200 rounded-lg hover:bg-red-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-red-900">Flash Sale</p>
+            <p className="text-xs text-red-600 mt-1">Time-limited offer</p>
+          </button>
+
+          <button
+            onClick={() => setNotificationData({
+              title: '🎁 New Prize Added!',
+              body: 'Exciting new prize just added to today\'s auction lineup! Check it out now!',
+              url: '/'
+            })}
+            className="p-4 border-2 border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors text-left"
+          >
+            <p className="font-semibold text-sm text-indigo-900">New Prize</p>
+            <p className="text-xs text-indigo-600 mt-1">Showcase new items</p>
           </button>
         </div>
       </div>

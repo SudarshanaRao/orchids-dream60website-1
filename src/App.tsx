@@ -731,7 +731,7 @@ export default function App() {
             }}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
           />
         </TooltipProvider>
@@ -751,7 +751,7 @@ export default function App() {
               localStorage.removeItem('admin_email');
               setAdminUser(null);
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -769,7 +769,7 @@ export default function App() {
               const mappedUser = mapUserData(user);
               setCurrentUser(mappedUser);
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onSwitchToSignup={() => {
               setCurrentPage('signup');
@@ -777,17 +777,17 @@ export default function App() {
             }}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onNavigate={(page) => {
               setCurrentPage(page);
               const urlMap: { [key: string]: string } = {
-                'game': '/',
+                'game': '/admin',
                 'login': '/login',
                 'signup': '/signup',
                 'forgot': '/forgot-password'
               };
-              const url = urlMap[page] || '/';
+              const url = urlMap[page] || '/admin';
               window.history.pushState({}, '', url);
             }}
           />
@@ -806,7 +806,7 @@ export default function App() {
               const mappedUser = mapUserData(user);
               setCurrentUser(mappedUser);
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onSwitchToLogin={() => {
               setCurrentPage('login');
@@ -814,17 +814,17 @@ export default function App() {
             }}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onNavigate={(page) => {
               setCurrentPage(page);
               const urlMap: { [key: string]: string } = {
-                'game': '/',
+                'game': '/admin',
                 'login': '/login',
                 'signup': '/signup',
                 'forgot': '/forgot-password'
               };
-              const url = urlMap[page] || '/';
+              const url = urlMap[page] || '/admin';
               window.history.pushState({}, '', url);
             }}
           />
@@ -857,7 +857,7 @@ export default function App() {
           <Rules 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -873,7 +873,7 @@ export default function App() {
           <Participation 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -889,7 +889,7 @@ export default function App() {
           <TermsAndConditions 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -905,7 +905,7 @@ export default function App() {
           <PrivacyPolicy 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -921,7 +921,7 @@ export default function App() {
           <Support 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -937,7 +937,7 @@ export default function App() {
           <Contact 
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }} 
           />
         </TooltipProvider>
@@ -959,7 +959,7 @@ export default function App() {
             user={currentUser}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onUpdateUser={(updatedUser) => {
               setCurrentUser(updatedUser);
@@ -984,7 +984,7 @@ export default function App() {
             userId={currentUser.id}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
             onViewDetails={(auctionId) => {
               setCurrentPage('history');
@@ -1005,7 +1005,7 @@ export default function App() {
             roundNumber={selectedLeaderboard?.roundNumber}
             onBack={() => {
               setCurrentPage('game');
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
           />
         </TooltipProvider>
@@ -1026,7 +1026,7 @@ export default function App() {
             onNavigate={(page) => {
               setCurrentPage(page);
               const urlMap: { [key: string]: string } = {
-                'game': '/',
+                'game': '/admin',
                 'login': '/login',
                 'signup': '/signup',
                 'forgot': '/forgot-password',
@@ -1042,7 +1042,7 @@ export default function App() {
                 'admin-login': '/admin',
                 'admin-dashboard': '/admin'
               };
-              const url = urlMap[page] || '/';
+              const url = urlMap[page] || '/admin';
               window.history.pushState({}, '', url);
             }}
             onLogin={() => {
@@ -1086,7 +1086,7 @@ export default function App() {
               }));
               setCurrentHourlyAuctionId(null);
               setCurrentPage("game");
-              window.history.pushState({}, '', '/');
+              window.history.pushState({}, '', '/admin');
             }}
           />
 
@@ -1189,7 +1189,7 @@ export default function App() {
             <Footer onNavigate={(page) => {
               setCurrentPage(page);
               const urlMap: { [key: string]: string } = {
-                'game': '/',
+                'game': '/admin',
                 'login': '/login',
                 'signup': '/signup',
                 'forgot': '/forgot-password',
@@ -1205,7 +1205,7 @@ export default function App() {
                 'admin-login': '/admin',
                 'admin-dashboard': '/admin'
               };
-              const url = urlMap[page] || '/';
+              const url = urlMap[page] || '/admin';
               window.history.pushState({}, '', url);
             }} />
           </main>
