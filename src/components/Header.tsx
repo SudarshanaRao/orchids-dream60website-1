@@ -269,17 +269,15 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
             {/* Mobile Install App & Menu Buttons */}
             <div className="lg:hidden flex items-center gap-2">
-              {showInstallButton && (
-                <motion.button
-                  onClick={handleInstallClick}
-                  className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Install App"
-                >
-                  <Download className="w-5 h-5" />
-                </motion.button>
-              )}
+              <motion.button
+                onClick={handleInstallClick}
+                className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Install App"
+              >
+                <Download className="w-5 h-5" />
+              </motion.button>
               <motion.button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
@@ -638,6 +636,18 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         </button>
                       </motion.div>
 
+                      <motion.div variants={menuItemVariants}>
+                        <button
+                          onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                        >
+                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                            <Download className="w-5 h-5 text-purple-600" />
+                          </div>
+                          <span className="font-medium text-purple-900">Install App</span>
+                        </button>
+                      </motion.div>
+
                       {/* Divider */}
                       <div className="border-t border-purple-200/50 my-3"></div>
 
@@ -721,6 +731,18 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                             <Shield className="w-5 h-5 text-purple-600" />
                           </div>
                           <span className="font-medium text-purple-900">Support</span>
+                        </button>
+                      </motion.div>
+
+                      <motion.div variants={menuItemVariants}>
+                        <button
+                          onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                          className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                        >
+                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                            <Download className="w-5 h-5 text-purple-600" />
+                          </div>
+                          <span className="font-medium text-purple-900">Install App</span>
                         </button>
                       </motion.div>
 
