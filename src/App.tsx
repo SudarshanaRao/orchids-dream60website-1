@@ -1303,20 +1303,17 @@ export default function App() {
               }}
             />
 
-            {/* ✅ CRITICAL FIX: Only show AuctionGrid if user has paid OR it's within join window */}
+            {/* ✅ CRITICAL FIX: Show AuctionGrid if user has paid entry fee */}
             {(() => {
-              const isJoinWindow = serverTime && serverTime.minute < 15;
               const hasPaidEntry = currentAuction.userHasPaidEntry;
-              const shouldShow = isJoinWindow || hasPaidEntry;
               
               console.log('🎲 [APP.TSX] AuctionGrid visibility check:', {
                 'Server Time Minute': serverTime?.minute,
-                'Is Join Window': isJoinWindow,
                 'Has Paid Entry': hasPaidEntry,
-                'Should Show AuctionGrid': shouldShow
+                'Should Show AuctionGrid': hasPaidEntry
               });
               
-              return shouldShow;
+              return hasPaidEntry;
             })() && (
               <AuctionGrid
                 auction={{
