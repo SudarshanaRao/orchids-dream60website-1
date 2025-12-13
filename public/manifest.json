@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["entertainment", "shopping", "games"],
+  "categories": ["entertainment", "shopping"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",

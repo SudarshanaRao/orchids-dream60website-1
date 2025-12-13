@@ -42,7 +42,7 @@ export interface RoundBox extends BaseBox {
 // Union of all boxes
 export type AnyBox = EntryBox | RoundBox;
 
-// Auction model used in the game UI
+// Auction model used in the UI
 export interface Auction {
   id: string;
   title: string;

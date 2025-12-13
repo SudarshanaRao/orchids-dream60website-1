@@ -5,8 +5,13 @@ import './styles/globals.css';
 import { Toaster } from 'sonner';
 import { BrowserRouter } from 'react-router-dom';
 import { initSecurityMeasures } from './utils/security';
+import { UpdateNotification } from './components/UpdateNotification';
 
 initSecurityMeasures();
+
+// State for update notification
+let showUpdateNotification: ((show: boolean, worker?: ServiceWorker) => void) | null = null;
+let pendingWorker: ServiceWorker | null = null;
 
 // Register service worker with update detection
 if ('serviceWorker' in navigator) {
@@ -27,13 +32,11 @@ if ('serviceWorker' in navigator) {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker available - show update prompt
+                // New service worker available - show custom notification
                 console.log('🔄 [SW] New version available!');
-                
-                // Show update notification
-                if (confirm('A new version of Dream60 is available! Click OK to update.')) {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  window.location.reload();
+                pendingWorker = newWorker;
+                if (showUpdateNotification) {
+                  showUpdateNotification(true, newWorker);
                 }
               }
             });

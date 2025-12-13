@@ -1,4 +1,4 @@
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const CACHE_NAME = `dream60-v${VERSION}`;
 const STATIC_CACHE = `dream60-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
