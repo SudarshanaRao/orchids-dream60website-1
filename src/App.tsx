@@ -1015,7 +1015,7 @@ const App = () => {
             
             if (userParticipant) {
               // ✅ CRITICAL FIX: If user is found in participants, they have paid entry fee
-              userHasPaidEntryFromAPI = true;
+              userHasPaidEntry = true; // Correction: update variable, but still update state below
               userEntryFeeFromAPI = userParticipant.entryFee;
               console.log(`✅ User found in participants - entry fee paid: ₹${userEntryFeeFromAPI}`);
             } else {
@@ -1945,7 +1945,7 @@ const App = () => {
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
                     <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
-                    <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}</div>
+                    <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Results Announced' : `Round ${currentAuction.currentRound}`}</div>
                   </div>
                 </div>
               </div>

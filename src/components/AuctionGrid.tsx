@@ -76,14 +76,12 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   };
 
   const roundBoxes = auction.boxes.filter(box => box.type === 'round');
-  const canShowBoxes = isJoinWindowOpen || auction.userHasPaidEntry;
-  const showGuestPreview = isJoinWindowOpen && !auction.userHasPaidEntry;
+  const canShowBoxes = auction.userHasPaidEntry; // Only show boxes for participants
+  const showGuestPreview = false; // Remove guest preview since we don't show boxes to non-participants
 
   console.log('🎯 [AUCTION GRID] Visibility check:', {
-    isJoinWindowOpen,
     userHasPaidEntry: auction.userHasPaidEntry,
     canShowBoxes,
-    showGuestPreview,
     roundBoxesCount: roundBoxes.length
   });
 
