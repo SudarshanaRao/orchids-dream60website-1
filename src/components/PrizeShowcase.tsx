@@ -583,26 +583,8 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
                         </div>
                       </div>
 
-                      {/* Join Window Status & Pay Button */}
-                      {!isJoinWindowOpen ? (
-                        <div className="relative group/closed">
-                          <div className="absolute -inset-[1px] bg-gradient-to-r from-red-400/30 to-orange-500/30 rounded-xl blur-md opacity-40"></div>
-                          <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-50/90 to-orange-50/85 border-2 border-red-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-red-700">
-                              <div className="bg-gradient-to-br from-red-500 to-orange-600 p-1 sm:p-1.5 rounded-lg shadow-md">
-                                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                              </div>
-                              <span className="text-xs sm:text-sm md:text-base font-bold">
-                                Join Window Closed
-                              </span>
-                            </div>
-                            <p className="text-[10px] sm:text-xs text-red-600 mt-1 ml-6 sm:ml-8 font-medium">
-                              You can only join within the first 15 minutes of each hour.
-                            </p>
-                            
-                          </div>
-                        </div>
-                      ) : (
+                      {/* Join Window Status & Pay Button - Only show if join window is open */}
+                      {isJoinWindowOpen && (
                         <>
                           {/* Pay Now Button */}
                           {isLoggedIn ? (
