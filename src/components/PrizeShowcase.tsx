@@ -500,93 +500,93 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
               </div>
 
               <div className="space-y-2 sm:space-y-2.5">
-                {/* Entry Fee Payment Section - Show only if user hasn't paid */}
-                {!hasAnyPaidEntry && (
-                  <div className="relative group/entry">
-                    {/* Animated glow effect */}
-                    <div className="absolute -inset-[1px] bg-gradient-to-r from-[#8456BC]/30 via-[#9F7ACB]/30 to-[#B99FD9]/30 rounded-[18px] blur-md opacity-30 group-hover/entry:opacity-50 transition-opacity duration-500"></div>
+                {/* Entry Fee Payment Section - Show only if join window is open OR user has paid */}
+                {(isJoinWindowOpen || hasAnyPaidEntry) && (
+                  <>
+                    {/* Entry Fee Payment Section - Show only if user hasn't paid */}
+                    {!hasAnyPaidEntry && (
+                      <div className="relative group/entry">
+                        {/* Animated glow effect */}
+                        <div className="absolute -inset-[1px] bg-gradient-to-r from-[#8456BC]/30 via-[#9F7ACB]/30 to-[#B99FD9]/30 rounded-[18px] blur-md opacity-30 group-hover/entry:opacity-50 transition-opacity duration-500"></div>
 
-                    <div className="relative backdrop-blur-2xl bg-white/85 rounded-2xl p-2.5 sm:p-3 md:p-4 border border-purple-200/50 shadow-xl">
-                      {/* Header */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                        <div className="bg-gradient-to-br from-[#8456BC] to-[#B99FD9] p-1 sm:p-1.5 rounded-xl shadow-md">
-                          <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
-                        </div>
-                        <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
-                          Pay Entry Fee to Join
-                        </span>
-                      </div>
-
-                      {/* Entry Fee Breakdown - BoxA and BoxB */}
-                      <div className="space-y-1.5 sm:space-y-2 mb-2.5 sm:mb-3">
-                        {/* Box 1 - BoxA */}
-                        <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
-                              Box 1 (BoxA):
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
-                              {isLoading ? (
-                                <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                              ) : (
-                                <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
-                                  {boxAFee.toLocaleString('en-IN')}
-                                </span>
-                              )}
+                        <div className="relative backdrop-blur-2xl bg-white/85 rounded-2xl p-2.5 sm:p-3 md:p-4 border border-purple-200/50 shadow-xl">
+                          {/* Header */}
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            <div className="bg-gradient-to-br from-[#8456BC] to-[#B99FD9] p-1 sm:p-1.5 rounded-xl shadow-md">
+                              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Box 2 - BoxB */}
-                        <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
-                              Box 2 (BoxB):
+                            <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
+                              Pay Entry Fee to Join
                             </span>
-                            <div className="flex items-center gap-1">
-                              <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
-                              {isLoading ? (
-                                <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                              ) : (
-                                <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
-                                  {boxBFee.toLocaleString('en-IN')}
-                                </span>
-                              )}
-                            </div>
                           </div>
-                        </div>
 
-                        {/* Total = BoxA + BoxB */}
-                        <div className="relative mt-2 sm:mt-3 group/total">
-                          <div className="absolute inset-0 bg-gradient-to-r from-[#8456BC]/15 to-[#B99FD9]/15 rounded-xl blur-sm"></div>
-                          <div className="relative backdrop-blur-xl bg-gradient-to-r from-purple-100/85 to-purple-50/85 rounded-xl p-2 sm:p-2.5 md:p-3 border-2 border-[#9F7ACB]/40 shadow-lg">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 sm:gap-1.5">
-                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC] animate-pulse" />
-                                <span className="text-xs sm:text-sm md:text-base font-bold text-[#3A2257]">
-                                  Total Entry Fee:
+                          {/* Entry Fee Breakdown - BoxA and BoxB */}
+                          <div className="space-y-1.5 sm:space-y-2 mb-2.5 sm:mb-3">
+                            {/* Box 1 - BoxA */}
+                            <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
+                                  Box 1 (BoxA):
                                 </span>
-                              </div>
-                              <div className="flex items-center gap-0.5 sm:gap-1">
-                                <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
-                                {isLoading ? (
-                                  <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                                ) : (
-                                  <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
-                                    {totalEntryFee.toLocaleString('en-IN')}
-                                  </span>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
+                                  {isLoading ? (
+                                    <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                                  ) : (
+                                    <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
+                                      {boxAFee.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Join Window Status & Pay Button - Only show if join window is open */}
-                      {isJoinWindowOpen && (
-                        <>
-                          {/* Pay Now Button */}
+                            {/* Box 2 - BoxB */}
+                            <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
+                                  Box 2 (BoxB):
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
+                                  {isLoading ? (
+                                    <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                                  ) : (
+                                    <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
+                                      {boxBFee.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Total = BoxA + BoxB */}
+                            <div className="relative mt-2 sm:mt-3 group/total">
+                              <div className="absolute inset-0 bg-gradient-to-r from-[#8456BC]/15 to-[#B99FD9]/15 rounded-xl blur-sm"></div>
+                              <div className="relative backdrop-blur-xl bg-gradient-to-r from-purple-100/85 to-purple-50/85 rounded-xl p-2 sm:p-2.5 md:p-3 border-2 border-[#9F7ACB]/40 shadow-lg">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1 sm:gap-1.5">
+                                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC] animate-pulse" />
+                                    <span className="text-xs sm:text-sm md:text-base font-bold text-[#3A2257]">
+                                      Total Entry Fee:
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-0.5 sm:gap-1">
+                                    <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
+                                    {isLoading ? (
+                                      <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                                    ) : (
+                                      <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
+                                        {totalEntryFee.toLocaleString('en-IN')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Pay Now Button - Show during join window */}
                           {isLoggedIn ? (
                             <>
                               <Button
@@ -622,30 +622,30 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
                               🔒 Login to pay entry fee and start Auction!
                             </p>
                           )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Entry Paid Success */}
-                {hasAnyPaidEntry && (
-                  <div className="relative group/success">
-                    <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-400/30 to-green-500/30 rounded-[18px] blur-md opacity-40"></div>
-                    <div className="relative backdrop-blur-2xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl">
-                      <div className="flex items-center gap-1.5 sm:gap-2 text-emerald-700">
-                        <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-1 sm:p-1.5 rounded-xl shadow-md">
-                          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                         </div>
-                        <span className="text-xs sm:text-sm md:text-base font-bold">
-                          ✓ Entry Paid - Auction Unlocked!
-                        </span>
                       </div>
-                      <p className="text-[10px] sm:text-xs text-emerald-600 mt-1 ml-6 sm:ml-8 font-medium">
-                        Round boxes are now available. Good luck!
-                      </p>
-                    </div>
-                  </div>
+                    )}
+
+                    {/* Entry Paid Success */}
+                    {hasAnyPaidEntry && (
+                      <div className="relative group/success">
+                        <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-400/30 to-green-500/30 rounded-[18px] blur-md opacity-40"></div>
+                        <div className="relative backdrop-blur-2xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl">
+                          <div className="flex items-center gap-1.5 sm:gap-2 text-emerald-700">
+                            <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-1 sm:p-1.5 rounded-xl shadow-md">
+                              <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                            </div>
+                            <span className="text-xs sm:text-sm md:text-base font-bold">
+                              ✓ Entry Paid - Auction Unlocked!
+                            </span>
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-emerald-600 mt-1 ml-6 sm:ml-8 font-medium">
+                            Round boxes are now available. Good luck!
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Info Box */}
