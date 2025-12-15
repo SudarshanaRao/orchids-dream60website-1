@@ -245,17 +245,10 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
   useEffect(() => {
     if (!serverTime) return;
     
-    // ✅ CRITICAL FIX: If user has already paid entry fee, join window should always be "open" for them
-    // This prevents showing "Join Window Closed" message after payment
-    if (isUserParticipating || currentPrize.userHasPaidEntry) {
-      setIsJoinWindowOpen(true);
-      return;
-    }
-    
     const isWithinJoinWindow = serverTime.minute < 15;
     setIsJoinWindowOpen(isWithinJoinWindow);
-  }, [serverTime, isUserParticipating, currentPrize.userHasPaidEntry]);
-
+  }, [serverTime]);
+  
   // ✅ Update countdown timer every second using server time
   useEffect(() => {
     if (!auctionEndTime) return;
@@ -364,61 +357,19 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
 
           {/* Content container */}
           <div className="relative backdrop-blur-md bg-white/30 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/60 shadow-2xl">
-            <div className="text-center py-8 sm:py-12">
+            <div className="text-center py-12 sm:py-16">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-3 sm:mb-4">
-                No Live Auctions Running Currently
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
+                No Live Auction
               </h3>
-              <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-6 sm:mb-8 max-w-md mx-auto">
-                Please come back during our auction hours to participate and win amazing prizes!
+              <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-4 sm:mb-6 max-w-md mx-auto">
+                There are currently no active auctions. New auctions start every hour at the beginning of the hour.
               </p>
-              
-              {/* Auction Schedule Box */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100/80 rounded-2xl p-4 sm:p-6 border-2 border-purple-200 shadow-lg max-w-2xl mx-auto">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                  <h4 className="text-lg sm:text-xl font-bold text-purple-900">Auction Schedule</h4>
-                </div>
-                
-                <div className="space-y-3 text-left">
-                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
-                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-purple-900 text-sm sm:text-base">Daily Auction Hours</p>
-                      <p className="text-purple-700 text-xs sm:text-sm">9:00 AM - 10:00 PM (IST)</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
-                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <Trophy className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-purple-900 text-sm sm:text-base">Frequency</p>
-                      <p className="text-purple-700 text-xs sm:text-sm">14 premium auctions daily • Every hour on the hour</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 bg-white/70 rounded-xl p-3 sm:p-4">
-                    <div className="bg-purple-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <Gift className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-purple-900 text-sm sm:text-base">What to Expect</p>
-                      <p className="text-purple-700 text-xs sm:text-sm">6 boxes per auction • 4 bidding rounds • Amazing prizes worth up to ₹3,50,000</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-purple-300">
-                  <p className="text-xs sm:text-sm text-purple-600 font-medium">
-                    💡 Tip: Join within the first 15 minutes of each hour to participate in that auction!
-                  </p>
-                </div>
+              <div className="flex items-center justify-center gap-2 text-purple-600">
+                <Clock className="w-5 h-5" />
+                <span className="text-sm sm:text-base">Check back soon for the next auction!</span>
               </div>
             </div>
           </div>
@@ -500,93 +451,111 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
               </div>
 
               <div className="space-y-2 sm:space-y-2.5">
-                {/* Entry Fee Payment Section - Show only if join window is open OR user has paid */}
-                {(isJoinWindowOpen || hasAnyPaidEntry) && (
-                  <>
-                    {/* Entry Fee Payment Section - Show only if user hasn't paid */}
-                    {!hasAnyPaidEntry && (
-                      <div className="relative group/entry">
-                        {/* Animated glow effect */}
-                        <div className="absolute -inset-[1px] bg-gradient-to-r from-[#8456BC]/30 via-[#9F7ACB]/30 to-[#B99FD9]/30 rounded-[18px] blur-md opacity-30 group-hover/entry:opacity-50 transition-opacity duration-500"></div>
+                {/* Entry Fee Payment Section - Show only if user hasn't paid */}
+                {!hasAnyPaidEntry && (
+                  <div className="relative group/entry">
+                    {/* Animated glow effect */}
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-[#8456BC]/30 via-[#9F7ACB]/30 to-[#B99FD9]/30 rounded-[18px] blur-md opacity-30 group-hover/entry:opacity-50 transition-opacity duration-500"></div>
 
-                        <div className="relative backdrop-blur-2xl bg-white/85 rounded-2xl p-2.5 sm:p-3 md:p-4 border border-purple-200/50 shadow-xl">
-                          {/* Header */}
-                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
-                            <div className="bg-gradient-to-br from-[#8456BC] to-[#B99FD9] p-1 sm:p-1.5 rounded-xl shadow-md">
-                              <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
-                            </div>
-                            <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
-                              Pay Entry Fee to Join
+                    <div className="relative backdrop-blur-2xl bg-white/85 rounded-2xl p-2.5 sm:p-3 md:p-4 border border-purple-200/50 shadow-xl">
+                      {/* Header */}
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                        <div className="bg-gradient-to-br from-[#8456BC] to-[#B99FD9] p-1 sm:p-1.5 rounded-xl shadow-md">
+                          <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                        </div>
+                        <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
+                          Pay Entry Fee to Join
+                        </span>
+                      </div>
+
+                      {/* Entry Fee Breakdown - BoxA and BoxB */}
+                      <div className="space-y-1.5 sm:space-y-2 mb-2.5 sm:mb-3">
+                        {/* Box 1 - BoxA */}
+                        <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
+                              Box 1 (BoxA):
                             </span>
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
+                              {isLoading ? (
+                                <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                              ) : (
+                                <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
+                                  {boxAFee.toLocaleString('en-IN')}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                        </div>
 
-                          {/* Entry Fee Breakdown - BoxA and BoxB */}
-                          <div className="space-y-1.5 sm:space-y-2 mb-2.5 sm:mb-3">
-                            {/* Box 1 - BoxA */}
-                            <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
-                                  Box 1 (BoxA):
+                        {/* Box 2 - BoxB */}
+                        <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
+                              Box 2 (BoxB):
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
+                              {isLoading ? (
+                                <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                              ) : (
+                                <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
+                                  {boxBFee.toLocaleString('en-IN')}
                                 </span>
-                                <div className="flex items-center gap-1">
-                                  <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
-                                  {isLoading ? (
-                                    <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                                  ) : (
-                                    <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
-                                      {boxAFee.toLocaleString('en-IN')}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+                              )}
                             </div>
+                          </div>
+                        </div>
 
-                            {/* Box 2 - BoxB */}
-                            <div className="group/box relative backdrop-blur-lg bg-gradient-to-r from-purple-50/70 to-white/70 rounded-xl p-2 sm:p-2.5 border border-purple-100/40 transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs sm:text-sm font-semibold text-[#53317B]">
-                                  Box 2 (BoxB):
+                        {/* Total = BoxA + BoxB */}
+                        <div className="relative mt-2 sm:mt-3 group/total">
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#8456BC]/15 to-[#B99FD9]/15 rounded-xl blur-sm"></div>
+                          <div className="relative backdrop-blur-xl bg-gradient-to-r from-purple-100/85 to-purple-50/85 rounded-xl p-2 sm:p-2.5 md:p-3 border-2 border-[#9F7ACB]/40 shadow-lg">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 sm:gap-1.5">
+                                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC] animate-pulse" />
+                                <span className="text-xs sm:text-sm md:text-base font-bold text-[#3A2257]">
+                                  Total Entry Fee:
                                 </span>
-                                <div className="flex items-center gap-1">
-                                  <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC]" />
-                                  {isLoading ? (
-                                    <div className="w-12 h-4 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                                  ) : (
-                                    <span className="text-xs sm:text-sm md:text-base font-bold bg-gradient-to-r from-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
-                                      {boxBFee.toLocaleString('en-IN')}
-                                    </span>
-                                  )}
-                                </div>
                               </div>
-                            </div>
-
-                            {/* Total = BoxA + BoxB */}
-                            <div className="relative mt-2 sm:mt-3 group/total">
-                              <div className="absolute inset-0 bg-gradient-to-r from-[#8456BC]/15 to-[#B99FD9]/15 rounded-xl blur-sm"></div>
-                              <div className="relative backdrop-blur-xl bg-gradient-to-r from-purple-100/85 to-purple-50/85 rounded-xl p-2 sm:p-2.5 md:p-3 border-2 border-[#9F7ACB]/40 shadow-lg">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1 sm:gap-1.5">
-                                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8456BC] animate-pulse" />
-                                    <span className="text-xs sm:text-sm md:text-base font-bold text-[#3A2257]">
-                                      Total Entry Fee:
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-0.5 sm:gap-1">
-                                    <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
-                                    {isLoading ? (
-                                      <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                                    ) : (
-                                      <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
-                                        {totalEntryFee.toLocaleString('en-IN')}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                              <div className="flex items-center gap-0.5 sm:gap-1">
+                                <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
+                                {isLoading ? (
+                                  <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                                ) : (
+                                  <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
+                                    {totalEntryFee.toLocaleString('en-IN')}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
+                        </div>
+                      </div>
 
-                          {/* Pay Now Button - Show during join window */}
+                      {/* Join Window Status & Pay Button */}
+                      {!isJoinWindowOpen ? (
+                        <div className="relative group/closed">
+                          <div className="absolute -inset-[1px] bg-gradient-to-r from-red-400/30 to-orange-500/30 rounded-xl blur-md opacity-40"></div>
+                          <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-50/90 to-orange-50/85 border-2 border-red-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
+                            <div className="flex items-center gap-1.5 sm:gap-2 text-red-700">
+                              <div className="bg-gradient-to-br from-red-500 to-orange-600 p-1 sm:p-1.5 rounded-lg shadow-md">
+                                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                              </div>
+                              <span className="text-xs sm:text-sm md:text-base font-bold">
+                                Join Window Closed
+                              </span>
+                            </div>
+                            <p className="text-[10px] sm:text-xs text-red-600 mt-1 ml-6 sm:ml-8 font-medium">
+                              You can only join within the first 15 minutes of each hour.
+                            </p>
+                            
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Pay Now Button */}
                           {isLoggedIn ? (
                             <>
                               <Button
@@ -622,30 +591,30 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
                               🔒 Login to pay entry fee and start Auction!
                             </p>
                           )}
-                        </div>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                    {/* Entry Paid Success */}
-                    {hasAnyPaidEntry && (
-                      <div className="relative group/success">
-                        <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-400/30 to-green-500/30 rounded-[18px] blur-md opacity-40"></div>
-                        <div className="relative backdrop-blur-2xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl">
-                          <div className="flex items-center gap-1.5 sm:gap-2 text-emerald-700">
-                            <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-1 sm:p-1.5 rounded-xl shadow-md">
-                              <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                            </div>
-                            <span className="text-xs sm:text-sm md:text-base font-bold">
-                              ✓ Entry Paid - Auction Unlocked!
-                            </span>
-                          </div>
-                          <p className="text-[10px] sm:text-xs text-emerald-600 mt-1 ml-6 sm:ml-8 font-medium">
-                            Round boxes are now available. Good luck!
-                          </p>
+                {/* Entry Paid Success */}
+                {hasAnyPaidEntry && (
+                  <div className="relative group/success">
+                    <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-400/30 to-green-500/30 rounded-[18px] blur-md opacity-40"></div>
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl">
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-emerald-700">
+                        <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-1 sm:p-1.5 rounded-xl shadow-md">
+                          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                         </div>
+                        <span className="text-xs sm:text-sm md:text-base font-bold">
+                          ✓ Entry Paid - Auction Unlocked!
+                        </span>
                       </div>
-                    )}
-                  </>
+                      <p className="text-[10px] sm:text-xs text-emerald-600 mt-1 ml-6 sm:ml-8 font-medium">
+                        Round boxes are now available. Good luck!
+                      </p>
+                    </div>
+                  </div>
                 )}
 
                 {/* Info Box */}
