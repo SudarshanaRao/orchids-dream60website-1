@@ -2,6 +2,8 @@
 const mongoose = require('mongoose');
 const { sendPrizeClaimWinnerEmail, sendWaitingQueueEmail } = require('../utils/emailService');
 const User = require('./user');
+const HourlyAuction = require('./HourlyAuction');
+const DailyAuction = require('./DailyAuction');
 
 /**
  * Helper function to get current IST time
@@ -340,24 +342,26 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
     for (const winner of winners) {
       // ✅ Calculate deadline based on rank (fixed time slots from winners announcement)
       // Rank 1: 0-15 mins, Rank 2: 16-30 mins, Rank 3: 31-45 mins
-      const claimWindowStart = new Date(now.getTime() + (winner.rank - 1) * 15 * 60 * 1000);
-      const claimDeadline = new Date(now.getTime() + winner.rank * 15 * 60 * 1000);
+        const isRankOne = winner.rank === 1;
+        const claimWindowStart = isRankOne ? now : null;
+        const claimDeadline = isRankOne ? new Date(now.getTime() + 15 * 60 * 1000) : null;
 
-      const updateData = {
-        isWinner: true,
-        finalRank: winner.rank,
-        prizeAmountWon: winner.prizeAmount || 0,
-        lastRoundBidAmount: winner.finalAuctionAmount || 0,
-        auctionStatus: 'COMPLETED',
-        completedAt: now, // ✅ Use IST time
-        prizeClaimStatus: 'PENDING',
-        claimDeadline: claimDeadline, // ✅ IST-based deadline
-        totalParticipants: totalParticipants,
-        // ✅ NEW: Fixed time slots - rank 1 starts immediately, others wait
-        currentEligibleRank: 1, // All winners see that rank 1 is currently eligible
-        claimWindowStartedAt: claimWindowStart, // ✅ IST-based window start
-        ranksOffered: [1], // Track that rank 1 has been offered
-      };
+        const updateData = {
+          isWinner: true,
+          finalRank: winner.rank,
+          prizeAmountWon: winner.prizeAmount || 0,
+          lastRoundBidAmount: winner.finalAuctionAmount || 0,
+          auctionStatus: 'COMPLETED',
+          completedAt: now, // ✅ Use IST time
+          prizeClaimStatus: 'PENDING',
+          claimDeadline: claimDeadline, // ✅ IST-based deadline (only for active rank)
+          totalParticipants: totalParticipants,
+          // ✅ NEW: Fixed start for rank 1 only, others will start fresh when promoted
+          currentEligibleRank: 1,
+          claimWindowStartedAt: claimWindowStart,
+          ranksOffered: [1],
+        };
+
 
       // Calculate remaining fees based on rank
       if (winner.rank === 1) {
@@ -701,33 +705,108 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
   }
 };
 
+// Helper: sync claim status into HourlyAuction and DailyAuction config
+const syncClaimStatusToAuctions = async (hourlyAuctionId, winnersSnapshot = null) => {
+  try {
+    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
+    if (!hourlyAuction) return;
+
+    const historyModel = mongoose.models.AuctionHistory;
+    const historyWinners = winnersSnapshot || (historyModel ? await historyModel.find({ hourlyAuctionId, isWinner: true }) : []);
+    if (!historyWinners || historyWinners.length === 0) return;
+
+    const byRank = historyWinners.reduce((acc, w) => {
+      acc[w.finalRank] = w;
+      return acc;
+    }, {});
+
+    if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
+      hourlyAuction.winners = hourlyAuction.winners.map(w => {
+        const hist = byRank[w.rank];
+        if (hist) {
+          w.prizeClaimStatus = hist.prizeClaimStatus;
+          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+          w.prizeClaimedAt = hist.claimedAt || null;
+          w.prizeClaimedBy = hist.claimedBy || null;
+          w.claimNotes = hist.claimNotes || null;
+        }
+        return w;
+      });
+      hourlyAuction.markModified('winners');
+      await hourlyAuction.save();
+    }
+
+    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
+    if (!dailyAuction) return;
+
+    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
+      c => c.TimeSlot === hourlyAuction.TimeSlot && c.auctionNumber === hourlyAuction.auctionNumber
+    );
+    if (configIndex === -1) return;
+
+    if (dailyAuction.dailyAuctionConfig[configIndex].topWinners) {
+      dailyAuction.dailyAuctionConfig[configIndex].topWinners = dailyAuction.dailyAuctionConfig[configIndex].topWinners.map(tw => {
+        const hist = byRank[tw.rank];
+        if (hist) {
+          tw.prizeClaimStatus = hist.prizeClaimStatus;
+          tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+          tw.prizeClaimedAt = hist.claimedAt || null;
+          tw.prizeClaimedBy = hist.claimedBy || null;
+          tw.claimNotes = hist.claimNotes || null;
+        }
+        return tw;
+      });
+      dailyAuction.markModified('dailyAuctionConfig');
+      await dailyAuction.save();
+    }
+  } catch (error) {
+    console.error('❌ [SYNC_CLAIM_STATUS] Error syncing claim status:', error.message);
+  }
+};
+
 /**
  * Static method: Advance to next rank in priority claim queue
- * Called when current eligible rank fails to claim within 30 minutes
+ * Called when current eligible rank fails to claim within 15 minutes OR cancels
  */
-auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId) {
+auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId, options = {}) {
   try {
-    // Find all winners for this auction with PENDING status
+    const { fromRank: explicitFromRank, reason = 'EXPIRED_WINDOW' } = options;
+
+    // Find all winners for this auction
     const winners = await this.find({
       hourlyAuctionId,
-      isWinner: true,
-      prizeClaimStatus: 'PENDING'
+      isWinner: true
     }).sort({ finalRank: 1 });
 
     if (winners.length === 0) {
-      console.log(`⏭️ [PRIORITY_CLAIM] No pending winners for auction ${hourlyAuctionId}`);
+      console.log(`⏭️ [PRIORITY_CLAIM] No winners for auction ${hourlyAuctionId}`);
       return null;
     }
 
-    // Get current eligible rank (should be same for all winners)
-    const currentEligibleRank = winners[0].currentEligibleRank || 1;
+    // Determine current rank to advance from
+    const currentEligibleRank = explicitFromRank || winners[0].currentEligibleRank || 1;
     const nextRank = currentEligibleRank + 1;
+    const now = getISTTime();
+
+    // Expire/mark current eligible rank as not claimed
+    const expireReason = reason === 'CANCELLED'
+      ? `Rank ${currentEligibleRank} cancelled the claim`
+      : `Rank ${currentEligibleRank} did not claim within 15 minutes`;
+
+    await this.updateMany(
+      { hourlyAuctionId, finalRank: currentEligibleRank, prizeClaimStatus: 'PENDING' },
+      {
+        $set: {
+          prizeClaimStatus: 'EXPIRED',
+          claimNotes: expireReason,
+        }
+      }
+    );
 
     // Check if there's a next rank (max is 3)
     if (nextRank > 3) {
-      console.log(`⏭️ [PRIORITY_CLAIM] All ranks exhausted for auction ${hourlyAuctionId}. Marking as EXPIRED.`);
+      console.log(`⏭️ [PRIORITY_CLAIM] All ranks exhausted for auction ${hourlyAuctionId}. Marking remaining as EXPIRED.`);
 
-      // Expire all pending claims
       await this.updateMany(
         { hourlyAuctionId, prizeClaimStatus: 'PENDING' },
         {
@@ -738,34 +817,33 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
         }
       );
 
+      await syncClaimStatusToAuctions(hourlyAuctionId);
       return null;
     }
 
-    // Check if next rank winner exists
+    // Activate next rank
     const nextRankWinner = winners.find(w => w.finalRank === nextRank);
 
     if (!nextRankWinner) {
       console.log(`⏭️ [PRIORITY_CLAIM] No rank ${nextRank} winner exists for auction ${hourlyAuctionId}. Marking remaining as EXPIRED.`);
 
-      // Expire all pending claims
       await this.updateMany(
         { hourlyAuctionId, prizeClaimStatus: 'PENDING' },
         {
           $set: {
             prizeClaimStatus: 'EXPIRED',
-            claimNotes: `Rank ${currentEligibleRank} failed to claim and no rank ${nextRank} winner exists`
+            claimNotes: `Rank ${currentEligibleRank} failed/cancelled and no rank ${nextRank} winner exists`
           }
         }
       );
 
+      await syncClaimStatusToAuctions(hourlyAuctionId);
       return null;
     }
 
-    // ✅ FIX: Only update currentEligibleRank
-    // Do NOT update claimWindowStartedAt - keep original fixed time slots
-    const now = getISTTime(); // ✅ Use IST time
+    const claimWindowStart = now;
+    const claimDeadline = new Date(now.getTime() + 15 * 60 * 1000);
 
-    // ✅ Format for logging
     const istFormatter = new Intl.DateTimeFormat('en-IN', {
       timeZone: 'Asia/Kolkata',
       year: 'numeric',
@@ -778,20 +856,17 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
     });
 
     console.log(`⏭️ [PRIORITY_CLAIM] Advancing auction ${hourlyAuctionId} from rank ${currentEligibleRank} to rank ${nextRank}`);
-    console.log(`     ❌ Rank ${currentEligibleRank} failed to claim within 15 minutes`);
+    console.log(`     Reason: ${expireReason}`);
     console.log(`     ✅ Rank ${nextRank} (${nextRankWinner.username}) now eligible to claim`);
     console.log(`     ⏰ Current time IST: ${istFormatter.format(now)}`);
-    console.log(`     ⏰ Rank ${nextRank} window start IST: ${istFormatter.format(nextRankWinner.claimWindowStartedAt)}`);
-    console.log(`     ⏰ Rank ${nextRank} deadline IST: ${istFormatter.format(nextRankWinner.claimDeadline)}`);
+    console.log(`     ⏰ Rank ${nextRank} window start IST: ${istFormatter.format(claimWindowStart)}`);
+    console.log(`     ⏰ Rank ${nextRank} deadline IST: ${istFormatter.format(claimDeadline)}`);
 
-    // ✅ FIX: Only update currentEligibleRank, do NOT update claimWindowStartedAt
-    const result = await this.updateMany(
-      { hourlyAuctionId, isWinner: true, prizeClaimStatus: 'PENDING' },
+    await this.updateMany(
+      { hourlyAuctionId, isWinner: true },
       {
         $set: {
           currentEligibleRank: nextRank
-          // ❌ REMOVED: claimWindowStartedAt: now
-          // Keep original fixed time slot window start
         },
         $push: {
           ranksOffered: nextRank
@@ -799,7 +874,19 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
       }
     );
 
-    console.log(`✅ [PRIORITY_CLAIM] Updated ${result.modifiedCount} winner records for auction ${hourlyAuctionId}`);
+    const updateNext = await this.updateOne(
+      { hourlyAuctionId, finalRank: nextRank },
+      {
+        $set: {
+          prizeClaimStatus: 'PENDING',
+          claimWindowStartedAt: claimWindowStart,
+          claimDeadline: claimDeadline,
+          claimNotes: `Rank ${nextRank} is now eligible to claim`,
+        }
+      }
+    );
+
+    console.log(`✅ [PRIORITY_CLAIM] Updated ${updateNext.modifiedCount} record(s) for rank ${nextRank} winner in auction ${hourlyAuctionId}`);
 
     // ✅ Send email notification to next rank winner
     try {
@@ -810,21 +897,22 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
           username: nextRankWinner.username,
           auctionName: nextRankWinner.auctionName || 'Auction',
           prizeAmount: nextRankWinner.prizeAmountWon || 0,
-          claimDeadline: nextRankWinner.claimDeadline,
+          claimDeadline: claimDeadline,
           upiId: null // Not claimed yet
         });
       }
     } catch (emailError) {
       console.error(`❌ [EMAIL] Error sending email to rank ${nextRank} winner:`, emailError.message);
-      // Don't fail the operation if email fails
     }
+
+    await syncClaimStatusToAuctions(hourlyAuctionId);
 
     return {
       previousRank: currentEligibleRank,
       currentRank: nextRank,
       currentWinner: nextRankWinner.username,
-      windowStart: nextRankWinner.claimWindowStartedAt,
-      deadline: nextRankWinner.claimDeadline
+      windowStart: claimWindowStart,
+      deadline: claimDeadline
     };
   } catch (error) {
     console.error(`❌ [PRIORITY_CLAIM] Error advancing claim queue:`, error);
@@ -838,88 +926,36 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId)
  */
 auctionHistorySchema.statics.processClaimQueues = async function() {
   try {
-    // ✅ Get current IST time for comparison
-    const now = getISTTime(); // ✅ Use IST time consistently
+    const now = getISTTime();
 
-    // ✅ Format for logging
-    const istFormatter = new Intl.DateTimeFormat('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
+    const expiredActive = await this.find({
+      prizeClaimStatus: 'PENDING',
+      isWinner: true,
+      claimDeadline: { $ne: null, $lt: now },
+    }).lean();
 
-    console.log(`⏰ [PRIORITY_CLAIM] Processing claim queues at IST: ${istFormatter.format(now)}`);
-
-    // ✅ Find auctions where the CURRENT eligible rank's window has expired
-    // Since all times are now stored in IST, we can directly compare with IST time
-    const expiredClaims = await this.aggregate([
-      {
-        $match: {
-          prizeClaimStatus: 'PENDING',
-          isWinner: true,
-          currentEligibleRank: { $exists: true, $ne: null },
-          completedAt: { $exists: true, $ne: null }
-        }
-      },
-      {
-        $addFields: {
-          // Calculate when current eligible rank's window expires
-          // currentEligibleRank 1 expires at completedAt + 15 mins
-          // currentEligibleRank 2 expires at completedAt + 30 mins
-          // currentEligibleRank 3 expires at completedAt + 45 mins
-          currentRankDeadline: {
-            $add: [
-              '$completedAt',
-              { $multiply: ['$currentEligibleRank', 15 * 60 * 1000] }
-            ]
-          }
-        }
-      },
-      {
-        $match: {
-          currentRankDeadline: { $lt: now } // Compare with IST now
-        }
-      },
-      {
-        $group: {
-          _id: '$hourlyAuctionId',
-          currentEligibleRank: { $first: '$currentEligibleRank' },
-          completedAt: { $first: '$completedAt' },
-          currentRankDeadline: { $first: '$currentRankDeadline' }
-        }
-      }
-    ]);
-
-    if (expiredClaims.length === 0) {
+    if (expiredActive.length === 0) {
       return { processed: 0, advanced: 0 };
     }
 
-    console.log(`⏰ [PRIORITY_CLAIM] Processing ${expiredClaims.length} auctions with expired claim windows`);
-
+    const processedAuctions = new Set();
     let advancedCount = 0;
 
-    for (const auction of expiredClaims) {
-      console.log(`⏰ [PRIORITY_CLAIM] Rank ${auction.currentEligibleRank} window expired for auction ${auction._id}`);
-      console.log(`     Completed at IST: ${istFormatter.format(auction.completedAt)}`);
-      console.log(`     Deadline IST: ${istFormatter.format(auction.currentRankDeadline)}`);
-      console.log(`     Current time IST: ${istFormatter.format(now)}`);
+    for (const entry of expiredActive) {
+      if (processedAuctions.has(entry.hourlyAuctionId)) continue;
+      processedAuctions.add(entry.hourlyAuctionId);
 
-      const result = await this.advanceClaimQueue(auction._id);
-      if (result) {
-        advancedCount++;
-      }
+      const result = await this.advanceClaimQueue(entry.hourlyAuctionId, {
+        fromRank: entry.finalRank,
+        reason: 'EXPIRED_WINDOW',
+      });
+
+      if (result) advancedCount++;
     }
 
-    console.log(`✅ [PRIORITY_CLAIM] Processed ${expiredClaims.length} auctions, advanced ${advancedCount} to next rank`);
-
     return {
-      processed: expiredClaims.length,
-      advanced: advancedCount
+      processed: processedAuctions.size,
+      advanced: advancedCount,
     };
   } catch (error) {
     console.error(`❌ [PRIORITY_CLAIM] Error processing claim queues:`, error);

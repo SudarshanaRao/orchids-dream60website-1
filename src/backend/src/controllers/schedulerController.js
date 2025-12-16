@@ -286,16 +286,20 @@ const syncHourlyStatusToDailyConfig = async (hourlyAuctionId, newStatus) => {
       
       // ✅ NEW: Sync winners from hourly auction to daily auction config
       if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
-        dailyAuction.dailyAuctionConfig[configIndex].topWinners = hourlyAuction.winners.map(winner => ({
-          rank: winner.rank,
-          playerId: winner.playerId,
-          playerUsername: winner.playerUsername,
-          finalAuctionAmount: winner.finalAuctionAmount,
-          totalAmountPaid: winner.totalAmountPaid,
-          prizeAmount: winner.prizeAmount,
-          isPrizeClaimed: winner.isPrizeClaimed || false,
-          prizeClaimedAt: winner.prizeClaimedAt || null
-        }));
+          dailyAuction.dailyAuctionConfig[configIndex].topWinners = hourlyAuction.winners.map(winner => ({
+            rank: winner.rank,
+            playerId: winner.playerId,
+            playerUsername: winner.playerUsername,
+            finalAuctionAmount: winner.finalAuctionAmount,
+            totalAmountPaid: winner.totalAmountPaid,
+            prizeAmount: winner.prizeAmount,
+            isPrizeClaimed: winner.isPrizeClaimed || false,
+            prizeClaimStatus: winner.prizeClaimStatus || 'PENDING',
+            prizeClaimedAt: winner.prizeClaimedAt || null,
+            prizeClaimedBy: winner.prizeClaimedBy || null,
+            claimNotes: winner.claimNotes || null,
+          }));
+
         
         console.log(`     🏆 [SYNC-WINNERS] Synced ${hourlyAuction.winners.length} winners to daily auction config for ${hourlyAuction.TimeSlot}`);
         console.log(`     🏆 [SYNC-WINNERS] Winners: ${hourlyAuction.winners.map(w => `${w.rank}. ${w.playerUsername}`).join(', ')}`);

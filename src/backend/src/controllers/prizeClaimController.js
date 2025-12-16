@@ -1,6 +1,65 @@
 // src/controllers/prizeClaimController.js
 const AuctionHistory = require('../models/AuctionHistory');
 const HourlyAuction = require('../models/HourlyAuction');
+const DailyAuction = require('../models/DailyAuction');
+
+// Helper: sync winner claim statuses into HourlyAuction and DailyAuction config
+const syncWinnerStatuses = async (hourlyAuctionId) => {
+  try {
+    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
+    if (!hourlyAuction) return;
+
+    const historyWinners = await AuctionHistory.find({ hourlyAuctionId, isWinner: true });
+    if (!historyWinners || historyWinners.length === 0) return;
+
+    const byRank = historyWinners.reduce((acc, w) => {
+      acc[w.finalRank] = w;
+      return acc;
+    }, {});
+
+    if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
+      hourlyAuction.winners = hourlyAuction.winners.map(w => {
+        const hist = byRank[w.rank];
+        if (hist) {
+          w.prizeClaimStatus = hist.prizeClaimStatus;
+          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+          w.prizeClaimedAt = hist.claimedAt || null;
+          w.prizeClaimedBy = hist.claimedBy || null;
+          w.claimNotes = hist.claimNotes || null;
+        }
+        return w;
+      });
+      hourlyAuction.markModified('winners');
+      await hourlyAuction.save();
+    }
+
+    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
+    if (!dailyAuction) return;
+
+    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
+      c => c.TimeSlot === hourlyAuction.TimeSlot && c.auctionNumber === hourlyAuction.auctionNumber
+    );
+    if (configIndex === -1) return;
+
+    if (dailyAuction.dailyAuctionConfig[configIndex].topWinners) {
+      dailyAuction.dailyAuctionConfig[configIndex].topWinners = dailyAuction.dailyAuctionConfig[configIndex].topWinners.map(tw => {
+        const hist = byRank[tw.rank];
+        if (hist) {
+          tw.prizeClaimStatus = hist.prizeClaimStatus;
+          tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+          tw.prizeClaimedAt = hist.claimedAt || null;
+          tw.prizeClaimedBy = hist.claimedBy || null;
+          tw.claimNotes = hist.claimNotes || null;
+        }
+        return tw;
+      });
+      dailyAuction.markModified('dailyAuctionConfig');
+      await dailyAuction.save();
+    }
+  } catch (error) {
+    console.error('❌ [SYNC_WINNERS] Error syncing winner statuses:', error.message);
+  }
+};
 
 /**
  * Submit prize claim with UPI ID and payment details
@@ -71,7 +130,8 @@ const submitPrizeClaim = async (req, res) => {
       await historyEntry.save();
       
       // ✅ IMMEDIATE: Advance queue to next winner without delay
-      await advanceQueueImmediately(hourlyAuctionId, historyEntry.finalRank);
+      await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
+      await syncWinnerStatuses(hourlyAuctionId);
       
       return res.status(400).json({
         success: false,
@@ -117,18 +177,7 @@ const submitPrizeClaim = async (req, res) => {
       }
     );
     
-    // Also update the winner's claim status in HourlyAuction
-    const auction = await HourlyAuction.findOne({ hourlyAuctionId });
-    if (auction && auction.winners) {
-      const winnerIndex = auction.winners.findIndex(w => w.playerId === userId);
-      if (winnerIndex !== -1) {
-        auction.winners[winnerIndex].isPrizeClaimed = true;
-        auction.winners[winnerIndex].prizeClaimedAt = new Date();
-        await auction.save();
-        
-        console.log(`🎁 [PRIZE_CLAIM] Updated winner status in HourlyAuction for ${updatedEntry.username}`);
-      }
-    }
+    await syncWinnerStatuses(hourlyAuctionId);
     
     console.log(`✅ [PRIZE_CLAIM] Prize claimed successfully by ${updatedEntry.username} (${getRankSuffix(updatedEntry.finalRank)} place)`);
     console.log(`     💰 Final round bid amount: ₹${updatedEntry.lastRoundBidAmount || 0}`);
@@ -159,42 +208,55 @@ const submitPrizeClaim = async (req, res) => {
   }
 };
 
-/**
- * ✅ NEW: Immediately advance queue to next winner (no delay)
- */
-async function advanceQueueImmediately(hourlyAuctionId, expiredRank) {
+// NEW: Winner can cancel claim to pass to next rank immediately
+const cancelPrizeClaim = async (req, res) => {
   try {
-    const nextRank = expiredRank + 1;
-    
-    if (nextRank > 3) {
-      console.log(`⏰ [QUEUE_ADVANCE] No more winners to advance for auction ${hourlyAuctionId}`);
-      return;
+    const { userId, hourlyAuctionId } = req.body;
+
+    if (!userId || !hourlyAuctionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId and hourlyAuctionId are required',
+      });
     }
-    
-    // Update next winner immediately with new 30-minute window
-    const result = await AuctionHistory.updateOne(
-      {
-        hourlyAuctionId,
-        finalRank: nextRank,
-        isWinner: true,
-        prizeClaimStatus: 'PENDING'
-      },
-      {
-        $set: {
-          currentEligibleRank: nextRank,
-          claimWindowStartedAt: new Date(),
-          claimDeadline: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
-        }
-      }
-    );
-    
-    if (result.modifiedCount > 0) {
-      console.log(`✅ [QUEUE_ADVANCE] Rank ${nextRank} winner can now claim (15-minute window started)`);
+
+    const historyEntry = await AuctionHistory.findOne({ userId, hourlyAuctionId, isWinner: true });
+    if (!historyEntry) {
+      return res.status(404).json({ success: false, message: 'Winner entry not found' });
     }
+
+    if (historyEntry.prizeClaimStatus !== 'PENDING') {
+      return res.status(400).json({ success: false, message: 'Prize is not in pending state' });
+    }
+
+    if (historyEntry.currentEligibleRank && historyEntry.finalRank !== historyEntry.currentEligibleRank) {
+      return res.status(403).json({
+        success: false,
+        message: `It's not your turn yet. Current eligible rank is ${historyEntry.currentEligibleRank}.`,
+      });
+    }
+
+    historyEntry.prizeClaimStatus = 'EXPIRED';
+    historyEntry.claimNotes = 'Cancelled by winner';
+    historyEntry.claimDeadline = null;
+    historyEntry.claimWindowStartedAt = null;
+    await historyEntry.save();
+
+    await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'CANCELLED' });
+    await syncWinnerStatuses(hourlyAuctionId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Prize claim cancelled. Next winner can now claim.',
+    });
   } catch (error) {
-    console.error('❌ [QUEUE_ADVANCE] Error advancing queue:', error);
+    console.error('❌ [PRIZE_CLAIM] Error cancelling prize claim:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error while cancelling prize claim',
+    });
   }
-}
+};
 
 /**
  * Get prize claim status for a user and auction
@@ -235,7 +297,8 @@ const getPrizeClaimStatus = async (req, res) => {
       await historyEntry.save();
       
       // ✅ IMMEDIATE: Advance queue to next winner
-      await advanceQueueImmediately(hourlyAuctionId, historyEntry.finalRank);
+      await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
+      await syncWinnerStatuses(hourlyAuctionId);
     }
     
     return res.status(200).json({
@@ -317,6 +380,7 @@ const processClaimQueues = async (req, res) => {
 
 module.exports = {
   submitPrizeClaim,
+  cancelPrizeClaim,
   getPrizeClaimStatus,
   expireUnclaimedPrizes,
   processClaimQueues,

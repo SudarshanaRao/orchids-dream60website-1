@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const AuctionHistory = require('../models/AuctionHistory');
+const { submitPrizeClaim, cancelPrizeClaim } = require('../controllers/prizeClaimController');
 
 /**
  * @swagger
@@ -267,65 +267,11 @@ router.get('/pending', async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.post('/submit', async (req, res) => {
-  try {
-    const { userId, hourlyAuctionId, upiId, paymentReference } = req.body;
+// Submit prize claim (delegates to controller so statuses are synced)
+router.post('/submit', submitPrizeClaim);
 
-    // Validate required fields
-    if (!userId || !hourlyAuctionId || !upiId) {
-      return res.status(400).json({
-        success: false,
-        message: 'userId, hourlyAuctionId, and upiId are required',
-      });
-    }
-
-    // Validate UPI ID format (basic validation)
-    const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
-    if (!upiRegex.test(upiId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid UPI ID format',
-      });
-    }
-
-    // Submit prize claim
-    const updated = await AuctionHistory.submitPrizeClaim(userId, hourlyAuctionId, {
-      upiId,
-      paymentReference,
-    });
-
-    console.log(`✅ [PRIZE-CLAIM-API] Prize claimed successfully by user ${userId} for auction ${hourlyAuctionId}`);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Prize claim submitted successfully',
-      data: updated,
-    });
-  } catch (error) {
-    console.error('Error submitting prize claim:', error);
-    
-    // Handle specific error messages
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        success: false,
-        message: error.message,
-      });
-    }
-    
-    if (error.message.includes('expired') || error.message.includes('not pending')) {
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to submit prize claim',
-      error: error.message,
-    });
-  }
-});
+// Cancel current winner's claim and advance to next winner immediately
+router.post('/cancel', cancelPrizeClaim);
 
 /**
  * @swagger

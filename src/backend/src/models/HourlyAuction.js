@@ -86,7 +86,14 @@ const WinnerSchema = new mongoose.Schema(
     totalAmountPaid: { type: Number, required: true },
     prizeAmount: { type: Number, required: true },
     isPrizeClaimed: { type: Boolean, default: false },
+    prizeClaimStatus: {
+      type: String,
+      enum: ['PENDING', 'CLAIMED', 'EXPIRED', 'CANCELLED'],
+      default: 'PENDING',
+    },
     prizeClaimedAt: { type: Date, default: null },
+    prizeClaimedBy: { type: String, default: null },
+    claimNotes: { type: String, default: null },
   },
   { _id: false }
 );
