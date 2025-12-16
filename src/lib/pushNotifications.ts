@@ -22,22 +22,6 @@ const supportsPush = () =>
   'PushManager' in window &&
   'Notification' in window;
 
-export function getStoredUserId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const localId = localStorage.getItem('user_id') || localStorage.getItem('userId');
-    const sessionId = (typeof sessionStorage !== 'undefined')
-      ? (sessionStorage.getItem('user_id') || sessionStorage.getItem('userId'))
-      : null;
-    const cookieMatch = document.cookie.match(/(?:^|;\s*)(user_id|userId)=([^;]+)/);
-    const cookieId = cookieMatch ? decodeURIComponent(cookieMatch[2]) : null;
-    return localId || sessionId || cookieId || null;
-  } catch (error) {
-    console.warn('Unable to read stored user id for push subscription', error);
-    return null;
-  }
-}
-
 // Request notification permission (no auto-prompt if already decided)
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!supportsPush()) {
@@ -125,9 +109,21 @@ async function persistSubscription(userId: string, subscription: PushSubscriptio
 }
 
 // Subscribe (or refresh) push notifications for a user
-export async function subscribeToPushNotifications(userId: string): Promise<boolean> {
+export async function subscribeToPushNotifications(userId?: string): Promise<boolean> {
   try {
-    if (!userId) return false;
+    // ✅ If userId not provided, try to get from localStorage/cookies
+    let actualUserId = userId;
+    if (!actualUserId) {
+      actualUserId = localStorage.getItem('user_id') || 
+                     getCookie('user_id') || 
+                     '';
+    }
+
+    if (!actualUserId) {
+      console.warn('❌ Cannot subscribe to push notifications: No user_id found');
+      return false;
+    }
+
     if (!supportsPush()) return false;
 
     const permission = await requestNotificationPermission();
@@ -142,14 +138,25 @@ export async function subscribeToPushNotifications(userId: string): Promise<bool
     const subscription = await createOrRefreshSubscription(registration);
     const deviceType = detectDeviceType();
 
-    await persistSubscription(userId, subscription, deviceType);
+    await persistSubscription(actualUserId, subscription, deviceType);
     localStorage.setItem('push-subscribed', 'true');
     localStorage.setItem('push-permission-asked', 'true');
+    localStorage.setItem('push-user-id', actualUserId); // ✅ Store for future reference
+    
+    console.log('✅ Push notification subscribed successfully for user:', actualUserId);
     return true;
   } catch (error) {
     console.error('Error subscribing to push notifications:', error);
     return false;
   }
+}
+
+// ✅ Helper function to get cookie value
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
 }
 
 // Unsubscribe from push notifications
