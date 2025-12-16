@@ -475,44 +475,37 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                     </div>
                   </div>
                   
-                  {/* Winner info for completed auctions */}
-                  {auction.winner && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center justify-between gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-                          <Trophy className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-xs text-purple-700">Winner</div>
-                          <div className="text-sm font-bold text-purple-900">{auction.winner}</div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                      
-                  {/* View Leaderboard for ALL completed auctions where user participated */}
-                  {auction.status === 'completed' && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 flex items-center justify-end"
-                    >
-                      <Button
-                        onClick={() => onNavigate?.('leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                        size="sm"
-                        className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                    {/* Winner info + leaderboard for completed auctions */}
+                    {auction.status === 'completed' && (auction.winner || (auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId])) && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 flex items-center justify-between gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-2 border border-purple-200/60"
                       >
-                        <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                        View Leaderboard
-                      </Button>
-                    </motion.div>
-                  )}
-                    
-                    {/* Active auction CTA */}
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
+                            <Trophy className="w-4 h-4 text-white" />
+                          </div>
+                          <div>
+                            <div className="text-xs text-purple-700">Winner</div>
+                            <div className="text-sm font-bold text-purple-900">{auction.winner || 'TBA'}</div>
+                          </div>
+                        </div>
+                        {auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                          <Button
+                            onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                            size="sm"
+                            className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                          >
+                            <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                            View Leaderboard
+                          </Button>
+                        )}
+                      </motion.div>
+                    )}
+                      
+                      {/* Active auction CTA */}
+
                     {auction.status === 'active' && (
                       <motion.div 
                         initial={{ opacity: 0, y: -10 }}

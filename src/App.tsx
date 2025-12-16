@@ -292,7 +292,15 @@ const App = () => {
           setSelectedAuctionDetails(null);
         }
       } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-      else if (path === '/auction-leaderboard') setCurrentPage('auction-leaderboard');
+      else if (path === '/auction-leaderboard') {
+        setCurrentPage('auction-leaderboard');
+        const params = new URLSearchParams(window.location.search);
+        const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
+        if (urlHourlyId) {
+          setCurrentHourlyAuctionId(urlHourlyId);
+          sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
+        }
+      }
       else setCurrentPage('game');
     };
 
@@ -439,6 +447,17 @@ const App = () => {
           console.error('Error parsing stored auction:', error);
           localStorage.removeItem('selectedAuctionDetails');
         }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (window.location.pathname === '/auction-leaderboard') {
+      const params = new URLSearchParams(window.location.search);
+      const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
+      if (urlHourlyId) {
+        setCurrentHourlyAuctionId(urlHourlyId);
+        sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
       }
     }
   }, []);
@@ -643,7 +662,11 @@ const App = () => {
     }
   }, [serverTime]); // Run when server time first loads
 
-  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
+  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
+  });
+
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   // ✅ NEW: Track previous round to detect round changes
   const [previousRound, setPreviousRound] = useState<number>(1);
@@ -1275,7 +1298,14 @@ const App = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-    const handleNavigate = (page: string) => {
+    const handleNavigate = (page: string, data?: { hourlyAuctionId?: string }) => {
+      let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
+
+      if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
+        setCurrentHourlyAuctionId(targetHourlyAuctionId);
+        sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
+      }
+
       setCurrentPage(page);
       
       // ✅ Update browser URL to match the page
@@ -1293,7 +1323,7 @@ const App = () => {
         'profile': '/profile',
         'history': '/history',
         'leaderboard': '/leaderboard',
-        'auction-leaderboard': '/auction-leaderboard',
+        'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
         'admin-login': '/admin',
         'admin-dashboard': '/admin'
       };
@@ -2040,12 +2070,13 @@ const App = () => {
                         <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
                       </div>
                     </div>
-                        <button
-                          onClick={() => handleNavigate('auction-leaderboard')}
-                          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                        >
-                          View winners
-                        </button>
+                          <button
+                            onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                          >
+                            View winners
+                          </button>
+
 
                   </div>
                 </div>
@@ -2100,11 +2131,12 @@ const App = () => {
                   serverTime={serverTime} // ✅ Pass server time to AuctionGrid
                 />
 
-                <AuctionSchedule />
-              </>
-            ) : (
-              <>
-                <AuctionSchedule />
+                  <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+                </>
+              ) : (
+                <>
+                  <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+
                 {/* Guest View - Show login prompt instead of auction  */}
                 <div className="text-center py-8 sm:py-12 md:py-16 px-4">
                   <div className="max-w-2xl mx-auto space-y-6">

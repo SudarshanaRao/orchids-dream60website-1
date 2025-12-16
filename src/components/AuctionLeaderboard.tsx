@@ -77,17 +77,37 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
         setIsLoading(true);
         const queryString = buildQueryString({ hourlyAuctionId, userId });
         const response = await fetch(`${API_ENDPOINTS.scheduler.auctionLeaderboard}${queryString}`);
-        const data = await response.json();
+          const data = await response.json();
 
-        if (response.ok && data.success) {
-          setAuction(data.auction);
-          setRounds(data.rounds || []);
-        } else {
-          setError(data.message || 'Failed to load leaderboard');
-          if (!data.isParticipant) {
-            toast.error('You did not participate in this auction');
+          if (response.ok && data.success) {
+            const normalizedWinners: WinnerData[] = (data.auction?.winners || []).map((winner: any) => {
+              const isClaimed = winner?.isPrizeClaimed === true
+                || winner?.isPrizeClaimed === 'true'
+                || winner?.isPrizeClaimed === 'YES'
+                || winner?.isPrizeClaimed === 'CLAIMED'
+                || !!winner?.prizeClaimedAt
+                || !!winner?.prizeClaimedBy;
+
+              return {
+                ...winner,
+                isPrizeClaimed: isClaimed,
+                prizeClaimedBy: winner?.prizeClaimedBy || (isClaimed ? winner?.playerUsername : winner?.prizeClaimedBy),
+              } as WinnerData;
+            });
+
+            if (data.auction) {
+              setAuction({ ...data.auction, winners: normalizedWinners });
+            } else {
+              setAuction(null);
+            }
+            setRounds(data.rounds || []);
+          } else {
+            setError(data.message || 'Failed to load leaderboard');
+            if (!data.isParticipant) {
+              toast.error('You did not participate in this auction');
+            }
           }
-        }
+
       } catch (err) {
         console.error('Error fetching leaderboard:', err);
         setError('Failed to load leaderboard data');
