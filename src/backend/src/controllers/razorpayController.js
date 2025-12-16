@@ -913,30 +913,38 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
 
     console.log(`✅ [PRIZE_CLAIM_UPDATE] Marked ${expireResult.modifiedCount} other winners as EXPIRED`);
     
-    // ✅ NEW: Immediately update currentEligibleRank to next rank (no delay)
-    // This allows the next winner to claim immediately without waiting for cron job
-    const nextRankToUpdate = updatedEntry.finalRank + 1;
-    if (nextRankToUpdate <= 3) {
-      const nextWinnerUpdate = await AuctionHistory.updateOne(
-        {
-          hourlyAuctionId: payment.auctionId,
-          finalRank: nextRankToUpdate,
-          isWinner: true,
-          prizeClaimStatus: 'PENDING' // Only update if still pending
-        },
-        {
-          $set: {
-            currentEligibleRank: nextRankToUpdate,
-            claimWindowStartedAt: new Date(), // Start their 15-minute window NOW
-            claimDeadline: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+      // ✅ NEW: Immediately update currentEligibleRank to next rank (no delay)
+      // This allows the next winner to claim immediately without waiting for cron job
+      const nextRankToUpdate = updatedEntry.finalRank + 1;
+
+      if (nextRankToUpdate <= 3) {
+        // Keep all winner records aligned with the active rank
+        await AuctionHistory.updateMany(
+          { hourlyAuctionId: payment.auctionId, isWinner: true },
+          { $set: { currentEligibleRank: nextRankToUpdate } }
+        );
+
+        const nextWinnerUpdate = await AuctionHistory.updateOne(
+          {
+            hourlyAuctionId: payment.auctionId,
+            finalRank: nextRankToUpdate,
+            isWinner: true,
+            prizeClaimStatus: 'PENDING' // Only update if still pending
+          },
+          {
+            $set: {
+              currentEligibleRank: nextRankToUpdate,
+              claimWindowStartedAt: new Date(), // Start their 15-minute window NOW
+              claimDeadline: new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+            }
           }
+        );
+        
+        if (nextWinnerUpdate.modifiedCount > 0) {
+          console.log(`✅ [IMMEDIATE_QUEUE_ADVANCE] Rank ${nextRankToUpdate} winner can now claim immediately (no delay)`);
         }
-      );
-      
-      if (nextWinnerUpdate.modifiedCount > 0) {
-        console.log(`✅ [IMMEDIATE_QUEUE_ADVANCE] Rank ${nextRankToUpdate} winner can now claim immediately (no delay)`);
       }
-    }
+
 
     const getRankSuffix = (rank) => {
       if (rank === 1) return '1st';

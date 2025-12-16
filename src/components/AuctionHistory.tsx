@@ -58,25 +58,27 @@ interface AuctionHistoryItem {
   totalAmountSpent?: number;
   roundsParticipated?: number;
   totalBidsPlaced?: number;
-  // Prize claim fields (for all winners)
-  isWinner?: boolean;
-  finalRank?: number;
-  prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
-  claimDeadline?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-  claimedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-  claimUpiId?: string;
-  remainingProductFees?: number;
-  remainingFeesPaid?: boolean;
-  hourlyAuctionId?: string;
-  lastRoundBidAmount?: number;
-  prizeAmountWon?: number;
-  // Claimant information (who actually claimed the prize)
-  claimedBy?: string;
-  claimedByRank?: number;
-  // ✅ NEW: Priority claim system fields
-  claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-  currentEligibleRank?: number; // Which rank can currently claim
-}
+    // Prize claim fields (for all winners)
+    isWinner?: boolean;
+    finalRank?: number;
+    prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
+    claimDeadline?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+    claimedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+    claimUpiId?: string;
+    remainingProductFees?: number;
+    remainingFeesPaid?: boolean;
+    hourlyAuctionId?: string;
+    lastRoundBidAmount?: number;
+    prizeAmountWon?: number;
+    // Claimant information (who actually claimed the prize)
+    claimedBy?: string;
+    claimedByRank?: number;
+    // ✅ NEW: Priority claim system fields
+    claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+    currentEligibleRank?: number; // Which rank can currently claim
+    winnersAnnouncedAt?: number; // When winners were declared (UTC ms)
+  }
+
 
 // Circular Progress Component
 const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percentage: number, size?: number, strokeWidth?: number }) => {
@@ -274,76 +276,92 @@ const AuctionCard = ({
     return '🏆';
   };
 
-  // Countdown timer for this auction
-  useEffect(() => {
-    if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return;
+    // Countdown timer for this auction
+    useEffect(() => {
+      if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return;
 
-    const updateTimer = () => {
-      // ✅ Current UTC time in milliseconds
-      const now = Date.now();
-      
-      // ✅ NEW: If in waiting queue, show time until claim window opens
-      if (isInWaitingQueue() && localAuction.claimWindowStartedAt) {
-        // ✅ Already UTC timestamp (number), no conversion needed
-        const windowStart = localAuction.claimWindowStartedAt;
-        let diff = windowStart - now;
+      const updateTimer = () => {
+        // ✅ Current UTC time in milliseconds
+        const now = Date.now();
+
+        // Helper: derive active window bounds (start/end) even for waiting users
+        const getActiveWindow = () => {
+          const activeRank = localAuction.currentEligibleRank || 1;
+          let start = localAuction.claimWindowStartedAt;
+
+          // Fallback: base on winners announcement time and fixed 15-min slots
+          if (!start && localAuction.winnersAnnouncedAt) {
+            start = localAuction.winnersAnnouncedAt + (activeRank - 1) * 15 * 60 * 1000;
+          }
+
+          if (!start) return null;
+
+          return {
+            start,
+            end: start + 15 * 60 * 1000,
+          };
+        };
+
+        const activeWindow = getActiveWindow();
         
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
-        diff = diff - (330 * 60 * 1000);
+        // ✅ NEW: If in waiting queue, show time remaining in the current active window
+        if (isInWaitingQueue() && activeWindow) {
+          let diff = activeWindow.end - now;
+          diff = diff - (330 * 60 * 1000);
+          
+          if (diff > 0) {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}m ${seconds}s`);
+            return;
+          } else {
+            // ✅ Window ended but backend may be updating next rank
+            setTimeLeft('Claim Window Soon');
+            return;
+          }
+        }
         
-        if (diff > 0) {
+        // ✅ CRITICAL FIX: Check if currentEligibleRank hasn't been updated yet (backend 1 min delay)
+        // When it's supposed to be user's turn but backend hasn't updated currentEligibleRank yet
+        if (localAuction.finalRank && localAuction.currentEligibleRank && activeWindow) {
+          let diff = activeWindow.start - now;
+          diff = diff - (330 * 60 * 1000);
+          
+          // If window time has passed within 1 minute, show "Claim Window Soon"
+          if (diff <= 0 && diff > -(60 * 1000)) {
+            setTimeLeft('Claim Window Soon');
+            return;
+          }
+        }
+        
+        // ✅ Show time left until deadline when it's user's turn (or fallback to active window end)
+        if (localAuction.claimDeadline || activeWindow) {
+          const deadline = localAuction.claimDeadline || activeWindow?.end;
+          if (!deadline) return;
+
+          let diff = deadline - now;
+
+          // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
+          diff = diff - (330 * 60 * 1000);
+
+          if (diff <= 0) {
+            setTimeLeft('EXPIRED');
+            return;
+          }
+
+          // ✅ Calculate remaining time directly in minutes and seconds
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          setTimeLeft(`Opens in ${minutes}m ${seconds}s`);
-          return;
-        } else {
-          // ✅ NEW: Window time has passed but still in waiting queue (backend 1 min delay)
-          // Show "Claim Window Soon" instead of falling through to 30 min deadline timer
-          setTimeLeft('Claim Window Soon');
-          return;
+          setTimeLeft(`${minutes}m ${seconds}s`);
         }
-      }
-      
-      // ✅ CRITICAL FIX: Check if currentEligibleRank hasn't been updated yet (backend 1 min delay)
-      // When it's supposed to be user's turn but backend hasn't updated currentEligibleRank yet
-      if (localAuction.finalRank && localAuction.currentEligibleRank && localAuction.claimWindowStartedAt) {
-        const windowStart = localAuction.claimWindowStartedAt;
-        let diff = windowStart - now;
-        diff = diff - (330 * 60 * 1000);
-        
-        // If window time has passed within 1 minute, show "Claim Window Soon"
-        if (diff <= 0 && diff > -(60 * 1000)) {
-          setTimeLeft('Claim Window Soon');
-          return;
-        }
-      }
-      
-      // ✅ Show time left until deadline when it's user's turn
-      if (localAuction.claimDeadline) {
-        // ✅ Already UTC timestamp (number), no conversion needed
-        const deadline = localAuction.claimDeadline;
-        let diff = deadline - now;
+      };
 
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
-        diff = diff - (330 * 60 * 1000);
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
 
-        if (diff <= 0) {
-          setTimeLeft('EXPIRED');
-          return;
-        }
+      return () => clearInterval(interval);
+    }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank, localAuction.currentEligibleRank, localAuction.winnersAnnouncedAt]);
 
-        // ✅ Calculate remaining time directly in minutes and seconds
-        const minutes = Math.floor(diff / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${minutes}m ${seconds}s`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank]);
 
   const handleClaimPrize = async () => {
     if (timeLeft === 'EXPIRED') {
@@ -816,10 +834,11 @@ const AuctionCard = ({
                         <p className="text-[10px] text-blue-800 leading-relaxed mb-1.5">
                           <strong>⏰ Your claim window:</strong> 15 minutes when your turn starts
                         </p>
-                      <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
-                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="font-bold text-xs text-blue-900">{timeLeft}</span>
-                      </div>
+                        <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="font-bold text-xs text-blue-900">{timeLeft || 'Updating...'}</span>
+                        </div>
+
                     </div>
 
                     <div className="bg-white/60 rounded-lg p-2 border border-blue-200">
@@ -1169,9 +1188,11 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
             claimedBy: auction.claimedBy,
             claimedByRank: auction.claimedByRank,
             // ✅ NEW: Priority claim system fields - converted to UTC timestamps
-            claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
-            currentEligibleRank: auction.currentEligibleRank,
-          };
+              claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
+              winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
+              currentEligibleRank: auction.currentEligibleRank,
+            };
+
         });
         
         // ✅ Only log on initial load to reduce console spam
