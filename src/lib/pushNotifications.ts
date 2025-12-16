@@ -22,6 +22,22 @@ const supportsPush = () =>
   'PushManager' in window &&
   'Notification' in window;
 
+export function getStoredUserId(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const localId = localStorage.getItem('user_id') || localStorage.getItem('userId');
+    const sessionId = (typeof sessionStorage !== 'undefined')
+      ? (sessionStorage.getItem('user_id') || sessionStorage.getItem('userId'))
+      : null;
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)(user_id|userId)=([^;]+)/);
+    const cookieId = cookieMatch ? decodeURIComponent(cookieMatch[2]) : null;
+    return localId || sessionId || cookieId || null;
+  } catch (error) {
+    console.warn('Unable to read stored user id for push subscription', error);
+    return null;
+  }
+}
+
 // Request notification permission (no auto-prompt if already decided)
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   if (!supportsPush()) {
