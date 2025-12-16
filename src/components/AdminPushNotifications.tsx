@@ -628,36 +628,24 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             <p className="text-xs text-purple-500 mt-1">
               Add a banner image to create a Rich Notification. Image will be displayed prominently in the notification.
             </p>
-              {richNotificationData.image && (
-                <div className="mt-3 space-y-2">
-                  <p className="text-xs font-semibold text-purple-700">IMAGE PREVIEW</p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative w-full sm:w-2/3 aspect-video max-h-48 bg-gray-100 rounded-lg overflow-hidden border-2 border-purple-200">
-                      <img
-                        src={richNotificationData.image}
-                        alt="Banner preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid Image%3C/text%3E%3C/svg%3E';
-                        }}
-                      />
-                    </div>
-                    <div className="sm:w-1/3 space-y-2">
-                      <p className="text-xs font-semibold text-purple-700">Small preview</p>
-                      <div className="w-full h-20 bg-gray-100 rounded-md border border-purple-200 overflow-hidden">
+                {richNotificationData.image && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-semibold text-purple-700">IMAGE PREVIEW</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-20 h-20 bg-gray-100 rounded-md border border-purple-200 overflow-hidden flex-shrink-0">
                         <img
                           src={richNotificationData.image}
                           alt="Thumbnail preview"
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid Image%3C/text%3E%3C/svg%3E';
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid%3C/text%3E%3C/svg%3E';
                           }}
                         />
                       </div>
+                      <p className="text-xs text-purple-600">Banner image preview</p>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
           </div>
 
@@ -677,21 +665,21 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                       {notificationData.body || 'Notification message'}
                     </p>
-                      {richNotificationData.image && (
-                        <div className="mt-3">
-                          <div className="relative w-full aspect-video max-h-40 bg-gray-100 rounded-md overflow-hidden">
-                            <img
-                              src={richNotificationData.image}
-                              alt="Rich notification banner"
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
+                        {richNotificationData.image && (
+                          <div className="mt-3">
+                            <div className="relative w-24 h-24 bg-gray-100 rounded-md overflow-hidden border border-purple-200">
+                              <img
+                                src={richNotificationData.image}
+                                alt="Rich notification banner"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-purple-600 mt-2 font-semibold">✨ Rich Notification with Banner Image</p>
                           </div>
-                          <p className="text-xs text-purple-600 mt-2 font-semibold">✨ Rich Notification with Banner Image</p>
-                        </div>
-                      )}
+                        )}
 
                   </div>
                 </div>

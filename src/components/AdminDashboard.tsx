@@ -77,6 +77,30 @@ interface Statistics {
 
 }
 
+interface DailyAuctionConfigItem {
+  auctionNumber: number;
+  auctionId?: string;
+  TimeSlot: string;
+  auctionName: string;
+  prizeValue: number;
+  Status: string;
+  maxDiscount: number;
+  EntryFee: 'RANDOM' | 'MANUAL';
+  minEntryFee: number | null;
+  maxEntryFee: number | null;
+  FeeSplits: { BoxA: number; BoxB: number } | null;
+  roundCount: number;
+  roundConfig: Array<{
+    round: number;
+    minPlayers: number | null;
+    duration: number;
+    maxBid: number | null;
+    roundCutoffPercentage: number | null;
+    topBidAmountsPerRound: number;
+  }>;
+  imageUrl?: string;
+}
+
 interface MasterAuction {
   master_id: string;
   totalAuctionsPerDay: number;
@@ -705,34 +729,46 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                                     <Clock className="w-3 h-3" />
                                     <span className="font-semibold text-sm">{config.TimeSlot}</span>
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                      config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
-                                      config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
-                                      config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
-                                      'bg-red-100 text-red-700'
-                                    }`}>
-                                      {config.Status}
-                                    </span>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                        config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
+                                        config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                                        config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
+                                        'bg-red-100 text-red-700'
+                                      }`}>
+                                        {config.Status}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
 
-                                {/* Right: Prize Value & Delete Button */}
-                                <div className="flex items-center gap-3">
-                                  <div className="text-left">
-                                    <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
-                                    <p className="text-lg font-bold text-purple-900">
-                                      ₹{config.prizeValue.toLocaleString()}
-                                    </p>
+                                  {/* Right: Image Preview, Prize Value & Delete Button */}
+                                  <div className="flex items-center gap-3">
+                                    {config.imageUrl && (
+                                      <div className="w-16 h-16 bg-gray-100 rounded-md border border-purple-200 overflow-hidden flex-shrink-0">
+                                        <img
+                                          src={config.imageUrl}
+                                          alt={config.auctionName}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="text-left">
+                                      <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
+                                      <p className="text-lg font-bold text-purple-900">
+                                        ₹{config.prizeValue.toLocaleString()}
+                                      </p>
+                                    </div>
+                                    <button
+                                      onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
+                                      className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                      title="Delete auction slot"
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </button>
                                   </div>
-                                  <button
-                                    onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
-                                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                    title="Delete auction slot"
-                                  >
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </button>
-                                </div>
                               </div>
                             </div>
                           </div>

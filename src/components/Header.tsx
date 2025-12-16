@@ -35,8 +35,15 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
     window.addEventListener('beforeinstallprompt', handler);
 
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    if (isStandalone) {
       setShowInstallButton(false);
+    } else {
+      // For iOS, show install button with instructions
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isIOS && !isStandalone) {
+        setShowInstallButton(true);
+      }
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -45,11 +52,22 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
     const handleInstallClick = async () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
 
+      // Hide button if already installed
       if (isStandalone) {
         setShowInstallButton(false);
         return;
       }
 
+      // Detect iOS
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // Show instructions for iOS
+        alert('To install this app on your iPhone:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
+        return;
+      }
+
+      // Android/Desktop: trigger native prompt
       if (deferredPrompt) {
         try {
           deferredPrompt.prompt();
@@ -65,8 +83,8 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
         return;
       }
 
-      // No captured prompt available
-      alert('Install prompt is not available on this device right now.');
+      // No captured prompt available (shouldn't reach here on Android/Desktop)
+      alert('Install prompt is not available right now. Please try again later.');
     };
 
   // Fetch user stats from backend API
