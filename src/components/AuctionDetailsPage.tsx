@@ -49,12 +49,14 @@ interface AuctionDetailsData {
   prizeAmountWon?: number;
   winnersAnnounced?: boolean;
   claimedBy?: string;
-  claimUpiId?: string;
-  claimedByRank?: number;
-  // NEW: Priority claim fields
-  currentEligibleRank?: number; // Which rank (1, 2, or 3) can currently claim
-  claimWindowStartedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
-}
+    claimUpiId?: string;
+    claimedByRank?: number;
+    // NEW: Priority claim fields
+    currentEligibleRank?: number; // Which rank (1, 2, or 3) can currently claim
+    claimWindowStartedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
+    winnersAnnouncedAt?: number; // ✅ When winners were declared (UTC ms)
+  }
+
 
 interface AuctionDetailsPageProps {
   auction: AuctionDetailsData;
