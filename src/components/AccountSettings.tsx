@@ -10,6 +10,7 @@ import { ChangeEmailModal } from './ChangeEmailModal';
 import { ChangePhoneModal } from './ChangePhoneModal';
 import { OTPVerificationModal } from './OTPVerificationModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { NotificationPermissionCard } from './NotificationPermissionCard';
 // import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { toast } from 'sonner';
 // import { motion } from 'motion/react';
@@ -878,15 +879,28 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                     <div className="text-xs sm:text-sm text-purple-600 truncate">Get SMS notifications for transactions</div>
                   </div>
                 </div>
-                <Switch
-                  checked={smsAlerts}
-                  onCheckedChange={setSmsAlerts}
-                  className="data-[state=checked]:bg-purple-600 flex-shrink-0"
-                />
-              </motion.div>
-            </div>
+                  <Switch
+                    checked={smsAlerts}
+                    onCheckedChange={setSmsAlerts}
+                    className="data-[state=checked]:bg-purple-600 flex-shrink-0"
+                  />
+                </motion.div>
 
-            <div className="px-4 sm:px-6 pb-4 sm:pb-6 relative">
+                {/* Push Notifications Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4 pt-4 border-t border-purple-200/50"
+                >
+                  <NotificationPermissionCard 
+                    userId={localStorage.getItem('user_id') || undefined}
+                    showTitle={false}
+                  />
+                </motion.div>
+              </div>
+
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6 relative">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   onClick={handleSavePreferences}
