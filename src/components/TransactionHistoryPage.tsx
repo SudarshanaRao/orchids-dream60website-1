@@ -11,6 +11,9 @@ import {
   Wallet,
   Banknote,
   Info,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -55,6 +58,34 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionItem | null>(null);
   const DETAIL_STORAGE_KEY = 'd60_last_transaction_detail';
+
+  const allTransactions = useMemo(
+    () => [
+      ...(transactions.entryFees || []),
+      ...(transactions.prizeClaims || []),
+      ...(transactions.vouchers || []),
+    ],
+    [transactions]
+  );
+
+  const stats = useMemo(() => {
+    const entryAmount = (transactions.entryFees || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prizeAmount = (transactions.prizeClaims || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const voucherAmount = (transactions.vouchers || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const upiCount = allTransactions.filter((t) => (t.paymentMethod || t.paymentDetails?.method) === 'upi' || Boolean(t.paymentDetails?.vpa)).length;
+
+    return {
+      totalCount: allTransactions.length,
+      entryCount: transactions.entryFees?.length || 0,
+      prizeCount: transactions.prizeClaims?.length || 0,
+      voucherCount: transactions.vouchers?.length || 0,
+      entryAmount,
+      prizeAmount,
+      voucherAmount,
+      netFlow: prizeAmount - entryAmount - voucherAmount,
+      upiCount,
+    };
+  }, [allTransactions, transactions]);
 
   const formatDateTime = (value?: string | number | Date | null) => {
     if (!value) return '--';
@@ -318,91 +349,107 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <Card className="border-2 border-purple-200/70 bg-white/90 backdrop-blur-xl shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/60 p-4 sm:p-5 flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
-                    <IndianRupee className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-purple-700">{paymentTypeLabel(selectedTransaction.paymentType)}</div>
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-900">
-                      ₹{selectedTransaction.amount?.toLocaleString('en-IN') || 0}
-                    </div>
-                    <div className="text-xs text-purple-600 mt-1">{user.username}'s payment</div>
-                  </div>
-                  <div className="ml-auto">
-                    <Badge className="bg-purple-100 text-purple-800 border border-purple-200">
-                      {selectedTransaction.status || 'pending'}
-                    </Badge>
-                  </div>
+          <Card className="border-2 border-purple-200/70 bg-white/90 backdrop-blur-xl shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/60 p-4 sm:p-5 flex flex-col gap-3">
+              <div className="flex flex-wrap items-start gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
+                  <IndianRupee className="w-6 h-6 text-white" />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm text-purple-700 mt-2">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>Paid: {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</span>
+                <div className="flex-1 min-w-[180px]">
+                  <div className="text-sm font-semibold text-purple-700">{paymentTypeLabel(selectedTransaction.paymentType)}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-900">
+                    ₹{selectedTransaction.amount?.toLocaleString('en-IN') || 0}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    <span>Round: {selectedTransaction.roundNumber ?? '--'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                  <div className="text-xs text-purple-600 mt-1">Paid on {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
+                </div>
+                <div className="flex flex-col items-end gap-2 ml-auto min-w-[160px]">
+                  <Badge className="bg-purple-100 text-purple-800 border border-purple-200">
+                    {selectedTransaction.status || 'pending'}
+                  </Badge>
+                  <div className="text-[11px] text-purple-700 flex items-center gap-2">
                     {detailMethodIcon}
-                    <span>{paymentMethodLabel(selectedTransaction)}</span>
+                    <span className="truncate">{paymentMethodLabel(selectedTransaction)}</span>
                   </div>
                 </div>
-              </CardHeader>
+              </div>
+            </CardHeader>
 
-              <CardContent className="p-4 sm:p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-3 rounded-xl border border-purple-100 bg-purple-50/50">
-                    <div className="text-xs font-semibold text-purple-700 mb-1">Auction</div>
-                    <div className="text-base font-semibold text-purple-900">{selectedTransaction.auctionName || selectedTransaction.productName || 'Auction'}</div>
-                    <div className="text-xs text-purple-600">Time Slot: {selectedTransaction.timeSlot || selectedTransaction.productTimeSlot || '--'}</div>
-                    <div className="text-xs text-purple-600">Auction ID: {selectedTransaction.auctionId || '--'}</div>
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-purple-100 bg-purple-50/50">
-                    <div className="text-xs font-semibold text-purple-700 mb-1">Order</div>
-                    <div className="text-sm text-purple-900 break-all">Order ID: {selectedTransaction.orderId || '--'}</div>
-                    <div className="text-sm text-purple-900 break-all">Payment ID: {selectedTransaction.paymentId || '--'}</div>
+            <CardContent className="p-4 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="border border-purple-100 bg-purple-50/60 shadow-sm">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <Receipt className="w-4 h-4" />
+                      <span>Payment Summary</span>
+                    </div>
+                    <div className="text-sm text-purple-900 font-semibold">{paymentTypeLabel(selectedTransaction.paymentType)}</div>
+                    <div className="text-xs text-purple-600">Paid at {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
                     <div className="text-xs text-purple-600">Status: {selectedTransaction.status || 'pending'}</div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-3 rounded-xl border border-purple-100 bg-purple-50/50">
-                    <div className="text-xs font-semibold text-purple-700 mb-1">Product</div>
-                    <div className="text-base font-semibold text-purple-900">{selectedTransaction.productName || selectedTransaction.auctionName || '—'}</div>
-                    <div className="text-xs text-purple-600">Time Slot: {selectedTransaction.productTimeSlot || selectedTransaction.timeSlot || '--'}</div>
-                    {selectedTransaction.productValue !== undefined && selectedTransaction.productValue !== null && (
-                      <div className="text-xs text-purple-600">Value: ₹{selectedTransaction.productValue.toLocaleString('en-IN')}</div>
-                    )}
-                  </div>
-
-                  <div className="p-3 rounded-xl border border-purple-100 bg-purple-50/50 space-y-1">
-                    <div className="text-xs font-semibold text-purple-700 mb-1">Payment Method</div>
+                <Card className="border border-purple-100 bg-purple-50/60 shadow-sm">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <CreditCard className="w-4 h-4" />
+                      <span>Payment Method & UPI</span>
+                    </div>
                     <div className="text-sm text-purple-900 flex items-center gap-2">
                       {detailMethodIcon}
-                      <span>{paymentMethodLabel(selectedTransaction)}</span>
+                      <span className="truncate">{paymentMethodLabel(selectedTransaction)}</span>
                     </div>
+                    {selectedTransaction.paymentDetails?.upiApp && (
+                      <div className="text-xs text-purple-600">App: {selectedTransaction.paymentDetails.upiApp}</div>
+                    )}
+                    {selectedTransaction.paymentDetails?.wallet && (
+                      <div className="text-xs text-purple-600">Wallet: {selectedTransaction.paymentDetails.wallet}</div>
+                    )}
+                    {selectedTransaction.paymentDetails?.vpa && (
+                      <div className="text-xs text-purple-600">UPI ID: {selectedTransaction.paymentDetails.vpa}</div>
+                    )}
+                    {selectedTransaction.paymentDetails?.bank && (
+                      <div className="text-xs text-purple-600">Bank: {selectedTransaction.paymentDetails.bank}</div>
+                    )}
                     {selectedTransaction.paymentDetails?.card?.network && (
                       <div className="text-xs text-purple-600">Card Network: {selectedTransaction.paymentDetails.card.network}</div>
                     )}
                     {selectedTransaction.paymentDetails?.card?.last4 && (
                       <div className="text-xs text-purple-600">Last 4: •••• {selectedTransaction.paymentDetails.card.last4}</div>
                     )}
-                    {selectedTransaction.paymentDetails?.vpa && (
-                      <div className="text-xs text-purple-600">UPI: {selectedTransaction.paymentDetails.vpa}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="border border-purple-100 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <Target className="w-4 h-4" />
+                      <span>Auction / Product</span>
+                    </div>
+                    <div className="text-base font-semibold text-purple-900">{selectedTransaction.auctionName || selectedTransaction.productName || 'Auction'}</div>
+                    <div className="text-xs text-purple-600">Time Slot: {selectedTransaction.timeSlot || selectedTransaction.productTimeSlot || '--'}</div>
+                    <div className="text-xs text-purple-600">Auction ID: {selectedTransaction.auctionId || '--'}</div>
+                    {selectedTransaction.productValue !== undefined && selectedTransaction.productValue !== null && (
+                      <div className="text-xs text-purple-600">Value: ₹{selectedTransaction.productValue.toLocaleString('en-IN')}</div>
                     )}
-                    {selectedTransaction.paymentDetails?.bank && (
-                      <div className="text-xs text-purple-600">Bank: {selectedTransaction.paymentDetails.bank}</div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                <Card className="border border-purple-100 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Order & Reference</span>
+                    </div>
+                    <div className="text-sm text-purple-900 break-all">Order ID: {selectedTransaction.orderId || '--'}</div>
+                    <div className="text-sm text-purple-900 break-all">Payment ID: {selectedTransaction.paymentId || '--'}</div>
+                    <div className="text-xs text-purple-600">Currency: {selectedTransaction.currency || 'INR'}</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
           </motion.div>
         </div>
       </div>
@@ -470,78 +517,130 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-3 sm:mb-6"
-        >
-          <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/90 shadow-2xl">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <motion.div
-                className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"
-                style={{
-                  background: 'radial-gradient(circle, #C4B5FD, #7C3AED)',
-                  top: '-20%',
-                  right: '-15%',
-                }}
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 180] }}
-                transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-              />
-            </div>
-
-            <CardHeader className="relative bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/50 backdrop-blur-xl p-3 sm:p-5">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl flex items-center justify-center shadow-lg">
-                  <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-base sm:text-xl md:text-2xl font-bold text-purple-900">Transaction History</h1>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 mt-0.5">Entry fees, prize claims, and vouchers</p>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="relative z-10 p-3 sm:p-5">
-              <Tabs defaultValue="entry" className="w-full">
-                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-                  <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-4 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
-                    <TabsTrigger
-                      value="entry"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                    >
-                      Entry Fee
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="prize"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                    >
-                      Prize Claim
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="voucher"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                    >
-                      Amazon Voucher
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-
-                <TabsContent value="entry" className="mt-0">
-                  {renderTransactionList(transactions.entryFees, 'No entry fee payments yet')}
-                </TabsContent>
-                <TabsContent value="prize" className="mt-0">
-                  {renderTransactionList(transactions.prizeClaims, 'No prize claim payments yet')}
-                </TabsContent>
-                <TabsContent value="voucher" className="mt-0">
-                  <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
-                    Amazon voucher transactions are coming soon.
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-3 sm:mb-4"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                    <BarChart3 className="w-4 h-4" />
+                    <span>Transactions</span>
                   </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  <div className="text-2xl font-bold text-purple-900">{stats.totalCount}</div>
+                  <div className="text-[11px] text-purple-600">Entry {stats.entryCount} • Prize {stats.prizeCount}</div>
+                </CardContent>
+              </Card>
+              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                    <IndianRupee className="w-4 h-4" />
+                    <span>Entry Fee Paid</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">₹{stats.entryAmount.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
+                </CardContent>
+              </Card>
+              <Card className="border-2 border-emerald-200/70 bg-white shadow-sm">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Prize Claims</span>
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-800">₹{stats.prizeAmount.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-emerald-700">{stats.prizeCount} payouts</div>
+                </CardContent>
+              </Card>
+              <Card className={`border-2 ${stats.netFlow >= 0 ? 'border-emerald-200/70 bg-emerald-50/60' : 'border-red-200/70 bg-red-50/60'} shadow-sm`}>
+                <CardContent className="p-4 space-y-1">
+                  <div className={`flex items-center gap-2 text-xs font-semibold ${stats.netFlow >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {stats.netFlow >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                    <span>Net Flow</span>
+                  </div>
+                  <div className={`text-2xl font-bold ${stats.netFlow >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>
+                    {stats.netFlow >= 0 ? '+' : '-'}₹{Math.abs(stats.netFlow).toLocaleString('en-IN')}
+                  </div>
+                  <div className="text-[11px] text-purple-700">UPI uses: {stats.upiCount}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-3 sm:mb-6"
+          >
+            <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/90 shadow-2xl">
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                  className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"
+                  style={{
+                    background: 'radial-gradient(circle, #C4B5FD, #7C3AED)',
+                    top: '-20%',
+                    right: '-15%',
+                  }}
+                  animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 180] }}
+                  transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                />
+              </div>
+
+              <CardHeader className="relative bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/50 backdrop-blur-xl p-3 sm:p-5">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-base sm:text-xl md:text-2xl font-bold text-purple-900">Transaction History</h1>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 mt-0.5">Entry fees, prize claims, and vouchers</p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="relative z-10 p-3 sm:p-5">
+                <Tabs defaultValue="entry" className="w-full">
+                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-4 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
+                      <TabsTrigger
+                        value="entry"
+                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
+                      >
+                        Entry Fee
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="prize"
+                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
+                      >
+                        Prize Claim
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="voucher"
+                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
+                      >
+                        Amazon Voucher
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+
+                  <TabsContent value="entry" className="mt-0">
+                    {renderTransactionList(transactions.entryFees, 'No entry fee payments yet')}
+                  </TabsContent>
+                  <TabsContent value="prize" className="mt-0">
+                    {renderTransactionList(transactions.prizeClaims, 'No prize claim payments yet')}
+                  </TabsContent>
+                  <TabsContent value="voucher" className="mt-0">
+                    <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
+                      Amazon voucher transactions are coming soon.
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </motion.div>
       </div>
     </div>
   );

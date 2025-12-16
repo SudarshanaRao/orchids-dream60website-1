@@ -107,23 +107,27 @@ const fetchRazorpayPaymentDetails = async (paymentId) => {
         ? new Date(payment.created_at * 1000)
         : new Date();
 
-    const details = {
-      method: payment.method,
-      card: payment.card
-        ? {
-            last4: payment.card.last4,
-            network: payment.card.network,
-            type: payment.card.type,
-            issuer: payment.card.issuer,
-          }
-        : undefined,
-      bank: payment.bank,
-      wallet: payment.wallet,
-      vpa: payment.vpa,
-    };
+  const upiApp = payment.wallet || payment?.notes?.upi_app || (payment.method === 'upi' ? payment.bank : undefined);
 
-    return { paidAt, details };
-  } catch (error) {
+  const details = {
+    method: payment.method,
+    card: payment.card
+      ? {
+          last4: payment.card.last4,
+          network: payment.card.network,
+          type: payment.card.type,
+          issuer: payment.card.issuer,
+        }
+      : undefined,
+    bank: payment.bank,
+    wallet: payment.wallet,
+    vpa: payment.vpa,
+    upiApp,
+    acquirerData: payment.acquirer_data,
+  };
+
+  return { paidAt, details };
+} catch (error) {
     console.error('❌ [RAZORPAY] Failed to fetch payment details:', { paymentId, error });
     return null;
   }
@@ -496,7 +500,10 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
         const paymentMeta = await fetchRazorpayPaymentDetails(razorpay_payment_id);
         if (paymentMeta) {
           payment.paymentMethod = paymentMeta.details?.method || payment.paymentMethod || null;
-          payment.paymentDetails = paymentMeta.details || payment.paymentDetails || null;
+          payment.paymentDetails = {
+            ...(payment.paymentDetails || {}),
+            ...(paymentMeta.details || {}),
+          };
           payment.paidAt = paymentMeta.paidAt || payment.paidAt;
           await payment.save();
         }
@@ -938,7 +945,10 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
     const paymentMeta = await fetchRazorpayPaymentDetails(razorpay_payment_id);
     if (paymentMeta) {
       payment.paymentMethod = paymentMeta.details?.method || payment.paymentMethod || null;
-      payment.paymentDetails = paymentMeta.details || payment.paymentDetails || null;
+      payment.paymentDetails = {
+        ...(payment.paymentDetails || {}),
+        ...(paymentMeta.details || {}),
+      };
       payment.paidAt = paymentMeta.paidAt || payment.paidAt;
       await payment.save();
     }

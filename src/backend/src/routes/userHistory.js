@@ -639,7 +639,7 @@ const mapPayment = (payment, auctionMeta = {}) => {
     productValue: payment.productValue ?? null,
     productImage: payment.productImage ?? null,
     paidAt: payment.paidAt,
-    paymentMethod: payment.paymentMethod,
+    paymentMethod: payment.paymentMethod || payment.paymentDetails?.method || null,
     paymentDetails: payment.paymentDetails,
     createdAt: payment.createdAt,
     updatedAt: payment.updatedAt,

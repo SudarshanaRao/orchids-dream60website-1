@@ -136,23 +136,25 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'upcoming';
             }
             
-            return {
-              time: timeStr,
-              hour: auctionHour,
-              minute: auctionMinute,
-              status,
-              hourlyAuctionId: auction.hourlyAuctionId,
-              auctionId: auction.auctionId,
-              prize: {
-                name: auction.auctionName || `Auction ${index + 1}`,
-                value: auction.prizeValue || 0,
-                image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
-              },
-              winner,
-              roundCount: auction.roundCount || 4, // Get from backend or default to 4
-              totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
-            };
-          });
+              return {
+                time: timeStr,
+                hour: auctionHour,
+                minute: auctionMinute,
+                status,
+                sequenceNumber: index + 1,
+                hourlyAuctionId: auction.hourlyAuctionId,
+                auctionId: auction.auctionId,
+                prize: {
+                  name: auction.auctionName || `Auction ${index + 1}`,
+                  value: auction.prizeValue || 0,
+                  image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
+                },
+                winner,
+                roundCount: auction.roundCount || 4, // Get from backend or default to 4
+                totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
+              };
+            });
+
 
           setScheduleData(auctions);
           
@@ -455,9 +457,10 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                               {getStatusText(auction.status)}
                             </Badge>
                           </div>
-                          <div className="text-xs text-purple-600 mt-0.5">
-                            Auction #{index + 1} of {scheduleData.length}
-                          </div>
+                            <div className="text-xs text-purple-600 mt-0.5">
+                              Auction #{auction.sequenceNumber}
+                            </div>
+
                           <div className="flex items-center gap-1.5 text-xs text-purple-700 mt-1">
                             <Users className="w-4 h-4" />
                             <span>{participantCount} participants</span>
