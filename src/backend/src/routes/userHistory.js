@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const AuctionHistory = require('../models/AuctionHistory');
+const RazorpayPayment = require('../models/RazorpayPayment');
+const HourlyAuction = require('../models/HourlyAuction');
 
 /**
  * @swagger
@@ -596,6 +598,95 @@ router.get('/stats', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch user statistics',
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /user/transactions:
+ *   get:
+ *     summary: Get user payment transactions
+ *     description: Returns entry fee and prize claim Razorpay payments for the user
+ *     tags: [User History]
+ *     parameters:
+ *       - name: userId
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transactions fetched successfully
+ */
+router.get('/transactions', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const status = req.query.status || 'paid';
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required',
+      });
+    }
+
+    const payments = await RazorpayPayment.find({ userId, status })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const auctionIds = [...new Set(payments.map(p => p.auctionId).filter(Boolean))];
+    const auctionMap = {};
+
+    if (auctionIds.length > 0) {
+      const auctions = await HourlyAuction.find({ hourlyAuctionId: { $in: auctionIds } })
+        .select('hourlyAuctionId auctionName TimeSlot')
+        .lean();
+
+      auctions.forEach((a) => {
+        auctionMap[a.hourlyAuctionId] = {
+          auctionName: a.auctionName,
+          timeSlot: a.TimeSlot,
+        };
+      });
+    }
+
+    const mapped = payments.map((p) => {
+      const paymentType = p.paymentType || 'ENTRY_FEE';
+      const auctionMeta = auctionMap[p.auctionId] || {};
+
+      return {
+        paymentType,
+        amount: p.amount,
+        currency: p.currency || 'INR',
+        status: p.status,
+        orderId: p.razorpayOrderId,
+        paymentId: p.razorpayPaymentId,
+        auctionId: p.auctionId,
+        auctionName: auctionMeta.auctionName || null,
+        timeSlot: auctionMeta.timeSlot || null,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      };
+    });
+
+    const entryFees = mapped.filter((m) => m.paymentType === 'ENTRY_FEE');
+    const prizeClaims = mapped.filter((m) => m.paymentType === 'PRIZE_CLAIM');
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        entryFees,
+        prizeClaims,
+        voucherTransactions: [],
+      },
+    });
+  } catch (error) {
+    console.error('❌ [USER-TRANSACTIONS] Error fetching transactions:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user transactions',
       error: error.message,
     });
   }

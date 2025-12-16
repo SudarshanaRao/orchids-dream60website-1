@@ -518,24 +518,25 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                         
                         {/* Active auction CTA */}
 
-                      {auction.status === 'active' && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
-                        >
-                          <motion.div
-                            animate={{ scale: [1, 1.2, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
+                        {auction.status === 'active' && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
                           >
-                            <Zap className="w-5 h-5 text-violet-600" />
+                            <motion.div
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                            >
+                              <Zap className="w-5 h-5 text-violet-600" />
+                            </motion.div>
+                            <div>
+                              <div className="text-sm font-bold text-violet-900">Entry opens at the start of the hour</div>
+                              <div className="text-xs text-violet-700">Pay one entry fee right at :00 to unlock all 6 boxes (split into Box 1 & 2)</div>
+                            </div>
                           </motion.div>
-                          <div>
-                            <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
-                            <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
-                          </div>
-                        </motion.div>
-                      )}
+                        )}
+
                   </div>
                 </div>
               </motion.div>
@@ -565,21 +566,22 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           
           {/* Entry Fee Boxes */}
           <div className="mb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="w-4 h-4 text-purple-700" />
-              <span className="text-xs sm:text-sm font-bold text-purple-800">Entry Fee Boxes (Opens 5 mins before auction)</span>
-            </div>
-            <div className="bg-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-300/60 mb-3">
-              <p className="text-xs text-purple-700 flex items-center gap-1.5">
-                <IndianRupee className="w-3.5 h-3.5 text-purple-700 shrink-0" />
-                <span><span className="font-semibold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens at <span className="font-bold">:55</span> (5 mins early)</span>
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { box: 'Box 1', time: ':55-:15', desc: 'Half of entry fee' },
-                { box: 'Box 2', time: ':55-:15', desc: 'Half of entry fee' }
-              ].map((round, idx) => (
+              <div className="flex items-center gap-2 mb-2">
+                <Lock className="w-4 h-4 text-purple-700" />
+                <span className="text-xs sm:text-sm font-bold text-purple-800">Entry Fee Boxes (Open at auction start)</span>
+              </div>
+              <div className="bg-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-300/60 mb-3">
+                <p className="text-xs text-purple-700 flex items-center gap-1.5">
+                  <IndianRupee className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                  <span><span className="font-semibold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
+                  { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
+                ].map((round, idx) => (
+
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -640,16 +642,17 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           <div className="mt-4 space-y-2">
             <div className="flex items-start gap-2 bg-violet-50/80 backdrop-blur-sm rounded-2xl p-3 border border-violet-200/60">
               <Star className="w-4 h-4 text-violet-600 mt-0.5 shrink-0" />
-              <p className="text-xs sm:text-sm text-violet-700">
-                <span className="font-semibold">How it works:</span> Pay ONE entry fee at :55 (5 mins before auction). This unlocks Box 1 & 2 (your entry is split between them). Then Box 3, 4, 5, 6 open every 15 minutes for bidding.
-              </p>
-            </div>
-            <div className="flex items-start gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/60">
-              <Clock className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-purple-700">
-                <span className="font-semibold">Example Timeline:</span> If auction starts at 2:00 PM → Entry opens at 1:55 PM → Box 3 at 2:00 PM → Box 4 at 2:15 PM → Box 5 at 2:30 PM → Box 6 at 2:45 PM → Results at 3:00 PM
-              </p>
-            </div>
+                <p className="text-xs sm:text-sm text-violet-700">
+                  <span className="font-semibold">How it works:</span> Pay ONE entry fee right at :00 when the auction hour begins. This unlocks Box 1 & 2 (your entry is split between them). Then Box 3, 4, 5, 6 open every 15 minutes for bidding.
+                </p>
+              </div>
+              <div className="flex items-start gap-2 bg-purple-50/80 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/60">
+                <Clock className="w-4 h-4 text-purple-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-purple-700">
+                  <span className="font-semibold">Example Timeline:</span> If auction starts at 2:00 PM → Entry opens at 2:00 PM → Box 3 at 2:00 PM → Box 4 at 2:15 PM → Box 5 at 2:30 PM → Box 6 at 2:45 PM → Results at 3:00 PM
+                </p>
+              </div>
+
           </div>
         </div>
       </motion.div>

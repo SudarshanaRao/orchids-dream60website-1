@@ -361,16 +361,20 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
               </div>
-              <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
-                No Live Auction
-              </h3>
-              <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-4 sm:mb-6 max-w-md mx-auto">
-                There are currently no active auctions. New auctions start every hour at the beginning of the hour.
-              </p>
-              <div className="flex items-center justify-center gap-2 text-purple-600">
-                <Clock className="w-5 h-5" />
-                <span className="text-sm sm:text-base">Check back soon for the next auction!</span>
-              </div>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
+                  No live auctions right now
+                </h3>
+                <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-2 sm:mb-4 max-w-md mx-auto">
+                  Daily auctions kick off at <span className="font-semibold">6:00 AM IST</span> and then run every hour on the hour (6:00, 7:00, 8:00...).
+                </p>
+                <p className="text-xs sm:text-sm text-purple-600 mb-4 sm:mb-6 max-w-md mx-auto">
+                  We’ll open the next slot at the start of the hour—no early 5-minute window needed.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-purple-600">
+                  <Clock className="w-5 h-5" />
+                  <span className="text-sm sm:text-base">Check back at the next hour to join.</span>
+                </div>
+
             </div>
           </div>
         </div>

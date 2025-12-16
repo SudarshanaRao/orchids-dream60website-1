@@ -67,13 +67,15 @@ export const API_ENDPOINTS = {
   },
   
   // User Management
-  user: {
-    profile: `${API_BASE_URL}/user/profile`,
-    update: `${API_BASE_URL}/user/update`,
-    updateDetails: `${API_BASE_URL}/auth/updateUserDetails`,
-    updatePreferences: `${API_BASE_URL}/auth/me/preferences`,
-    delete: `${API_BASE_URL}/user/delete`,
-  },
+    user: {
+      profile: `${API_BASE_URL}/user/profile`,
+      update: `${API_BASE_URL}/user/update`,
+      updateDetails: `${API_BASE_URL}/auth/updateUserDetails`,
+      updatePreferences: `${API_BASE_URL}/auth/me/preferences`,
+      delete: `${API_BASE_URL}/user/delete`,
+      transactions: `${API_BASE_URL}/user/transactions`,
+    },
+
   
   // Razorpay Payments
   razorpay: {
