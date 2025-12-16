@@ -11,7 +11,7 @@ import { API_ENDPOINTS } from '../lib/api-config';
 
 interface SupportProps {
   onBack: () => void;
-  onNavigate?: (page: string) => void;
+  onNavigate?: (page: string, data?: Record<string, any>) => void;
 }
 
 export function Support({ onBack, onNavigate }: SupportProps) {
@@ -23,13 +23,16 @@ export function Support({ onBack, onNavigate }: SupportProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string }>>([
+  const botStreamRef = useRef<NodeJS.Timeout | null>(null);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string; streaming?: boolean }>>([
     {
       role: 'bot',
       text: "Hi! I'm Dream60 Assist. Ask me about entry fees, bidding rounds, prize claims, or payouts.",
     },
   ]);
+
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,14 +199,48 @@ export function Support({ onBack, onNavigate }: SupportProps) {
     return match?.answer || "I couldn't find that yet. Ask about entry fees, bids, prize claims, vouchers, or scheduling.";
   };
 
+  const streamBotReply = (reply: string) => {
+    if (botStreamRef.current) {
+      clearInterval(botStreamRef.current);
+      botStreamRef.current = null;
+    }
+    setIsBotTyping(true);
+    setMessages((prev) => [...prev, { role: 'bot', text: '', streaming: true }]);
+    let index = 0;
+    botStreamRef.current = setInterval(() => {
+      index += 1;
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
+        if (lastIndex >= 0) {
+          updated[lastIndex] = {
+            ...updated[lastIndex],
+            text: reply.slice(0, index),
+            streaming: index < reply.length,
+          };
+        }
+        return updated;
+      });
+
+      if (index >= reply.length) {
+        setIsBotTyping(false);
+        if (botStreamRef.current) {
+          clearInterval(botStreamRef.current);
+          botStreamRef.current = null;
+        }
+      }
+    }, 18);
+  };
+
   const handleSendMessage = (e?: React.FormEvent, overrideText?: string) => {
     if (e) e.preventDefault();
     const text = (overrideText ?? chatInput).trim();
     if (!text) return;
     const reply = getBotReply(text);
-    setMessages((prev) => [...prev, { role: 'user', text }, { role: 'bot', text: reply }]);
+    setMessages((prev) => [...prev, { role: 'user', text }]);
     setChatInput('');
     setChatOpen(true);
+    streamBotReply(reply);
   };
 
   useEffect(() => {
@@ -211,6 +248,12 @@ export function Support({ onBack, onNavigate }: SupportProps) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages, chatOpen]);
+
+  useEffect(() => () => {
+    if (botStreamRef.current) {
+      clearInterval(botStreamRef.current);
+    }
+  }, []);
 
   const filteredFaq = faqData.map(category => ({
     ...category,
@@ -298,8 +341,7 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                   variant="outline"
                   className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
                   onClick={() => {
-                    onNavigate?.('view-guide');
-                    window.history.pushState({}, '', '/view-guide');
+                    onNavigate?.('view-guide', { from: 'support' });
                   }}
                 >
                   View Guide
@@ -316,8 +358,7 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                   variant="outline"
                   className="rounded-xl border-green-400/50 text-green-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
                   onClick={() => {
-                    setChatOpen(true);
-                    setTimeout(() => chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' }), 50);
+                    onNavigate?.('support-chat', { from: 'support' });
                   }}
                 >
                   Start Chat
@@ -334,8 +375,7 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                   variant="outline"
                   className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
                   onClick={() => {
-                    onNavigate?.('winning-tips');
-                    window.history.pushState({}, '', '/winning-tips');
+                    onNavigate?.('winning-tips', { from: 'support' });
                   }}
                 >
                   Learn More
@@ -395,6 +435,14 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                           </div>
                         </div>
                       ))}
+                      {isBotTyping && (
+                        <div className="flex justify-start">
+                          <div className="inline-flex items-center gap-2 max-w-[75%] rounded-2xl px-3 py-2 text-xs bg-purple-50 text-purple-800 border border-purple-100 shadow">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Dream60 Assist is typing…</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <form onSubmit={(e) => handleSendMessage(e)} className="flex flex-col sm:flex-row gap-2">

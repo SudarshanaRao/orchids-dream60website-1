@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, Clock, Trophy } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
@@ -26,6 +26,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { WinningTips } from './components/WinningTips';
 import { ViewGuide } from './components/ViewGuide';
+import { SupportChatPage } from './components/SupportChatPage';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -260,6 +261,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/terms') return 'terms';
         if (path === '/privacy') return 'privacy';
         if (path === '/support') return 'support';
+        if (path === '/support/chat') return 'support-chat';
         if (path === '/contact') return 'contact';
         if (path === '/winning-tips') return 'winning-tips';
         if (path === '/view-guide') return 'view-guide';
@@ -271,9 +273,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
         return 'game';
-      });
+        });
 
-  const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
+    const supportReturnRef = useRef<boolean>(false);
+
+    const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
+
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
@@ -295,11 +300,13 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/terms') setCurrentPage('terms');
         else if (path === '/privacy') setCurrentPage('privacy');
-          else if (path === '/support') setCurrentPage('support');
-          else if (path === '/contact') setCurrentPage('contact');
-          else if (path === '/winning-tips') setCurrentPage('winning-tips');
-          else if (path === '/view-guide') setCurrentPage('view-guide');
-          else if (path === '/profile') setCurrentPage('profile');
+            else if (path === '/support') setCurrentPage('support');
+            else if (path === '/support/chat') setCurrentPage('support-chat');
+            else if (path === '/contact') setCurrentPage('contact');
+            else if (path === '/winning-tips') setCurrentPage('winning-tips');
+            else if (path === '/view-guide') setCurrentPage('view-guide');
+            else if (path === '/profile') setCurrentPage('profile');
+
 
           else if (path === '/history' || path.startsWith('/history/')) {
             setCurrentPage('history');
@@ -1321,17 +1328,29 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-    const handleNavigate = (page: string, data?: { hourlyAuctionId?: string }) => {
-      let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
+      const handleNavigate = (page: string, data?: { hourlyAuctionId?: string; from?: string }) => {
+        let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
 
-      if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
-        setCurrentHourlyAuctionId(targetHourlyAuctionId);
-        sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
-      }
+        if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
+          setCurrentHourlyAuctionId(targetHourlyAuctionId);
+          sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
+        }
 
-      setCurrentPage(page);
-      
-      // ✅ Update browser URL to match the page
+        const supportChildren = ['winning-tips', 'view-guide', 'support-chat'];
+        if (supportChildren.includes(page)) {
+          if (data?.from === 'support' || currentPage === 'support') {
+            supportReturnRef.current = true;
+          }
+        } else if (page === 'support') {
+          supportReturnRef.current = false;
+        } else {
+          supportReturnRef.current = false;
+        }
+
+        setCurrentPage(page);
+        
+        // ✅ Update browser URL to match the page
+
           const urlMap: { [key: string]: string } = {
             'game': '/',
             'login': '/login',

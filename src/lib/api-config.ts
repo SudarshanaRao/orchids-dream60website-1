@@ -29,6 +29,11 @@ export const API_ENDPOINTS = {
   contact: {
     sendMessage: `${API_BASE_URL}/contact/send-message`,
   },
+
+  supportChat: {
+    start: `${API_BASE_URL}/support-chat/start`,
+    message: `${API_BASE_URL}/support-chat`,
+  },
   
   // Authentication
   auth: {
