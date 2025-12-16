@@ -77,25 +77,30 @@ interface PrizeShowcaseProps {
   isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
 }
 
-export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
-  const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  // ✅ NEW: Track if this is the initial load
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
-  const [boxAFee, setBoxAFee] = useState<number>(0);
-  const [boxBFee, setBoxBFee] = useState<number>(0);
-  const { initiatePayment, loading: paymentLoading } = useRazorpayPayment();
-  const [participantsCount, setParticipantsCount] = useState(0);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isUserParticipating, setIsUserParticipating] = useState(false);
-  const [isJoinWindowOpen, setIsJoinWindowOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
-  const [auctionEndTime, setAuctionEndTime] = useState<Date | null>(null);
-  const [noLiveAuction, setNoLiveAuction] = useState(false);
-  // ✅ NEW: Store initial fallback time to prevent recalculation
-  const [fallbackEndTime, setFallbackEndTime] = useState<Date | null>(null);
-  // ✅ NEW: Track current auction ID to detect auction changes
-  const [currentAuctionId, setCurrentAuctionId] = useState<string | null>(null);
+  export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
+    const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    // ✅ NEW: Track if this is the initial load
+    const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+    const [boxAFee, setBoxAFee] = useState<number>(0);
+    const [boxBFee, setBoxBFee] = useState<number>(0);
+    const { initiatePayment, loading: paymentLoading } = useRazorpayPayment();
+    const [participantsCount, setParticipantsCount] = useState(0);
+    const [participants, setParticipants] = useState<Participant[]>([]);
+    const [isUserParticipating, setIsUserParticipating] = useState(false);
+    const [isJoinWindowOpen, setIsJoinWindowOpen] = useState(false);
+    const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
+    const [auctionEndTime, setAuctionEndTime] = useState<Date | null>(null);
+    const [noLiveAuction, setNoLiveAuction] = useState(false);
+    // ✅ NEW: Store initial fallback time to prevent recalculation
+    const [fallbackEndTime, setFallbackEndTime] = useState<Date | null>(null);
+    // ✅ NEW: Track current auction ID to detect auction changes
+    const [currentAuctionId, setCurrentAuctionId] = useState<string | null>(null);
+    // ✅ NEW: Internal live auction fetch state
+    const [apiLiveAuction, setApiLiveAuction] = useState<any | null>(null);
+    const [apiLiveLoading, setApiLiveLoading] = useState<boolean>(true);
+
+
 
   // ✅ Calculate current server time based on passed serverTime
   const getCurrentServerTime = (): number => {
@@ -160,35 +165,77 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
     return new Date(getCurrentServerTime() + 60 * 60 * 1000);
   };
 
-  // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
-  useEffect(() => {
-    // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
-    if (isLoadingLiveAuction && !hasInitiallyLoaded) {
-      setIsLoading(true);
-      setNoLiveAuction(false);
-      return;
-    }
+    // ✅ NEW: Fetch live auction data directly
+    useEffect(() => {
+      let isMounted = true;
+      const fetchLiveAuction = async () => {
+        try {
+          const res = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          const json = await res.json().catch(() => ({ success: false }));
+          if (!isMounted) return;
 
-    // ✅ FIX: If data is loading but we already have data, just wait for new data
-    if (isLoadingLiveAuction && hasInitiallyLoaded) {
-      return;
-    }
+          if (res.ok && json?.success && json?.data) {
+            setApiLiveAuction(json.data);
+            setNoLiveAuction(false);
+          } else {
+            setApiLiveAuction(null);
+            setNoLiveAuction(true);
+          }
+        } catch (error) {
+          if (isMounted) {
+            setApiLiveAuction(null);
+            setNoLiveAuction(true);
+          }
+        } finally {
+          if (isMounted) {
+            setApiLiveLoading(false);
+            setHasInitiallyLoaded(true);
+            setIsLoading(false);
+          }
+        }
+      };
 
-    // ✅ FIX: Don't clear state if data is temporarily undefined during refetch
-    if (!liveAuctionData) {
-      if (liveAuctions.length === 0 && hasInitiallyLoaded) {
-        setNoLiveAuction(true);
-        setIsLoading(false);
+      fetchLiveAuction();
+      const interval = setInterval(fetchLiveAuction, 15000);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
+    }, []);
+
+    const effectiveLiveAuctionData = apiLiveAuction ?? liveAuctionData;
+    const effectiveLoading = (apiLiveLoading || isLoadingLiveAuction) && !apiLiveAuction;
+
+    // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
+    useEffect(() => {
+      // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
+      if (effectiveLoading && !hasInitiallyLoaded) {
+        setIsLoading(true);
+        setNoLiveAuction(false);
+        return;
       }
-      return;
-    }
 
-    console.log('📊 [PRIZE SHOWCASE] Received live auction data from parent');
-    setNoLiveAuction(false);
-    setIsLoading(false);
-    setHasInitiallyLoaded(true);
+      // ✅ FIX: If data is loading but we already have data, just wait for new data
+      if (effectiveLoading && hasInitiallyLoaded) {
+        return;
+      }
 
-    const a = liveAuctionData;
+      // ✅ FIX: Don't clear state if data is temporarily undefined during refetch
+      if (!effectiveLiveAuctionData) {
+        if (liveAuctions.length === 0 && hasInitiallyLoaded) {
+          setNoLiveAuction(true);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      console.log('📊 [PRIZE SHOWCASE] Received live auction data from parent');
+      setNoLiveAuction(false);
+      setIsLoading(false);
+      setHasInitiallyLoaded(true);
+
+      const a = effectiveLiveAuctionData;
+
 
     const participantsList = a.participants || [];
     setParticipants(participantsList);
@@ -361,19 +408,20 @@ export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUs
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
               </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
-                  No live auctions right now
-                </h3>
-                <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-2 sm:mb-4 max-w-md mx-auto">
-                  Daily auctions kick off at <span className="font-semibold">6:00 AM IST</span> and then run every hour on the hour (6:00, 7:00, 8:00...).
-                </p>
-                <p className="text-xs sm:text-sm text-purple-600 mb-4 sm:mb-6 max-w-md mx-auto">
-                  We’ll open the next slot at the start of the hour—no early 5-minute window needed.
-                </p>
-                <div className="flex items-center justify-center gap-2 text-purple-600">
-                  <Clock className="w-5 h-5" />
-                  <span className="text-sm sm:text-base">Check back at the next hour to join.</span>
-                </div>
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900 mb-2 sm:mb-3">
+                    No live auctions right now
+                  </h3>
+                  <p className="text-sm sm:text-base md:text-lg text-purple-700 mb-2 sm:mb-4 max-w-md mx-auto">
+                    There are no current auctions running. Please come back at <span className="font-semibold">9:00 AM</span> to start the auctions.
+                  </p>
+                  <p className="text-xs sm:text-sm text-purple-600 mb-4 sm:mb-6 max-w-md mx-auto">
+                    We’ll open the next slot at the start of the hour when auctions resume.
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-purple-600">
+                    <Clock className="w-5 h-5" />
+                    <span className="text-sm sm:text-base">Check back soon to join.</span>
+                  </div>
+
 
             </div>
           </div>

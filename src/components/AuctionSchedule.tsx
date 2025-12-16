@@ -85,22 +85,25 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
   const now = getCurrentIST();
   const currentHour = now.getHours();
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
-  const [scheduleData, setScheduleData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [participationMap, setParticipationMap] = useState<Record<string, boolean>>({});
-  const [scheduleStats, setScheduleStats] = useState({
-    totalAuctions: 0,
-    earliestTime: '',
-    latestTime: '',
-    boxesPerAuction: 6 // Default fallback
-  });
-  
-  // Fetch auction schedule from API
-  useEffect(() => {
-    const fetchAuctionSchedule = async () => {
-      setIsLoading(true);
+    const [scheduleData, setScheduleData] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+    const [participationMap, setParticipationMap] = useState<Record<string, boolean>>({});
+    const [scheduleStats, setScheduleStats] = useState({
+      totalAuctions: 0,
+      earliestTime: '',
+      latestTime: '',
+      boxesPerAuction: 6 // Default fallback
+    });
+    
+    // Fetch auction schedule from API
+    useEffect(() => {
+      const fetchAuctionSchedule = async () => {
+        if (!hasLoadedOnce) {
+          setIsLoading(true);
+        }
+
       try {
-        
         const response = await fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?`);
         const data = await response.json();
         
@@ -133,25 +136,24 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'upcoming';
             }
             
-              return {
-                time: timeStr,
-                hour: auctionHour,
-                minute: auctionMinute,
-                status,
-                hourlyAuctionId: auction.hourlyAuctionId,
-                auctionId: auction.auctionId,
-                prize: {
-                  name: auction.auctionName || `Auction ${index + 1}`,
-                  value: auction.prizeValue || 0,
-                  image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
-                },
-                winner,
-                roundCount: auction.roundCount || 4, // Get from backend or default to 4
-                totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
-              };
-            });
+            return {
+              time: timeStr,
+              hour: auctionHour,
+              minute: auctionMinute,
+              status,
+              hourlyAuctionId: auction.hourlyAuctionId,
+              auctionId: auction.auctionId,
+              prize: {
+                name: auction.auctionName || `Auction ${index + 1}`,
+                value: auction.prizeValue || 0,
+                image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
+              },
+              winner,
+              roundCount: auction.roundCount || 4, // Get from backend or default to 4
+              totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
+            };
+          });
 
-          
           setScheduleData(auctions);
           
           // ✅ Check participation for completed auctions if user is logged in
@@ -220,7 +222,10 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               latestTime: latest.time,
               boxesPerAuction: totalBoxes
             });
+          } else {
+            toast.error('Failed to load auction schedule');
           }
+          setHasLoadedOnce(true);
         } else {
           toast.error('Failed to load auction schedule');
         }
@@ -240,7 +245,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
     }, 60000); // Refresh every 60 seconds
     
     return () => clearInterval(refreshInterval);
-  }, [currentHour, user?.id]);
+  }, [currentHour, user?.id, hasLoadedOnce]);
 
   // Filter auctions based on active filter
   const filteredAuctions = scheduleData.filter(auction => {

@@ -26,40 +26,53 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [highlightRect, setHighlightRect] = useState<DOMRect | null>(null);
-  const [actionRunMap, setActionRunMap] = useState<Record<string, boolean>>({});
-  const previousOverflow = useRef<string | null>(null);
+    const [actionRunMap, setActionRunMap] = useState<Record<string, boolean>>({});
+    const previousOverflow = useRef<string | null>(null);
+    const previousPaddingRight = useRef<string | null>(null);
 
-  const lockScroll = () => {
-    if (typeof document === 'undefined') return;
-    if (previousOverflow.current === null) {
-      previousOverflow.current = document.body.style.overflow;
-    }
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-  };
+    const lockScroll = () => {
+      if (typeof document === 'undefined') return;
+      if (previousOverflow.current === null) {
+        previousOverflow.current = document.body.style.overflow;
+        previousPaddingRight.current = document.body.style.paddingRight;
+      }
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    };
 
-  const unlockScroll = () => {
-    if (typeof document === 'undefined') return;
-    if (previousOverflow.current !== null) {
-      document.body.style.overflow = previousOverflow.current;
-      document.body.style.touchAction = '';
-      previousOverflow.current = null;
-    }
-  };
+    const unlockScroll = () => {
+      if (typeof document === 'undefined') return;
+      if (previousOverflow.current !== null) {
+        document.body.style.overflow = previousOverflow.current;
+        document.body.style.touchAction = '';
+        document.body.style.paddingRight = previousPaddingRight.current || '';
+        previousOverflow.current = null;
+        previousPaddingRight.current = null;
+      }
+    };
 
-  const updateHighlight = () => {
-    const step = steps[currentStep];
-    if (!step || typeof document === 'undefined') return;
+    const updateHighlight = () => {
+      const step = steps[currentStep];
+      if (!step || typeof document === 'undefined') return;
 
-    const element = document.querySelector(step.targetElement) as HTMLElement | null;
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      setHighlightRect(rect);
-      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    } else {
-      setHighlightRect(null);
-    }
-  };
+      const element = document.querySelector(step.targetElement) as HTMLElement | null;
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        setHighlightRect(rect);
+        const isVertInView = rect.top >= 12 && rect.bottom <= window.innerHeight - 12;
+        const isHorizInView = rect.left >= 12 && rect.right <= window.innerWidth - 12;
+        if (!isVertInView || !isHorizInView) {
+          element.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'center' });
+        }
+      } else {
+        setHighlightRect(null);
+      }
+    };
+
 
   useEffect(() => {
     const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`) === 'true';
@@ -224,39 +237,40 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[9999] pointer-events-auto">
-        {/* Dimmed overlay with spotlight cutout */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/65 backdrop-blur-sm"
-        />
+          {/* Dimmed overlay with spotlight cutout */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"
+          />
 
-        {highlightRect && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div
-              className="absolute rounded-2xl transition-all duration-300"
-              style={{
-                top: highlightRect.top - 16,
-                left: highlightRect.left - 16,
-                width: highlightRect.width + 32,
-                height: highlightRect.height + 32,
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
-                background: 'rgba(255,255,255,0.02)',
-                border: '2px solid rgba(139,92,246,0.5)',
-              }}
-            />
-            <div
-              className="absolute rounded-2xl ring-4 ring-purple-300/60 shadow-[0_0_0_12px_rgba(126,87,194,0.18)] transition-all duration-300 animate-pulse"
-              style={{
-                top: highlightRect.top - 12,
-                left: highlightRect.left - 12,
-                width: highlightRect.width + 24,
-                height: highlightRect.height + 24,
-              }}
-            />
-          </div>
-        )}
+          {highlightRect && (
+            <div className="absolute inset-0 pointer-events-none">
+              <div
+                className="absolute rounded-2xl transition-all duration-250"
+                style={{
+                  top: highlightRect.top - 16,
+                  left: highlightRect.left - 16,
+                  width: highlightRect.width + 32,
+                  height: highlightRect.height + 32,
+                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.7)',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '2px solid rgba(139,92,246,0.8)',
+                }}
+              />
+              <div
+                className="absolute rounded-2xl ring-4 ring-purple-300/70 shadow-[0_0_0_14px_rgba(126,87,194,0.28)] transition-all duration-250 animate-pulse"
+                style={{
+                  top: highlightRect.top - 12,
+                  left: highlightRect.left - 12,
+                  width: highlightRect.width + 24,
+                  height: highlightRect.height + 24,
+                }}
+              />
+            </div>
+          )}
+
 
         {/* Tooltip card */}
         <motion.div
