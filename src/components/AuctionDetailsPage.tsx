@@ -10,6 +10,22 @@ import { toast } from 'sonner';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
+const maskEmail = (email: string) => {
+  if (!email) return '';
+  const [local = '', domain = ''] = email.split('@');
+  const maskedLocal = local.length <= 2
+    ? `${local.slice(0, 1)}***`
+    : `${local.slice(0, 1)}***${local.slice(-1)}`;
+
+  const [domainName = '', ...restDomain] = domain.split('.');
+  const maskedDomain = domainName.length <= 2
+    ? `${domainName.slice(0, 1)}***`
+    : `${domainName.slice(0, 1)}***${domainName.slice(-1)}`;
+
+  const domainSuffix = restDomain.join('.');
+  return `${maskedLocal}@${maskedDomain}${domainSuffix ? `.${domainSuffix}` : ''}`;
+};
+
 interface RoundDetails {
   roundNumber: number;
   status: string;
@@ -71,9 +87,14 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
+  const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
+    round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
+  );
+    
   const { initiatePrizeClaimPayment, loading: globalPaymentLoading } = usePrizeClaimPayment();
-  
+    
   // Get user info - state for dynamic updates
+
   const [userInfo, setUserInfo] = useState({
     userId: localStorage.getItem('user_id') || '',
     userName: localStorage.getItem('user_name') || 'User',
@@ -913,12 +934,13 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                               : 'Winner Details'
                             }
                           </p>
-                          <p className="text-xs text-green-700 mb-2">
-                            {auction.claimUpiId === userInfo.userEmail 
-                              ? `Amazon voucher worth ₹${auction.prizeValue.toLocaleString('en-IN')} has been sent to ${userInfo.userEmail}`
-                              : `Claimed by ${auction.claimedBy}`
-                            }
-                          </p>
+                            <p className="text-xs text-green-700 mb-2">
+                              {auction.claimUpiId === userInfo.userEmail 
+                                ? `Amazon voucher worth ₹${auction.prizeValue.toLocaleString('en-IN')} has been sent to ${maskEmail(userInfo.userEmail)}`
+                                : `Claimed by ${maskEmail(auction.claimedBy || '')}`
+                              }
+                            </p>
+
                           {auction.claimedAt && (
   <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
     <Clock className="w-3 h-3" />
@@ -986,9 +1008,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                           <p className="text-sm font-semibold text-green-900 mb-1">
                             Amazon Voucher Delivered
                           </p>
-                          <p className="text-xs text-green-700 mb-2">
-                            Your prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been sent to <span className="font-semibold">{userInfo.userEmail}</span>
-                          </p>
+                            <p className="text-xs text-green-700 mb-2">
+                              Your prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been sent to <span className="font-semibold">{maskEmail(userInfo.userEmail)}</span>
+                            </p>
+
                           {auction.claimedAt && (
   <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
     <Clock className="w-3 h-3" />
@@ -1203,152 +1226,164 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                   </div>
                 </div>
 
-                <div className="space-y-3 sm:space-y-4">
-                  {detailedData.rounds.map((round: RoundDetails, index: number) => (
-                    <motion.div
-                      key={round.roundNumber}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
-                    >
-                      <Card className={`relative overflow-hidden border-2 backdrop-blur-2xl shadow-xl ${
-                        round.userBid 
-                          ? round.userQualified
-                            ? 'border-green-300/70 bg-gradient-to-br from-green-50/95 via-emerald-50/80 to-green-50/70'
-                            : 'border-purple-300/60 bg-gradient-to-br from-white/90 via-purple-50/70 to-violet-50/60'
-                          : 'border-gray-300/60 bg-gradient-to-br from-white/90 to-gray-50/70'
-                      }`}>
-                        <CardContent className="p-3 sm:p-5 relative z-10">
-                          <div className="flex items-start justify-between gap-3 mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shadow-lg border-2 border-white/60 ${
-                                round.userBid
-                                  ? round.userQualified
-                                    ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                    : 'bg-gradient-to-br from-purple-500 to-purple-700'
-                                  : 'bg-gradient-to-br from-gray-400 to-gray-600'
-                              }`}>
-                                {round.userBid ? (
-                                  round.userQualified ? (
-                                    <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                  <div className="space-y-3 sm:space-y-4">
+                    {detailedData.rounds.map((round: RoundDetails, index: number) => {
+                      const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1;
+                      const roundStatusLabel = isSkippedRound
+                        ? 'Not opened (winners announced in Round 1)'
+                        : (auction.winnersAnnounced && !round.userBid ? 'Winners Announced' : round.status);
+                      const qualifiedLabel = winnersAnnouncedEarly && round.roundNumber === 1 ? 'Winner' : 'Qualified';
+                      const nonParticipationText = isSkippedRound
+                        ? 'This round did not open because winners were announced in Round 1'
+                        : 'You did not participate in this round';
+
+                      return (
+                        <motion.div
+                          key={round.roundNumber}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
+                        >
+                        <Card className={`relative overflow-hidden border-2 backdrop-blur-2xl shadow-xl ${
+                          round.userBid 
+                            ? round.userQualified
+                              ? 'border-green-300/70 bg-gradient-to-br from-green-50/95 via-emerald-50/80 to-green-50/70'
+                              : 'border-purple-300/60 bg-gradient-to-br from-white/90 via-purple-50/70 to-violet-50/60'
+                            : 'border-gray-300/60 bg-gradient-to-br from-white/90 to-gray-50/70'
+                        }`}>
+                          <CardContent className="p-3 sm:p-5 relative z-10">
+                            <div className="flex items-start justify-between gap-3 mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shadow-lg border-2 border-white/60 ${
+                                  round.userBid
+                                    ? round.userQualified
+                                      ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                                      : 'bg-gradient-to-br from-purple-500 to-purple-700'
+                                    : 'bg-gradient-to-br from-gray-400 to-gray-600'
+                                }`}>
+                                  {round.userBid ? (
+                                    round.userQualified ? (
+                                      <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                                    ) : (
+                                      <Target className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                                    )
                                   ) : (
-                                    <Target className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                                  )
-                                ) : (
-                                  <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                                )}
+                                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                                  )}
+                                </div>
+                                
+                                <div>
+                                  <h3 className="font-bold text-purple-900 text-sm sm:text-base mb-1">Round {round.roundNumber}</h3>
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-purple-100/80 text-purple-700 border-purple-300">
+                                    {roundStatusLabel}
+                                  </Badge>
+                                </div>
                               </div>
-                              
-                              <div>
-                                <h3 className="font-bold text-purple-900 text-sm sm:text-base mb-1">Round {round.roundNumber}</h3>
-                                <Badge variant="outline" className="text-[10px] sm:text-xs bg-purple-100/80 text-purple-700 border-purple-300">
-                                  {auction.winnersAnnounced && !round.userBid ? 'Winners Announced' : round.status}
+  
+                              {round.userQualified && (
+                                <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 text-xs">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" /> {qualifiedLabel}
                                 </Badge>
-                              </div>
+                              )}
                             </div>
-
-                            {round.userQualified && (
-                              <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 text-xs">
-                                <CheckCircle2 className="w-3 h-3 mr-1" /> Qualified
-                              </Badge>
-                            )}
-                          </div>
-
-                          {round.userBid ? (
-                            <>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3">
-                                <Card className="border-2 border-purple-200/60 bg-white/70 backdrop-blur-xl">
-                                  <CardContent className="p-2 sm:p-3">
-                                    <div className="flex items-center gap-1 text-[10px] text-purple-600 mb-1">
-                                      <Users className="w-3 h-3" />
-                                      <span>Participants</span>
-                                    </div>
-                                    <div className="font-bold text-purple-900 text-sm">{round.totalParticipants}</div>
-                                  </CardContent>
-                                </Card>
-
-                                <Card className="border-2 border-green-200/60 bg-white/70 backdrop-blur-xl">
-                                  <CardContent className="p-2 sm:p-3">
-                                    <div className="flex items-center gap-1 text-[10px] text-green-600 mb-1">
-                                      <CheckCircle2 className="w-3 h-3" />
-                                      <span>Qualified</span>
-                                    </div>
-                                    <div className="font-bold text-green-900 text-sm">{round.qualifiedCount}</div>
-                                  </CardContent>
-                                </Card>
-
-                                <Card className="border-2 border-blue-200/60 bg-white/70 backdrop-blur-xl">
-                                  <CardContent className="p-2 sm:p-3">
-                                    <div className="flex items-center gap-1 text-[10px] text-blue-600 mb-1">
-                                      <TrendingUp className="w-3 h-3" />
-                                      <span>My Bid</span>
-                                    </div>
-                                    <div className="flex items-center gap-0.5 font-bold text-blue-900">
-                                      <IndianRupee className="w-3 h-3" />
-                                      <span className="text-sm">{round.userBid?.toLocaleString('en-IN')}</span>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-
-                                <Card className="border-2 border-violet-200/60 bg-white/70 backdrop-blur-xl">
-                                  <CardContent className="p-2 sm:p-3">
-                                    <div className="flex items-center gap-1 text-[10px] text-violet-600 mb-1">
-                                      <Award className="w-3 h-3" />
-                                      <span>My Rank</span>
-                                    </div>
-                                    <div className="font-bold text-violet-900 text-sm">#{round.userRank || 'N/A'}</div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-
-                              <Card className="border-2 border-purple-200/60 bg-gradient-to-br from-purple-50/80 to-violet-50/60 backdrop-blur-xl">
-                                <CardContent className="p-3">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <BarChart3 className="w-5 h-5 text-purple-600" />
-                                    <h4 className="font-bold text-purple-900 text-xs sm:text-sm">Bid Range</h4>
-                                  </div>
-                                  
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="bg-white/80 rounded-lg p-2 border border-green-200/50">
-                                      <div className="flex items-center gap-1 mb-1">
-                                        <TrendingDown className="w-3 h-3 text-green-600" />
-                                        <span className="text-[10px] text-purple-600 font-medium">Lowest</span>
+  
+                            {round.userBid ? (
+                              <>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3">
+                                  <Card className="border-2 border-purple-200/60 bg-white/70 backdrop-blur-xl">
+                                    <CardContent className="p-2 sm:p-3">
+                                      <div className="flex items-center gap-1 text-[10px] text-purple-600 mb-1">
+                                        <Users className="w-3 h-3" />
+                                        <span>Participants</span>
                                       </div>
-                                      <div className="flex items-center gap-0.5 font-bold text-purple-900">
+                                      <div className="font-bold text-purple-900 text-sm">{round.totalParticipants}</div>
+                                    </CardContent>
+                                  </Card>
+  
+                                  <Card className="border-2 border-green-200/60 bg-white/70 backdrop-blur-xl">
+                                    <CardContent className="p-2 sm:p-3">
+                                      <div className="flex items-center gap-1 text-[10px] text-green-600 mb-1">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        <span>Qualified</span>
+                                      </div>
+                                      <div className="font-bold text-green-900 text-sm">{round.qualifiedCount}</div>
+                                    </CardContent>
+                                  </Card>
+  
+                                  <Card className="border-2 border-blue-200/60 bg-white/70 backdrop-blur-xl">
+                                    <CardContent className="p-2 sm:p-3">
+                                      <div className="flex items-center gap-1 text-[10px] text-blue-600 mb-1">
+                                        <TrendingUp className="w-3 h-3" />
+                                        <span>My Bid</span>
+                                      </div>
+                                      <div className="flex items-center gap-0.5 font-bold text-blue-900">
                                         <IndianRupee className="w-3 h-3" />
-                                        <span className="text-sm">{round.lowestBid.toLocaleString('en-IN')}</span>
+                                        <span className="text-sm">{round.userBid?.toLocaleString('en-IN')}</span>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+  
+                                  <Card className="border-2 border-violet-200/60 bg-white/70 backdrop-blur-xl">
+                                    <CardContent className="p-2 sm:p-3">
+                                      <div className="flex items-center gap-1 text-[10px] text-violet-600 mb-1">
+                                        <Award className="w-3 h-3" />
+                                        <span>My Rank</span>
+                                      </div>
+                                      <div className="font-bold text-violet-900 text-sm">#{round.userRank || 'N/A'}</div>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+  
+                                <Card className="border-2 border-purple-200/60 bg-gradient-to-br from-purple-50/80 to-violet-50/60 backdrop-blur-xl">
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <BarChart3 className="w-5 h-5 text-purple-600" />
+                                      <h4 className="font-bold text-purple-900 text-xs sm:text-sm">Bid Range</h4>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div className="bg-white/80 rounded-lg p-2 border border-green-200/50">
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <TrendingDown className="w-3 h-3 text-green-600" />
+                                          <span className="text-[10px] text-purple-600 font-medium">Lowest</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5 font-bold text-purple-900">
+                                          <IndianRupee className="w-3 h-3" />
+                                          <span className="text-sm">{round.lowestBid.toLocaleString('en-IN')}</span>
+                                        </div>
+                                      </div>
+  
+                                      <div className="bg-white/80 rounded-lg p-2 border border-red-200/50">
+                                        <div className="flex items-center gap-1 mb-1">
+                                          <TrendingUp className="w-3 h-3 text-red-600" />
+                                          <span className="text-[10px] text-purple-600 font-medium">Highest</span>
+                                        </div>
+                                        <div className="flex items-center gap-0.5 font-bold text-purple-900">
+                                          <IndianRupee className="w-3 h-3" />
+                                          <span className="text-sm">{round.highestBid.toLocaleString('en-IN')}</span>
+                                        </div>
                                       </div>
                                     </div>
-
-                                    <div className="bg-white/80 rounded-lg p-2 border border-red-200/50">
-                                      <div className="flex items-center gap-1 mb-1">
-                                        <TrendingUp className="w-3 h-3 text-red-600" />
-                                        <span className="text-[10px] text-purple-600 font-medium">Highest</span>
-                                      </div>
-                                      <div className="flex items-center gap-0.5 font-bold text-purple-900">
-                                        <IndianRupee className="w-3 h-3" />
-                                        <span className="text-sm">{round.highestBid.toLocaleString('en-IN')}</span>
-                                      </div>
-                                    </div>
-                                  </div>
+                                  </CardContent>
+                                </Card>
+                              </>
+                            ) : (
+                              <Card className="border-2 border-gray-200/60 bg-gray-50/50">
+                                <CardContent className="p-4 text-center">
+                                  <Lock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                                  <p className="text-sm font-medium text-gray-600">{nonParticipationText}</p>
                                 </CardContent>
                               </Card>
-                            </>
-                          ) : (
-                            <Card className="border-2 border-gray-200/60 bg-gray-50/50">
-                              <CardContent className="p-4 text-center">
-                                <Lock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                <p className="text-sm font-medium text-gray-600">You did not participate in this round</p>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
+                            )}
+                          </CardContent>
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
 
             {/* Net Profit Card for Winners */}
             {auction.isWinner && auction.lastRoundBidAmount && auction.prizeClaimStatus === 'CLAIMED' && (
