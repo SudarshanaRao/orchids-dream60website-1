@@ -16,21 +16,28 @@ interface TutorialOverlayProps {
   tutorialId: string; // Unique ID to track completion
   onComplete?: () => void;
   returnTo?: string; // Where to return after completion (e.g., 'home')
+  startToken?: number; // Change this to force-start the tutorial
+  forceShow?: boolean; // Ignore completion flag when true
 }
 
-export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo }: TutorialOverlayProps) {
+export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, startToken, forceShow }: TutorialOverlayProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [highlightPosition, setHighlightPosition] = useState<DOMRect | null>(null);
 
   useEffect(() => {
-    // Check if tutorial was already completed
-    const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`);
-    if (!completed) {
+    const shouldTrigger = forceShow || !!startToken;
+
+    if (shouldTrigger) {
+      setCurrentStep(0);
       setIsVisible(true);
-      updateHighlight();
+      requestAnimationFrame(() => updateHighlight());
+      return;
     }
-  }, [tutorialId]);
+
+    setIsVisible(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tutorialId, startToken, forceShow]);
 
   useEffect(() => {
     if (isVisible) {

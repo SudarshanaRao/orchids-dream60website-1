@@ -32,6 +32,7 @@ import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { TutorialOverlay } from './components/TutorialOverlay';
 
 // ✅ Create QueryClient instance
 const queryClient = new QueryClient();
@@ -236,38 +237,43 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-const App = () => {
-  // ✅ Add server time state
-  const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+  const App = () => {
+    // ✅ Add server time state
+    const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
-  // Initialize currentPage based on URL path
-    const [currentPage, setCurrentPage] = useState(() => {
-      const path = window.location.pathname;
+    // Initialize currentPage based on URL path
+      const [currentPage, setCurrentPage] = useState(() => {
+        const path = window.location.pathname;
 
-      if (path === '/admin' || path === '/admin/') {
-        const adminUserId = localStorage.getItem('admin_user_id');
-        return adminUserId ? 'admin-dashboard' : 'admin-login';
-      }
-      if (path === '/login') return 'login';
-      if (path === '/signup') return 'signup';
-      if (path === '/forgot-password') return 'forgot';
-      if (path === '/rules') return 'rules';
-      if (path === '/participation') return 'participation';
-      if (path === '/terms') return 'terms';
-      if (path === '/privacy') return 'privacy';
-      if (path === '/support') return 'support';
-      if (path === '/contact') return 'contact';
-      if (path === '/profile') return 'profile';
-      if (path === '/history') return 'history';
-      if (path.startsWith('/history/')) return 'history';
-      if (path === '/leaderboard') return 'leaderboard';
-      if (path === '/auction-leaderboard') return 'auction-leaderboard';
+        if (path === '/admin' || path === '/admin/') {
+          const adminUserId = localStorage.getItem('admin_user_id');
+          return adminUserId ? 'admin-dashboard' : 'admin-login';
+        }
+        if (path === '/login') return 'login';
+        if (path === '/signup') return 'signup';
+        if (path === '/forgot-password') return 'forgot';
+        if (path === '/rules') return 'rules';
+        if (path === '/participation') return 'participation';
+        if (path === '/terms') return 'terms';
+        if (path === '/privacy') return 'privacy';
+        if (path === '/support') return 'support';
+        if (path === '/contact') return 'contact';
+        if (path === '/profile') return 'profile';
+        if (path === '/history') return 'history';
+        if (path.startsWith('/history/')) return 'history';
+        if (path === '/leaderboard') return 'leaderboard';
+        if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
-      return 'game';
-    });
+        return 'game';
+      });
+
+    const TUTORIAL_ID = 'new_update_leaderboard_v1';
+    const [tutorialStartToken, setTutorialStartToken] = useState(0);
+    const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
 
-  // ✅ Sync URL with page state and handle browser back/forward
+    // ✅ Sync URL with page state and handle browser back/forward
+
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
@@ -1336,6 +1342,38 @@ const App = () => {
       window.history.pushState({}, '', url);
     };
 
+    const triggerTutorial = (returnTo: string = '') => {
+      const currentPath = window.location.pathname.replace(/^\//, '');
+      const targetReturn = returnTo || currentPath;
+      localStorage.removeItem(`tutorial_completed_${TUTORIAL_ID}`);
+      setTutorialReturnTo(targetReturn);
+      setTutorialStartToken(Date.now());
+    };
+
+    const tutorialSteps = [
+      {
+        id: 'view-winners',
+        title: 'See winners & claim',
+        description: 'Tap “View winners” to open the leaderboard and claim prizes.',
+        targetElement: '[data-tutorial-target="view-winners"]',
+        position: 'bottom' as const,
+      },
+      {
+        id: 'leaderboard',
+        title: 'Track ranks live',
+        description: 'Use the leaderboard shortcut to watch ranks and prize windows.',
+        targetElement: '[data-tutorial-target="leaderboard-link"]',
+        position: 'bottom' as const,
+      },
+      {
+        id: 'replay',
+        title: 'Replay this guide anytime',
+        description: 'Hit the tutorial button whenever you need a refresh.',
+        targetElement: '[data-tutorial-target="tutorial-trigger"]',
+        position: 'bottom' as const,
+      },
+    ];
+
 
   const handleBackToGame = () => {
     setCurrentPage('game');
@@ -1419,29 +1457,32 @@ const App = () => {
       // setCurrentHourlyAuctionId(null);
       
       // ✅ Force immediate refetch by incrementing trigger
-      setForceRefetchTrigger(prev => prev + 1);
+        setForceRefetchTrigger(prev => prev + 1);
 
-      setCurrentPage("game");
-      window.history.pushState({}, '', '/');
-    } catch (error) {
-      console.error("Error while login:", error);
-    }
-  };
+        setCurrentPage("game");
+        window.history.pushState({}, '', '/');
+        triggerTutorial('home');
+      } catch (error) {
+        console.error("Error while login:", error);
+      }
+    };
 
-  const handleSignup = async (user: any) => {
-    try {
-      // ✅ User data is already passed from SignupForm, map and set it directly
-      const mappedUser = mapUserData(user);
-      setCurrentUser(mappedUser);
-      
-      console.log('✅ User signed up successfully:', mappedUser.username);
+    const handleSignup = async (user: any) => {
+      try {
+        // ✅ User data is already passed from SignupForm, map and set it directly
+        const mappedUser = mapUserData(user);
+        setCurrentUser(mappedUser);
+        
+        console.log('✅ User signed up successfully:', mappedUser.username);
 
-      setCurrentPage("game");
-      window.history.pushState({}, '', '/');
-    } catch (error) {
-      console.error("Error while signup:", error);
-    }
-  };
+        setCurrentPage("game");
+        window.history.pushState({}, '', '/');
+        triggerTutorial('home');
+      } catch (error) {
+        console.error("Error while signup:", error);
+      }
+    };
+
 
   const handleLogout = () => {
     try {
@@ -1995,15 +2036,26 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-background">
-          <Sonner />
-          
-          <Header
-            user={currentUser}
-            onNavigate={handleNavigate}
-            onLogin={handleShowLogin}
-            onLogout={handleLogout}
-          />
+          <div className="min-h-screen bg-background">
+            <Sonner />
+            
+            <Header
+              user={currentUser}
+              onNavigate={handleNavigate}
+              onLogin={handleShowLogin}
+              onLogout={handleLogout}
+              onStartTutorial={() => triggerTutorial()}
+            />
+
+            <TutorialOverlay
+              steps={tutorialSteps}
+              tutorialId={TUTORIAL_ID}
+              startToken={tutorialStartToken}
+              forceShow={tutorialStartToken > 0}
+              returnTo={tutorialReturnTo}
+              onComplete={() => setTutorialStartToken(0)}
+            />
+
 
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Hero Section */}
@@ -2020,23 +2072,41 @@ const App = () => {
   The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
 </p>
 
-              {!currentUser && (
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
+                {!currentUser && (
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
+                    <button
+                      onClick={handleShowLogin}
+                      className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
+                    >
+                      Join Now & Start Playing
+                    </button>
+                    <button
+                      onClick={handleSwitchToSignup}
+                      className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-4 px-4">
                   <button
-                    onClick={handleShowLogin}
-                    className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
+                    onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold shadow-sm"
+                    data-tutorial-target="view-winners"
                   >
-                    Join Now & Start Playing
+                    View winners
                   </button>
                   <button
-                    onClick={handleSwitchToSignup}
-                    className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
+                    onClick={() => handleNavigate('leaderboard')}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 font-semibold shadow-sm"
+                    data-tutorial-target="leaderboard-link"
                   >
-                    Create Account
+                    Open leaderboard
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
@@ -2084,13 +2154,15 @@ const App = () => {
                           <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
                         </div>
                       </div>
-                            <button
-                              onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
-                              className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                            >
-                              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-emerald-100 animate-pulse" aria-hidden="true" />
-                              View winners
-                            </button>
+                              <button
+                                onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
+                                className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                                data-tutorial-target="view-winners"
+                              >
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-emerald-100 animate-pulse" aria-hidden="true" />
+                                View winners
+                              </button>
+
 
 
                     </div>

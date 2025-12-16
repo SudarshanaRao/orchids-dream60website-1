@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download } from 'lucide-react';
+import { Coins, Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
@@ -15,9 +15,10 @@ interface HeaderProps {
   onNavigate?: (page: string) => void;
   onLogin?: () => void;
   onLogout?: () => void;
+  onStartTutorial?: () => void;
 }
 
-export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
+export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hasNewHistory, setHasNewHistory] = useState(false);
   const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>({ totalWins: 0, totalLosses: 0 });
@@ -387,56 +388,70 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
-                    {/* PWA Install Button - Only on large screens */}
-                    {showInstallButton && (
+                      {/* PWA Install Button - Only on large screens */}
+                      {showInstallButton && (
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={handleInstallClick}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                            size="sm"
+                          >
+                            <Download className="w-4 h-4 mr-1.5" />
+                            Install App
+                          </Button>
+                        </motion.div>
+                      )}
+
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
-                          onClick={handleInstallClick}
+                          onClick={() => onStartTutorial?.()}
+                          variant="ghost"
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                          size="sm"
+                          data-tutorial-target="tutorial-trigger"
+                        >
+                          <Sparkles className="w-4 h-4 mr-1.5" />
+                          Tutorial
+                        </Button>
+                      </motion.div>
+
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          onClick={() => onNavigate?.('rules')}
                           variant="ghost"
                           className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
                           size="sm"
                         >
-                          <Download className="w-4 h-4 mr-1.5" />
-                          Install App
+                          <FileText className="w-4 h-4 mr-1.5" />
+                          Rules
                         </Button>
                       </motion.div>
-                    )}
 
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => onNavigate?.('rules')}
-                        variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                        size="sm"
-                      >
-                        <FileText className="w-4 h-4 mr-1.5" />
-                        Rules
-                      </Button>
-                    </motion.div>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          onClick={() => onNavigate?.('participation')}
+                          variant="ghost"
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
+                          size="sm"
+                        >
+                          <Shield className="w-4 h-4 mr-1.5" />
+                          Play Guide
+                        </Button>
+                      </motion.div>
 
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => onNavigate?.('participation')}
-                        variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
-                        size="sm"
-                      >
-                        <Shield className="w-4 h-4 mr-1.5" />
-                        Play Guide
-                      </Button>
-                    </motion.div>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          onClick={() => onNavigate?.('support')}
+                          variant="ghost"
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                          size="sm"
+                        >
+                          Support
+                        </Button>
+                      </motion.div>
+                    </div>
 
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => onNavigate?.('support')}
-                        variant="ghost"
-                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                        size="sm"
-                      >
-                        Support
-                      </Button>
-                    </motion.div>
-                  </div>
 
                   {/* Logout Button - Only on large screens */}
                   <motion.div
@@ -498,38 +513,52 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                     </Button>
                   </motion.div>
 
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={() => onNavigate?.('support')}
-                      variant="ghost"
-                      className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
-                      size="sm"
-                    >
-                      Support
-                    </Button>
-                  </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => onNavigate?.('support')}
+                        variant="ghost"
+                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
+                        size="sm"
+                      >
+                        Support
+                      </Button>
+                    </motion.div>
 
-                  <motion.div
-                    whileHover={{ scale: 1.05, y: -1 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      onClick={onLogin}
-                      size="lg"
-                      className="
-                        rounded-xl
-                        bg-gradient-to-r from-[#5E3A8A] via-[#7A4FB0] to-[#9A6ED6]
-                        text-white font-semibold
-                        hover:from-[#7A4FB0] hover:to-[#9A6ED6]
-                        shadow-xl shadow-[#9A6ED6]/30
-                        transition-all duration-300
-                        hover:scale-[1.02]
-                      "
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={() => onStartTutorial?.()}
+                        variant="ghost"
+                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
+                        size="sm"
+                        data-tutorial-target="tutorial-trigger"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1.5" />
+                        Tutorial
+                      </Button>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -1 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      Login
-                    </Button>
-                  </motion.div>
-                </div>
+                      <Button
+                        onClick={onLogin}
+                        size="lg"
+                        className="
+                          rounded-xl
+                          bg-gradient-to-r from-[#5E3A8A] via-[#7A4FB0] to-[#9A6ED6]
+                          text-white font-semibold
+                          hover:from-[#7A4FB0] hover:to-[#9A6ED6]
+                          shadow-xl shadow-[#9A6ED6]/30
+                          transition-all duration-300
+                          hover:scale-[1.02]
+                        "
+                      >
+                        Login
+                      </Button>
+                    </motion.div>
+                  </div>
+
               )}
             </motion.div>
           </div>
@@ -668,20 +697,34 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         </button>
                       </motion.div>
 
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <Download className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Install App</span>
-                        </button>
-                      </motion.div>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Download className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Install App</span>
+                          </button>
+                        </motion.div>
 
-                      {/* Divider */}
-                      <div className="border-t border-purple-200/50 my-3"></div>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { onStartTutorial?.(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                            data-tutorial-target="tutorial-trigger"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Sparkles className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Start Tutorial</span>
+                          </button>
+                        </motion.div>
+
+                        {/* Divider */}
+                        <div className="border-t border-purple-200/50 my-3"></div>
+
 
                       <motion.div variants={menuItemVariants}>
                         <button
@@ -766,27 +809,41 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
                         </button>
                       </motion.div>
 
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <Download className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Install App</span>
-                        </button>
-                      </motion.div>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Download className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Install App</span>
+                          </button>
+                        </motion.div>
 
-                      <motion.div variants={menuItemVariants} className="pt-2">
-                        <Button
-                          onClick={() => { onLogin?.(); setMobileMenuOpen(false); }}
-                          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600 shadow-lg shadow-purple-500/30 py-6 rounded-xl"
-                        >
-                          Login to Continue
-                        </Button>
-                      </motion.div>
-                    </>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { onStartTutorial?.(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                            data-tutorial-target="tutorial-trigger"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Sparkles className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Start Tutorial</span>
+                          </button>
+                        </motion.div>
+
+                        <motion.div variants={menuItemVariants} className="pt-2">
+                          <Button
+                            onClick={() => { onLogin?.(); setMobileMenuOpen(false); }}
+                            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600 shadow-lg shadow-purple-500/30 py-6 rounded-xl"
+                          >
+                            Login to Continue
+                          </Button>
+                        </motion.div>
+                      </>
+
                   )}
                 </div>
               </motion.div>
