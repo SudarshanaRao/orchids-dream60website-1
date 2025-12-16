@@ -248,17 +248,20 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     console.log('[SW] Push data:', data);
     
-    // Professional notification options with brand styling
-    const options = {
-      // Core content
-      body: data.body || 'New notification from Dream60',
-      
-      // Visual branding
-      icon: '/icons/icon-192x192.png',           // App icon (Square)
-      badge: '/icons/icon-72x72.png',            // Monochrome badge icon (Android)
-      image: data.image || null,                  // Large image (Optional)
-      
-      // Interaction settings
+      // Professional notification options with brand styling
+      const options = {
+        // Core content
+        body: data.body || 'New notification from Dream60',
+        
+        // Visual branding
+        icon: data.icon || '/icons/icon-192x192.png',           // App icon (Square)
+        badge: '/icons/icon-72x72.png',            // Monochrome badge icon (Android)
+        
+        // iOS Safari 16.4+ does not support rich images in notifications
+        // Only include image for Android/Desktop Chrome/Edge
+        ...(data.image && !/(iPhone|iPad|iPod)/.test(navigator.userAgent) ? { image: data.image } : {}),
+        
+        // Interaction settings
       vibrate: [200, 100, 200, 100, 200],        // Vibration pattern
       tag: data.tag || 'dream60-notification',   // Notification grouping
       requireInteraction: data.requireInteraction || false, // Keep notification visible

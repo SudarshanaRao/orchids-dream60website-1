@@ -9,6 +9,14 @@ interface LeaderboardEntry {
   bid: number;
   timestamp: Date;
   rank: number | null;
+  userId?: string;
+  isWinner?: boolean;
+  prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
+  finalRank?: number;
+  currentEligibleRank?: number;
+  claimWindowStartedAt?: number;
+  winnersAnnouncedAt?: number;
+  claimDeadline?: number;
 }
 
 interface LeaderboardProps {
@@ -26,6 +34,8 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [opensAt, setOpensAt] = useState<Date | undefined>(undefined);
   const [closesAt, setClosesAt] = useState<Date | undefined>(undefined);
+  const [currentUserId] = useState(localStorage.getItem('user_id') || '');
+  const [claimTimers, setClaimTimers] = useState<Record<string, string>>({});
 
   // ✅ Helper function to format round times WITHOUT timezone conversion (display API times as-is)
   const formatRoundTime = (date: Date) => {
@@ -119,13 +129,21 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
           });
         }
 
-        // Transform playersData to leaderboard entries
-        const entries: LeaderboardEntry[] = roundData.playersData?.map((player: any) => ({
-          username: player.playerUsername || 'Unknown Player',
-          bid: player.auctionPlacedAmount || 0,
-          timestamp: new Date(player.auctionPlacedTime || Date.now()),
-          rank: player.rank || null,
-        })) || [];
+          // Transform playersData to leaderboard entries
+          const entries: LeaderboardEntry[] = roundData.playersData?.map((player: any) => ({
+            username: player.playerUsername || 'Unknown Player',
+            bid: player.auctionPlacedAmount || 0,
+            timestamp: new Date(player.auctionPlacedTime || Date.now()),
+            rank: player.rank || null,
+            userId: player.userId || player.playerId,
+            isWinner: player.isWinner || (player.rank && player.rank <= 3),
+            prizeClaimStatus: player.prizeClaimStatus,
+            finalRank: player.rank,
+            currentEligibleRank: liveAuction.currentEligibleRank,
+            claimWindowStartedAt: liveAuction.claimWindowStartedAt,
+            winnersAnnouncedAt: liveAuction.winnersAnnouncedAt,
+            claimDeadline: player.claimDeadline,
+          })) || [];
 
         // Sort by rank (ascending), then by bid (descending) for null ranks
         const sortedEntries = entries.sort((a, b) => {
@@ -149,8 +167,67 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
 
     fetchLeaderboardData();
 
-    // Remove auto-refresh - only fetch once when page opens
-  }, [roundNumber]);
+      // Remove auto-refresh - only fetch once when page opens
+    }, [roundNumber]);
+
+  // Timer effect for claim windows
+  useEffect(() => {
+    const updateTimers = () => {
+      const timers: Record<string, string> = {};
+      
+      leaderboard.forEach((entry) => {
+        if (!entry.userId || !entry.isWinner || entry.prizeClaimStatus !== 'PENDING') return;
+        
+        const now = Date.now();
+        const activeRank = entry.currentEligibleRank || 1;
+        let start = entry.claimWindowStartedAt;
+        
+        if (!start && entry.winnersAnnouncedAt) {
+          start = entry.winnersAnnouncedAt + (activeRank - 1) * 15 * 60 * 1000;
+        }
+        
+        if (!start) return;
+        
+        const end = start + 15 * 60 * 1000;
+        
+        // Check if user is in waiting queue
+        const isWaiting = entry.finalRank && entry.currentEligibleRank && entry.finalRank > entry.currentEligibleRank;
+        
+        if (isWaiting) {
+          let diff = end - now;
+          diff = diff - (330 * 60 * 1000);
+          
+          if (diff > 0) {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            timers[entry.userId] = `${minutes}m ${seconds}s`;
+          } else {
+            timers[entry.userId] = 'Claim Window Soon';
+          }
+        } else {
+          // User's turn to claim
+          const deadline = entry.claimDeadline || end;
+          let diff = deadline - now;
+          diff = diff - (330 * 60 * 1000);
+          
+          if (diff <= 0) {
+            timers[entry.userId] = 'EXPIRED';
+          } else {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            timers[entry.userId] = `${minutes}m ${seconds}s`;
+          }
+        }
+      });
+      
+      setClaimTimers(timers);
+    };
+    
+    updateTimers();
+    const interval = setInterval(updateTimers, 1000);
+    
+    return () => clearInterval(interval);
+  }, [leaderboard]);
 
   // Loading state
   if (isLoading) {
@@ -765,20 +842,32 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
                                     </span>
                                   </div>
                                   
-                                  {/* Info */}
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-black text-purple-900 text-sm truncate">
-                                      {entry.username}
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-black text-purple-900 text-sm truncate flex items-center gap-2">
+                                        {entry.username}
+                                        {/* Claim/Waiting Timer for Current User */}
+                                        {entry.userId === currentUserId && entry.isWinner && entry.prizeClaimStatus === 'PENDING' && claimTimers[entry.userId] && (
+                                          <div className={`px-2 py-0.5 rounded-full text-xs font-black flex items-center gap-1 ${
+                                            entry.finalRank === entry.currentEligibleRank 
+                                              ? 'bg-green-100 text-green-700 border border-green-300' 
+                                              : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                          }`}>
+                                            <Clock className="w-2.5 h-2.5" />
+                                            {entry.finalRank === entry.currentEligibleRank ? 'CLAIM: ' : 'WAIT: '}
+                                            {claimTimers[entry.userId]}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium mt-0.5">
+                                        <Clock className="w-3 h-3" />
+                                        {entry.timestamp.toLocaleTimeString('en-US', {
+                                          hour: 'numeric',
+                                          minute: '2-digit',
+                                          hour12: true
+                                        })}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium mt-0.5">
-                                      <Clock className="w-3 h-3" />
-                                      {entry.timestamp.toLocaleTimeString('en-US', {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                        hour12: true
-                                      })}
-                                    </div>
-                                  </div>
                                   
                                   {/* Bid Badge */}
                                   <div className="flex items-center gap-1 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl px-3 py-2 border border-purple-200 shadow-sm">
@@ -841,32 +930,44 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
                               </span>
                             </div>
 
-                            {/* User Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-black text-purple-900 truncate">
-                                  {entry.username}
-                                </h3>
-                                {isTopThree && entry.rank && (
-                                  <div className={`px-2 py-0.5 rounded-full text-xs font-black ${
-                                    entry.rank === 1 ? 'bg-violet-100 text-violet-700' :
-                                    entry.rank === 2 ? 'bg-purple-100 text-purple-700' :
-                                    'bg-violet-50 text-violet-600'
-                                  }`}>
-                                    RANK {entry.rank}
-                                  </div>
-                                )}
+                              {/* User Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-black text-purple-900 truncate">
+                                    {entry.username}
+                                  </h3>
+                                  {isTopThree && entry.rank && (
+                                    <div className={`px-2 py-0.5 rounded-full text-xs font-black ${
+                                      entry.rank === 1 ? 'bg-violet-100 text-violet-700' :
+                                      entry.rank === 2 ? 'bg-purple-100 text-purple-700' :
+                                      'bg-violet-50 text-violet-600'
+                                    }`}>
+                                      RANK {entry.rank}
+                                    </div>
+                                  )}
+                                  {/* Claim/Waiting Timer for Current User */}
+                                  {entry.userId === currentUserId && entry.isWinner && entry.prizeClaimStatus === 'PENDING' && claimTimers[entry.userId] && (
+                                    <div className={`px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 ${
+                                      entry.finalRank === entry.currentEligibleRank 
+                                        ? 'bg-green-100 text-green-700 border border-green-300' 
+                                        : 'bg-amber-100 text-amber-700 border border-amber-300'
+                                    }`}>
+                                      <Clock className="w-3 h-3" />
+                                      {entry.finalRank === entry.currentEligibleRank ? 'CLAIM: ' : 'WAIT: '}
+                                      {claimTimers[entry.userId]}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-purple-600">
+                                  <Clock className="w-3 h-3" />
+                                  {entry.timestamp.toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: true
+                                  })}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-purple-600">
-                                <Clock className="w-3 h-3" />
-                                {entry.timestamp.toLocaleTimeString('en-US', {
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: true
-                                })}
-                              </div>
-                            </div>
 
                             {/* Bid Amount */}
                             <div className={`flex items-center gap-1 px-4 py-2 rounded-xl shadow-md ${
