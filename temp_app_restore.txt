@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, Trophy } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
@@ -758,21 +758,26 @@ const App = () => {
     }
   }, [currentPage, currentUser?.id]);
 
-    // ✅ NEW: Detect round changes and trigger refetch
-    useEffect(() => {
-      if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
+  // ✅ NEW: Detect round changes and trigger refetch
+  useEffect(() => {
+    if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
+    
+    const currentRound = getCurrentRoundByTime(serverTime);
+    
+    // Check if round has changed
+    if (currentRound !== previousRound) {
+      console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
+      setPreviousRound(currentRound);
       
-      const currentRound = getCurrentRoundByTime(serverTime);
+      // Trigger immediate refetch by incrementing the trigger
+      setForceRefetchTrigger(prev => prev + 1);
       
-      // Check if round has changed
-      if (currentRound !== previousRound) {
-        console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
-        setPreviousRound(currentRound);
-        
-        // Trigger immediate refetch by incrementing the trigger
-        setForceRefetchTrigger(prev => prev + 1);
-      }
-    }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+      toast.info(`Round ${currentRound} Started`, {
+        description: 'Auction data refreshed with latest information',
+        duration: 3000,
+      });
+    }
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -1960,62 +1965,27 @@ const App = () => {
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
-              {serverTime && getCurrentAuctionSlot(serverTime) && (
-                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                      <div>
-                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                        <div className="text-xl sm:text-2xl font-bold">
-                          {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </div>
+            {serverTime && getCurrentAuctionSlot(serverTime) && (
+              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <div>
+                      <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
+                      <div className="text-xl sm:text-2xl font-bold">
+                        {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
                       </div>
                     </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                        <div className="text-xs sm:text-sm opacity-90">Status</div>
-                        {liveAuctionData?.winnersAnnounced ? (
-                          <div className="flex items-start gap-2 mt-1">
-                            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-200 mt-0.5" />
-                            <div>
-                              <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
-                              <div className="text-xs sm:text-sm text-white/80">Results are live for this slot</div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-lg sm:text-xl font-bold">
-                            {`Round ${liveAuctionData?.currentRound || currentAuction.currentRound}`}
-                          </div>
-                        )}
-                      </div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                    <div className="text-xs sm:text-sm opacity-90">Active Round</div>
+                    <div className="text-lg sm:text-xl font-bold">Round {currentAuction.currentRound}</div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {currentAuction.winnersAnnounced && (
-                <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-emerald-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <Trophy className="w-6 h-6 text-emerald-700" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-emerald-700 font-semibold">Winners Announced</p>
-                        <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
-                      </div>
-                    </div>
-                    <a
-                      href="/auction-history"
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                    >
-                      View winners
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* Prize Showcase */}
-
+            {/* Prize Showcase */}
             <PrizeShowcase
               currentPrize={currentAuction as any}
               isLoggedIn={!!currentUser}
