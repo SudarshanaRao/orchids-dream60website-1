@@ -141,7 +141,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                 hour: auctionHour,
                 minute: auctionMinute,
                 status,
-                sequenceNumber: index + 1,
+                sequenceNumber: auction.auctionNumber || index + 1,
                 hourlyAuctionId: auction.hourlyAuctionId,
                 auctionId: auction.auctionId,
                 prize: {

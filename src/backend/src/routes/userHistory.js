@@ -637,6 +637,7 @@ const mapPayment = (payment, auctionMeta = {}) => {
     productName: payment.productName || payment.auctionName || auctionMeta.auctionName || null,
     productTimeSlot: payment.productTimeSlot || payment.auctionTimeSlot || auctionMeta.timeSlot || null,
     productValue: payment.productValue ?? null,
+    prizeWorth: payment.productValue ?? null,
     productImage: payment.productImage ?? null,
     paidAt: payment.paidAt,
     paymentMethod: payment.paymentMethod || payment.paymentDetails?.method || null,
@@ -685,13 +686,24 @@ router.get('/transactions', async (req, res) => {
 
     const entryFees = mapped.filter((m) => m.paymentType === 'ENTRY_FEE');
     const prizeClaims = mapped.filter((m) => m.paymentType === 'PRIZE_CLAIM');
+    const voucherTransactions = mapped.filter((m) => m.paymentType === 'VOUCHER');
+
+    const summary = {
+      entryAmount: entryFees.reduce((sum, t) => sum + (t.amount || 0), 0),
+      prizeAmount: prizeClaims.reduce((sum, t) => sum + (t.amount || 0), 0),
+      voucherAmount: voucherTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
+      productWorthPaid: entryFees.reduce((sum, t) => sum + (t.productValue || 0), 0),
+      totalProductWorth: mapped.reduce((sum, t) => sum + (t.productValue || 0), 0),
+      totalTransactions: mapped.length,
+    };
 
     return res.status(200).json({
       success: true,
       data: {
         entryFees,
         prizeClaims,
-        voucherTransactions: [],
+        voucherTransactions,
+        summary,
       },
     });
   } catch (error) {

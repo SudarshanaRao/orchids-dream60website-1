@@ -20,6 +20,27 @@ const isValidUUID = (uuid) => {
   return uuidRegex.test(uuid);
 };
 
+const deriveUpiApp = (vpa = '', wallet, bank) => {
+  const suffix = vpa.split('@')[1]?.toLowerCase();
+  const map = {
+    okaxis: 'gpay',
+    okhdfcbank: 'gpay',
+    oksbi: 'gpay',
+    okicici: 'gpay',
+    okyesbank: 'gpay',
+    ybl: 'phonepe',
+    ibl: 'phonepe',
+    axl: 'phonepe',
+    paytm: 'paytm',
+    airtel: 'airtel',
+  };
+  if (suffix && map[suffix]) return map[suffix];
+  if (suffix && suffix.includes('paytm')) return 'paytm';
+  if (wallet) return wallet.toLowerCase();
+  if (bank && bank.toLowerCase().includes('phonepe')) return 'phonepe';
+  return suffix || wallet || bank || undefined;
+};
+
 // Fetch server time from API using native https module
 const fetchServerTime = async () => {
   return new Promise((resolve) => {
@@ -101,13 +122,13 @@ const fetchRazorpayPaymentDetails = async (paymentId) => {
     const payment = await razorpay.payments.fetch(paymentId);
     if (!payment) return null;
 
-    const paidAt = payment.captured_at
-      ? new Date(payment.captured_at * 1000)
-      : payment.created_at
-        ? new Date(payment.created_at * 1000)
-        : new Date();
+  const paidAt = payment.captured_at
+    ? new Date(payment.captured_at * 1000)
+    : payment.created_at
+      ? new Date(payment.created_at * 1000)
+      : new Date();
 
-  const upiApp = payment.wallet || payment?.notes?.upi_app || (payment.method === 'upi' ? payment.bank : undefined);
+  const upiApp = deriveUpiApp(payment.vpa, payment.wallet, payment.bank) || payment?.notes?.upi_app;
 
   const details = {
     method: payment.method,
@@ -123,11 +144,13 @@ const fetchRazorpayPaymentDetails = async (paymentId) => {
     wallet: payment.wallet,
     vpa: payment.vpa,
     upiApp,
+    provider: upiApp,
     acquirerData: payment.acquirer_data,
   };
 
   return { paidAt, details };
 } catch (error) {
+
     console.error('❌ [RAZORPAY] Failed to fetch payment details:', { paymentId, error });
     return null;
   }

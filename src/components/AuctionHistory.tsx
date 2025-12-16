@@ -1790,81 +1790,8 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
           </div>
           </motion.div>
 
-          {/* Transaction History */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mb-3 sm:mb-6"
-          >
-            <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/85 shadow-2xl">
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <motion.div
-                  className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"
-                  style={{
-                    background: 'radial-gradient(circle, #C4B5FD, #7C3AED)',
-                    top: '-20%',
-                    right: '-15%',
-                  }}
-                  animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 180] }}
-                  transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
-                />
-              </div>
+            {/* History List/Tabs */}
 
-              <CardHeader className="relative bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/50 backdrop-blur-xl p-3 sm:p-5">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl flex items-center justify-center shadow-lg">
-                    <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-base sm:text-xl md:text-2xl font-bold text-purple-900">Transaction History</h2>
-                    <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 mt-0.5">Entry fees, prize claims, and vouchers</p>
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="relative z-10 p-3 sm:p-5">
-                <Tabs defaultValue="entry" className="w-full">
-                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
-                    <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-4 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
-                      <TabsTrigger 
-                        value="entry" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                      >
-                        Entry Fee
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="prize" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                      >
-                        Prize Claim
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="voucher" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-slate-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 rounded-md sm:rounded-xl text-[9px] sm:text-sm md:text-base font-semibold py-1.5 sm:py-2 whitespace-nowrap px-3 sm:px-4"
-                      >
-                        Amazon Voucher
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <TabsContent value="entry" className="mt-0">
-                    {renderTransactionList(transactions.entryFees, 'No entry fee payments yet')}
-                  </TabsContent>
-                  <TabsContent value="prize" className="mt-0">
-                    {renderTransactionList(transactions.prizeClaims, 'No prize claim payments yet')}
-                  </TabsContent>
-                  <TabsContent value="voucher" className="mt-0">
-                    <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
-                      Amazon voucher transactions are coming soon.
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* History List/Tabs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

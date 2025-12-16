@@ -14,6 +14,7 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart3,
+  Gift,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -42,11 +43,13 @@ interface TransactionItem {
   paidAt?: string | number | Date | null;
   roundNumber?: number | null;
   productName?: string | null;
-  productTimeSlot?: string | null;
-  productValue?: number | null;
-  paymentMethod?: string | null;
-  paymentDetails?: Record<string, any> | null;
-}
+    productTimeSlot?: string | null;
+    productValue?: number | null;
+    prizeWorth?: number | null;
+    paymentMethod?: string | null;
+    paymentDetails?: Record<string, any> | null;
+  }
+
 
 export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageProps) {
   const [transactions, setTransactions] = useState<{
@@ -72,6 +75,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     const entryAmount = (transactions.entryFees || []).reduce((sum, t) => sum + (t.amount || 0), 0);
     const prizeAmount = (transactions.prizeClaims || []).reduce((sum, t) => sum + (t.amount || 0), 0);
     const voucherAmount = (transactions.vouchers || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+    const productWorth = (transactions.entryFees || []).reduce((sum, t) => sum + (t.productValue || t.prizeWorth || 0), 0);
+    const amazonVoucher = prizeAmount + voucherAmount;
     const upiCount = allTransactions.filter((t) => (t.paymentMethod || t.paymentDetails?.method) === 'upi' || Boolean(t.paymentDetails?.vpa)).length;
 
     return {
@@ -82,6 +87,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
       entryAmount,
       prizeAmount,
       voucherAmount,
+      productWorth,
+      amazonVoucher,
       netFlow: prizeAmount - entryAmount - voucherAmount,
       upiCount,
     };
@@ -284,28 +291,36 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                 </Badge>
               </div>
 
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-purple-700">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{formatDateTime(item.paidAt || item.createdAt)}</span>
-                  </div>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-purple-700">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{formatDateTime(item.paidAt || item.createdAt)}</span>
+                    </div>
 
-                {item.auctionId && (
-                  <div className="flex items-center gap-1">
-                    <Target className="w-3.5 h-3.5" />
-                    <span className="truncate">
-                      {item.auctionName || item.productName || 'Auction'}{' '}
-                      {item.timeSlot ? `(${item.timeSlot})` : ''}
-                    </span>
-                  </div>
-                )}
-                {item.orderId && (
-                  <div className="flex items-center gap-1 col-span-1 sm:col-span-2">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="truncate">Order: {item.orderId}</span>
-                  </div>
-                )}
-              </div>
+                  {(item.productValue ?? item.prizeWorth) && (
+                    <div className="flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span className="truncate">Prize worth: ₹{(item.productValue ?? item.prizeWorth)?.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  {item.auctionId && (
+                    <div className="flex items-center gap-1">
+                      <Target className="w-3.5 h-3.5" />
+                      <span className="truncate">
+                        {item.auctionName || item.productName || 'Auction'}{' '}
+                        {item.timeSlot ? `(${item.timeSlot})` : ''}
+                      </span>
+                    </div>
+                  )}
+                  {item.orderId && (
+                    <div className="flex items-center gap-1 col-span-1 sm:col-span-2">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span className="truncate">Order: {item.orderId}</span>
+                    </div>
+                  )}
+                </div>
+
             </CardContent>
           </Card>
         ))}
@@ -360,6 +375,9 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                   <div className="text-2xl sm:text-3xl font-bold text-purple-900">
                     ₹{selectedTransaction.amount?.toLocaleString('en-IN') || 0}
                   </div>
+                  {selectedTransaction.productValue !== undefined && selectedTransaction.productValue !== null && (
+                    <div className="text-xs text-purple-600">Prize worth: ₹{selectedTransaction.productValue.toLocaleString('en-IN')}</div>
+                  )}
                   <div className="text-xs text-purple-600 mt-1">Paid on {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
                 </div>
                 <div className="flex flex-col items-end gap-2 ml-auto min-w-[160px]">
@@ -523,7 +541,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             transition={{ duration: 0.4 }}
             className="mb-3 sm:mb-4"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
                 <CardContent className="p-4 space-y-1">
                   <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
@@ -544,14 +562,24 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                   <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
                 </CardContent>
               </Card>
+              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                    <Target className="w-4 h-4" />
+                    <span>Prize Worth</span>
+                  </div>
+                  <div className="text-2xl font-bold text-purple-900">₹{stats.productWorth.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-purple-600">Across your entries</div>
+                </CardContent>
+              </Card>
               <Card className="border-2 border-emerald-200/70 bg-white shadow-sm">
                 <CardContent className="p-4 space-y-1">
                   <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>Prize Claims</span>
+                    <Gift className="w-4 h-4" />
+                    <span>Amazon Voucher</span>
                   </div>
-                  <div className="text-2xl font-bold text-emerald-800">₹{stats.prizeAmount.toLocaleString('en-IN')}</div>
-                  <div className="text-[11px] text-emerald-700">{stats.prizeCount} payouts</div>
+                  <div className="text-2xl font-bold text-emerald-800">₹{stats.amazonVoucher.toLocaleString('en-IN')}</div>
+                  <div className="text-[11px] text-emerald-700">{stats.prizeCount} vouchers</div>
                 </CardContent>
               </Card>
               <Card className={`border-2 ${stats.netFlow >= 0 ? 'border-emerald-200/70 bg-emerald-50/60' : 'border-red-200/70 bg-red-50/60'} shadow-sm`}>
