@@ -5,9 +5,18 @@ import { Badge } from './ui/badge';
 
 interface WinningTipsProps {
   onBack: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function WinningTips({ onBack }: WinningTipsProps) {
+export function WinningTips({ onBack, onNavigate }: WinningTipsProps) {
+  const handleBack = () => {
+    if (onNavigate) {
+      onNavigate('support');
+      window.history.pushState({}, '', '/support');
+    } else {
+      onBack();
+    }
+  };
   const tips = [
     {
       title: 'Pay entry early',
@@ -44,12 +53,12 @@ export function WinningTips({ onBack }: WinningTipsProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={onBack} className="flex items-center gap-2 text-purple-700 hover:text-purple-800">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-        </div>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2 text-purple-700 hover:text-purple-800">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+          </div>
 
         <Card className="border-2 border-purple-200/70 shadow-xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white p-4 sm:p-6">

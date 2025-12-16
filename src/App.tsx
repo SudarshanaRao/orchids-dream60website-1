@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle2, Clock, Trophy } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
@@ -261,10 +261,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/terms') return 'terms';
         if (path === '/privacy') return 'privacy';
         if (path === '/support') return 'support';
-        if (path === '/support/chat') return 'support-chat';
         if (path === '/contact') return 'contact';
         if (path === '/winning-tips') return 'winning-tips';
         if (path === '/view-guide') return 'view-guide';
+        if (path === '/support-chat') return 'support-chat';
         if (path === '/profile') return 'profile';
         if (path === '/history') return 'history';
         if (path.startsWith('/history/')) return 'history';
@@ -273,12 +273,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
         return 'game';
-        });
+      });
 
-    const supportReturnRef = useRef<boolean>(false);
-
-    const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
-
+  const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
@@ -300,13 +297,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/terms') setCurrentPage('terms');
         else if (path === '/privacy') setCurrentPage('privacy');
-            else if (path === '/support') setCurrentPage('support');
-            else if (path === '/support/chat') setCurrentPage('support-chat');
-            else if (path === '/contact') setCurrentPage('contact');
-            else if (path === '/winning-tips') setCurrentPage('winning-tips');
-            else if (path === '/view-guide') setCurrentPage('view-guide');
-            else if (path === '/profile') setCurrentPage('profile');
-
+          else if (path === '/support') setCurrentPage('support');
+          else if (path === '/contact') setCurrentPage('contact');
+          else if (path === '/winning-tips') setCurrentPage('winning-tips');
+          else if (path === '/view-guide') setCurrentPage('view-guide');
+          else if (path === '/support-chat') setCurrentPage('support-chat');
+          else if (path === '/profile') setCurrentPage('profile');
 
           else if (path === '/history' || path.startsWith('/history/')) {
             setCurrentPage('history');
@@ -1328,29 +1324,17 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-      const handleNavigate = (page: string, data?: { hourlyAuctionId?: string; from?: string }) => {
-        let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
+    const handleNavigate = (page: string, data?: { hourlyAuctionId?: string }) => {
+      let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
 
-        if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
-          setCurrentHourlyAuctionId(targetHourlyAuctionId);
-          sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
-        }
+      if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
+        setCurrentHourlyAuctionId(targetHourlyAuctionId);
+        sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
+      }
 
-        const supportChildren = ['winning-tips', 'view-guide', 'support-chat'];
-        if (supportChildren.includes(page)) {
-          if (data?.from === 'support' || currentPage === 'support') {
-            supportReturnRef.current = true;
-          }
-        } else if (page === 'support') {
-          supportReturnRef.current = false;
-        } else {
-          supportReturnRef.current = false;
-        }
-
-        setCurrentPage(page);
-        
-        // ✅ Update browser URL to match the page
-
+      setCurrentPage(page);
+      
+      // ✅ Update browser URL to match the page
           const urlMap: { [key: string]: string } = {
             'game': '/',
             'login': '/login',
@@ -1364,6 +1348,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             'contact': '/contact',
             'winning-tips': '/winning-tips',
             'view-guide': '/view-guide',
+            'support-chat': '/support-chat',
             'profile': '/profile',
             'history': '/history',
             'transactions': '/transactions',
@@ -2141,7 +2126,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <WinningTips onBack={handleBackToGame} />
+            <WinningTips onBack={handleBackToGame} onNavigate={handleNavigate} />
           </TooltipProvider>
         </QueryClientProvider>
       );
@@ -2152,7 +2137,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <ViewGuide onBack={handleBackToGame} />
+            <ViewGuide onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'support-chat') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <SupportChatPage onBack={handleBackToGame} onNavigate={handleNavigate} />
           </TooltipProvider>
         </QueryClientProvider>
       );

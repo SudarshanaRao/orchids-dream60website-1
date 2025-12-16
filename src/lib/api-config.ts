@@ -29,11 +29,6 @@ export const API_ENDPOINTS = {
   contact: {
     sendMessage: `${API_BASE_URL}/contact/send-message`,
   },
-
-  supportChat: {
-    start: `${API_BASE_URL}/support-chat/start`,
-    message: `${API_BASE_URL}/support-chat`,
-  },
   
   // Authentication
   auth: {
@@ -104,6 +99,13 @@ export const API_ENDPOINTS = {
     admin: {
       pushSubscriptions: `${API_BASE_URL}/admin/push-subscriptions`,
     },
+
+  supportChat: {
+    sendMessage: `${API_BASE_URL}/support-chat/message`,
+    getSession: (sessionId: string) => `${API_BASE_URL}/support-chat/session/${sessionId}`,
+    getUserMessages: (userId: string) => `${API_BASE_URL}/support-chat/user/${userId}`,
+    deleteSession: (sessionId: string) => `${API_BASE_URL}/support-chat/session/${sessionId}`,
+  },
   };
 
 

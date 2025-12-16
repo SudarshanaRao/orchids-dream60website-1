@@ -1,48 +1,68 @@
-const mongoose = require('mongoose');
-const { randomUUID } = require('crypto');
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+import { sql } from "drizzle-orm";
+import { text, integer, sqliteTable } from "drizzle-orm/sqlite-core";
 
-const MessageSchema = new mongoose.Schema(
-  {
-    role: {
-      type: String,
-      enum: ['user', 'bot'],
-      required: true,
-    },
-    text: {
-      type: String,
-      required: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  { _id: false }
-);
+const tursoClient = createClient({
+  url: process.env.TURSO_CONNECTION_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-const SupportChatSchema = new mongoose.Schema(
-  {
-    threadId: {
-      type: String,
-      unique: true,
-      default: () => randomUUID(),
-    },
-    userId: { type: String, default: null },
-    name: { type: String, default: null },
-    email: { type: String, default: null },
-    status: {
-      type: String,
-      enum: ['open', 'closed'],
-      default: 'open',
-    },
-    messages: {
-      type: [MessageSchema],
-      default: [],
-    },
-    metadata: { type: Object, default: {} },
-    lastMessageAt: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-);
+const db = drizzle(tursoClient);
 
-module.exports = mongoose.model('SupportChat', SupportChatSchema);
+const supportChatMessages = sqliteTable("support_chat_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionId: text("session_id").notNull(),
+  userId: text("user_id"),
+  role: text("role").notNull(),
+  message: text("message").notNull(),
+  timestamp: integer("timestamp").notNull(),
+  createdAt: integer("created_at").notNull(),
+});
+
+class SupportChat {
+  static async createMessage({ sessionId, userId, role, message }) {
+    const now = Date.now();
+    const result = await db
+      .insert(supportChatMessages)
+      .values({
+        sessionId,
+        userId: userId || null,
+        role,
+        message,
+        timestamp: now,
+        createdAt: now,
+      })
+      .returning();
+    
+    return result[0];
+  }
+
+  static async getMessagesBySession(sessionId) {
+    const messages = await db
+      .select()
+      .from(supportChatMessages)
+      .where(sql`${supportChatMessages.sessionId} = ${sessionId}`)
+      .orderBy(supportChatMessages.timestamp);
+    
+    return messages;
+  }
+
+  static async getMessagesByUser(userId) {
+    const messages = await db
+      .select()
+      .from(supportChatMessages)
+      .where(sql`${supportChatMessages.userId} = ${userId}`)
+      .orderBy(supportChatMessages.timestamp);
+    
+    return messages;
+  }
+
+  static async deleteSessionMessages(sessionId) {
+    await db
+      .delete(supportChatMessages)
+      .where(sql`${supportChatMessages.sessionId} = ${sessionId}`);
+  }
+}
+
+export default SupportChat;
