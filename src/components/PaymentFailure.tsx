@@ -137,31 +137,43 @@ export function PaymentFailure({
             </div>
           </div>
 
-          {/* Amount Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="px-6 py-5 bg-gradient-to-br from-red-50 to-rose-50"
-          >
-            <div className="text-center space-y-3">
-              {/* Amount */}
-              <div className="flex items-center justify-center gap-1.5">
-                <span className="text-2xl text-red-700 font-bold">₹</span>
-                <div className="text-4xl font-black bg-gradient-to-r from-red-800 via-rose-700 to-red-800 bg-clip-text text-transparent">
-                  {amount.toLocaleString('en-IN')}
+            {/* Amount Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="px-6 py-5 bg-gradient-to-br from-red-50 to-rose-50"
+            >
+              <div className="text-center space-y-3">
+                {/* Amount */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-2xl text-red-700 font-bold">₹</span>
+                  <div className="text-4xl font-black bg-gradient-to-r from-red-800 via-rose-700 to-red-800 bg-clip-text text-transparent">
+                    {amount.toLocaleString('en-IN')}
+                  </div>
                 </div>
-              </div>
 
-              {/* Status Badge */}
-              <div className="flex justify-center">
-                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-red-500/30">
-                  <XCircle className="w-3.5 h-3.5" strokeWidth={3} />
-                  FAILED
+                {/* Status Badge */}
+                <div className="flex justify-center">
+                  <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-500 to-rose-500 text-white px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-red-500/30">
+                    <XCircle className="w-3.5 h-3.5" strokeWidth={3} />
+                    FAILED
+                  </div>
                 </div>
+
+                {/* Countdown Timer */}
+                <motion.div 
+                  className="flex items-center justify-center gap-2 text-red-700"
+                  key={countdown}
+                  initial={{ scale: 1.2, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Clock className="w-5 h-5" />
+                  <span className="text-2xl font-black">{countdown}</span>
+                </motion.div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
           {/* Error Message */}
           <motion.div 

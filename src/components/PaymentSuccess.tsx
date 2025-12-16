@@ -143,31 +143,43 @@ export function PaymentSuccess({
             </div>
           </div>
 
-          {/* Amount Section */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="px-6 py-5 bg-gradient-to-br from-purple-50 to-violet-50"
-          >
-            <div className="text-center space-y-3">
-              {/* Amount */}
-              <div className="flex items-center justify-center gap-1.5">
-                <IndianRupee className="w-7 h-7 text-purple-700" strokeWidth={2.5} />
-                <div className="text-4xl font-black bg-gradient-to-r from-purple-800 via-violet-700 to-purple-800 bg-clip-text text-transparent">
-                  {amount.toLocaleString('en-IN')}
+            {/* Amount Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="px-6 py-5 bg-gradient-to-br from-purple-50 to-violet-50"
+            >
+              <div className="text-center space-y-3">
+                {/* Amount */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <IndianRupee className="w-7 h-7 text-purple-700" strokeWidth={2.5} />
+                  <div className="text-4xl font-black bg-gradient-to-r from-purple-800 via-violet-700 to-purple-800 bg-clip-text text-transparent">
+                    {amount.toLocaleString('en-IN')}
+                  </div>
                 </div>
-              </div>
 
-              {/* Status Badge */}
-              <div className="flex justify-center">
-                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-green-500/30">
-                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                  COMPLETED
+                {/* Status Badge */}
+                <div className="flex justify-center">
+                  <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-green-500/30">
+                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    COMPLETED
+                  </div>
                 </div>
+
+                {/* Countdown Timer */}
+                <motion.div 
+                  className="flex items-center justify-center gap-2 text-purple-700"
+                  key={countdown}
+                  initial={{ scale: 1.2, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Clock className="w-5 h-5" />
+                  <span className="text-2xl font-black">{countdown}</span>
+                </motion.div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
           {/* Info Message */}
           <motion.div 
