@@ -2,6 +2,7 @@
 import { motion } from 'motion/react';
 import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star } from 'lucide-react';
 import { Button } from './ui/button';
+import { useEffect, useState } from 'react';
 
 
 interface PaymentSuccessProps {
@@ -18,6 +19,22 @@ export function PaymentSuccess({
   boxNumber, 
   onBackToHome,
 }: PaymentSuccessProps) {
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onBackToHome();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [onBackToHome]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -194,21 +211,26 @@ export function PaymentSuccess({
             </Button>
           </motion.div>
 
-          {/* Footer */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
-            className="bg-gradient-to-r from-purple-50 via-white to-violet-50 border-t border-purple-100 px-6 py-3 text-center"
-          >
-            <div className="flex items-center justify-center gap-1.5 text-purple-600">
-              <Trophy className="w-3.5 h-3.5" />
-              <p className="text-xs font-bold">
-                Best of luck!
-              </p>
-              <Trophy className="w-3.5 h-3.5" />
-            </div>
-          </motion.div>
+            {/* Footer */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+              className="bg-gradient-to-r from-purple-50 via-white to-violet-50 border-t border-purple-100 px-6 py-3"
+            >
+              <div className="flex items-center justify-center gap-2 text-purple-600 mb-2">
+                <Trophy className="w-3.5 h-3.5" />
+                <p className="text-xs font-bold">
+                  Best of luck!
+                </p>
+                <Trophy className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-purple-500 font-semibold">
+                  Closing in {countdown} seconds...
+                </p>
+              </div>
+            </motion.div>
         </div>
       </motion.div>
     </div>

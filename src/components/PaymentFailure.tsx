@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { XCircle, Home, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import { Button } from './ui/button';
+import { useEffect, useState } from 'react';
 
 
 interface PaymentFailureProps {
@@ -17,6 +18,22 @@ export function PaymentFailure({
   onRetry,
   onBackToHome,
 }: PaymentFailureProps) {
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onBackToHome();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [onBackToHome]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -199,17 +216,22 @@ export function PaymentFailure({
             </Button>
           </motion.div>
 
-          {/* Footer */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
-            className="bg-gradient-to-r from-red-50 via-white to-rose-50 border-t border-red-100 px-6 py-3 text-center"
-          >
-            <p className="text-xs text-red-600 font-medium">
-              Need help? Contact support
-            </p>
-          </motion.div>
+            {/* Footer */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+              className="bg-gradient-to-r from-red-50 via-white to-rose-50 border-t border-red-100 px-6 py-3"
+            >
+              <p className="text-xs text-red-600 font-medium text-center mb-2">
+                Need help? Contact support
+              </p>
+              <div className="text-center">
+                <p className="text-xs text-red-500 font-semibold">
+                  Closing in {countdown} seconds...
+                </p>
+              </div>
+            </motion.div>
         </div>
       </motion.div>
     </div>
