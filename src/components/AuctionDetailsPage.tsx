@@ -140,12 +140,13 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
   useEffect(() => {
     const interval = setInterval(() => {
       fetchDetailedData(false); // Background refresh without loading state
-    }, 5000);
+    }, 2000); // Faster 2s refresh so next rank opens within seconds
 
     return () => clearInterval(interval);
   }, [auction.hourlyAuctionId, userInfo.userId]);
 
   // ✅ UPDATED: Add isInitialLoad parameter to control loading state
+
   const fetchDetailedData = async (isInitialLoad = false) => {
     if (!auction.hourlyAuctionId || !userInfo.userId) {
       if (isInitialLoad) setIsLoading(false);

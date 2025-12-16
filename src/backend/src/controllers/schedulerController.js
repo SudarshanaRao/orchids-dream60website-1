@@ -1456,6 +1456,9 @@ const getUserAuctionHistory = async (req, res) => {
         message: 'userId is required',
       });
     }
+
+    // ✅ Ensure priority claim queue is up to date before returning history
+    await AuctionHistory.processClaimQueues();
     
     // Get user's history
     const history = await AuctionHistory.getUserHistory(userId);
@@ -1520,6 +1523,9 @@ const getAuctionDetails = async (req, res) => {
         message: 'hourlyAuctionId and userId are required',
       });
     }
+
+    // ✅ Ensure claim queue advances instantly when a window expires
+    await AuctionHistory.processClaimQueues();
     
     // Find the auction
     const auction = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
