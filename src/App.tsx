@@ -267,7 +267,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         return 'game';
       });
 
-  const TUTORIAL_ID = 'dream60_christmas_walkthrough_v2';
+  const TUTORIAL_ID = 'pwa_schedule_download_notify_v1';
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
@@ -2089,11 +2089,20 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  // Default game page
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-          <div className="min-h-screen bg-background">
+    // Default game page
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+            <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-green-50 relative overflow-hidden">
+              {/* Christmas Background Pattern */}
+              <div className="absolute inset-0 pointer-events-none opacity-10">
+                <div className="absolute top-[10%] left-[5%] text-9xl">🎄</div>
+                <div className="absolute top-[30%] right-[8%] text-8xl">⛄</div>
+                <div className="absolute top-[50%] left-[15%] text-7xl">🎁</div>
+                <div className="absolute top-[70%] right-[20%] text-8xl">🎅</div>
+                <div className="absolute top-[85%] left-[40%] text-6xl">⭐</div>
+                <div className="absolute top-[20%] right-[50%] text-7xl">🔔</div>
+              </div>
             <Sonner />
             
             <Header
@@ -2104,100 +2113,173 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               onStartTutorial={() => triggerTutorial()}
             />
 
-            <TutorialOverlay
-              steps={tutorialSteps}
-              tutorialId={TUTORIAL_ID}
-              startToken={tutorialStartToken}
-              forceShow={tutorialStartToken > 0}
-              returnTo={tutorialReturnTo}
-              onComplete={() => setTutorialStartToken(0)}
-            />
+              <TutorialOverlay
+                steps={tutorialSteps}
+                tutorialId={TUTORIAL_ID}
+                startToken={tutorialStartToken}
+                forceShow={tutorialStartToken > 0}
+                returnTo="home"
+                onComplete={() => {
+                  setTutorialStartToken(0);
+                  setCurrentPage('game');
+                  window.history.pushState({}, '', '/');
+                }}
+              />
 
 
-          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-            {/* Hero Section */}
-            <div className="text-center space-y-4 px-2 sm:px-4">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
-  bg-clip-text text-transparent">
-  DREAM60
-</h1>
+            <main className="relative container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-hidden">
+              
+              {/* Christmas Decorative Elements */}
+              <div className="absolute top-0 left-0 right-0 pointer-events-none overflow-hidden h-32">
+                <div className="absolute top-0 left-[5%] text-6xl opacity-80 animate-bounce" style={{animationDelay: '0s', animationDuration: '3s'}}>🎄</div>
+                <div className="absolute top-0 right-[8%] text-5xl opacity-70 animate-bounce" style={{animationDelay: '0.5s', animationDuration: '2.5s'}}>⛄</div>
+                <div className="absolute top-4 left-[20%] text-4xl opacity-60 animate-bounce" style={{animationDelay: '1s', animationDuration: '3.5s'}}>🎁</div>
+                <div className="absolute top-2 right-[25%] text-3xl opacity-50" style={{animation: 'float 4s ease-in-out infinite'}}>❄️</div>
+                <div className="absolute top-6 left-[45%] text-4xl opacity-60" style={{animation: 'float 3.5s ease-in-out infinite', animationDelay: '1s'}}>⭐</div>
+                <div className="absolute top-1 right-[50%] text-3xl opacity-50 animate-pulse">🔔</div>
+                <div className="absolute top-8 left-[70%] text-4xl opacity-70" style={{animation: 'float 3s ease-in-out infinite', animationDelay: '0.5s'}}>🎅</div>
+              </div>
 
-              <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
-  bg-clip-text text-transparent">
-  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
-</p>
+              {/* Hero Section with Christmas Theme */}
+              <div className="relative text-center space-y-6 px-2 sm:px-4 py-8 bg-gradient-to-br from-red-50 via-green-50 to-red-50 rounded-3xl border-2 border-red-200/50 shadow-2xl overflow-hidden">
+                
+                {/* Snowflakes Animation */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div className="absolute top-[10%] left-[10%] text-2xl opacity-30 animate-pulse">❄️</div>
+                  <div className="absolute top-[20%] right-[15%] text-xl opacity-20 animate-pulse" style={{animationDelay: '1s'}}>❄️</div>
+                  <div className="absolute top-[40%] left-[20%] text-3xl opacity-25 animate-pulse" style={{animationDelay: '2s'}}>❄️</div>
+                  <div className="absolute top-[60%] right-[10%] text-xl opacity-20 animate-pulse" style={{animationDelay: '0.5s'}}>❄️</div>
+                  <div className="absolute top-[80%] left-[30%] text-2xl opacity-30 animate-pulse" style={{animationDelay: '1.5s'}}>❄️</div>
+                </div>
+
+                {/* Christmas Banner */}
+                <div className="relative flex items-center justify-center gap-3 mb-4">
+                  <span className="text-5xl animate-bounce" style={{animationDelay: '0s'}}>🎄</span>
+                  <div className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-red-600 via-green-600 to-red-600 bg-clip-text text-transparent">
+                    Christmas Carnival
+                  </div>
+                  <span className="text-5xl animate-bounce" style={{animationDelay: '0.5s'}}>🎄</span>
+                </div>
+
+                <h1 className="relative text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold 
+                  bg-gradient-to-r from-red-600 via-green-600 to-red-600 
+                  bg-clip-text text-transparent drop-shadow-2xl"
+                  style={{
+                    textShadow: '0 0 30px rgba(220, 38, 38, 0.3), 0 0 60px rgba(22, 163, 74, 0.2)',
+                    fontFamily: "'Playfair Display', 'Georgia', serif"
+                  }}>
+                  DREAM60
+                </h1>
+
+                <p className="relative text-lg sm:text-xl md:text-2xl max-w-3xl mx-auto px-4 font-semibold
+                  bg-gradient-to-r from-red-700 via-green-700 to-red-700
+                  bg-clip-text text-transparent leading-relaxed">
+                  🎅 Ho Ho Ho! Win Amazing Christmas Prizes! 🎁
+                  <br />
+                  <span className="text-base sm:text-lg text-green-800">
+                    Join the festive 60-minute auction extravaganza!
+                  </span>
+                </p>
+
+                {/* Christmas Ornaments */}
+                <div className="flex justify-center gap-4 text-4xl my-4">
+                  <span className="animate-bounce" style={{animationDelay: '0s'}}>🎁</span>
+                  <span className="animate-bounce" style={{animationDelay: '0.3s'}}>🔔</span>
+                  <span className="animate-bounce" style={{animationDelay: '0.6s'}}>⭐</span>
+                  <span className="animate-bounce" style={{animationDelay: '0.9s'}}>🎄</span>
+                  <span className="animate-bounce" style={{animationDelay: '1.2s'}}>❄️</span>
+                </div>
 
                 {!currentUser && (
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
+                  <div className="relative flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
                     <button
                       onClick={handleShowLogin}
-                      className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
+                      className="relative bg-gradient-to-r from-red-600 via-red-700 to-green-700 text-white font-bold px-8 sm:px-10 py-4 rounded-2xl hover:from-red-700 hover:to-green-800 transition-all shadow-2xl w-full sm:w-auto transform hover:scale-105 border-2 border-yellow-300"
+                      style={{boxShadow: '0 0 20px rgba(220, 38, 38, 0.5), 0 0 40px rgba(22, 163, 74, 0.3)'}}
                     >
-                      Join Now & Start Playing
+                      🎄 Join the Christmas Fun!
                     </button>
                     <button
                       onClick={handleSwitchToSignup}
-                      className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
+                      className="relative border-3 border-red-600 bg-white text-red-700 font-bold px-8 sm:px-10 py-4 rounded-2xl hover:bg-gradient-to-r hover:from-red-600 hover:to-green-700 hover:text-white transition-all shadow-lg w-full sm:w-auto transform hover:scale-105"
                     >
-                      Create Account
+                      🎁 Create Account
                     </button>
                   </div>
                 )}
 
+                {/* Garland decoration at bottom */}
+                <div className="absolute -bottom-2 left-0 right-0 h-8 bg-gradient-to-r from-green-600 via-red-600 to-green-600 opacity-20 rounded-b-3xl"></div>
               </div>
 
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
               {serverTime && getCurrentAuctionSlot(serverTime) && (
-                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                      <div>
-                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                        <div className="text-xl sm:text-2xl font-bold">
-                          {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </div>
-                      </div>
-                    </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                        <div className="text-xs sm:text-sm opacity-90">Status</div>
-                        {liveAuctionData?.winnersAnnounced ? (
-                          <div className="flex items-start gap-2 mt-1">
-                            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-200 mt-0.5" />
-                            <div>
-                              <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
-                              <div className="text-xs sm:text-sm text-white/80">Results are live for this slot</div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-lg sm:text-xl font-bold">
-                            {`Round ${liveAuctionData?.currentRound || currentAuction.currentRound}`}
-                          </div>
-                        )}
-                      </div>
-                  </div>
-                </div>
-              )}
-
-                {currentAuction.winnersAnnounced && (
-                  <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-emerald-100">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <Trophy className="w-6 h-6 text-emerald-700" />
+                  <div className="relative bg-gradient-to-r from-red-600 via-green-600 to-red-700 text-white rounded-3xl p-5 sm:p-7 shadow-2xl border-2 border-yellow-300/50 overflow-hidden">
+                    {/* Christmas decoration overlay */}
+                    <div className="absolute top-2 left-4 text-3xl opacity-60 animate-pulse">🎄</div>
+                    <div className="absolute top-2 right-4 text-3xl opacity-60 animate-pulse" style={{animationDelay: '0.5s'}}>⛄</div>
+                    <div className="absolute bottom-2 left-8 text-2xl opacity-50 animate-bounce">🎁</div>
+                    <div className="absolute bottom-2 right-8 text-2xl opacity-50 animate-bounce" style={{animationDelay: '0.3s'}}>⭐</div>
+                    
+                    <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                          <Clock className="w-7 h-7 sm:w-9 sm:h-9" />
                         </div>
                         <div>
-                          <p className="text-sm text-emerald-700 font-semibold">Winners Announced</p>
-                          <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
+                          <div className="text-sm sm:text-base font-semibold opacity-95 flex items-center gap-2">
+                            🔔 Current Christmas Auction
+                          </div>
+                          <div className="text-xl sm:text-3xl font-bold">
+                            {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </div>
                         </div>
                       </div>
+                        <div className="bg-white/30 backdrop-blur-md rounded-2xl px-5 py-3 border-2 border-white/40 shadow-lg">
+                          <div className="text-xs sm:text-sm font-bold opacity-95 mb-1">🎯 Status</div>
+                          {liveAuctionData?.winnersAnnounced ? (
+                            <div className="flex items-start gap-2">
+                              <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-200 mt-0.5 drop-shadow-lg" />
+                              <div>
+                                <div className="text-lg sm:text-2xl font-extrabold">Winners! 🏆</div>
+                                <div className="text-xs sm:text-sm text-white/90">Check the results</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
+                              ⚡ Round {liveAuctionData?.currentRound || currentAuction.currentRound}
+                            </div>
+                          )}
+                        </div>
                     </div>
                   </div>
                 )}
+
+                  {currentAuction.winnersAnnounced && (
+                    <div className="relative bg-gradient-to-br from-yellow-50 via-green-50 to-red-50 rounded-3xl p-5 sm:p-6 shadow-2xl border-2 border-yellow-300/60 overflow-hidden">
+                      {/* Celebration elements */}
+                      <div className="absolute top-2 left-4 text-4xl opacity-70 animate-bounce">🏆</div>
+                      <div className="absolute top-2 right-4 text-4xl opacity-70 animate-bounce" style={{animationDelay: '0.3s'}}>🎉</div>
+                      <div className="absolute bottom-2 left-6 text-3xl opacity-60 animate-pulse">⭐</div>
+                      <div className="absolute bottom-2 right-6 text-3xl opacity-60 animate-pulse" style={{animationDelay: '0.5s'}}>🎊</div>
+                      
+                      <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-xl">
+                            <Trophy className="w-8 h-8 text-white drop-shadow-lg" />
+                          </div>
+                          <div>
+                            <p className="text-sm sm:text-base text-green-700 font-bold mb-1">🎄 Winners Announced!</p>
+                            <p className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-red-700 to-green-700 bg-clip-text text-transparent">
+                              Celebrate the Christmas Champions! 🎅
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
 
 
