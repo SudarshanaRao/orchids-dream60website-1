@@ -1,8 +1,10 @@
 import  { useState, useEffect} from 'react';
-import { ArrowLeft, Trophy, Crown, Award, Medal, IndianRupee, Users, Clock, ChevronUp, TrendingUp, BarChart3, Activity, Target, Zap, Loader2, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, Trophy, Crown, Award, Medal, IndianRupee, Users, Clock, ChevronUp, TrendingUp, BarChart3, Activity, Target, Zap, Loader2, AlertCircle, Download, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { API_ENDPOINTS } from '../lib/api-config';
 import jsPDF from 'jspdf';
+import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
+import { toast } from 'sonner';
 
 interface LeaderboardEntry {
   username: string;
@@ -17,6 +19,8 @@ interface LeaderboardEntry {
   claimWindowStartedAt?: number;
   winnersAnnouncedAt?: number;
   claimDeadline?: number;
+  hourlyAuctionId?: string;
+  lastRoundBidAmount?: number;
 }
 
 interface LeaderboardProps {
@@ -36,6 +40,8 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
   const [closesAt, setClosesAt] = useState<Date | undefined>(undefined);
   const [currentUserId] = useState(localStorage.getItem('user_id') || '');
   const [claimTimers, setClaimTimers] = useState<Record<string, string>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { initiatePrizeClaimPayment } = usePrizeClaimPayment();
 
   // ✅ Helper function to format round times WITHOUT timezone conversion (display API times as-is)
   const formatRoundTime = (date: Date) => {
@@ -143,6 +149,8 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
             claimWindowStartedAt: liveAuction.claimWindowStartedAt,
             winnersAnnouncedAt: liveAuction.winnersAnnouncedAt,
             claimDeadline: player.claimDeadline,
+            hourlyAuctionId: liveAuction.hourlyAuctionId,
+            lastRoundBidAmount: player.auctionPlacedAmount,
           })) || [];
 
         // Sort by rank (ascending), then by bid (descending) for null ranks
@@ -228,6 +236,90 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
     
     return () => clearInterval(interval);
   }, [leaderboard]);
+
+  // Claim prize handler
+  const handleClaimPrize = async (entry: LeaderboardEntry) => {
+    if (!entry.hourlyAuctionId || !entry.lastRoundBidAmount) {
+      toast.error('Missing auction information');
+      return;
+    }
+
+    const userId = localStorage.getItem('user_id');
+    const userEmail = localStorage.getItem('user_email') || localStorage.getItem('email') || '';
+    const userName = localStorage.getItem('user_name') || entry.username;
+    let userMobile = localStorage.getItem('user_mobile') || '9999999999';
+
+    if (!userEmail) {
+      toast.error('Email not found. Please update your profile.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      initiatePrizeClaimPayment(
+        {
+          userId: userId || '',
+          hourlyAuctionId: entry.hourlyAuctionId,
+          amount: entry.lastRoundBidAmount,
+          currency: 'INR',
+          username: userName,
+        },
+        {
+          name: userName,
+          email: userEmail,
+          contact: userMobile,
+          upiId: userEmail,
+        },
+        async () => {
+          toast.success('Prize claimed successfully!');
+          setIsProcessing(false);
+          
+          // Refresh leaderboard data
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const liveAuction = result.data;
+              const roundData = liveAuction.rounds?.find((round: any) => round.roundNumber === roundNumber);
+              if (roundData) {
+                const entries: LeaderboardEntry[] = roundData.playersData?.map((player: any) => ({
+                  username: player.playerUsername || 'Unknown Player',
+                  bid: player.auctionPlacedAmount || 0,
+                  timestamp: new Date(player.auctionPlacedTime || Date.now()),
+                  rank: player.rank || null,
+                  userId: player.userId || player.playerId,
+                  isWinner: player.isWinner || (player.rank && player.rank <= 3),
+                  prizeClaimStatus: player.prizeClaimStatus,
+                  finalRank: player.rank,
+                  currentEligibleRank: liveAuction.currentEligibleRank,
+                  claimWindowStartedAt: liveAuction.claimWindowStartedAt,
+                  winnersAnnouncedAt: liveAuction.winnersAnnouncedAt,
+                  claimDeadline: player.claimDeadline,
+                  hourlyAuctionId: liveAuction.hourlyAuctionId,
+                  lastRoundBidAmount: player.auctionPlacedAmount,
+                })) || [];
+                const sortedEntries = entries.sort((a, b) => {
+                  if (a.rank !== null && b.rank !== null) return a.rank - b.rank;
+                  if (a.rank !== null) return -1;
+                  if (b.rank !== null) return 1;
+                  return b.bid - a.bid;
+                });
+                setLeaderboard(sortedEntries);
+              }
+            }
+          }
+        },
+        () => {
+          setIsProcessing(false);
+        }
+      );
+    } catch (error) {
+      console.error('Claim prize error:', error);
+      toast.error('Failed to process claim');
+      setIsProcessing(false);
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -869,15 +961,27 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
                                       </div>
                                     </div>
                                   
-                                  {/* Bid Badge */}
-                                  <div className="flex items-center gap-1 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl px-3 py-2 border border-purple-200 shadow-sm">
-                                    <IndianRupee className="w-4 h-4 text-purple-600" />
-                                    <span className="font-black text-purple-900 text-sm">
-                                      {entry.bid.toLocaleString('en-IN')}
-                                    </span>
+                                    {/* Bid Badge */}
+                                    <div className="flex items-center gap-1 bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl px-3 py-2 border border-purple-200 shadow-sm">
+                                      <IndianRupee className="w-4 h-4 text-purple-600" />
+                                      <span className="font-black text-purple-900 text-sm">
+                                        {entry.bid.toLocaleString('en-IN')}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              </motion.div>
+
+                                  {/* Claim Prize Button */}
+                                  {entry.userId === currentUserId && entry.isWinner && entry.prizeClaimStatus === 'PENDING' && entry.finalRank === entry.currentEligibleRank && claimTimers[entry.userId] && claimTimers[entry.userId] !== 'EXPIRED' && claimTimers[entry.userId] !== 'Claim Window Soon' && (
+                                    <button
+                                      onClick={() => handleClaimPrize(entry)}
+                                      disabled={isProcessing}
+                                      className="mt-3 w-full px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-xs rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg transition-all"
+                                    >
+                                      <Gift className="w-3.5 h-3.5" />
+                                      {isProcessing ? 'Processing...' : 'Claim Prize'}
+                                    </button>
+                                  )}
+                                </motion.div>
                             ))}
                           </div>
                         </div>
@@ -969,19 +1073,31 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
                                 </div>
                               </div>
 
-                            {/* Bid Amount */}
-                            <div className={`flex items-center gap-1 px-4 py-2 rounded-xl shadow-md ${
-                              isTopThree && config
-                                ? `${config.lightBg} border-2 ${config.borderColor}`
-                                : 'bg-purple-50 border-2 border-purple-200'
-                            }`}>
-                              <IndianRupee className={`w-5 h-5 ${isTopThree && config ? config.textColor : 'text-purple-600'}`} />
-                              <span className={`font-black ${isTopThree && config ? config.textColor : 'text-purple-900'}`}>
-                                {entry.bid.toLocaleString('en-IN')}
-                              </span>
+                              {/* Bid Amount */}
+                              <div className={`flex items-center gap-1 px-4 py-2 rounded-xl shadow-md ${
+                                isTopThree && config
+                                  ? `${config.lightBg} border-2 ${config.borderColor}`
+                                  : 'bg-purple-50 border-2 border-purple-200'
+                              }`}>
+                                <IndianRupee className={`w-5 h-5 ${isTopThree && config ? config.textColor : 'text-purple-600'}`} />
+                                <span className={`font-black ${isTopThree && config ? config.textColor : 'text-purple-900'}`}>
+                                  {entry.bid.toLocaleString('en-IN')}
+                                </span>
+                              </div>
+
+                              {/* Claim Prize Button */}
+                              {entry.userId === currentUserId && entry.isWinner && entry.prizeClaimStatus === 'PENDING' && entry.finalRank === entry.currentEligibleRank && claimTimers[entry.userId] && claimTimers[entry.userId] !== 'EXPIRED' && claimTimers[entry.userId] !== 'Claim Window Soon' && (
+                                <button
+                                  onClick={() => handleClaimPrize(entry)}
+                                  disabled={isProcessing}
+                                  className="ml-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-sm rounded-xl hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg transition-all"
+                                >
+                                  <Gift className="w-4 h-4" />
+                                  {isProcessing ? 'Processing...' : 'Claim Prize'}
+                                </button>
+                              )}
                             </div>
-                          </div>
-                        </motion.div>
+                          </motion.div>
                       );
                     })}
                   </div>
