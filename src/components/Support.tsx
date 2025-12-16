@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, DollarSign, Trophy, AlertCircle, Send, Search } from 'lucide-react';
+import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, DollarSign, Trophy, AlertCircle, Send, Search, Bot, Sparkles, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -11,15 +11,25 @@ import { API_ENDPOINTS } from '../lib/api-config';
 
 interface SupportProps {
   onBack: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function Support({ onBack }: SupportProps) {
+export function Support({ onBack, onNavigate }: SupportProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [ticketName, setTicketName] = useState('');
   const [ticketEmail, setTicketEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string }>>([
+    {
+      role: 'bot',
+      text: "Hi! I'm Dream60 Assist. Ask me about entry fees, bidding rounds, prize claims, or payouts.",
+    },
+  ]);
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,6 +158,60 @@ export function Support({ onBack }: SupportProps) {
     }
   ];
 
+  const knowledgeBase = [
+    ...faqData.flatMap((cat) => cat.questions.map((q) => ({ question: q.question, answer: q.answer }))),
+    {
+      question: 'How do prize claims work?',
+      answer: 'If you win, you pay only your final round bid amount to claim. You then receive an Amazon voucher equal to the full product worth. Example: pay ₹1,000, get ₹20,000 voucher.',
+    },
+    {
+      question: 'What is the entry fee?',
+      answer: 'You must pay the entry fee before Round 1. After that, you can place one bid per round as boxes open every 15 minutes.',
+    },
+    {
+      question: 'How do I contact support?',
+      answer: 'You can chat here, submit a ticket, or email support@dream60.com. For urgent issues, use live chat.',
+    },
+    {
+      question: 'When are auctions scheduled?',
+      answer: 'Auctions run hourly (10 daily). Check Today’s Schedule to see fixed auction numbers and time slots.',
+    },
+  ];
+
+  const getBotReply = (query: string) => {
+    const normalized = query.toLowerCase();
+    if (normalized.includes('prize') || normalized.includes('claim') || normalized.includes('voucher')) {
+      return 'You pay only your final round bid to claim. We then issue an Amazon voucher equal to the full product worth for that auction.';
+    }
+    if (normalized.includes('entry')) {
+      return 'Pay the entry fee before Round 1. After entry, you can bid once per 15-minute round (4 rounds). Entry fees are non-refundable.';
+    }
+    if (normalized.includes('bid') || normalized.includes('round')) {
+      return 'There are 4 bidding rounds after entry. One bid per round. Each next round opens every 15 minutes. Highest final bid wins.';
+    }
+    if (normalized.includes('schedule') || normalized.includes('auction number')) {
+      return 'Today’s Schedule shows fixed auction numbers for the day (they do not reset). You can preview time slots and prizes there.';
+    }
+    const match = knowledgeBase.find((item) => item.question.toLowerCase().includes(normalized) || item.answer.toLowerCase().includes(normalized));
+    return match?.answer || "I couldn't find that yet. Ask about entry fees, bids, prize claims, vouchers, or scheduling.";
+  };
+
+  const handleSendMessage = (e?: React.FormEvent, overrideText?: string) => {
+    if (e) e.preventDefault();
+    const text = (overrideText ?? chatInput).trim();
+    if (!text) return;
+    const reply = getBotReply(text);
+    setMessages((prev) => [...prev, { role: 'user', text }, { role: 'bot', text: reply }]);
+    setChatInput('');
+    setChatOpen(true);
+  };
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, chatOpen]);
+
   const filteredFaq = faqData.map(category => ({
     ...category,
     questions: category.questions.filter(
@@ -224,42 +288,136 @@ export function Support({ onBack }: SupportProps) {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
-                <Book className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Quick Start Guide</h3>
-              <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">New to Dream60? Learn the basics in under 5 minutes.</p>
-              <Button variant="outline" className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md">
-                View Guide
-              </Button>
-            </Card>
+              <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
+                  <Book className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Quick Start Guide</h3>
+                <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">New to Dream60? Learn the basics in under 5 minutes.</p>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
+                  onClick={() => {
+                    onNavigate?.('view-guide');
+                    window.history.pushState({}, '', '/view-guide');
+                  }}
+                >
+                  View Guide
+                </Button>
+              </Card>
 
-            <Card className="bg-white/80 backdrop-blur-xl border-green-200/50 p-4 sm:p-6 text-center shadow-xl shadow-green-500/10">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-green-500/30">
-                <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Live Chat</h3>
-              <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">Get instant help from our support team.</p>
-              <Button variant="outline" className="rounded-xl border-green-400/50 text-green-600 bg-white/60 backdrop-blur-sm text-sm shadow-md">
-                Start Chat
-              </Button>
-            </Card>
+              <Card className="bg-white/80 backdrop-blur-xl border-green-200/50 p-4 sm:p-6 text-center shadow-xl shadow-green-500/10">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-green-500/30">
+                  <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Live Chat</h3>
+                <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">Get instant help from our support team.</p>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-green-400/50 text-green-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
+                  onClick={() => {
+                    setChatOpen(true);
+                    setTimeout(() => chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' }), 50);
+                  }}
+                >
+                  Start Chat
+                </Button>
+              </Card>
 
-            <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10 sm:col-span-2 lg:col-span-1">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
-                <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Winning Tips</h3>
-              <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">Strategies to improve your auction success rate.</p>
-              <Button variant="outline" className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md">
-                Learn More
-              </Button>
-            </Card>
-          </motion.div>
+              <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10 sm:col-span-2 lg:col-span-1">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
+                  <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg md:text-xl font-semibold text-purple-800 mb-2">Winning Tips</h3>
+                <p className="text-xs sm:text-sm text-purple-600 mb-3 sm:mb-4">Strategies to improve your auction success rate.</p>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-purple-400/50 text-purple-600 bg-white/60 backdrop-blur-sm text-sm shadow-md"
+                  onClick={() => {
+                    onNavigate?.('winning-tips');
+                    window.history.pushState({}, '', '/winning-tips');
+                  }}
+                >
+                  Learn More
+                </Button>
+              </Card>
 
-          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-            {/* FAQ Section */}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="mb-6 sm:mb-8"
+            >
+              <Card className="bg-white/85 backdrop-blur-xl border-purple-200/60 shadow-xl overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  <div className="md:w-1/3 p-4 sm:p-6 bg-gradient-to-br from-purple-600 to-violet-700 text-white flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center">
+                        <Bot className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-white/80">Live Chat</p>
+                        <h3 className="text-lg font-bold">Dream60 Assist</h3>
+                      </div>
+                    </div>
+                    <p className="text-sm text-white/90">Ask about entry fees, bidding rounds, prize claims, vouchers, or anything about the game.</p>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {['How do prize claims work?', 'What is my auction schedule?', 'Entry fee rules', 'How to get Amazon voucher?'].map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => handleSendMessage(undefined, prompt)}
+                          className="px-3 py-1 rounded-full bg-white/15 border border-white/20 hover:bg-white/25 transition"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="md:w-2/3 p-4 sm:p-6 flex flex-col gap-4">
+                    <div ref={chatContainerRef} className="h-64 sm:h-72 bg-white/70 border border-purple-100 rounded-xl p-3 overflow-y-auto space-y-3">
+                      {messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div
+                            className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow ${
+                              msg.role === 'user'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-purple-50 text-purple-900 border border-purple-100'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-xs mb-1 opacity-80">
+                              {msg.role === 'user' ? <User className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                              <span>{msg.role === 'user' ? 'You' : 'Dream60 Assist'}</span>
+                            </div>
+                            <div>{msg.text}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <form onSubmit={(e) => handleSendMessage(e)} className="flex flex-col sm:flex-row gap-2">
+                      <Input
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type your question..."
+                        className="flex-1 bg-white/80 border-purple-200 text-purple-900"
+                        onFocus={() => setChatOpen(true)}
+                      />
+                      <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setChatOpen(true)}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Ask
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+              {/* FAQ Section */}
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

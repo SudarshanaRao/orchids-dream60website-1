@@ -24,6 +24,8 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { WinningTips } from './components/WinningTips';
+import { ViewGuide } from './components/ViewGuide';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -259,6 +261,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/privacy') return 'privacy';
         if (path === '/support') return 'support';
         if (path === '/contact') return 'contact';
+        if (path === '/winning-tips') return 'winning-tips';
+        if (path === '/view-guide') return 'view-guide';
         if (path === '/profile') return 'profile';
         if (path === '/history') return 'history';
         if (path.startsWith('/history/')) return 'history';
@@ -290,10 +294,13 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/terms') setCurrentPage('terms');
-      else if (path === '/privacy') setCurrentPage('privacy');
-        else if (path === '/support') setCurrentPage('support');
-        else if (path === '/contact') setCurrentPage('contact');
-        else if (path === '/profile') setCurrentPage('profile');
+        else if (path === '/privacy') setCurrentPage('privacy');
+          else if (path === '/support') setCurrentPage('support');
+          else if (path === '/contact') setCurrentPage('contact');
+          else if (path === '/winning-tips') setCurrentPage('winning-tips');
+          else if (path === '/view-guide') setCurrentPage('view-guide');
+          else if (path === '/profile') setCurrentPage('profile');
+
           else if (path === '/history' || path.startsWith('/history/')) {
             setCurrentPage('history');
             // ✅ If navigating back from details to history list, clear selected auction
@@ -1325,25 +1332,28 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setCurrentPage(page);
       
       // ✅ Update browser URL to match the page
-        const urlMap: { [key: string]: string } = {
-          'game': '/',
-          'login': '/login',
-          'signup': '/signup',
-          'forgot': '/forgot-password',
-          'rules': '/rules',
-          'participation': '/participation',
-          'terms': '/terms',
-          'privacy': '/privacy',
-          'support': '/support',
-          'contact': '/contact',
-          'profile': '/profile',
-          'history': '/history',
-          'transactions': '/transactions',
-          'leaderboard': '/leaderboard',
-          'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
-          'admin-login': '/admin',
-          'admin-dashboard': '/admin'
-        };
+          const urlMap: { [key: string]: string } = {
+            'game': '/',
+            'login': '/login',
+            'signup': '/signup',
+            'forgot': '/forgot-password',
+            'rules': '/rules',
+            'participation': '/participation',
+            'terms': '/terms',
+            'privacy': '/privacy',
+            'support': '/support',
+            'contact': '/contact',
+            'winning-tips': '/winning-tips',
+            'view-guide': '/view-guide',
+            'profile': '/profile',
+            'history': '/history',
+            'transactions': '/transactions',
+            'leaderboard': '/leaderboard',
+            'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
+            'admin-login': '/admin',
+            'admin-dashboard': '/admin'
+          };
+
 
       
       const url = urlMap[page] || '/';
@@ -2096,18 +2106,41 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'support') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Support onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'support') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Support onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
-  if (currentPage === 'contact') {
+    if (currentPage === 'winning-tips') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <WinningTips onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'view-guide') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <ViewGuide onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'contact') {
+
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>

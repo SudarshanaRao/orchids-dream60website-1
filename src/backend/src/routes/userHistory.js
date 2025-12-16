@@ -688,12 +688,21 @@ router.get('/transactions', async (req, res) => {
     const prizeClaims = mapped.filter((m) => m.paymentType === 'PRIZE_CLAIM');
     const voucherTransactions = mapped.filter((m) => m.paymentType === 'VOUCHER');
 
+    const entryAmount = entryFees.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prizeAmount = prizeClaims.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const voucherAmount = voucherTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prizeWorth = prizeClaims.reduce((sum, t) => sum + (t.productValue || 0), 0);
+    const voucherWorth = prizeClaims.reduce((sum, t) => sum + (t.productValue || 0), 0) + voucherTransactions.reduce((sum, t) => sum + (t.productValue || 0), 0);
+
     const summary = {
-      entryAmount: entryFees.reduce((sum, t) => sum + (t.amount || 0), 0),
-      prizeAmount: prizeClaims.reduce((sum, t) => sum + (t.amount || 0), 0),
-      voucherAmount: voucherTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
-      productWorthPaid: entryFees.reduce((sum, t) => sum + (t.productValue || 0), 0),
+      entryAmount,
+      prizeAmount,
+      voucherAmount,
+      prizeWorth,
+      voucherWorth,
       totalProductWorth: mapped.reduce((sum, t) => sum + (t.productValue || 0), 0),
+      totalPaid: entryAmount + prizeAmount + voucherAmount,
+      netValue: voucherWorth - (entryAmount + prizeAmount + voucherAmount),
       totalTransactions: mapped.length,
     };
 

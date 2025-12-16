@@ -834,7 +834,13 @@ exports.createPrizeClaimOrder = async (req, res) => {
       razorpayOrderId: order.id,
       status: 'created',
       orderResponse: order,
-      paymentType: 'PRIZE_CLAIM' // Mark this as a prize claim payment
+      paymentType: 'PRIZE_CLAIM', // Mark this as a prize claim payment
+      auctionName: historyEntry.auctionName,
+      auctionTimeSlot: historyEntry.TimeSlot,
+      productName: historyEntry.auctionName,
+      productTimeSlot: historyEntry.TimeSlot,
+      productValue: historyEntry.prizeAmountWon || historyEntry.prizeValue || amountInRupees,
+      paymentMethod: 'upi',
     });
 
     console.log('Prize claim Razorpay order created:', {
@@ -986,13 +992,27 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
   };
   
   const updatedEntry = await AuctionHistory.submitPrizeClaim(
-    payment.userId,
-    payment.auctionId,
-    claimData
-  );
+      payment.userId,
+      payment.auctionId,
+      claimData
+    );
 
+    const upiFromRequest = upiId?.trim();
+    const derivedUpiApp = deriveUpiApp(payment.paymentDetails?.vpa || upiFromRequest, payment.paymentDetails?.wallet, payment.paymentDetails?.bank);
+    payment.paymentDetails = {
+      ...(payment.paymentDetails || {}),
+      vpa: payment.paymentDetails?.vpa || upiFromRequest,
+      upiApp: payment.paymentDetails?.upiApp || derivedUpiApp,
+      provider: payment.paymentDetails?.provider || derivedUpiApp,
+    };
+    payment.paymentMethod = payment.paymentMethod || 'upi';
+    payment.productValue = payment.productValue ?? updatedEntry?.prizeAmountWon ?? updatedEntry?.prizeValue ?? null;
+    payment.productName = payment.productName || updatedEntry?.auctionName || null;
+    payment.productTimeSlot = payment.productTimeSlot || updatedEntry?.TimeSlot || null;
+    await payment.save();
 
-    // ✅ NEW: Mark ALL other pending winners' claims as EXPIRED
+      // ✅ NEW: Mark ALL other pending winners' claims as EXPIRED
+
     // This ensures other winners in queue know the prize has been claimed
     const expireResult = await AuctionHistory.updateMany(
       { 

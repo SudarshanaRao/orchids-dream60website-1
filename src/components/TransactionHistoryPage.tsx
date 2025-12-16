@@ -75,8 +75,9 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     const entryAmount = (transactions.entryFees || []).reduce((sum, t) => sum + (t.amount || 0), 0);
     const prizeAmount = (transactions.prizeClaims || []).reduce((sum, t) => sum + (t.amount || 0), 0);
     const voucherAmount = (transactions.vouchers || []).reduce((sum, t) => sum + (t.amount || 0), 0);
-    const productWorth = (transactions.entryFees || []).reduce((sum, t) => sum + (t.productValue || t.prizeWorth || 0), 0);
-    const amazonVoucher = prizeAmount + voucherAmount;
+    const prizeWorth = (transactions.prizeClaims || []).reduce((sum, t) => sum + (t.productValue || t.prizeWorth || 0), 0);
+    const voucherWorth = prizeWorth + (transactions.vouchers || []).reduce((sum, t) => sum + (t.productValue || t.prizeWorth || 0), 0);
+    const netValue = voucherWorth - (entryAmount + prizeAmount + voucherAmount);
     const upiCount = allTransactions.filter((t) => (t.paymentMethod || t.paymentDetails?.method) === 'upi' || Boolean(t.paymentDetails?.vpa)).length;
 
     return {
@@ -87,9 +88,9 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
       entryAmount,
       prizeAmount,
       voucherAmount,
-      productWorth,
-      amazonVoucher,
-      netFlow: prizeAmount - entryAmount - voucherAmount,
+      prizeWorth,
+      voucherWorth,
+      netValue,
       upiCount,
     };
   }, [allTransactions, transactions]);
@@ -541,60 +542,61 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             transition={{ duration: 0.4 }}
             className="mb-3 sm:mb-4"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
-                <CardContent className="p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Transactions</span>
-                  </div>
-                  <div className="text-2xl font-bold text-purple-900">{stats.totalCount}</div>
-                  <div className="text-[11px] text-purple-600">Entry {stats.entryCount} • Prize {stats.prizeCount}</div>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
-                <CardContent className="p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
-                    <IndianRupee className="w-4 h-4" />
-                    <span>Entry Fee Paid</span>
-                  </div>
-                  <div className="text-2xl font-bold text-purple-900">₹{stats.entryAmount.toLocaleString('en-IN')}</div>
-                  <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
-                <CardContent className="p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
-                    <Target className="w-4 h-4" />
-                    <span>Prize Worth</span>
-                  </div>
-                  <div className="text-2xl font-bold text-purple-900">₹{stats.productWorth.toLocaleString('en-IN')}</div>
-                  <div className="text-[11px] text-purple-600">Across your entries</div>
-                </CardContent>
-              </Card>
-              <Card className="border-2 border-emerald-200/70 bg-white shadow-sm">
-                <CardContent className="p-4 space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-                    <Gift className="w-4 h-4" />
-                    <span>Amazon Voucher</span>
-                  </div>
-                  <div className="text-2xl font-bold text-emerald-800">₹{stats.amazonVoucher.toLocaleString('en-IN')}</div>
-                  <div className="text-[11px] text-emerald-700">{stats.prizeCount} vouchers</div>
-                </CardContent>
-              </Card>
-              <Card className={`border-2 ${stats.netFlow >= 0 ? 'border-emerald-200/70 bg-emerald-50/60' : 'border-red-200/70 bg-red-50/60'} shadow-sm`}>
-                <CardContent className="p-4 space-y-1">
-                  <div className={`flex items-center gap-2 text-xs font-semibold ${stats.netFlow >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
-                    {stats.netFlow >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    <span>Net Flow</span>
-                  </div>
-                  <div className={`text-2xl font-bold ${stats.netFlow >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>
-                    {stats.netFlow >= 0 ? '+' : '-'}₹{Math.abs(stats.netFlow).toLocaleString('en-IN')}
-                  </div>
-                  <div className="text-[11px] text-purple-700">UPI uses: {stats.upiCount}</div>
-                </CardContent>
-              </Card>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <BarChart3 className="w-4 h-4" />
+                      <span>Transactions</span>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-900">{stats.totalCount}</div>
+                    <div className="text-[11px] text-purple-600">Entry {stats.entryCount} • Prize {stats.prizeCount}</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <IndianRupee className="w-4 h-4" />
+                      <span>Entry Fee Paid</span>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-900">₹{stats.entryAmount.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                      <Target className="w-4 h-4" />
+                      <span>Prize Claim Paid</span>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-900">₹{stats.prizeAmount.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-purple-600">{stats.prizeCount} payments</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-2 border-emerald-200/70 bg-white shadow-sm">
+                  <CardContent className="p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+                      <Gift className="w-4 h-4" />
+                      <span>Voucher Worth</span>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-800">₹{stats.voucherWorth.toLocaleString('en-IN')}</div>
+                    <div className="text-[11px] text-emerald-700">{stats.prizeCount} vouchers</div>
+                  </CardContent>
+                </Card>
+                <Card className={`border-2 ${stats.netValue >= 0 ? 'border-emerald-200/70 bg-emerald-50/60' : 'border-red-200/70 bg-red-50/60'} shadow-sm`}>
+                  <CardContent className="p-4 space-y-1">
+                    <div className={`flex items-center gap-2 text-xs font-semibold ${stats.netValue >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {stats.netValue >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <span>Net Value</span>
+                    </div>
+                    <div className={`text-2xl font-bold ${stats.netValue >= 0 ? 'text-emerald-800' : 'text-red-800'}`}>
+                      {stats.netValue >= 0 ? '+' : '-'}₹{Math.abs(stats.netValue).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[11px] text-purple-700">UPI uses: {stats.upiCount}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
           </motion.div>
 
           <motion.div
