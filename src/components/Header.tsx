@@ -407,53 +407,66 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                         )}
 
 
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => onStartTutorial?.()}
-                          variant="ghost"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                          size="sm"
-                          data-tutorial-target="tutorial-trigger"
-                        >
-                          <Sparkles className="w-4 h-4 mr-1.5" />
-                          Tutorial
-                        </Button>
-                      </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={() => onStartTutorial?.()}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                            size="sm"
+                            data-tutorial-target="tutorial-trigger"
+                          >
+                            <Sparkles className="w-4 h-4 mr-1.5" />
+                            Tutorial
+                          </Button>
+                        </motion.div>
 
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => onNavigate?.('rules')}
-                          variant="ghost"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                          size="sm"
-                        >
-                          <FileText className="w-4 h-4 mr-1.5" />
-                          Rules
-                        </Button>
-                      </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={() => onNavigate?.('rules')}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                            size="sm"
+                          >
+                            <FileText className="w-4 h-4 mr-1.5" />
+                            Rules
+                          </Button>
+                        </motion.div>
 
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => onNavigate?.('participation')}
-                          variant="ghost"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
-                          size="sm"
-                        >
-                          <Shield className="w-4 h-4 mr-1.5" />
-                          Play Guide
-                        </Button>
-                      </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={() => onNavigate?.('participation')}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
+                            size="sm"
+                          >
+                            <Shield className="w-4 h-4 mr-1.5" />
+                            Play Guide
+                          </Button>
+                        </motion.div>
 
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => onNavigate?.('support')}
-                          variant="ghost"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                          size="sm"
-                        >
-                          Support
-                        </Button>
-                      </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={() => onNavigate?.('transactions')}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                            size="sm"
+                          >
+                            <Coins className="w-4 h-4 mr-1.5" />
+                            Transactions
+                          </Button>
+                        </motion.div>
+
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button
+                            onClick={() => onNavigate?.('support')}
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                            size="sm"
+                          >
+                            Support
+                          </Button>
+                        </motion.div>
+
                     </div>
 
 
@@ -731,38 +744,51 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                         <div className="border-t border-purple-200/50 my-3"></div>
 
 
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { handleNavigateToHistory(); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group relative"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors relative">
-                            <History className="w-5 h-5 text-purple-600" />
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { handleNavigateToHistory(); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group relative"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors relative">
+                              <History className="w-5 h-5 text-purple-600" />
+                              {hasNewHistory && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-medium text-purple-900">Auction History</span>
                             {hasNewHistory && (
-                              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                              </span>
+                              <span className="ml-auto text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">New</span>
                             )}
-                          </div>
-                          <span className="font-medium text-purple-900">Auction History</span>
-                          {hasNewHistory && (
-                            <span className="ml-auto text-xs font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">New</span>
-                          )}
-                        </button>
-                      </motion.div>
+                          </button>
+                        </motion.div>
 
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { onNavigate?.('profile'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <User className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Profile Settings</span>
-                        </button>
-                      </motion.div>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { onNavigate?.('transactions'); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Coins className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Transactions</span>
+                          </button>
+                        </motion.div>
+
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { onNavigate?.('profile'); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <User className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Profile Settings</span>
+                          </button>
+                        </motion.div>
+
 
                       <motion.div variants={menuItemVariants}>
                         <button

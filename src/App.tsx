@@ -19,6 +19,7 @@ import { Leaderboard } from './components/Leaderboard';
 import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
+import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -261,6 +262,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/profile') return 'profile';
         if (path === '/history') return 'history';
         if (path.startsWith('/history/')) return 'history';
+        if (path === '/transactions') return 'transactions';
         if (path === '/leaderboard') return 'leaderboard';
         if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
@@ -292,24 +294,27 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/support') setCurrentPage('support');
       else if (path === '/contact') setCurrentPage('contact');
       else if (path === '/profile') setCurrentPage('profile');
-      else if (path === '/history' || path.startsWith('/history/')) {
-        setCurrentPage('history');
-        // ✅ If navigating back from details to history list, clear selected auction
-        if (path === '/history') {
-          setSelectedAuctionDetails(null);
+        else if (path === '/history' || path.startsWith('/history/')) {
+          setCurrentPage('history');
+          // ✅ If navigating back from details to history list, clear selected auction
+          if (path === '/history') {
+            setSelectedAuctionDetails(null);
+          }
+        } else if (path === '/transactions') {
+          setCurrentPage('transactions');
+        } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+        else if (path === '/auction-leaderboard') {
+          setCurrentPage('auction-leaderboard');
+          const params = new URLSearchParams(window.location.search);
+          const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
+          if (urlHourlyId) {
+            setCurrentHourlyAuctionId(urlHourlyId);
+            sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
+          }
         }
-      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-      else if (path === '/auction-leaderboard') {
-        setCurrentPage('auction-leaderboard');
-        const params = new URLSearchParams(window.location.search);
-        const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
-        if (urlHourlyId) {
-          setCurrentHourlyAuctionId(urlHourlyId);
-          sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
-        }
-      }
-      else setCurrentPage('game');
-    };
+        else setCurrentPage('game');
+      };
+
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -1320,24 +1325,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setCurrentPage(page);
       
       // ✅ Update browser URL to match the page
-      const urlMap: { [key: string]: string } = {
-        'game': '/',
-        'login': '/login',
-        'signup': '/signup',
-        'forgot': '/forgot-password',
-        'rules': '/rules',
-        'participation': '/participation',
-        'terms': '/terms',
-        'privacy': '/privacy',
-        'support': '/support',
-        'contact': '/contact',
-        'profile': '/profile',
-        'history': '/history',
-        'leaderboard': '/leaderboard',
-        'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
-        'admin-login': '/admin',
-        'admin-dashboard': '/admin'
-      };
+        const urlMap: { [key: string]: string } = {
+          'game': '/',
+          'login': '/login',
+          'signup': '/signup',
+          'forgot': '/forgot-password',
+          'rules': '/rules',
+          'participation': '/participation',
+          'terms': '/terms',
+          'privacy': '/privacy',
+          'support': '/support',
+          'contact': '/contact',
+          'profile': '/profile',
+          'history': '/history',
+          'transactions': '/transactions',
+          'leaderboard': '/leaderboard',
+          'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
+          'admin-login': '/admin',
+          'admin-dashboard': '/admin'
+        };
+
       
       const url = urlMap[page] || '/';
       window.history.pushState({}, '', url);
@@ -1943,18 +1950,36 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'history' && currentUser) {
-    if (selectedAuctionDetails) {
+    if (currentPage === 'history' && currentUser) {
+      if (selectedAuctionDetails) {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <AuctionDetailsPage
+                auction={selectedAuctionDetails}
+                onBack={() => {
+                  setSelectedAuctionDetails(null);
+                  localStorage.removeItem('selectedAuctionDetails');
+                  window.history.pushState({}, '', '/history');
+                }}
+              />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <AuctionDetailsPage
-              auction={selectedAuctionDetails}
-              onBack={() => {
-                setSelectedAuctionDetails(null);
-                localStorage.removeItem('selectedAuctionDetails');
-                window.history.pushState({}, '', '/history');
+            <AuctionHistory
+              user={currentUser}
+              onBack={handleBackToGame}
+              onViewDetails={(auction) => {
+                setSelectedAuctionDetails(auction);
+                localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
+                window.history.pushState({}, '', '/history/details');
               }}
             />
           </TooltipProvider>
@@ -1962,39 +1987,42 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       );
     }
 
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AuctionHistory
-            user={currentUser}
-            onBack={handleBackToGame}
-            onViewDetails={(auction) => {
-              setSelectedAuctionDetails(auction);
-              localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
-              window.history.pushState({}, '', '/history/details');
-            }}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'transactions') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            {currentUser ? (
+              <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
+            ) : (
+              <LoginForm
+                onLogin={handleLogin}
+                onSwitchToSignup={handleSwitchToSignup}
+                onBack={handleBackToGame}
+                onNavigate={handleNavigate}
+              />
+            )}
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
-  if (currentPage === 'login') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <LoginForm
-            onLogin={handleLogin}
-            onSwitchToSignup={handleSwitchToSignup}
-            onBack={handleBackToGame}
-            onNavigate={handleNavigate}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'login') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <LoginForm
+              onLogin={handleLogin}
+              onSwitchToSignup={handleSwitchToSignup}
+              onBack={handleBackToGame}
+              onNavigate={handleNavigate}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
 
   if (currentPage === 'signup') {
     return (
