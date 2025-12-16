@@ -813,11 +813,9 @@ const AuctionCard = ({
                     </div>
 
                     <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
-                      <p className="text-[10px] text-blue-800 leading-relaxed mb-1.5">
-                        <strong>⏰ Your claim window:</strong>
-                        {localAuction.finalRank === 2 && ' 31-60 minutes from winners announcement'}
-                        {localAuction.finalRank === 3 && ' 61-90 minutes from winners announcement'}
-                      </p>
+                        <p className="text-[10px] text-blue-800 leading-relaxed mb-1.5">
+                          <strong>⏰ Your claim window:</strong> 15 minutes when your turn starts
+                        </p>
                       <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-1.5">
                         <Clock className="w-3.5 h-3.5 text-blue-600" />
                         <span className="font-bold text-xs text-blue-900">{timeLeft}</span>
