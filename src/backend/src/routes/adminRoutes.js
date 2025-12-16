@@ -12,6 +12,7 @@ const {
   deleteMasterAuctionAdmin,
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,
+  deletePushSubscriptionAdmin,
 } = require('../controllers/adminController');
 
 /**
@@ -647,5 +648,6 @@ router.delete('/master-auctions/:master_id/slots/:auction_number', deleteDailyAu
  *         description: Server error
  */
 router.get('/push-subscriptions', getPushSubscriptionStats);
+router.delete('/push-subscriptions/:subscriptionId', deletePushSubscriptionAdmin);
 
 module.exports = router;

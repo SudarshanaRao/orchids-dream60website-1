@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Bell, Send, Users, Loader2, Smartphone, Monitor, Sparkles } from 'lucide-react';
+import { Bell, Send, Users, Loader2, Smartphone, Monitor, Sparkles, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '@/lib/api-config';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/api-config';
 
 interface SubscriptionUser {
   subscriptionId: string;
@@ -58,13 +58,17 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
     requireInteraction: false,
     actions: [] as Array<{ action: string; title: string; icon?: string }>
   });
-  const [isSending, setIsSending] = useState(false);
-  const [stats, setStats] = useState<SubscriptionStats | null>(null);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [usersWithBidAlerts, setUsersWithBidAlerts] = useState<User[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [allSubscribedUsers, setAllSubscribedUsers] = useState<SubscriptionUser[]>([]);
+    const [isSending, setIsSending] = useState(false);
+    const [stats, setStats] = useState<SubscriptionStats | null>(null);
+    const [isLoadingStats, setIsLoadingStats] = useState(true);
+    const [usersWithBidAlerts, setUsersWithBidAlerts] = useState<User[]>([]);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+    const [selectedSubscriptions, setSelectedSubscriptions] = useState<Set<string>>(new Set());
+    const [allSubscribedUsers, setAllSubscribedUsers] = useState<SubscriptionUser[]>([]);
+    const [removingId, setRemovingId] = useState<string | null>(null);
+
+    const adminId = adminUserId || localStorage.getItem('admin_user_id');
+
 
   useEffect(() => {
     fetchSubscriptionStats();
@@ -93,56 +97,54 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
     }
   };
 
-  const fetchSubscriptionStats = async () => {
-    try {
-      setIsLoadingStats(true);
-      const adminId = adminUserId || localStorage.getItem('admin_user_id');
-      
-      if (!adminId) {
-        toast.error('Admin session expired');
-        return;
-      }
+    const fetchSubscriptionStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        
+        if (!adminId) {
+          toast.error('Admin session expired');
+          return;
+        }
 
-      const response = await fetch(
-        `https://dev-api.dream60.com/admin/push-subscriptions?user_id=${adminId}`
-      );
-      const data = await response.json();
+        const response = await fetch(
+          `${API_BASE_URL}/admin/push-subscriptions?user_id=${adminId}`
+        );
+        const data = await response.json();
 
-      if (data.success) {
-        setStats(data.data);
-        // Combine PWA and Web users into a single array
-        const allUsers = [...data.data.pwaUsers, ...data.data.webUsers];
-        setAllSubscribedUsers(allUsers);
-      } else {
-        toast.error(data.message || 'Failed to load subscription stats');
+        if (data.success) {
+          setStats(data.data);
+          // Combine PWA and Web users into a single array
+          const allUsers = [...data.data.pwaUsers, ...data.data.webUsers];
+          setAllSubscribedUsers(allUsers);
+        } else {
+          toast.error(data.message || 'Failed to load subscription stats');
+        }
+      } catch (error) {
+        console.error('Error fetching subscription stats:', error);
+        toast.error('Failed to load subscription stats');
+      } finally {
+        setIsLoadingStats(false);
       }
-    } catch (error) {
-      console.error('Error fetching subscription stats:', error);
-      toast.error('Failed to load subscription stats');
-    } finally {
-      setIsLoadingStats(false);
-    }
-  };
+    };
+
 
   const handleSelectAll = () => {
-    if (selectedUsers.size === allSubscribedUsers.length) {
-      // Deselect all
-      setSelectedUsers(new Set());
+    if (selectedSubscriptions.size === allSubscribedUsers.length) {
+      setSelectedSubscriptions(new Set());
     } else {
-      // Select all
-      const allUserIds = new Set(allSubscribedUsers.map(u => u.userId));
-      setSelectedUsers(allUserIds);
+      const allIds = new Set(allSubscribedUsers.map(u => u.subscriptionId));
+      setSelectedSubscriptions(allIds);
     }
   };
 
-  const handleToggleUser = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
+  const handleToggleSubscription = (subscriptionId: string) => {
+    const next = new Set(selectedSubscriptions);
+    if (next.has(subscriptionId)) {
+      next.delete(subscriptionId);
     } else {
-      newSelected.add(userId);
+      next.add(subscriptionId);
     }
-    setSelectedUsers(newSelected);
+    setSelectedSubscriptions(next);
   };
 
   const handleSendToSelected = async () => {
@@ -151,14 +153,21 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       return;
     }
 
-    if (selectedUsers.size === 0) {
+    if (selectedSubscriptions.size === 0) {
       toast.error('Please select at least one user');
       return;
     }
 
+    const selectedUserIds = allSubscribedUsers
+      .filter(u => selectedSubscriptions.has(u.subscriptionId))
+      .map(u => u.userId)
+      .filter(Boolean);
+
+    const uniqueUserIds = Array.from(new Set(selectedUserIds));
+
     try {
       setIsSending(true);
-      const response = await fetch(`${API_ENDPOINTS.pushNotification.sendToAll}/selected`, {
+      const response = await fetch(API_ENDPOINTS.pushNotification.sendToSelected, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -166,7 +175,8 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         body: JSON.stringify({
           ...notificationData,
           ...richNotificationData,
-          userIds: Array.from(selectedUsers)
+          userIds: uniqueUserIds,
+          adminId
         })
       });
 
@@ -176,14 +186,14 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         toast.success(
           `Notification sent successfully!`,
           {
-            description: `Sent to ${selectedUsers.size} selected user(s)`,
+            description: `Sent to ${uniqueUserIds.length} selected user(s)`,
             duration: 5000,
           }
         );
 
         console.log('📧 Push Notification Sent to Selected Users:');
         console.log(`   Title: ${notificationData.title}`);
-        console.log(`   Total Recipients: ${selectedUsers.size}`);
+        console.log(`   Total Recipients: ${uniqueUserIds.length}`);
 
         // Reset form and selections
         setNotificationData({
@@ -199,7 +209,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           requireInteraction: false,
           actions: []
         });
-        setSelectedUsers(new Set());
+        setSelectedSubscriptions(new Set());
 
         fetchSubscriptionStats();
       } else {
@@ -236,10 +246,6 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
       if (data.success) {
         // Show detailed success message with user information
-        const recipientInfo = data.recipients ? 
-          data.recipients.map((r: any) => `${r.username} (${r.email})`).join(', ') : 
-          `${data.successfulSends} users`;
-        
         toast.success(
           `Notification sent successfully!`,
           {
@@ -289,6 +295,58 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
     }
   };
 
+  const handleRemoveSubscription = async (subscriptionId: string) => {
+    if (!adminId) {
+      toast.error('Admin session expired');
+      return;
+    }
+
+    const confirmed = window.confirm('Remove this subscription from push notifications?');
+    if (!confirmed) return;
+
+    try {
+      setRemovingId(subscriptionId);
+      const response = await fetch(`${API_BASE_URL}/admin/push-subscriptions/${subscriptionId}?user_id=${adminId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Subscription removed');
+        setSelectedSubscriptions((prev) => {
+          const next = new Set(prev);
+          next.delete(subscriptionId);
+          return next;
+        });
+        setAllSubscribedUsers((prev) => prev.filter((user) => user.subscriptionId !== subscriptionId));
+        setStats((prev) => {
+          if (!prev) return prev;
+          const isPwa = prev.pwaUsers.some((u) => u.subscriptionId === subscriptionId);
+          const updatedPwa = prev.pwaUsers.filter((u) => u.subscriptionId !== subscriptionId);
+          const updatedWeb = prev.webUsers.filter((u) => u.subscriptionId !== subscriptionId);
+          return {
+            ...prev,
+            summary: {
+              ...prev.summary,
+              totalActive: Math.max(0, prev.summary.totalActive - 1),
+              pwaCount: isPwa ? Math.max(0, prev.summary.pwaCount - 1) : prev.summary.pwaCount,
+              webCount: !isPwa ? Math.max(0, prev.summary.webCount - 1) : prev.summary.webCount,
+            },
+            pwaUsers: updatedPwa,
+            webUsers: updatedWeb,
+          };
+        });
+      } else {
+        toast.error(data.message || 'Failed to remove subscription');
+      }
+    } catch (error) {
+      console.error('Error removing subscription', error);
+      toast.error('Failed to remove subscription');
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -306,19 +364,20 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-purple-900">Select Recipients</h3>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="selectAll"
-              checked={selectedUsers.size === allSubscribedUsers.length && allSubscribedUsers.length > 0}
-              onChange={handleSelectAll}
-              className="w-4 h-4 text-purple-700 rounded border-purple-300 focus:ring-purple-500"
-            />
-            <label htmlFor="selectAll" className="text-sm font-semibold text-purple-900 cursor-pointer">
-              Select All ({selectedUsers.size}/{allSubscribedUsers.length})
-            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="selectAll"
+                checked={selectedSubscriptions.size === allSubscribedUsers.length && allSubscribedUsers.length > 0}
+                onChange={handleSelectAll}
+                className="w-4 h-4 text-purple-700 rounded border-purple-300 focus:ring-purple-500"
+              />
+              <label htmlFor="selectAll" className="text-sm font-semibold text-purple-900 cursor-pointer">
+                Select All ({selectedSubscriptions.size}/{allSubscribedUsers.length})
+              </label>
+            </div>
           </div>
-        </div>
+
         
         {isLoadingStats ? (
           <div className="flex items-center justify-center py-8">
@@ -354,41 +413,56 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                   <Smartphone className="w-5 h-5 text-green-700" />
                   <h4 className="font-bold text-green-900">PWA Users ({stats.summary.pwaCount})</h4>
                 </div>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {stats.pwaUsers.length === 0 ? (
-                    <p className="text-sm text-green-600 text-center py-4">No PWA subscriptions yet</p>
-                  ) : (
-                    stats.pwaUsers.map((user) => (
-                      <div 
-                        key={user.subscriptionId} 
-                        onClick={() => handleToggleUser(user.userId)}
-                        className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
-                          selectedUsers.has(user.userId) 
-                            ? 'border-green-500 bg-green-50 ring-2 ring-green-300' 
-                            : 'border-green-200 hover:bg-green-50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.has(user.userId)}
-                            onChange={() => handleToggleUser(user.userId)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="mt-1 w-4 h-4 text-green-700 rounded border-green-300 focus:ring-green-500"
-                          />
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
-                            <p className="text-xs text-gray-600">{user.email}</p>
-                            <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
-                            <p className="text-xs text-green-600 mt-1">
-                              Last used: {new Date(user.lastUsed).toLocaleDateString()}
-                            </p>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {stats.pwaUsers.length === 0 ? (
+                      <p className="text-sm text-green-600 text-center py-4">No PWA subscriptions yet</p>
+                    ) : (
+                      stats.pwaUsers.map((user) => {
+                        const isSelected = selectedSubscriptions.has(user.subscriptionId);
+                        return (
+                          <div 
+                            key={user.subscriptionId} 
+                            onClick={() => handleToggleSubscription(user.subscriptionId)}
+                            className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'border-green-500 bg-green-50 ring-2 ring-green-300' 
+                                : 'border-green-200 hover:bg-green-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSubscription(user.subscriptionId)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="mt-1 w-4 h-4 text-green-700 rounded border-green-300 focus:ring-green-500"
+                              />
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                                <p className="text-xs text-gray-600">{user.email}</p>
+                                <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                                <p className="text-xs text-green-600 mt-1">
+                                  Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveSubscription(user.subscriptionId);
+                                }}
+                                disabled={removingId === user.subscriptionId}
+                                className="ml-2 px-2 py-1 text-xs text-red-600 hover:text-red-700 border border-red-200 rounded-md flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Remove
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                        );
+                      })
+                    )}
+                  </div>
+
               </div>
 
               {/* Web Users Column */}
@@ -397,41 +471,56 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                   <Monitor className="w-5 h-5 text-blue-700" />
                   <h4 className="font-bold text-blue-900">Web Users ({stats.summary.webCount})</h4>
                 </div>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {stats.webUsers.length === 0 ? (
-                    <p className="text-sm text-blue-600 text-center py-4">No web subscriptions yet</p>
-                  ) : (
-                    stats.webUsers.map((user) => (
-                      <div 
-                        key={user.subscriptionId} 
-                        onClick={() => handleToggleUser(user.userId)}
-                        className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
-                          selectedUsers.has(user.userId) 
-                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
-                            : 'border-blue-200 hover:bg-blue-50'
-                        }`}
-                      >
-                        <div className="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedUsers.has(user.userId)}
-                            onChange={() => handleToggleUser(user.userId)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="mt-1 w-4 h-4 text-blue-700 rounded border-blue-300 focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
-                            <p className="text-xs text-gray-600">{user.email}</p>
-                            <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
-                            <p className="text-xs text-blue-600 mt-1">
-                              Last used: {new Date(user.lastUsed).toLocaleDateString()}
-                            </p>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {stats.webUsers.length === 0 ? (
+                      <p className="text-sm text-blue-600 text-center py-4">No web subscriptions yet</p>
+                    ) : (
+                      stats.webUsers.map((user) => {
+                        const isSelected = selectedSubscriptions.has(user.subscriptionId);
+                        return (
+                          <div 
+                            key={user.subscriptionId} 
+                            onClick={() => handleToggleSubscription(user.subscriptionId)}
+                            className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
+                                : 'border-blue-200 hover:bg-blue-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleSubscription(user.subscriptionId)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="mt-1 w-4 h-4 text-blue-700 rounded border-blue-300 focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
+                                <p className="text-xs text-gray-600">{user.email}</p>
+                                <p className="text-xs text-gray-500 mt-1">Code: {user.userCode}</p>
+                                <p className="text-xs text-blue-600 mt-1">
+                                  Last used: {new Date(user.lastUsed).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveSubscription(user.subscriptionId);
+                                }}
+                                disabled={removingId === user.subscriptionId}
+                                className="ml-2 px-2 py-1 text-xs text-red-600 hover:text-red-700 border border-red-200 rounded-md flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Remove
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                        );
+                      })
+                    )}
+                  </div>
+
               </div>
             </div>
           </>
@@ -536,21 +625,37 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             <p className="text-xs text-purple-500 mt-1">
               Add a banner image to create a Rich Notification. Image will be displayed prominently in the notification.
             </p>
-            {richNotificationData.image && (
-              <div className="mt-3">
-                <p className="text-xs font-semibold text-purple-700 mb-2">IMAGE PREVIEW</p>
-                <div className="relative w-full aspect-[2/1] bg-gray-100 rounded-lg overflow-hidden border-2 border-purple-200">
-                  <img
-                    src={richNotificationData.image}
-                    alt="Banner preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid Image%3C/text%3E%3C/svg%3E';
-                    }}
-                  />
+              {richNotificationData.image && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-semibold text-purple-700">IMAGE PREVIEW</p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative w-full sm:w-2/3 aspect-video max-h-48 bg-gray-100 rounded-lg overflow-hidden border-2 border-purple-200">
+                      <img
+                        src={richNotificationData.image}
+                        alt="Banner preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid Image%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+                    <div className="sm:w-1/3 space-y-2">
+                      <p className="text-xs font-semibold text-purple-700">Small preview</p>
+                      <div className="w-full h-20 bg-gray-100 rounded-md border border-purple-200 overflow-hidden">
+                        <img
+                          src={richNotificationData.image}
+                          alt="Thumbnail preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif"%3EInvalid Image%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
           </div>
 
           {/* Preview */}
@@ -569,21 +674,22 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                     <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                       {notificationData.body || 'Notification message'}
                     </p>
-                    {richNotificationData.image && (
-                      <div className="mt-3">
-                        <div className="relative w-full aspect-[2/1] bg-gray-100 rounded-md overflow-hidden">
-                          <img
-                            src={richNotificationData.image}
-                            alt="Rich notification banner"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
+                      {richNotificationData.image && (
+                        <div className="mt-3">
+                          <div className="relative w-full aspect-video max-h-40 bg-gray-100 rounded-md overflow-hidden">
+                            <img
+                              src={richNotificationData.image}
+                              alt="Rich notification banner"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-purple-600 mt-2 font-semibold">✨ Rich Notification with Banner Image</p>
                         </div>
-                        <p className="text-xs text-purple-600 mt-2 font-semibold">✨ Rich Notification with Banner Image</p>
-                      </div>
-                    )}
+                      )}
+
                   </div>
                 </div>
               </div>
@@ -592,23 +698,24 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
           {/* Send Button */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleSendToSelected}
-              disabled={isSending || !notificationData.title || !notificationData.body || selectedUsers.size === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-800 text-white rounded-lg font-semibold hover:from-orange-700 hover:to-orange-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Send to Selected ({selectedUsers.size})
-                </>
-              )}
-            </button>
+              <button
+                onClick={handleSendToSelected}
+                disabled={isSending || !notificationData.title || !notificationData.body || selectedSubscriptions.size === 0}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-orange-800 text-white rounded-lg font-semibold hover:from-orange-700 hover:to-orange-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Send to Selected ({selectedSubscriptions.size})
+                  </>
+                )}
+              </button>
+
             <button
               onClick={handleSendToAll}
               disabled={isSending || !notificationData.title || !notificationData.body}
@@ -794,7 +901,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             }}
             className="group relative bg-white rounded-xl overflow-hidden border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg"
           >
-            <div className="aspect-[2/1] bg-gradient-to-br from-purple-400 to-violet-600 relative overflow-hidden">
+            <div className="aspect-video max-h-40 bg-gradient-to-br from-purple-400 to-violet-600 relative overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1556742400-b5b7c6a5d9e0?w=800&h=400&fit=crop&q=80"
                 alt="Auction starting"
@@ -823,7 +930,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             }}
             className="group relative bg-white rounded-xl overflow-hidden border-2 border-amber-200 hover:border-amber-400 transition-all hover:shadow-lg"
           >
-            <div className="aspect-[2/1] bg-gradient-to-br from-amber-400 to-orange-600 relative overflow-hidden">
+            <div className="aspect-video max-h-40 bg-gradient-to-br from-amber-400 to-orange-600 relative overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1533158628620-7e35717d36e8?w=800&h=400&fit=crop&q=80"
                 alt="Winner announcement"
@@ -852,7 +959,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             }}
             className="group relative bg-white rounded-xl overflow-hidden border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg"
           >
-            <div className="aspect-[2/1] bg-gradient-to-br from-blue-400 to-indigo-600 relative overflow-hidden">
+            <div className="aspect-video max-h-40 bg-gradient-to-br from-blue-400 to-indigo-600 relative overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&h=400&fit=crop&q=80"
                 alt="New round"
@@ -881,7 +988,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             }}
             className="group relative bg-white rounded-xl overflow-hidden border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-lg"
           >
-            <div className="aspect-[2/1] bg-gradient-to-br from-green-400 to-emerald-600 relative overflow-hidden">
+            <div className="aspect-video max-h-40 bg-gradient-to-br from-green-400 to-emerald-600 relative overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop&q=80"
                 alt="Bid update"
@@ -910,7 +1017,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             }}
             className="group relative bg-white rounded-xl overflow-hidden border-2 border-red-200 hover:border-red-400 transition-all hover:shadow-lg"
           >
-            <div className="aspect-[2/1] bg-gradient-to-br from-red-400 to-rose-600 relative overflow-hidden">
+            <div className="aspect-video max-h-40 bg-gradient-to-br from-red-400 to-rose-600 relative overflow-hidden">
               <img
                 src="https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&h=400&fit=crop&q=80"
                 alt="Last chance"
@@ -924,36 +1031,66 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             </div>
           </button>
 
-          {/* Template 6: Special Offer */}
-          <button
-            onClick={() => {
-              setNotificationData({
-                title: '🎁 Special Offer: Double Prize!',
-                body: 'This round has a special double prize pool! Join now for your chance to win 2x the rewards!',
-                url: '/'
-              });
-              setRichNotificationData({
-                ...richNotificationData,
-                image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80'
-              });
-            }}
-            className="group relative bg-white rounded-xl overflow-hidden border-2 border-pink-200 hover:border-pink-400 transition-all hover:shadow-lg"
-          >
-            <div className="aspect-[2/1] bg-gradient-to-br from-pink-400 to-purple-600 relative overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80"
-                alt="Special offer"
-                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-2 left-2 right-2">
-                <p className="text-white font-bold text-sm">🎁 Special Promotion</p>
-                <p className="text-white/90 text-xs mt-1">Highlight special offers and events</p>
+            {/* Template 6: Special Offer */}
+            <button
+              onClick={() => {
+                setNotificationData({
+                  title: '🎁 Special Offer: Double Prize!',
+                  body: 'This round has a special double prize pool! Join now for your chance to win 2x the rewards!',
+                  url: '/'
+                });
+                setRichNotificationData({
+                  ...richNotificationData,
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80'
+                });
+              }}
+              className="group relative bg-white rounded-xl overflow-hidden border-2 border-pink-200 hover:border-pink-400 transition-all hover:shadow-lg"
+            >
+              <div className="aspect-video max-h-40 bg-gradient-to-br from-pink-400 to-purple-600 relative overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1513151233558-d860c5398176?w=800&h=400&fit=crop&q=80"
+                  alt="Special offer"
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2">
+                  <p className="text-white font-bold text-sm">🎁 Special Promotion</p>
+                  <p className="text-white/90 text-xs mt-1">Highlight special offers and events</p>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+
+            {/* Template 7: Dream60 Festival Wishes */}
+            <button
+              onClick={() => {
+                setNotificationData({
+                  title: '🎊 Dream60 Festival Wishes!',
+                  body: 'Team Dream60 wishes you a joyful festival! Join us for special drops, gifts, and dazzling auctions today.',
+                  url: '/'
+                });
+                setRichNotificationData({
+                  ...richNotificationData,
+                  image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&h=500&fit=crop&q=80'
+                });
+              }}
+              className="group relative bg-white rounded-xl overflow-hidden border-2 border-amber-200 hover:border-amber-400 transition-all hover:shadow-lg"
+            >
+              <div className="aspect-video max-h-40 bg-gradient-to-br from-amber-400 to-rose-500 relative overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&h=500&fit=crop&q=80"
+                  alt="Festival wishes"
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-2 left-2 right-2">
+                  <p className="text-white font-bold text-sm">🎉 Dream60 Festival Wishes</p>
+                  <p className="text-white/90 text-xs mt-1">Bright, festive, and brand-forward</p>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
-      </div>
+
 
       {/* Info */}
       <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">

@@ -85,14 +85,19 @@ export const API_ENDPOINTS = {
   },
   
   // Push Notifications
-  pushNotification: {
-    vapidPublicKey: `${API_BASE_URL}/push-notification/vapid-public-key`,
-    subscribe: `${API_BASE_URL}/push-notification/subscribe`,
-    unsubscribe: `${API_BASE_URL}/push-notification/unsubscribe`,
-    sendToUser: `${API_BASE_URL}/push-notification/send-to-user`,
-    sendToAll: `${API_BASE_URL}/push-notification/send-to-all`,
-  },
-};
+    pushNotification: {
+      vapidPublicKey: `${API_BASE_URL}/push-notification/vapid-public-key`,
+      subscribe: `${API_BASE_URL}/push-notification/subscribe`,
+      unsubscribe: `${API_BASE_URL}/push-notification/unsubscribe`,
+      sendToUser: `${API_BASE_URL}/push-notification/send-to-user`,
+      sendToAll: `${API_BASE_URL}/push-notification/send-to-all`,
+      sendToSelected: `${API_BASE_URL}/push-notification/send-to-selected`,
+    },
+    admin: {
+      pushSubscriptions: `${API_BASE_URL}/admin/push-subscriptions`,
+    },
+  };
+
 
 // Helper function to build query string
 export const buildQueryString = (params: Record<string, any>): string => {

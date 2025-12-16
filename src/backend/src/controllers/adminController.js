@@ -752,6 +752,35 @@ const getPushSubscriptionStats = async (req, res) => {
   }
 };
 
+const deletePushSubscriptionAdmin = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const { subscriptionId } = req.params;
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || adminUser.userType !== 'ADMIN') {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
+    const subscription = await PushSubscription.findById(subscriptionId);
+    if (!subscription) {
+      return res.status(404).json({ success: false, message: 'Subscription not found' });
+    }
+
+    subscription.isActive = false;
+    await subscription.save();
+
+    return res.status(200).json({ success: true, message: 'Subscription removed successfully' });
+  } catch (err) {
+    console.error('Delete Push Subscription Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getUserStatistics,
@@ -763,4 +792,5 @@ module.exports = {
   deleteMasterAuctionAdmin,
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,
+  deletePushSubscriptionAdmin,
 };

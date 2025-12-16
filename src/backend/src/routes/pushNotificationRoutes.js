@@ -367,4 +367,7 @@ router.post('/send-to-user', pushController.sendToUser);
  */
 router.post('/send-to-all', pushController.sendToAllParticipants);
 
+// Send to selected user IDs (admin-only preferred)
+router.post('/send-to-selected', pushController.sendToSelectedUsers);
+
 module.exports = router;
