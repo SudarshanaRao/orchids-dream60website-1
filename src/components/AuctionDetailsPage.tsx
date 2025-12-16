@@ -340,57 +340,79 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Countdown timer for prize claim
-  useEffect(() => {
-    if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return;
+    // Countdown timer for prize claim
+    useEffect(() => {
+      if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return;
 
-    const updateTimer = () => {
-      // ✅ Current UTC time in milliseconds
-      const now = Date.now();
-      
-      // ✅ NEW: If in waiting queue, show time until claim window opens
-      if (isInWaitingQueue() && auction.claimWindowStartedAt) {
-        // ✅ Already UTC timestamp (number), no conversion needed
-        const windowStart = auction.claimWindowStartedAt;
-        let diff = windowStart - now;
-        
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
-        diff = diff - (330 * 60 * 1000);
-        
-        if (diff > 0) {
+      const updateTimer = () => {
+        const now = Date.now();
+
+        const getActiveWindow = () => {
+          const activeRank = auction.currentEligibleRank || 1;
+          let start = auction.claimWindowStartedAt;
+
+          if (!start && auction.winnersAnnouncedAt) {
+            start = auction.winnersAnnouncedAt + (activeRank - 1) * 15 * 60 * 1000;
+          }
+
+          if (!start) return null;
+
+          return {
+            start,
+            end: start + 15 * 60 * 1000,
+          };
+        };
+
+        const activeWindow = getActiveWindow();
+
+        if (isInWaitingQueue() && activeWindow) {
+          let diff = activeWindow.end - now;
+          diff = diff - (330 * 60 * 1000);
+
+          if (diff > 0) {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}m ${seconds}s`);
+            return;
+          }
+
+          setTimeLeft('Claim Window Soon');
+          return;
+        }
+
+        if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
+          let diff = activeWindow.start - now;
+          diff = diff - (330 * 60 * 1000);
+
+          if (diff <= 0 && diff > -(60 * 1000)) {
+            setTimeLeft('Claim Window Soon');
+            return;
+          }
+        }
+
+        if (auction.claimDeadline || activeWindow) {
+          const deadline = auction.claimDeadline || activeWindow?.end;
+          if (!deadline) return;
+
+          let diff = deadline - now;
+          diff = diff - (330 * 60 * 1000);
+
+          if (diff <= 0) {
+            setTimeLeft('EXPIRED');
+            return;
+          }
+
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          setTimeLeft(`Opens in ${minutes}m ${seconds}s`);
-          return;
+          setTimeLeft(`${minutes}m ${seconds}s`);
         }
-      }
-      
-      // ✅ Show time left until deadline when it's user's turn
-      if (auction.claimDeadline) {
-        // ✅ Already UTC timestamp (number), no conversion needed
-        const deadline = auction.claimDeadline;
-        let diff = deadline - now;
+      };
 
-        // ✅ SUBTRACT 330 MINUTES (330 * 60 * 1000 milliseconds)
-        diff = diff - (330 * 60 * 1000);
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
 
-        if (diff <= 0) {
-          setTimeLeft('EXPIRED');
-          return;
-        }
-
-        // ✅ Calculate remaining time directly in minutes and seconds
-        const minutes = Math.floor(diff / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeft(`${minutes}m ${seconds}s`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank]);
+      return () => clearInterval(interval);
+    }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt]);
 
   const handleClaimPrize = async () => {
     if (timeLeft === 'EXPIRED') {
