@@ -1810,16 +1810,24 @@ const getAuctionLeaderboard = async (req, res) => {
       status: auction.Status,
       totalParticipants: auction.participants?.length || 0,
       totalRounds: auction.roundCount || 4,
-      winners: auction.winners?.map(w => ({
+    winners: auction.winners?.map(w => {
+      const isPrizeClaimed = w.isPrizeClaimed === true
+        || w.isPrizeClaimed === 'true'
+        || w.prizeClaimStatus === 'CLAIMED'
+        || !!w.prizeClaimedAt;
+
+      return {
         rank: w.rank,
         playerId: w.playerId,
         playerUsername: w.playerUsername,
         prizeAmount: w.prizeAmount,
-        isPrizeClaimed: w.isPrizeClaimed || false,
+        isPrizeClaimed,
         prizeClaimedAt: w.prizeClaimedAt || null,
-        prizeClaimedBy: w.playerUsername || null, // The winner who claimed it
+        prizeClaimedBy: w.prizeClaimedBy || w.claimedBy || null,
         isCurrentUser: w.playerId === userId,
-      })) || [],
+      };
+    }) || [],
+
     };
     
     return res.status(200).json({

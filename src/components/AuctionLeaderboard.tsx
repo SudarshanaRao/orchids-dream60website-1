@@ -83,15 +83,14 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
             const normalizedWinners: WinnerData[] = (data.auction?.winners || []).map((winner: any) => {
               const isClaimed = winner?.isPrizeClaimed === true
                 || winner?.isPrizeClaimed === 'true'
-                || winner?.isPrizeClaimed === 'YES'
-                || winner?.isPrizeClaimed === 'CLAIMED'
-                || !!winner?.prizeClaimedAt
-                || !!winner?.prizeClaimedBy;
+                || winner?.isPrizeClaimStatus === 'CLAIMED'
+                || winner?.prizeClaimStatus === 'CLAIMED'
+                || !!winner?.prizeClaimedAt;
 
               return {
                 ...winner,
                 isPrizeClaimed: isClaimed,
-                prizeClaimedBy: winner?.prizeClaimedBy || (isClaimed ? winner?.playerUsername : winner?.prizeClaimedBy),
+                prizeClaimedBy: winner?.prizeClaimedBy || null,
               } as WinnerData;
             });
 

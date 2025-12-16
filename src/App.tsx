@@ -675,9 +675,10 @@ const App = () => {
   // ✅ NEW: Track if user just logged in to trigger immediate refresh
   const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
   // ✅ NEW: Store live auction data to pass to PrizeShowcase
-  const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
-  // ✅ NEW: Track if we're currently fetching live auction data
-  const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+    const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
+    const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+    const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
+
 
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
@@ -718,52 +719,55 @@ const App = () => {
   }, []); // Run once on mount
 
   // Check for existing session on app initialization
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        // Check for admin session first
-        const adminUserId = localStorage.getItem("admin_user_id");
-        if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
-          const adminEmail = localStorage.getItem("admin_email");
-          setAdminUser({
-            user_id: adminUserId,
-            username: 'admin_dream60',
-            email: adminEmail || 'dream60@gmail.com',
-            userType: 'ADMIN',
-            userCode: '#ADMIN',
-          });
-          if (currentPage === 'admin-login') {
-            setCurrentPage("admin-dashboard");
+    useEffect(() => {
+      const checkExistingSession = async () => {
+        try {
+          // Check for admin session first
+          const adminUserId = localStorage.getItem("admin_user_id");
+          if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
+            const adminEmail = localStorage.getItem("admin_email");
+            setAdminUser({
+              user_id: adminUserId,
+              username: 'admin_dream60',
+              email: adminEmail || 'dream60@gmail.com',
+              userType: 'ADMIN',
+              userCode: '#ADMIN',
+            });
+            if (currentPage === 'admin-login') {
+              setCurrentPage("admin-dashboard");
+            }
+            return;
           }
-          return;
+
+          // ✅ Check for regular user session - restore from localStorage only
+          const userId = localStorage.getItem("user_id");
+          const username = localStorage.getItem("username");
+          const email = localStorage.getItem("email");
+
+          if (!userId || !username) return; // No valid session
+
+          // ✅ Restore user from localStorage without API call
+          const user = mapUserData({
+            user_id: userId,
+            username: username,
+            email: email || '',
+          });
+
+          setCurrentUser(user);
+          console.log('✅ Session restored from localStorage');
+        } catch (error) {
+          console.error("Session restore error:", error);
+          localStorage.removeItem("user_id");
+          localStorage.removeItem("username");
+          localStorage.removeItem("email");
+        } finally {
+          setIsRestoringSession(false);
         }
+      };
 
-        // ✅ Check for regular user session - restore from localStorage only
-        const userId = localStorage.getItem("user_id");
-        const username = localStorage.getItem("username");
-        const email = localStorage.getItem("email");
+      checkExistingSession();
+    }, [currentPage]);
 
-        if (!userId || !username) return; // No valid session
-
-        // ✅ Restore user from localStorage without API call
-        const user = mapUserData({
-          user_id: userId,
-          username: username,
-          email: email || '',
-        });
-
-        setCurrentUser(user);
-        console.log('✅ Session restored from localStorage');
-      } catch (error) {
-        console.error("Session restore error:", error);
-        localStorage.removeItem("user_id");
-        localStorage.removeItem("username");
-        localStorage.removeItem("email");
-      }
-    };
-
-    checkExistingSession();
-  }, [currentPage]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1733,34 +1737,44 @@ const App = () => {
   }
 
   if (currentPage === 'auction-leaderboard') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          {currentUser && currentHourlyAuctionId ? (
-            <AuctionLeaderboard
-              hourlyAuctionId={currentHourlyAuctionId}
-              userId={currentUser.id}
-              onBack={handleBackToGame}
-            />
-          ) : (
-            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
-              <div className="text-center space-y-4">
-                <p className="text-xl font-semibold text-purple-800">Auction leaderboard unavailable</p>
-                <p className="text-sm text-purple-600">Please return to the auction page and try again.</p>
-                <button
-                  onClick={handleBackToGame}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow"
-                >
-                  Back to auctions
-                </button>
+      const canShowLeaderboard = currentUser && currentHourlyAuctionId;
+
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            {canShowLeaderboard ? (
+              <AuctionLeaderboard
+                hourlyAuctionId={currentHourlyAuctionId as string}
+                userId={currentUser?.id as string}
+                onBack={handleBackToGame}
+              />
+            ) : isRestoringSession ? (
+              <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
+                <div className="text-center space-y-3">
+                  <div className="inline-block w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+                  <p className="text-sm text-purple-700">Restoring your session...</p>
+                </div>
               </div>
-            </div>
-          )}
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+            ) : (
+              <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
+                <div className="text-center space-y-4">
+                  <p className="text-xl font-semibold text-purple-800">Auction leaderboard unavailable</p>
+                  <p className="text-sm text-purple-600">Please return to the auction page and try again.</p>
+                  <button
+                    onClick={handleBackToGame}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow"
+                  >
+                    Back to auctions
+                  </button>
+                </div>
+              </div>
+            )}
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
 
   if (currentPage === 'profile' && currentUser) {
     return (
