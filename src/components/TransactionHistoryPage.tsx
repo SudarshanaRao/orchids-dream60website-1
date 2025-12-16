@@ -22,6 +22,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
+import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface TransactionHistoryPageProps {
   user: { id: string; username: string };
@@ -112,6 +113,17 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     if (type === 'PRIZE_CLAIM') return 'Prize Claim';
     if (type === 'ENTRY_FEE') return 'Entry Fee';
     return type || 'Payment';
+  };
+
+  const statusBadgeClass = (status?: string) => {
+    const normalized = String(status || '').toLowerCase();
+    if (normalized === 'paid' || normalized === 'captured' || normalized === 'success') {
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    }
+    if (normalized === 'failed') {
+      return 'bg-red-100 text-red-800 border-red-200';
+    }
+    return 'bg-purple-100 text-purple-800 border-purple-200';
   };
 
   const paymentMethodLabel = (tx?: TransactionItem | null) => {
@@ -281,13 +293,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     <div className="text-[11px] text-purple-600">{paymentTypeLabel(item.paymentType)}</div>
                   </div>
                 </div>
-                <Badge
-                  className={`w-fit ${
-                    item.paymentType === 'PRIZE_CLAIM'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-purple-50 text-purple-700 border-purple-200'
-                  }`}
-                >
+                  <Badge className={`w-fit border ${statusBadgeClass(item.status)}`}>
                   {item.status || 'pending'}
                 </Badge>
               </div>
@@ -339,33 +345,22 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     return <Info className="w-4 h-4" />;
   }, [selectedTransaction]);
 
-  if (selectedTransaction) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
-        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <Button
-                variant="ghost"
-                onClick={closeDetails}
-                className="flex items-center gap-2 text-purple-700 hover:text-purple-800"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </Button>
-              <div className="flex items-center gap-3">
-                {detailLoading && (
-                  <div className="text-xs text-purple-600 animate-pulse">Refreshing...</div>
-                )}
-                <div className="flex items-center gap-2 text-purple-800 font-semibold">
-                  <IndianRupee className="w-4 h-4" />
-                  Transaction Details
-                </div>
-              </div>
+    if (selectedTransaction) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+          <SupportCenterHeader
+            title="Transaction Details"
+            icon={<IndianRupee className="w-6 h-6" />}
+            onBack={closeDetails}
+            backLabel="Back to Transactions"
+          />
+          <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+            <div className="flex items-center justify-end mb-4 sm:mb-6">
+              {detailLoading && <div className="text-xs text-purple-600 animate-pulse">Refreshing...</div>}
             </div>
 
-
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <Card className="border-2 border-purple-200/70 bg-white/90 backdrop-blur-xl shadow-xl">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+            <Card className="border-2 border-purple-200/70 bg-white/90 backdrop-blur-xl shadow-xl">
             <CardHeader className="bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-purple-50/90 border-b-2 border-purple-200/60 p-4 sm:p-5 flex flex-col gap-3">
               <div className="flex flex-wrap items-start gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
@@ -376,13 +371,22 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                   <div className="text-2xl sm:text-3xl font-bold text-purple-900">
                     ₹{selectedTransaction.amount?.toLocaleString('en-IN') || 0}
                   </div>
-                  {selectedTransaction.productValue !== undefined && selectedTransaction.productValue !== null && (
-                    <div className="text-xs text-purple-600">Prize worth: ₹{selectedTransaction.productValue.toLocaleString('en-IN')}</div>
-                  )}
-                  <div className="text-xs text-purple-600 mt-1">Paid on {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
+                    {selectedTransaction.productValue !== undefined && selectedTransaction.productValue !== null && (
+                      <div className="text-xs text-purple-600">Prize worth: ₹{selectedTransaction.productValue.toLocaleString('en-IN')}</div>
+                    )}
+                    {selectedTransaction.paymentType === 'PRIZE_CLAIM' &&
+                      selectedTransaction.productValue !== undefined &&
+                      selectedTransaction.productValue !== null && (
+                        <div
+                          className={`text-xs font-semibold ${(selectedTransaction.productValue - (selectedTransaction.amount || 0)) >= 0 ? 'text-emerald-700' : 'text-red-700'}`}
+                        >
+                          Profit (before entry fee): {(selectedTransaction.productValue - (selectedTransaction.amount || 0)) >= 0 ? '+' : '-'}₹{Math.abs(selectedTransaction.productValue - (selectedTransaction.amount || 0)).toLocaleString('en-IN')}
+                        </div>
+                      )}
+                    <div className="text-xs text-purple-600 mt-1">Paid on {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
                 </div>
                 <div className="flex flex-col items-end gap-2 ml-auto min-w-[160px]">
-                  <Badge className="bg-purple-100 text-purple-800 border border-purple-200">
+                    <Badge className={`border ${statusBadgeClass(selectedTransaction.status)}`}>
                     {selectedTransaction.status || 'pending'}
                   </Badge>
                   <div className="text-[11px] text-purple-700 flex items-center gap-2">
@@ -403,7 +407,12 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     </div>
                     <div className="text-sm text-purple-900 font-semibold">{paymentTypeLabel(selectedTransaction.paymentType)}</div>
                     <div className="text-xs text-purple-600">Paid at {formatDateTime(selectedTransaction.paidAt || selectedTransaction.createdAt)}</div>
-                    <div className="text-xs text-purple-600">Status: {selectedTransaction.status || 'pending'}</div>
+                      <div className="text-xs text-purple-600">
+                        Status:{' '}
+                        <span className={`font-semibold ${String(selectedTransaction.status || '').toLowerCase() === 'paid' ? 'text-emerald-700' : 'text-purple-700'}`}>
+                          {selectedTransaction.status || 'pending'}
+                        </span>
+                      </div>
                   </CardContent>
                 </Card>
 
@@ -475,17 +484,16 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50" data-whatsnew-target="transactions">
-      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <Button variant="ghost" onClick={onBack} className="flex items-center gap-2 text-purple-700 hover:text-purple-800">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-        </div>
-
-          <motion.div
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50" data-whatsnew-target="transactions">
+        <SupportCenterHeader
+          title="Transaction History"
+          icon={<IndianRupee className="w-6 h-6" />}
+          onBack={onBack}
+          backLabel="Back to Home"
+        />
+        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+            <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}

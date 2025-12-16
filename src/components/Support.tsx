@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, DollarSign, Trophy, AlertCircle, Search } from 'lucide-react';
+import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, DollarSign, Trophy, AlertCircle, Search, Send } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';

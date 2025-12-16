@@ -21,6 +21,7 @@ const prizeClaimRoutes = require('./src/routes/prizeClaim');
 const emailRoutes = require('./src/routes/emailRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const pushNotificationRoutes = require('./src/routes/pushNotificationRoutes');
+const supportChatRoutes = require('./src/routes/supportChat');
 
 const app = express();
 
@@ -165,6 +166,7 @@ app.use('/user', userHistoryRoutes);
 app.use('/prize-claim', prizeClaimRoutes);
 app.use('/contact', contactRoutes);
 app.use('/push-notification', pushNotificationRoutes);
+app.use('/support-chat', supportChatRoutes);
 
 // --------------------
 // MongoDB Connection

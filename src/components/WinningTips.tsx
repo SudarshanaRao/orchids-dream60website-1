@@ -2,6 +2,7 @@ import { ArrowLeft, Lightbulb, Target, Timer, ShieldCheck, Gift } from 'lucide-r
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface WinningTipsProps {
   onBack: () => void;
@@ -52,14 +53,13 @@ export function WinningTips({ onBack, onNavigate }: WinningTipsProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+      <SupportCenterHeader
+        title="Winning Tips"
+        icon={<Lightbulb className="w-6 h-6" />}
+        onBack={handleBack}
+        backLabel="Back to Support"
+      />
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-4 sm:space-y-6">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2 text-purple-700 hover:text-purple-800">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-          </div>
-
         <Card className="border-2 border-purple-200/70 shadow-xl overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white p-4 sm:p-6">
             <CardTitle className="text-2xl sm:text-3xl font-bold flex items-center gap-2">

@@ -3,6 +3,7 @@ const router = express.Router();
 const AuctionHistory = require('../models/AuctionHistory');
 const RazorpayPayment = require('../models/RazorpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
+const DailyAuction = require('../models/DailyAuction');
 
 /**
  * @swagger
@@ -620,8 +621,15 @@ router.get('/stats', async (req, res) => {
  *       200:
  *         description: Transactions fetched successfully
  */
-const mapPayment = (payment, auctionMeta = {}) => {
+const mapPayment = (payment, auctionMeta = {}, dailyMeta = {}) => {
   const paymentType = payment.paymentType || 'ENTRY_FEE';
+
+  // Source of truth for product worth: DailyAuction prizeValue (when available)
+  let resolvedProductValue = payment.productValue ?? null;
+  if (paymentType === 'PRIZE_CLAIM' && dailyMeta?.prizeValue !== undefined && dailyMeta?.prizeValue !== null) {
+    resolvedProductValue = dailyMeta.prizeValue;
+  }
+
   return {
     id: payment._id,
     paymentType,
@@ -631,13 +639,13 @@ const mapPayment = (payment, auctionMeta = {}) => {
     orderId: payment.razorpayOrderId,
     paymentId: payment.razorpayPaymentId,
     auctionId: payment.auctionId,
-    auctionName: payment.auctionName || auctionMeta.auctionName || null,
-    timeSlot: payment.auctionTimeSlot || payment.productTimeSlot || auctionMeta.timeSlot || null,
+    auctionName: payment.auctionName || dailyMeta.auctionName || auctionMeta.auctionName || null,
+    timeSlot: payment.auctionTimeSlot || payment.productTimeSlot || dailyMeta.timeSlot || auctionMeta.timeSlot || null,
     roundNumber: payment.roundNumber || null,
-    productName: payment.productName || payment.auctionName || auctionMeta.auctionName || null,
-    productTimeSlot: payment.productTimeSlot || payment.auctionTimeSlot || auctionMeta.timeSlot || null,
-    productValue: payment.productValue ?? null,
-    prizeWorth: payment.productValue ?? null,
+    productName: payment.productName || payment.auctionName || dailyMeta.auctionName || auctionMeta.auctionName || null,
+    productTimeSlot: payment.productTimeSlot || payment.auctionTimeSlot || dailyMeta.timeSlot || auctionMeta.timeSlot || null,
+    productValue: resolvedProductValue,
+    prizeWorth: resolvedProductValue,
     productImage: payment.productImage ?? null,
     paidAt: payment.paidAt,
     paymentMethod: payment.paymentMethod || payment.paymentDetails?.method || null,
@@ -666,23 +674,44 @@ router.get('/transactions', async (req, res) => {
     const auctionIds = [...new Set(payments.map(p => p.auctionId).filter(Boolean))];
     const auctionMap = {};
 
-    if (auctionIds.length > 0) {
-      const auctions = await HourlyAuction.find({ hourlyAuctionId: { $in: auctionIds } })
-        .select('hourlyAuctionId auctionName TimeSlot')
-        .lean();
+      if (auctionIds.length > 0) {
+        const auctions = await HourlyAuction.find({ hourlyAuctionId: { $in: auctionIds } })
+          .select('hourlyAuctionId auctionName TimeSlot')
+          .lean();
 
-      auctions.forEach((a) => {
-        auctionMap[a.hourlyAuctionId] = {
-          auctionName: a.auctionName,
-          timeSlot: a.TimeSlot,
-        };
+        auctions.forEach((a) => {
+          auctionMap[a.hourlyAuctionId] = {
+            auctionName: a.auctionName,
+            timeSlot: a.TimeSlot,
+          };
+        });
+      }
+
+      // Resolve product worth from DailyAuction (dailyAuctions) when available
+      const dailyMap = {};
+      if (auctionIds.length > 0) {
+        const dailyDocs = await DailyAuction.find({ 'dailyAuctionConfig.hourlyAuctionId': { $in: auctionIds } })
+          .select('dailyAuctionConfig.hourlyAuctionId dailyAuctionConfig.auctionName dailyAuctionConfig.prizeValue dailyAuctionConfig.TimeSlot')
+          .lean();
+
+        dailyDocs.forEach((doc) => {
+          (doc.dailyAuctionConfig || []).forEach((cfg) => {
+            if (!cfg?.hourlyAuctionId) return;
+            if (!auctionIds.includes(cfg.hourlyAuctionId)) return;
+            dailyMap[cfg.hourlyAuctionId] = {
+              auctionName: cfg.auctionName,
+              timeSlot: cfg.TimeSlot,
+              prizeValue: cfg.prizeValue,
+            };
+          });
+        });
+      }
+
+      const mapped = payments.map((p) => {
+        const auctionMeta = auctionMap[p.auctionId] || {};
+        const dailyMeta = dailyMap[p.auctionId] || {};
+        return mapPayment(p, auctionMeta, dailyMeta);
       });
-    }
-
-    const mapped = payments.map((p) => {
-      const auctionMeta = auctionMap[p.auctionId] || {};
-      return mapPayment(p, auctionMeta);
-    });
 
     const entryFees = mapped.filter((m) => m.paymentType === 'ENTRY_FEE');
     const prizeClaims = mapped.filter((m) => m.paymentType === 'PRIZE_CLAIM');
@@ -753,23 +782,39 @@ router.get('/transactions/:id', async (req, res) => {
       });
     }
 
-    let auctionMeta = {};
-    if (payment.auctionId) {
-      const auction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId })
-        .select('hourlyAuctionId auctionName TimeSlot')
-        .lean();
-      if (auction) {
-        auctionMeta = {
-          auctionName: auction.auctionName,
-          timeSlot: auction.TimeSlot,
-        };
+      let auctionMeta = {};
+      if (payment.auctionId) {
+        const auction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId })
+          .select('hourlyAuctionId auctionName TimeSlot')
+          .lean();
+        if (auction) {
+          auctionMeta = {
+            auctionName: auction.auctionName,
+            timeSlot: auction.TimeSlot,
+          };
+        }
       }
-    }
 
-    return res.status(200).json({
-      success: true,
-      data: mapPayment(payment, auctionMeta),
-    });
+      let dailyMeta = {};
+      if (payment.auctionId) {
+        const dailyDoc = await DailyAuction.findOne({ 'dailyAuctionConfig.hourlyAuctionId': payment.auctionId })
+          .select('dailyAuctionConfig.hourlyAuctionId dailyAuctionConfig.auctionName dailyAuctionConfig.prizeValue dailyAuctionConfig.TimeSlot')
+          .lean();
+
+        const cfg = (dailyDoc?.dailyAuctionConfig || []).find((c) => c?.hourlyAuctionId === payment.auctionId);
+        if (cfg) {
+          dailyMeta = {
+            auctionName: cfg.auctionName,
+            timeSlot: cfg.TimeSlot,
+            prizeValue: cfg.prizeValue,
+          };
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: mapPayment(payment, auctionMeta, dailyMeta),
+      });
   } catch (error) {
     console.error('❌ [USER-TRANSACTION-DETAIL] Error fetching transaction detail:', error);
     return res.status(500).json({
