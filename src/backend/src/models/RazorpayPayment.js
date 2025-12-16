@@ -37,6 +37,18 @@ const RazorpayPaymentSchema = new mongoose.Schema(
     },
     orderResponse: Object,
     paymentResponse: Object,
+
+    // Extended transaction metadata for detailed history
+    auctionName: { type: String, default: null },
+    auctionTimeSlot: { type: String, default: null },
+    roundNumber: { type: Number, default: null },
+    productName: { type: String, default: null },
+    productTimeSlot: { type: String, default: null },
+    productValue: { type: Number, default: null },
+    productImage: { type: String, default: null },
+    paidAt: { type: Date, default: null },
+    paymentMethod: { type: String, default: null },
+    paymentDetails: { type: Object, default: null },
   },
   { timestamps: true }
 );

@@ -95,6 +95,40 @@ const fetchServerTime = async () => {
   });
 };
 
+// Fetch Razorpay payment details for method & metadata
+const fetchRazorpayPaymentDetails = async (paymentId) => {
+  try {
+    const payment = await razorpay.payments.fetch(paymentId);
+    if (!payment) return null;
+
+    const paidAt = payment.captured_at
+      ? new Date(payment.captured_at * 1000)
+      : payment.created_at
+        ? new Date(payment.created_at * 1000)
+        : new Date();
+
+    const details = {
+      method: payment.method,
+      card: payment.card
+        ? {
+            last4: payment.card.last4,
+            network: payment.card.network,
+            type: payment.card.type,
+            issuer: payment.card.issuer,
+          }
+        : undefined,
+      bank: payment.bank,
+      wallet: payment.wallet,
+      vpa: payment.vpa,
+    };
+
+    return { paidAt, details };
+  } catch (error) {
+    console.error('❌ [RAZORPAY] Failed to fetch payment details:', { paymentId, error });
+    return null;
+  }
+};
+
 /**
  * Sync participant data from HourlyAuction to DailyAuction
  * This ensures dailyAuctionConfig.participants stays in sync with hourlyAuction.participants
@@ -300,7 +334,14 @@ exports.createHourlyAuctionOrder = async (req, res) => {
       currency,
       razorpayOrderId: order.id,
       status: 'created',
-      orderResponse: order
+      orderResponse: order,
+      auctionName: hourlyAuction.auctionName,
+      auctionTimeSlot: hourlyAuction.TimeSlot,
+      roundNumber: hourlyAuction.currentRound ?? 1,
+      productName: hourlyAuction.auctionName,
+      productTimeSlot: hourlyAuction.TimeSlot,
+      productValue: hourlyAuction.prizeValue,
+      productImage: hourlyAuction.imageUrl || null,
     });
 
     console.log('Razorpay order created successfully:', {
