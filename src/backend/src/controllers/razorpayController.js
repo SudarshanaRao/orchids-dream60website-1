@@ -491,6 +491,19 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
       amountInRupees: payment.amount
     });
 
+      // Fetch method + paid timestamp for richer history
+      try {
+        const paymentMeta = await fetchRazorpayPaymentDetails(razorpay_payment_id);
+        if (paymentMeta) {
+          payment.paymentMethod = paymentMeta.details?.method || payment.paymentMethod || null;
+          payment.paymentDetails = paymentMeta.details || payment.paymentDetails || null;
+          payment.paidAt = paymentMeta.paidAt || payment.paidAt;
+          await payment.save();
+        }
+      } catch (metaError) {
+        console.error('⚠️ [RAZORPAY] Failed to enrich payment details:', metaError);
+      }
+
     // 3. Find the hourly auction by auctionId (UUID)
     const hourlyAuction = await HourlyAuction.findOne({ 
       hourlyAuctionId: payment.auctionId 
@@ -920,17 +933,31 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
       amountInRupees: payment.amount
     });
 
-    // 3. Update auction history with prize claim
-    const claimData = {
-      upiId: upiId.trim(),
-      paymentReference: razorpay_payment_id,
-    };
-    
-    const updatedEntry = await AuctionHistory.submitPrizeClaim(
-      payment.userId,
-      payment.auctionId,
-      claimData
-    );
+  // Enrich payment method + paidAt for history before updating claim
+  try {
+    const paymentMeta = await fetchRazorpayPaymentDetails(razorpay_payment_id);
+    if (paymentMeta) {
+      payment.paymentMethod = paymentMeta.details?.method || payment.paymentMethod || null;
+      payment.paymentDetails = paymentMeta.details || payment.paymentDetails || null;
+      payment.paidAt = paymentMeta.paidAt || payment.paidAt;
+      await payment.save();
+    }
+  } catch (metaError) {
+    console.error('⚠️ [RAZORPAY] Failed to enrich prize claim payment details:', metaError);
+  }
+
+  // 3. Update auction history with prize claim
+  const claimData = {
+    upiId: upiId.trim(),
+    paymentReference: razorpay_payment_id,
+  };
+  
+  const updatedEntry = await AuctionHistory.submitPrizeClaim(
+    payment.userId,
+    payment.auctionId,
+    claimData
+  );
+
 
     // ✅ NEW: Mark ALL other pending winners' claims as EXPIRED
     // This ensures other winners in queue know the prize has been claimed

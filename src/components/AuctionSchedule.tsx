@@ -288,7 +288,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
   }
 
   return (
-    <div className="relative space-y-6">
+    <div className="relative space-y-6" data-whatsnew-target="auction-schedule">
       {/* Header Section - No Card Background */}
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-4">

@@ -262,14 +262,14 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         if (path === '/profile') return 'profile';
         if (path === '/history') return 'history';
         if (path.startsWith('/history/')) return 'history';
-        if (path === '/transactions') return 'transactions';
+        if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
         if (path === '/leaderboard') return 'leaderboard';
         if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
         return 'game';
       });
 
-  const TUTORIAL_ID = 'whatsnew_transactions_pwa_notifications_v1';
+  const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
@@ -291,28 +291,28 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
-      else if (path === '/support') setCurrentPage('support');
-      else if (path === '/contact') setCurrentPage('contact');
-      else if (path === '/profile') setCurrentPage('profile');
-        else if (path === '/history' || path.startsWith('/history/')) {
-          setCurrentPage('history');
-          // ✅ If navigating back from details to history list, clear selected auction
-          if (path === '/history') {
-            setSelectedAuctionDetails(null);
+        else if (path === '/support') setCurrentPage('support');
+        else if (path === '/contact') setCurrentPage('contact');
+        else if (path === '/profile') setCurrentPage('profile');
+          else if (path === '/history' || path.startsWith('/history/')) {
+            setCurrentPage('history');
+            // ✅ If navigating back from details to history list, clear selected auction
+            if (path === '/history') {
+              setSelectedAuctionDetails(null);
+            }
+          } else if (path === '/transactions' || path.startsWith('/transactions/')) {
+            setCurrentPage('transactions');
+          } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+          else if (path === '/auction-leaderboard') {
+            setCurrentPage('auction-leaderboard');
+            const params = new URLSearchParams(window.location.search);
+            const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
+            if (urlHourlyId) {
+              setCurrentHourlyAuctionId(urlHourlyId);
+              sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
+            }
           }
-        } else if (path === '/transactions') {
-          setCurrentPage('transactions');
-        } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-        else if (path === '/auction-leaderboard') {
-          setCurrentPage('auction-leaderboard');
-          const params = new URLSearchParams(window.location.search);
-          const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
-          if (urlHourlyId) {
-            setCurrentHourlyAuctionId(urlHourlyId);
-            sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
-          }
-        }
-        else setCurrentPage('game');
+          else setCurrentPage('game');
       };
 
 
@@ -1363,7 +1363,17 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       id: 'transactions',
       title: 'Transaction History (new)',
       description: 'See every payment and payout in one place.',
-      targetElement: '[data-whatsnew-target="transactions"]',
+      targetElement: '[data-whatsnew-target="transactions-hero"]',
+      position: 'bottom' as const,
+      action: () => {
+        handleNavigate('transactions');
+      },
+    },
+    {
+      id: 'transaction-details',
+      title: 'Drill into transaction details',
+      description: 'Tap any card to see order IDs, payment method, round, and time slot.',
+      targetElement: '[data-whatsnew-target="transactions-list"]',
       position: 'bottom' as const,
       action: () => {
         handleNavigate('transactions');
@@ -1398,6 +1408,16 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       },
       action: () => {
         handleNavigate('profile');
+      },
+    },
+    {
+      id: 'auction-schedule',
+      title: 'Check today’s auction schedule',
+      description: 'Preview every slot and prize for the day.',
+      targetElement: '[data-whatsnew-target="auction-schedule"]',
+      position: 'bottom' as const,
+      action: () => {
+        handleNavigate('game');
       },
     },
   ];

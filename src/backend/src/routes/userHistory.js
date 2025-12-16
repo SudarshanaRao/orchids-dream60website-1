@@ -620,6 +620,32 @@ router.get('/stats', async (req, res) => {
  *       200:
  *         description: Transactions fetched successfully
  */
+const mapPayment = (payment, auctionMeta = {}) => {
+  const paymentType = payment.paymentType || 'ENTRY_FEE';
+  return {
+    id: payment._id,
+    paymentType,
+    amount: payment.amount,
+    currency: payment.currency || 'INR',
+    status: payment.status,
+    orderId: payment.razorpayOrderId,
+    paymentId: payment.razorpayPaymentId,
+    auctionId: payment.auctionId,
+    auctionName: payment.auctionName || auctionMeta.auctionName || null,
+    timeSlot: payment.auctionTimeSlot || payment.productTimeSlot || auctionMeta.timeSlot || null,
+    roundNumber: payment.roundNumber || null,
+    productName: payment.productName || payment.auctionName || auctionMeta.auctionName || null,
+    productTimeSlot: payment.productTimeSlot || payment.auctionTimeSlot || auctionMeta.timeSlot || null,
+    productValue: payment.productValue ?? null,
+    productImage: payment.productImage ?? null,
+    paidAt: payment.paidAt,
+    paymentMethod: payment.paymentMethod,
+    paymentDetails: payment.paymentDetails,
+    createdAt: payment.createdAt,
+    updatedAt: payment.updatedAt,
+  };
+};
+
 router.get('/transactions', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -653,22 +679,8 @@ router.get('/transactions', async (req, res) => {
     }
 
     const mapped = payments.map((p) => {
-      const paymentType = p.paymentType || 'ENTRY_FEE';
       const auctionMeta = auctionMap[p.auctionId] || {};
-
-      return {
-        paymentType,
-        amount: p.amount,
-        currency: p.currency || 'INR',
-        status: p.status,
-        orderId: p.razorpayOrderId,
-        paymentId: p.razorpayPaymentId,
-        auctionId: p.auctionId,
-        auctionName: auctionMeta.auctionName || null,
-        timeSlot: auctionMeta.timeSlot || null,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
-      };
+      return mapPayment(p, auctionMeta);
     });
 
     const entryFees = mapped.filter((m) => m.paymentType === 'ENTRY_FEE');
@@ -687,6 +699,61 @@ router.get('/transactions', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch user transactions',
+      error: error.message,
+    });
+  }
+});
+
+router.get('/transactions/:id', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const { id } = req.params;
+
+    if (!userId || !id) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId and transaction id are required',
+      });
+    }
+
+    const payment = await RazorpayPayment.findOne({
+      userId,
+      $or: [
+        { razorpayOrderId: id },
+        { razorpayPaymentId: id },
+        { _id: id },
+      ],
+    }).lean();
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found',
+      });
+    }
+
+    let auctionMeta = {};
+    if (payment.auctionId) {
+      const auction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId })
+        .select('hourlyAuctionId auctionName TimeSlot')
+        .lean();
+      if (auction) {
+        auctionMeta = {
+          auctionName: auction.auctionName,
+          timeSlot: auction.TimeSlot,
+        };
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: mapPayment(payment, auctionMeta),
+    });
+  } catch (error) {
+    console.error('❌ [USER-TRANSACTION-DETAIL] Error fetching transaction detail:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch transaction detail',
       error: error.message,
     });
   }

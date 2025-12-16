@@ -453,7 +453,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                               size="sm"
                             >
                               <IndianRupee className="w-4 h-4 mr-1.5" />
-                              ₹ Transactions
+                              Transactions
                             </Button>
                           </motion.div>
 

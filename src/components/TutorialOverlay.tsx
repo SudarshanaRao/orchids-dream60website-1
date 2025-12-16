@@ -47,27 +47,6 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, isVisible, steps]);
 
-  const handleNext = (fromSkip?: boolean) => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      handleComplete(fromSkip);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep === 0) return;
-    setCurrentStep((prev) => Math.max(0, prev - 1));
-  };
-
-  const handleSkip = () => {
-    handleComplete(true);
-  };
-
-  const handleClose = () => {
-    handleComplete(true);
-  };
-
   const getVisibleTarget = (selector: string) => {
     if (typeof document === 'undefined') return null;
     const nodes = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
@@ -90,6 +69,37 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     if (attempt < 6) {
       setTimeout(() => highlightTarget(selector, attempt + 1), 200);
     }
+  };
+
+  // Auto-highlight when step changes
+  useEffect(() => {
+    if (!isVisible) return;
+    const step = steps[currentStep];
+    if (step?.targetElement) {
+      setTimeout(() => highlightTarget(step.targetElement), 250);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, isVisible]);
+
+  const handleNext = (fromSkip?: boolean) => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep((prev) => prev + 1);
+    } else {
+      handleComplete(fromSkip);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep === 0) return;
+    setCurrentStep((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleSkip = () => {
+    handleComplete(true);
+  };
+
+  const handleClose = () => {
+    handleComplete(true);
   };
 
   const handleTryNow = () => {
@@ -127,6 +137,7 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
 
   const step = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
+  const isLastStep = currentStep === steps.length - 1;
 
   return (
     <div className="fixed bottom-4 right-4 z-[9999] max-w-[calc(100vw-24px)]">
@@ -189,10 +200,10 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
               Try now
             </button>
             <button
-              onClick={() => handleNext()}
+              onClick={() => (isLastStep ? handleComplete(false) : handleNext())}
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 text-white shadow-md hover:shadow-lg"
             >
-              {currentStep < steps.length - 1 ? (step.actionLabel || 'Next') : 'Done'}
+              {isLastStep ? 'Start journey' : (step.actionLabel || 'Next')}
               <ChevronRight className="w-4 h-4 inline ml-1" />
             </button>
           </div>

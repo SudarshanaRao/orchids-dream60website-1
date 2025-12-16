@@ -74,6 +74,7 @@ export const API_ENDPOINTS = {
       updatePreferences: `${API_BASE_URL}/auth/me/preferences`,
       delete: `${API_BASE_URL}/user/delete`,
       transactions: `${API_BASE_URL}/user/transactions`,
+      transactionDetail: `${API_BASE_URL}/user/transactions`,
     },
 
   

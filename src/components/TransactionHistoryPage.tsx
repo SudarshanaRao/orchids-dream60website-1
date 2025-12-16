@@ -52,7 +52,9 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     vouchers: TransactionItem[];
   }>({ entryFees: [], prizeClaims: [], vouchers: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionItem | null>(null);
+  const DETAIL_STORAGE_KEY = 'd60_last_transaction_detail';
 
   const formatDateTime = (value?: string | number | Date | null) => {
     if (!value) return '--';
@@ -128,10 +130,54 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
+  const fetchTransactionDetail = async (orderId: string) => {
+    setDetailLoading(true);
+    try {
+      const queryString = buildQueryString({ userId: user.id });
+      const response = await fetch(`${API_ENDPOINTS.user.transactionDetail}/${encodeURIComponent(orderId)}${queryString}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch transaction detail');
+      }
+      const result = await response.json();
+      if (result?.data) {
+        setSelectedTransaction(result.data);
+        sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(result.data));
+      }
+    } catch (error) {
+      console.error('Error fetching transaction detail:', error);
+      toast.error('Could not load transaction details');
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.pathname.startsWith('/transactions/details')) {
+        const orderId = url.searchParams.get('orderId');
+        if (orderId) {
+          fetchTransactionDetail(orderId);
+        } else {
+          const cached = sessionStorage.getItem(DETAIL_STORAGE_KEY);
+          if (cached) {
+            setSelectedTransaction(JSON.parse(cached));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to hydrate transaction detail from URL/storage:', error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.id]);
+
   const openDetails = (tx: TransactionItem) => {
     setSelectedTransaction(tx);
+    sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(tx));
+    const orderId = tx.orderId || tx.paymentId;
     try {
-      window.history.pushState({}, '', '/transactions/details');
+      const path = orderId ? `/transactions/details?orderId=${encodeURIComponent(orderId)}` : '/transactions/details';
+      window.history.pushState({}, '', path);
     } catch (_) {
       // no-op
     }
@@ -139,6 +185,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
   const closeDetails = () => {
     setSelectedTransaction(null);
+    sessionStorage.removeItem(DETAIL_STORAGE_KEY);
     try {
       window.history.pushState({}, '', '/transactions');
     } catch (_) {
@@ -170,14 +217,14 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     }
 
     return (
-      <div className="space-y-2 sm:space-y-3">
-        {items.map((item, idx) => (
-          <Card
-            key={`${item.orderId || item.paymentId || idx}`}
-            className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md transition"
-            onClick={() => openDetails(item)}
-            role="button"
-          >
+        <div className="space-y-2 sm:space-y-3" data-whatsnew-target="transactions-list">
+          {items.map((item, idx) => (
+            <Card
+              key={`${item.orderId || item.paymentId || idx}`}
+              className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md transition"
+              onClick={() => openDetails(item)}
+              role="button"
+            >
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -207,10 +254,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               </div>
 
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-purple-700">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{formatDateTime(item.createdAt)}</span>
-                </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{formatDateTime(item.paidAt || item.createdAt)}</span>
+                  </div>
+
                 {item.auctionId && (
                   <div className="flex items-center gap-1">
                     <Target className="w-3.5 h-3.5" />
@@ -248,20 +296,26 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
         <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <Button
-              variant="ghost"
-              onClick={closeDetails}
-              className="flex items-center gap-2 text-purple-700 hover:text-purple-800"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <div className="flex items-center gap-2 text-purple-800 font-semibold">
-              <IndianRupee className="w-4 h-4" />
-              Transaction Details
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <Button
+                variant="ghost"
+                onClick={closeDetails}
+                className="flex items-center gap-2 text-purple-700 hover:text-purple-800"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <div className="flex items-center gap-3">
+                {detailLoading && (
+                  <div className="text-xs text-purple-600 animate-pulse">Refreshing...</div>
+                )}
+                <div className="flex items-center gap-2 text-purple-800 font-semibold">
+                  <IndianRupee className="w-4 h-4" />
+                  Transaction Details
+                </div>
+              </div>
             </div>
-          </div>
+
 
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
             <Card className="border-2 border-purple-200/70 bg-white/90 backdrop-blur-xl shadow-xl">
@@ -365,27 +419,52 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           </Button>
         </div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-4 sm:mb-6"
+          >
+            <Card className="overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white" data-whatsnew-target="transactions-hero">
+              <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">
+                    <IndianRupee className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-sm opacity-90">Transaction History</div>
+                    <div className="text-xl sm:text-2xl font-bold">{user.username}'s transactions</div>
+                    <div className="text-xs opacity-90 mt-0.5">Entry fees, prize claims, and vouchers</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs sm:text-sm bg-white/15 px-3 py-2 rounded-full border border-white/30">
+                  <Sparkles className="w-4 h-4" />
+                  Tap any transaction to view details
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-4 sm:mb-6"
+          transition={{ duration: 0.35 }}
+          className="mb-3 sm:mb-4"
         >
-          <Card className="overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white">
-            <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <Card className={`border-2 shadow-xl overflow-hidden ${user.username?.toLowerCase() === 'dharsh650' ? 'bg-gradient-to-r from-purple-100 via-violet-50 to-white border-purple-200' : 'bg-white border-purple-100'}`}>
+            <CardContent className="p-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">
-                  <IndianRupee className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
+                  <IndianRupee className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-sm opacity-90">Transaction History</div>
-                  <div className="text-xl sm:text-2xl font-bold">{user.username}'s transactions</div>
-                  <div className="text-xs opacity-90 mt-0.5">Entry fees, prize claims, and vouchers</div>
+                  <div className="text-xs uppercase tracking-wide text-purple-600 font-semibold">{user.username}&apos;s wallet trail</div>
+                  <div className="text-sm sm:text-base text-purple-900 font-semibold">Track entry fees, prize claims, and refunds in one place.</div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs sm:text-sm bg-white/15 px-3 py-2 rounded-full border border-white/30">
-                <Sparkles className="w-4 h-4" />
-                Tap any transaction to view details
+              <div className="ml-auto flex items-center gap-2 text-xs sm:text-sm px-3 py-2 rounded-xl bg-purple-50 text-purple-800 border border-purple-200">
+                <Clock className="w-4 h-4" />
+                Live updates every 10s
               </div>
             </CardContent>
           </Card>
