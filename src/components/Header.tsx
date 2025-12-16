@@ -308,7 +308,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   title="Install App"
-                  data-tutorial-target="pwa-install"
+                  data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
                 >
                   <Download className="w-5 h-5" />
                 </motion.button>
@@ -398,7 +398,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                               variant="ghost"
                               className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
                               size="sm"
-                              data-tutorial-target="pwa-install"
+                              data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
                             >
                               <Download className="w-4 h-4 mr-1.5" />
                               Install App
@@ -415,8 +415,9 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                             size="sm"
                             data-tutorial-target="tutorial-trigger"
                           >
-                            <Sparkles className="w-4 h-4 mr-1.5" />
-                            Tutorial
+                              <Sparkles className="w-4 h-4 mr-1.5" />
+                              What's new
+
                           </Button>
                         </motion.div>
 
@@ -552,8 +553,9 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                         size="sm"
                         data-tutorial-target="tutorial-trigger"
                       >
-                        <Sparkles className="w-4 h-4 mr-1.5" />
-                        Tutorial
+                          <Sparkles className="w-4 h-4 mr-1.5" />
+                          What's new
+
                       </Button>
                     </motion.div>
 
@@ -722,7 +724,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                           <button
                             onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
                             className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                            data-tutorial-target="pwa-install"
+                            data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
                           >
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Download className="w-5 h-5 text-purple-600" />
@@ -740,7 +742,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Sparkles className="w-5 h-5 text-purple-600" />
                             </div>
-                            <span className="font-medium text-purple-900">Start Tutorial</span>
+                            <span className="font-medium text-purple-900">What's new</span>
                           </button>
                         </motion.div>
 
@@ -850,7 +852,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                             <button
                               onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
                               className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                              data-tutorial-target="pwa-install"
+                              data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
                             >
                               <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                                 <Download className="w-5 h-5 text-purple-600" />
@@ -869,7 +871,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Sparkles className="w-5 h-5 text-purple-600" />
                             </div>
-                            <span className="font-medium text-purple-900">Start Tutorial</span>
+                            <span className="font-medium text-purple-900">What's new</span>
                           </button>
                         </motion.div>
 

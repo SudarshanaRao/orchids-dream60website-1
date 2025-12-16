@@ -234,7 +234,7 @@ export function NotificationPermissionCard({
                 disabled:opacity-50 disabled:cursor-not-allowed
                 disabled:hover:from-purple-600 disabled:hover:to-indigo-600
               "
-              data-tutorial-target="enable-notifications"
+              data-tutorial-target="enable-notifications" data-whatsnew-target="enable-notifications"
             >
 
             {isLoading || isProcessing ? (

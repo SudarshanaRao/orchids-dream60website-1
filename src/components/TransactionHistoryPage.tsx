@@ -356,7 +356,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50" data-whatsnew-target="transactions">
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button variant="ghost" onClick={onBack} className="flex items-center gap-2 text-purple-700 hover:text-purple-800">

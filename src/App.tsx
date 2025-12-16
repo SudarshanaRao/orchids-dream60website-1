@@ -269,7 +269,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         return 'game';
       });
 
-  const TUTORIAL_ID = 'pwa_schedule_download_notify_v1';
+  const TUTORIAL_ID = 'whatsnew_transactions_pwa_notifications_v1';
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
@@ -1358,93 +1358,71 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setTutorialStartToken(Date.now());
     };
 
-    const tutorialSteps = [
-      {
-        id: 'install-app',
-        title: 'Install Dream60',
-        description: 'Use the install button in the header to add the app to your device.',
-        targetElement: '[data-tutorial-target="pwa-install"]',
-        position: 'bottom' as const,
-        shouldSkip: () => {
-          if (typeof window === 'undefined') return false;
-          return window.matchMedia('(display-mode: standalone)').matches || (navigator as any)?.standalone;
-        },
-        action: () => {
-          if (currentPage !== 'game') {
-            setCurrentPage('game');
-            window.history.pushState({}, '', '/');
-          }
-          setTimeout(() => {
-            const installButton = document.querySelector('[data-tutorial-target="pwa-install"]') as HTMLElement | null;
-            installButton?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 200);
+  const tutorialSteps = [
+    {
+      id: 'transactions',
+      title: 'Transaction History (new)',
+      description: 'See every payment and payout in one place.',
+      targetElement: '[data-whatsnew-target="transactions"]',
+      position: 'bottom' as const,
+      action: () => {
+        handleNavigate('transactions');
+      },
+    },
+    {
+      id: 'install-app',
+      title: 'Install Dream60 to your device',
+      description: 'Tap the install button for a 1-tap home-screen shortcut.',
+      targetElement: '[data-whatsnew-target="pwa-install"]',
+      position: 'bottom' as const,
+      shouldSkip: () => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(display-mode: standalone)').matches || (navigator as any)?.standalone;
+      },
+      action: () => {
+        if (currentPage !== 'game') {
+          setCurrentPage('game');
+          window.history.pushState({}, '', '/');
         }
       },
-      {
-        id: 'completed-leaderboard',
-        title: 'View completed results',
-        description: 'Open the Completed tab and tap View Leaderboard for a finished auction.',
-        targetElement: '[data-tutorial-target="schedule-view-leaderboard"]',
-        position: 'bottom' as const,
-        action: () => {
-          if (currentPage !== 'game') {
-            setCurrentPage('game');
-            window.history.pushState({}, '', '/');
-          }
-          setTimeout(() => {
-            const filterBtn = document.querySelector('[data-tutorial-target="schedule-filter-completed"]') as HTMLButtonElement | null;
-            filterBtn?.click();
-            setTimeout(() => {
-              const leaderboardBtn = document.querySelector('[data-tutorial-target="schedule-view-leaderboard"]') as HTMLElement | null;
-              leaderboardBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 250);
-          }, 200);
-        }
+    },
+    {
+      id: 'enable-notifications',
+      title: 'Enable auction notifications',
+      description: 'Turn on alerts from Profile to get round and winner updates.',
+      targetElement: '[data-whatsnew-target="enable-notifications"]',
+      position: 'bottom' as const,
+      shouldSkip: () => {
+        if (typeof Notification === 'undefined') return false;
+        return Notification.permission === 'granted';
       },
-      {
-        id: 'download-leaderboard',
-        title: 'Download leaderboard PDF',
-        description: 'Use the download button to save any auction leaderboard as PDF.',
-        targetElement: '[data-tutorial-target="download-leaderboard"]',
-        position: 'bottom' as const,
-        action: () => {
-          const hourlyId = currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id') || undefined;
-          handleNavigate('auction-leaderboard', { hourlyAuctionId: hourlyId });
-          setTimeout(() => {
-            const downloadBtn = document.querySelector('[data-tutorial-target="download-leaderboard"]') as HTMLElement | null;
-            downloadBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 700);
-        }
+      action: () => {
+        handleNavigate('profile');
       },
-      {
-        id: 'enable-notifications',
-        title: 'Enable push notifications',
-        description: 'Turn on alerts from Profile settings to get auction and winner updates.',
-        targetElement: '[data-tutorial-target="enable-notifications"]',
-        position: 'bottom' as const,
-        shouldSkip: () => {
-          if (typeof Notification === 'undefined') return false;
-          return Notification.permission === 'granted';
-        },
-        action: () => {
-          handleNavigate('profile');
-          setTimeout(() => {
-            const notifBtn = document.querySelector('[data-tutorial-target="enable-notifications"]') as HTMLElement | null;
-            notifBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 500);
-        }
-      },
-    ];
+    },
+  ];
 
 
 
+  const tutorialOverlay = (
+    <TutorialOverlay
+      steps={tutorialSteps}
+      tutorialId={TUTORIAL_ID}
+      startToken={tutorialStartToken}
+      forceShow={tutorialStartToken > 0}
+      returnTo={tutorialReturnTo}
+      onComplete={() => setTutorialStartToken(0)}
+    />
+  );
 
-  const handleBackToGame = () => {
-    setCurrentPage('game');
-    window.history.pushState({}, '', '/');
-    setSelectedLeaderboard(null);
-    setSelectedAuctionDetails(null);
-  };
+
+    const handleBackToGame = () => {
+      setCurrentPage('game');
+      window.history.pushState({}, '', '/');
+      setSelectedLeaderboard(null);
+      setSelectedAuctionDetails(null);
+    };
+
 
   const handleShowLeaderboard = (
     roundNumber: number,
@@ -1883,72 +1861,74 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
   if (currentPage === 'profile' && currentUser) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <AccountSettings
-            user={currentUser}
-            onBack={handleBackToGame}
-            onNavigate={handleNavigate}
-            onDeleteAccount={() => {
-              try {
-                // Clear user session data
-                localStorage.removeItem("user_id");
-                localStorage.removeItem("user_name");
-                localStorage.removeItem("user_email");
-                localStorage.removeItem("user_mobile");
-                
-                // Clear additional user fields
-                localStorage.removeItem("email");
-                localStorage.removeItem("username");
-                
-                // Clear all Razorpay session data
-                localStorage.removeItem("rzp_checkout_anon_id");
-                localStorage.removeItem("rzp_device_id");
-                localStorage.removeItem("rzp_stored_checkout_id");
-                
-                // Clear any other Razorpay keys
-                Object.keys(localStorage).forEach(key => {
-                  if (key.startsWith('rzp_')) {
-                    localStorage.removeItem(key);
-                  }
-                });
-                
-                console.log('✅ Account deleted - all user and Razorpay data cleared');
-              } catch (error) {
-                console.error("Error clearing session:", error);
-              }
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            {tutorialOverlay}
+            <AccountSettings
+              user={currentUser}
+              onBack={handleBackToGame}
+              onNavigate={handleNavigate}
+              onDeleteAccount={() => {
+                try {
+                  // Clear user session data
+                  localStorage.removeItem("user_id");
+                  localStorage.removeItem("user_name");
+                  localStorage.removeItem("user_email");
+                  localStorage.removeItem("user_mobile");
+                  
+                  // Clear additional user fields
+                  localStorage.removeItem("email");
+                  localStorage.removeItem("username");
+                  
+                  // Clear all Razorpay session data
+                  localStorage.removeItem("rzp_checkout_anon_id");
+                  localStorage.removeItem("rzp_device_id");
+                  localStorage.removeItem("rzp_stored_checkout_id");
+                  
+                  // Clear any other Razorpay keys
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('rzp_')) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  
+                  console.log('✅ Account deleted - all user and Razorpay data cleared');
+                } catch (error) {
+                  console.error("Error clearing session:", error);
+                }
 
-              setCurrentUser(null);
-              
-              // Reset auction state
-              setCurrentAuction(prev => ({
-                ...prev,
-                userHasPaidEntry: false,
-                userBidsPerRound: {},
-                userQualificationPerRound: {},
-                boxes: prev.boxes.map(box => {
-                  if (box.type === 'entry') {
-                    return {
-                      ...box,
-                      hasPaid: false,
-                      currentBid: 0,
-                      bidder: null
-                    };
-                  }
-                  return box;
-                })
-              }));
-              
-              setCurrentHourlyAuctionId(null);
-              setCurrentPage("login");
-            }}
-            onLogout={handleLogout}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+                setCurrentUser(null);
+                
+                // Reset auction state
+                setCurrentAuction(prev => ({
+                  ...prev,
+                  userHasPaidEntry: false,
+                  userBidsPerRound: {},
+                  userQualificationPerRound: {},
+                  boxes: prev.boxes.map(box => {
+                    if (box.type === 'entry') {
+                      return {
+                        ...box,
+                        hasPaid: false,
+                        currentBid: 0,
+                        bidder: null
+                      };
+                    }
+                    return box;
+                  })
+                }));
+                
+                setCurrentHourlyAuctionId(null);
+                setCurrentPage("login");
+              }}
+              onLogout={handleLogout}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
 
     if (currentPage === 'history' && currentUser) {
       if (selectedAuctionDetails) {
@@ -1992,6 +1972,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
+            {tutorialOverlay}
             {currentUser ? (
               <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
             ) : (
@@ -2132,14 +2113,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               onStartTutorial={() => triggerTutorial()}
             />
 
-            <TutorialOverlay
-              steps={tutorialSteps}
-              tutorialId={TUTORIAL_ID}
-              startToken={tutorialStartToken}
-              forceShow={tutorialStartToken > 0}
-              returnTo={tutorialReturnTo}
-              onComplete={() => setTutorialStartToken(0)}
-            />
+            {tutorialOverlay}
 
 
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
