@@ -16,6 +16,7 @@ import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
+import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
@@ -240,29 +241,31 @@ const App = () => {
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
   // Initialize currentPage based on URL path
-  const [currentPage, setCurrentPage] = useState(() => {
-    const path = window.location.pathname;
+    const [currentPage, setCurrentPage] = useState(() => {
+      const path = window.location.pathname;
 
-    if (path === '/admin' || path === '/admin/') {
-      const adminUserId = localStorage.getItem('admin_user_id');
-      return adminUserId ? 'admin-dashboard' : 'admin-login';
-    }
-    if (path === '/login') return 'login';
-    if (path === '/signup') return 'signup';
-    if (path === '/forgot-password') return 'forgot';
-    if (path === '/rules') return 'rules';
-    if (path === '/participation') return 'participation';
-    if (path === '/terms') return 'terms';
-    if (path === '/privacy') return 'privacy';
-    if (path === '/support') return 'support';
-    if (path === '/contact') return 'contact';
-    if (path === '/profile') return 'profile';
-    if (path === '/history') return 'history';
-    if (path.startsWith('/history/')) return 'history';
-    if (path === '/leaderboard') return 'leaderboard';
+      if (path === '/admin' || path === '/admin/') {
+        const adminUserId = localStorage.getItem('admin_user_id');
+        return adminUserId ? 'admin-dashboard' : 'admin-login';
+      }
+      if (path === '/login') return 'login';
+      if (path === '/signup') return 'signup';
+      if (path === '/forgot-password') return 'forgot';
+      if (path === '/rules') return 'rules';
+      if (path === '/participation') return 'participation';
+      if (path === '/terms') return 'terms';
+      if (path === '/privacy') return 'privacy';
+      if (path === '/support') return 'support';
+      if (path === '/contact') return 'contact';
+      if (path === '/profile') return 'profile';
+      if (path === '/history') return 'history';
+      if (path.startsWith('/history/')) return 'history';
+      if (path === '/leaderboard') return 'leaderboard';
+      if (path === '/auction-leaderboard') return 'auction-leaderboard';
 
-    return 'game';
-  });
+      return 'game';
+    });
+
 
   // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
@@ -289,6 +292,7 @@ const App = () => {
           setSelectedAuctionDetails(null);
         }
       } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+      else if (path === '/auction-leaderboard') setCurrentPage('auction-leaderboard');
       else setCurrentPage('game');
     };
 
@@ -1271,31 +1275,33 @@ const App = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-  const handleNavigate = (page: string) => {
-    setCurrentPage(page);
-    
-    // ✅ Update browser URL to match the page
-    const urlMap: { [key: string]: string } = {
-      'game': '/',
-      'login': '/login',
-      'signup': '/signup',
-      'forgot': '/forgot-password',
-      'rules': '/rules',
-      'participation': '/participation',
-      'terms': '/terms',
-      'privacy': '/privacy',
-      'support': '/support',
-      'contact': '/contact',
-      'profile': '/profile',
-      'history': '/history',
-      'leaderboard': '/leaderboard',
-      'admin-login': '/admin',
-      'admin-dashboard': '/admin'
+    const handleNavigate = (page: string) => {
+      setCurrentPage(page);
+      
+      // ✅ Update browser URL to match the page
+      const urlMap: { [key: string]: string } = {
+        'game': '/',
+        'login': '/login',
+        'signup': '/signup',
+        'forgot': '/forgot-password',
+        'rules': '/rules',
+        'participation': '/participation',
+        'terms': '/terms',
+        'privacy': '/privacy',
+        'support': '/support',
+        'contact': '/contact',
+        'profile': '/profile',
+        'history': '/history',
+        'leaderboard': '/leaderboard',
+        'auction-leaderboard': '/auction-leaderboard',
+        'admin-login': '/admin',
+        'admin-dashboard': '/admin'
+      };
+      
+      const url = urlMap[page] || '/';
+      window.history.pushState({}, '', url);
     };
-    
-    const url = urlMap[page] || '/';
-    window.history.pushState({}, '', url);
-  };
+
 
   const handleBackToGame = () => {
     setCurrentPage('game');
@@ -1696,6 +1702,36 @@ const App = () => {
     );
   }
 
+  if (currentPage === 'auction-leaderboard') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          {currentUser && currentHourlyAuctionId ? (
+            <AuctionLeaderboard
+              hourlyAuctionId={currentHourlyAuctionId}
+              userId={currentUser.id}
+              onBack={handleBackToGame}
+            />
+          ) : (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
+              <div className="text-center space-y-4">
+                <p className="text-xl font-semibold text-purple-800">Auction leaderboard unavailable</p>
+                <p className="text-sm text-purple-600">Please return to the auction page and try again.</p>
+                <button
+                  onClick={handleBackToGame}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow"
+                >
+                  Back to auctions
+                </button>
+              </div>
+            </div>
+          )}
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   if (currentPage === 'profile' && currentUser) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -2004,12 +2040,13 @@ const App = () => {
                         <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
                       </div>
                     </div>
-                      <button
-                        onClick={() => setCurrentPage('auction-leaderboard')}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                      >
-                        View winners
-                      </button>
+                        <button
+                          onClick={() => handleNavigate('auction-leaderboard')}
+                          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                        >
+                          View winners
+                        </button>
+
                   </div>
                 </div>
               )}
