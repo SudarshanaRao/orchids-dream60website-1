@@ -528,15 +528,17 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
                           <Eye className="w-4 h-4 mr-1" />
                           {expandedRound === roundNum ? 'Hide' : 'View'} Leaderboard
                         </Button>
-                        <Button
-                          onClick={() => downloadLeaderboard(roundNum)}
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 text-violet-700 border-violet-300 hover:bg-violet-50"
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          Download
-                        </Button>
+                          <Button
+                            onClick={() => downloadLeaderboard(roundNum)}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-violet-700 border-violet-300 hover:bg-violet-50"
+                            data-tutorial-target="download-leaderboard"
+                          >
+                            <Download className="w-4 h-4 mr-1" />
+                            Download
+                          </Button>
+
                       </div>
 
                       {/* Expanded Leaderboard */}

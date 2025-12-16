@@ -301,16 +301,18 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
             </motion.div>
 
             {/* Mobile Install App & Menu Buttons */}
-            <div className="lg:hidden flex items-center gap-2">
-              <motion.button
-                onClick={handleInstallClick}
-                className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Install App"
-              >
-                <Download className="w-5 h-5" />
-              </motion.button>
+              <div className="lg:hidden flex items-center gap-2">
+                <motion.button
+                  onClick={handleInstallClick}
+                  className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Install App"
+                  data-tutorial-target="pwa-install"
+                >
+                  <Download className="w-5 h-5" />
+                </motion.button>
+
               <motion.button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
@@ -389,19 +391,21 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
                       {/* PWA Install Button - Only on large screens */}
-                      {showInstallButton && (
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            onClick={handleInstallClick}
-                            variant="ghost"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                            size="sm"
-                          >
-                            <Download className="w-4 h-4 mr-1.5" />
-                            Install App
-                          </Button>
-                        </motion.div>
-                      )}
+                        {showInstallButton && (
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              onClick={handleInstallClick}
+                              variant="ghost"
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                              size="sm"
+                              data-tutorial-target="pwa-install"
+                            >
+                              <Download className="w-4 h-4 mr-1.5" />
+                              Install App
+                            </Button>
+                          </motion.div>
+                        )}
+
 
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
@@ -701,6 +705,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                           <button
                             onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
                             className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                            data-tutorial-target="pwa-install"
                           >
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Download className="w-5 h-5 text-purple-600" />
@@ -809,17 +814,19 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                         </button>
                       </motion.div>
 
-                        <motion.div variants={menuItemVariants}>
-                          <button
-                            onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
-                            className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                          >
-                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                              <Download className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <span className="font-medium text-purple-900">Install App</span>
-                          </button>
-                        </motion.div>
+                          <motion.div variants={menuItemVariants}>
+                            <button
+                              onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                              data-tutorial-target="pwa-install"
+                            >
+                              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                <Download className="w-5 h-5 text-purple-600" />
+                              </div>
+                              <span className="font-medium text-purple-900">Install App</span>
+                            </button>
+                          </motion.div>
+
 
                         <motion.div variants={menuItemVariants}>
                           <button

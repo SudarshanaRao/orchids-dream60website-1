@@ -325,20 +325,22 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
             const isActive = activeFilter === filter.id;
             
             return (
-              <motion.button
-                key={filter.id}
-                onClick={() => setActiveFilter(filter.id as typeof activeFilter)}
-                className={`
-                  relative px-4 py-2 rounded-2xl text-xs font-semibold
-                  transition-all duration-300 ease-out
-                  ${isActive 
-                    ? 'bg-gradient-to-r from-purple-600 to-violet-700 text-white shadow-lg shadow-purple-500/30' 
-                    : 'bg-white/80 text-purple-700 border-2 border-purple-200/60 hover:border-purple-300 hover:bg-purple-50/80'
-                  }
-                `}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+                <motion.button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id as typeof activeFilter)}
+                  className={`
+                    relative px-4 py-2 rounded-2xl text-xs font-semibold
+                    transition-all duration-300 ease-out
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-purple-600 to-violet-700 text-white shadow-lg shadow-purple-500/30' 
+                      : 'bg-white/80 text-purple-700 border-2 border-purple-200/60 hover:border-purple-300 hover:bg-purple-50/80'
+                    }
+                  `}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  data-tutorial-target={filter.id === 'completed' ? 'schedule-filter-completed' : undefined}
+                >
+
                 <span className="flex items-center gap-1.5">
                   <Icon className="w-3.5 h-3.5" />
                   {filter.label}
@@ -491,16 +493,18 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                             <div className="text-sm font-bold text-purple-900">{auction.winner || 'TBA'}</div>
                           </div>
                         </div>
-                        {auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
-                          <Button
-                            onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                            size="sm"
-                            className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
-                          >
-                            <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                            View Leaderboard
-                          </Button>
-                        )}
+                          {auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
+                            <Button
+                              onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                              size="sm"
+                              className="bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white text-xs px-3 py-1.5 h-auto rounded-xl shadow-md"
+                              data-tutorial-target="schedule-view-leaderboard"
+                            >
+                              <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                              View Leaderboard
+                            </Button>
+                          )}
+
                       </motion.div>
                     )}
                       

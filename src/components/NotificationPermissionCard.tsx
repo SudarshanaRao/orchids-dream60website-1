@@ -222,19 +222,21 @@ export function NotificationPermissionCard({
             </li>
           </ul>
 
-          <button
-            onClick={handleEnableNotifications}
-            disabled={isLoading || isProcessing || !userId}
-            className="
-              w-full flex items-center justify-center gap-2 
-              px-4 py-3 rounded-lg font-semibold text-sm
-              bg-gradient-to-r from-purple-600 to-indigo-600 text-white
-              hover:from-purple-700 hover:to-indigo-700
-              transition-all duration-200 shadow-md hover:shadow-lg
-              disabled:opacity-50 disabled:cursor-not-allowed
-              disabled:hover:from-purple-600 disabled:hover:to-indigo-600
-            "
-          >
+            <button
+              onClick={handleEnableNotifications}
+              disabled={isLoading || isProcessing || !userId}
+              className="
+                w-full flex items-center justify-center gap-2 
+                px-4 py-3 rounded-lg font-semibold text-sm
+                bg-gradient-to-r from-purple-600 to-indigo-600 text-white
+                hover:from-purple-700 hover:to-indigo-700
+                transition-all duration-200 shadow-md hover:shadow-lg
+                disabled:opacity-50 disabled:cursor-not-allowed
+                disabled:hover:from-purple-600 disabled:hover:to-indigo-600
+              "
+              data-tutorial-target="enable-notifications"
+            >
+
             {isLoading || isProcessing ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />

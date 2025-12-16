@@ -267,9 +267,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         return 'game';
       });
 
-    const TUTORIAL_ID = 'new_update_leaderboard_v1';
-    const [tutorialStartToken, setTutorialStartToken] = useState(0);
-    const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
+  const TUTORIAL_ID = 'pwa_schedule_download_notify_v1';
+  const [tutorialStartToken, setTutorialStartToken] = useState(0);
+  const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
+
 
 
     // ✅ Sync URL with page state and handle browser back/forward
@@ -1350,29 +1351,76 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setTutorialStartToken(Date.now());
     };
 
-    const tutorialSteps = [
-      {
-        id: 'view-winners',
-        title: 'See winners & claim',
-        description: 'Tap “View winners” to open the leaderboard and claim prizes.',
-        targetElement: '[data-tutorial-target="view-winners"]',
-        position: 'bottom' as const,
-      },
-      {
-        id: 'leaderboard',
-        title: 'Track ranks live',
-        description: 'Use the leaderboard shortcut to watch ranks and prize windows.',
-        targetElement: '[data-tutorial-target="leaderboard-link"]',
-        position: 'bottom' as const,
-      },
-      {
-        id: 'replay',
-        title: 'Replay this guide anytime',
-        description: 'Hit the tutorial button whenever you need a refresh.',
-        targetElement: '[data-tutorial-target="tutorial-trigger"]',
-        position: 'bottom' as const,
-      },
-    ];
+  const tutorialSteps = [
+    {
+      id: 'install-app',
+      title: 'Install Dream60',
+      description: 'Use the install button in the header to add the app to your device.',
+      targetElement: '[data-tutorial-target="pwa-install"]',
+      position: 'bottom' as const,
+      action: () => {
+        if (currentPage !== 'game') {
+          setCurrentPage('game');
+          window.history.pushState({}, '', '/');
+        }
+        setTimeout(() => {
+          const installButton = document.querySelector('[data-tutorial-target="pwa-install"]') as HTMLElement | null;
+          installButton?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      }
+    },
+    {
+      id: 'completed-leaderboard',
+      title: 'View completed results',
+      description: 'Open the Completed tab and tap View Leaderboard for a finished auction.',
+      targetElement: '[data-tutorial-target="schedule-view-leaderboard"]',
+      position: 'bottom' as const,
+      action: () => {
+        if (currentPage !== 'game') {
+          setCurrentPage('game');
+          window.history.pushState({}, '', '/');
+        }
+        setTimeout(() => {
+          const filterBtn = document.querySelector('[data-tutorial-target="schedule-filter-completed"]') as HTMLButtonElement | null;
+          filterBtn?.click();
+          setTimeout(() => {
+            const leaderboardBtn = document.querySelector('[data-tutorial-target="schedule-view-leaderboard"]') as HTMLElement | null;
+            leaderboardBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 250);
+        }, 200);
+      }
+    },
+    {
+      id: 'download-leaderboard',
+      title: 'Download leaderboard PDF',
+      description: 'Use the download button to save any auction leaderboard as PDF.',
+      targetElement: '[data-tutorial-target="download-leaderboard"]',
+      position: 'bottom' as const,
+      action: () => {
+        const hourlyId = currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id') || undefined;
+        handleNavigate('auction-leaderboard', { hourlyAuctionId: hourlyId });
+        setTimeout(() => {
+          const downloadBtn = document.querySelector('[data-tutorial-target="download-leaderboard"]') as HTMLElement | null;
+          downloadBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 700);
+      }
+    },
+    {
+      id: 'enable-notifications',
+      title: 'Enable push notifications',
+      description: 'Turn on alerts from Profile settings to get auction and winner updates.',
+      targetElement: '[data-tutorial-target="enable-notifications"]',
+      position: 'bottom' as const,
+      action: () => {
+        handleNavigate('profile');
+        setTimeout(() => {
+          const notifBtn = document.querySelector('[data-tutorial-target="enable-notifications"]') as HTMLElement | null;
+          notifBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+      }
+    },
+  ];
+
 
 
   const handleBackToGame = () => {
@@ -1461,7 +1509,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
         setCurrentPage("game");
         window.history.pushState({}, '', '/');
-        triggerTutorial('home');
+        triggerTutorial();
       } catch (error) {
         console.error("Error while login:", error);
       }
@@ -1477,7 +1525,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
         setCurrentPage("game");
         window.history.pushState({}, '', '/');
-        triggerTutorial('home');
+        triggerTutorial();
       } catch (error) {
         console.error("Error while signup:", error);
       }
@@ -2089,22 +2137,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                   </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-4 px-4">
-                  <button
-                    onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold shadow-sm"
-                    data-tutorial-target="view-winners"
-                  >
-                    View winners
-                  </button>
-                  <button
-                    onClick={() => handleNavigate('leaderboard')}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 font-semibold shadow-sm"
-                    data-tutorial-target="leaderboard-link"
-                  >
-                    Open leaderboard
-                  </button>
-                </div>
               </div>
 
 
