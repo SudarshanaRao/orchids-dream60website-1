@@ -1,4 +1,4 @@
-import { Clock, Calendar, Trophy, Sparkles, IndianRupee, Star, Zap, Lock, Unlock, Radio, PlayCircle, BarChart2 } from 'lucide-react';
+import { Clock, Calendar, Trophy, Sparkles, IndianRupee, Star, Zap, Lock, Unlock, Radio, PlayCircle, BarChart2, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -133,22 +133,24 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'upcoming';
             }
             
-            return {
-              time: timeStr,
-              hour: auctionHour,
-              minute: auctionMinute,
-              status,
-              hourlyAuctionId: auction.hourlyAuctionId,
-              auctionId: auction.auctionId,
-              prize: {
-                name: auction.auctionName || `Auction ${index + 1}`,
-                value: auction.prizeValue || 0,
-                image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
-              },
-              winner,
-              roundCount: auction.roundCount || 4 // Get from backend or default to 4
-            };
-          });
+              return {
+                time: timeStr,
+                hour: auctionHour,
+                minute: auctionMinute,
+                status,
+                hourlyAuctionId: auction.hourlyAuctionId,
+                auctionId: auction.auctionId,
+                prize: {
+                  name: auction.auctionName || `Auction ${index + 1}`,
+                  value: auction.prizeValue || 0,
+                  image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
+                },
+                winner,
+                roundCount: auction.roundCount || 4, // Get from backend or default to 4
+                totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
+              };
+            });
+
           
           setScheduleData(auctions);
           
@@ -383,100 +385,106 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               </p>
             </div>
           </motion.div>
-        ) : (
-          sortedAuctions.map((auction, index) => (
-            <motion.div
-              key={auction.hour}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ delay: index * 0.05, duration: 0.4 }}
-              layout
-            >
-              <div 
-                className={`
-                  relative overflow-hidden rounded-2xl border-2 transition-all duration-300
-                  ${auction.status === 'active' 
-                    ? 'border-violet-300/70 bg-gradient-to-r from-violet-100/90 via-fuchsia-100/80 to-purple-100/70 shadow-xl shadow-purple-400/30 backdrop-blur-xl' 
-                    : auction.status === 'completed'
-                    ? 'border-purple-200/60 bg-gradient-to-r from-purple-50/80 to-violet-50/70 backdrop-blur-lg hover:shadow-lg'
-                    : 'border-purple-200/60 bg-gradient-to-r from-white/80 to-purple-50/70 backdrop-blur-lg hover:shadow-lg hover:border-purple-300/70'
-                  }
-                `}
+          ) : (
+            sortedAuctions.map((auction, index) => {
+              const participantCount = auction.totalParticipants ?? (auction.participants?.length ?? 0);
+              return (
+              <motion.div
+                key={auction.hour}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ delay: index * 0.05, duration: 0.4 }}
+                layout
               >
-                {/* Glassmorphism effect */}
-                <div className="absolute inset-0 bg-white/30 backdrop-blur-sm pointer-events-none rounded-2xl" />
-                
-                {/* Active auction pulse animation */}
-                {auction.status === 'active' && (
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 rounded-2xl"
-                    animate={{
-                      opacity: [0.3, 0.6, 0.3],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                )}
+                <div 
+                  className={`
+                    relative overflow-hidden rounded-2xl border-2 transition-all duration-300
+                    ${auction.status === 'active' 
+                      ? 'border-violet-300/70 bg-gradient-to-r from-violet-100/90 via-fuchsia-100/80 to-purple-100/70 shadow-xl shadow-purple-400/30 backdrop-blur-xl' 
+                      : auction.status === 'completed'
+                      ? 'border-purple-200/60 bg-gradient-to-r from-purple-50/80 to-violet-50/70 backdrop-blur-lg hover:shadow-lg'
+                      : 'border-purple-200/60 bg-gradient-to-r from-white/80 to-purple-50/70 backdrop-blur-lg hover:shadow-lg hover:border-purple-300/70'
+                    }
+                  `}
+                >
+                  {/* Glassmorphism effect */}
+                  <div className="absolute inset-0 bg-white/30 backdrop-blur-sm pointer-events-none rounded-2xl" />
+                  
+                  {/* Active auction pulse animation */}
+                  {auction.status === 'active' && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 rounded-2xl"
+                      animate={{
+                        opacity: [0.3, 0.6, 0.3],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    />
+                  )}
 
-                <div className="relative z-10 p-3 sm:p-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    {/* Left side - Time and Status */}
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br from-purple-500 to-purple-700`}>
-                        <Clock className="w-6 h-6 text-white" />
+                  <div className="relative z-10 p-3 sm:p-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                      {/* Left side - Time and Status */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md bg-gradient-to-br from-purple-500 to-purple-700`}>
+                          <Clock className="w-6 h-6 text-white" />
+                        </div>
+                        
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base sm:text-lg font-bold text-purple-900">{auction.time}</span>
+                            <Badge className={`${getStatusColor(auction.status)} text-xs flex items-center gap-2 rounded-2xl`} >
+                              {auction.status === 'active' && (
+                                <motion.div
+                                  animate={{ scale: [1, 1.3, 1] }}
+                                  transition={{ duration: 2.0, repeat: Infinity, ease: "easeInOut" }}
+                                >
+                                  <Radio className="w-3 h-4" />
+                                </motion.div>
+                              )}
+                              {auction.status === 'upcoming' && <PlayCircle className="w-4 h-4" />}
+                              {getStatusText(auction.status)}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-purple-600 mt-0.5">
+                            Auction #{index + 1} of {scheduleData.length}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-purple-700 mt-1">
+                            <Users className="w-4 h-4" />
+                            <span>{participantCount} participants</span>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-base sm:text-lg font-bold text-purple-900">{auction.time}</span>
-                          <Badge className={`${getStatusColor(auction.status)} text-xs flex items-center gap-2 rounded-2xl`} >
-                            {auction.status === 'active' && (
-                              <motion.div
-                                animate={{ scale: [1, 1.3, 1] }}
-                                transition={{ duration: 2.0, repeat: Infinity, ease: "easeInOut" }}
-                              >
-                                <Radio className="w-3 h-4" />
-                              </motion.div>
-                            )}
-                            {auction.status === 'upcoming' && <PlayCircle className="w-4 h-4" />}
-                            {getStatusText(auction.status)}
-                          </Badge>
+                      {/* Right side - Prize with Image */}
+                      <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/50 w-full lg:w-80">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-purple-300/60 shadow-md shrink-0">
+                          <ImageWithFallback 
+                            src={auction.prize.image}
+                            alt={auction.prize.name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                        <div className="text-xs text-purple-600 mt-0.5">
-                          Auction #{index + 1} of {scheduleData.length}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1 text-xs text-purple-600 mb-1">
+                            <Trophy className="w-3 h-3" />
+                            <span>Prize</span>
+                          </div>
+                          <div className="font-bold text-purple-900 text-sm mb-1 line-clamp-2 h-10 leading-5">
+                            {auction.prize.name}
+                          </div>
+                          <div className="flex items-center gap-0.5 text-violet-700 font-semibold text-sm">
+                            <IndianRupee className="w-3.5 h-3.5" />
+                            <span>{auction.prize.value.toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Right side - Prize with Image */}
-                    <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-2xl p-3 border border-purple-200/50 w-full lg:w-80">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-purple-300/60 shadow-md shrink-0">
-                        <ImageWithFallback 
-                          src={auction.prize.image}
-                          alt={auction.prize.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 text-xs text-purple-600 mb-1">
-                          <Trophy className="w-3 h-3" />
-                          <span>Prize</span>
-                        </div>
-                        <div className="font-bold text-purple-900 text-sm mb-1 line-clamp-2 h-10 leading-5">
-                          {auction.prize.name}
-                        </div>
-                        <div className="flex items-center gap-0.5 text-violet-700 font-semibold text-sm">
-                          <IndianRupee className="w-3.5 h-3.5" />
-                          <span>{auction.prize.value.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
                     {/* Winner info + leaderboard for completed auctions */}
                     {auction.status === 'completed' && (auction.winner || (auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId])) && (
                       <motion.div 
@@ -507,31 +515,33 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
 
                       </motion.div>
                     )}
-                      
-                      {/* Active auction CTA */}
+                        
+                        {/* Active auction CTA */}
 
-                    {auction.status === 'active' && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
-                      >
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
+                      {auction.status === 'active' && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-3 flex items-center gap-2 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm rounded-2xl p-2.5 border-2 border-violet-300/60"
                         >
-                          <Zap className="w-5 h-5 text-violet-600" />
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 1, repeat: Infinity }}
+                          >
+                            <Zap className="w-5 h-5 text-violet-600" />
+                          </motion.div>
+                          <div>
+                            <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
+                            <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
+                          </div>
                         </motion.div>
-                        <div>
-                          <div className="text-sm font-bold text-violet-900">Entry opens 5 minutes early!</div>
-                          <div className="text-xs text-violet-700">Pay one entry fee to unlock all 6 boxes (split into Box 1 & 2)</div>
-                        </div>
-                      </motion.div>
-                    )}
+                      )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))
+              </motion.div>
+            );
+            })
+
         )}
       </div>
       

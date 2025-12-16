@@ -1351,75 +1351,84 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setTutorialStartToken(Date.now());
     };
 
-  const tutorialSteps = [
-    {
-      id: 'install-app',
-      title: 'Install Dream60',
-      description: 'Use the install button in the header to add the app to your device.',
-      targetElement: '[data-tutorial-target="pwa-install"]',
-      position: 'bottom' as const,
-      action: () => {
-        if (currentPage !== 'game') {
-          setCurrentPage('game');
-          window.history.pushState({}, '', '/');
-        }
-        setTimeout(() => {
-          const installButton = document.querySelector('[data-tutorial-target="pwa-install"]') as HTMLElement | null;
-          installButton?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 200);
-      }
-    },
-    {
-      id: 'completed-leaderboard',
-      title: 'View completed results',
-      description: 'Open the Completed tab and tap View Leaderboard for a finished auction.',
-      targetElement: '[data-tutorial-target="schedule-view-leaderboard"]',
-      position: 'bottom' as const,
-      action: () => {
-        if (currentPage !== 'game') {
-          setCurrentPage('game');
-          window.history.pushState({}, '', '/');
-        }
-        setTimeout(() => {
-          const filterBtn = document.querySelector('[data-tutorial-target="schedule-filter-completed"]') as HTMLButtonElement | null;
-          filterBtn?.click();
+    const tutorialSteps = [
+      {
+        id: 'install-app',
+        title: 'Install Dream60',
+        description: 'Use the install button in the header to add the app to your device.',
+        targetElement: '[data-tutorial-target="pwa-install"]',
+        position: 'bottom' as const,
+        shouldSkip: () => {
+          if (typeof window === 'undefined') return false;
+          return window.matchMedia('(display-mode: standalone)').matches || (navigator as any)?.standalone;
+        },
+        action: () => {
+          if (currentPage !== 'game') {
+            setCurrentPage('game');
+            window.history.pushState({}, '', '/');
+          }
           setTimeout(() => {
-            const leaderboardBtn = document.querySelector('[data-tutorial-target="schedule-view-leaderboard"]') as HTMLElement | null;
-            leaderboardBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 250);
-        }, 200);
-      }
-    },
-    {
-      id: 'download-leaderboard',
-      title: 'Download leaderboard PDF',
-      description: 'Use the download button to save any auction leaderboard as PDF.',
-      targetElement: '[data-tutorial-target="download-leaderboard"]',
-      position: 'bottom' as const,
-      action: () => {
-        const hourlyId = currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id') || undefined;
-        handleNavigate('auction-leaderboard', { hourlyAuctionId: hourlyId });
-        setTimeout(() => {
-          const downloadBtn = document.querySelector('[data-tutorial-target="download-leaderboard"]') as HTMLElement | null;
-          downloadBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 700);
-      }
-    },
-    {
-      id: 'enable-notifications',
-      title: 'Enable push notifications',
-      description: 'Turn on alerts from Profile settings to get auction and winner updates.',
-      targetElement: '[data-tutorial-target="enable-notifications"]',
-      position: 'bottom' as const,
-      action: () => {
-        handleNavigate('profile');
-        setTimeout(() => {
-          const notifBtn = document.querySelector('[data-tutorial-target="enable-notifications"]') as HTMLElement | null;
-          notifBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 500);
-      }
-    },
-  ];
+            const installButton = document.querySelector('[data-tutorial-target="pwa-install"]') as HTMLElement | null;
+            installButton?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 200);
+        }
+      },
+      {
+        id: 'completed-leaderboard',
+        title: 'View completed results',
+        description: 'Open the Completed tab and tap View Leaderboard for a finished auction.',
+        targetElement: '[data-tutorial-target="schedule-view-leaderboard"]',
+        position: 'bottom' as const,
+        action: () => {
+          if (currentPage !== 'game') {
+            setCurrentPage('game');
+            window.history.pushState({}, '', '/');
+          }
+          setTimeout(() => {
+            const filterBtn = document.querySelector('[data-tutorial-target="schedule-filter-completed"]') as HTMLButtonElement | null;
+            filterBtn?.click();
+            setTimeout(() => {
+              const leaderboardBtn = document.querySelector('[data-tutorial-target="schedule-view-leaderboard"]') as HTMLElement | null;
+              leaderboardBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 250);
+          }, 200);
+        }
+      },
+      {
+        id: 'download-leaderboard',
+        title: 'Download leaderboard PDF',
+        description: 'Use the download button to save any auction leaderboard as PDF.',
+        targetElement: '[data-tutorial-target="download-leaderboard"]',
+        position: 'bottom' as const,
+        action: () => {
+          const hourlyId = currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id') || undefined;
+          handleNavigate('auction-leaderboard', { hourlyAuctionId: hourlyId });
+          setTimeout(() => {
+            const downloadBtn = document.querySelector('[data-tutorial-target="download-leaderboard"]') as HTMLElement | null;
+            downloadBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 700);
+        }
+      },
+      {
+        id: 'enable-notifications',
+        title: 'Enable push notifications',
+        description: 'Turn on alerts from Profile settings to get auction and winner updates.',
+        targetElement: '[data-tutorial-target="enable-notifications"]',
+        position: 'bottom' as const,
+        shouldSkip: () => {
+          if (typeof Notification === 'undefined') return false;
+          return Notification.permission === 'granted';
+        },
+        action: () => {
+          handleNavigate('profile');
+          setTimeout(() => {
+            const notifBtn = document.querySelector('[data-tutorial-target="enable-notifications"]') as HTMLElement | null;
+            notifBtn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 500);
+        }
+      },
+    ];
+
 
 
 
