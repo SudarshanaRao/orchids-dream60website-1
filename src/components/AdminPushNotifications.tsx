@@ -158,27 +158,30 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       return;
     }
 
-    const selectedUserIds = allSubscribedUsers
-      .filter(u => selectedSubscriptions.has(u.subscriptionId))
-      .map(u => u.userId)
-      .filter(Boolean);
+      const selectedUserIds = allSubscribedUsers
+        .filter(u => selectedSubscriptions.has(u.subscriptionId))
+        .map(u => u.userId)
+        .filter(Boolean);
 
-    const uniqueUserIds = Array.from(new Set(selectedUserIds));
+      const uniqueUserIds = Array.from(new Set(selectedUserIds));
+      const subscriptionIds = Array.from(selectedSubscriptions);
 
-    try {
-      setIsSending(true);
-      const response = await fetch(API_ENDPOINTS.pushNotification.sendToSelected, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...notificationData,
-          ...richNotificationData,
-          userIds: uniqueUserIds,
-          adminId
-        })
-      });
+      try {
+        setIsSending(true);
+        const response = await fetch(API_ENDPOINTS.pushNotification.sendToSelected, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...notificationData,
+            ...richNotificationData,
+            userIds: uniqueUserIds,
+            subscriptionIds,
+            adminId
+          })
+        });
+
 
       const data = await response.json();
 

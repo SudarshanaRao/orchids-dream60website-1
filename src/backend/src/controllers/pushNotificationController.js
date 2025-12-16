@@ -430,11 +430,14 @@ const sendToAllParticipants = async (req, res) => {
 
 const sendToSelectedUsers = async (req, res) => {
   try {
-    const { userIds = [], title, body, ttl, urgency, topic, ...rest } = req.body;
+    const { userIds = [], subscriptionIds = [], title, body, ttl, urgency, topic, ...rest } = req.body;
     const adminId = req.query.admin_id || req.body.adminId;
 
-    if (!Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ success: false, message: 'userIds array is required' });
+    const normalizedUserIds = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
+    const normalizedSubscriptionIds = Array.isArray(subscriptionIds) ? subscriptionIds.filter(Boolean) : [];
+
+    if (normalizedUserIds.length === 0 && normalizedSubscriptionIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'userIds or subscriptionIds array is required' });
     }
     if (!title || !body) {
       return res.status(400).json({ success: false, message: 'Title and body are required' });
@@ -448,13 +451,23 @@ const sendToSelectedUsers = async (req, res) => {
       }
     }
 
-    const subscriptions = await PushSubscription.find({
-      isActive: true,
-      userId: { $in: userIds }
-    }).populate('userId', 'username email user_id userCode');
+    const subscriptionQuery = { isActive: true };
+
+    if (normalizedUserIds.length && normalizedSubscriptionIds.length) {
+      subscriptionQuery.$or = [
+        { userId: { $in: normalizedUserIds } },
+        { _id: { $in: normalizedSubscriptionIds } }
+      ];
+    } else if (normalizedUserIds.length) {
+      subscriptionQuery.userId = { $in: normalizedUserIds };
+    } else {
+      subscriptionQuery._id = { $in: normalizedSubscriptionIds };
+    }
+
+    const subscriptions = await PushSubscription.find(subscriptionQuery).populate('userId', 'username email user_id userCode');
 
     if (subscriptions.length === 0) {
-      return res.status(404).json({ success: false, message: 'No active subscriptions found for selected users' });
+      return res.status(404).json({ success: false, message: 'No active subscriptions found for selected users/devices' });
     }
 
     webpush.setVapidDetails(

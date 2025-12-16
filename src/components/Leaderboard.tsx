@@ -398,6 +398,26 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
 
   const top3Groups = getTop3BidGroups();
 
+  const currentUserEntry = leaderboard.find(entry => entry.userId === currentUserId && entry.isWinner);
+  const currentUserTimer = currentUserEntry?.userId ? claimTimers[currentUserEntry.userId] : undefined;
+  const isUserWaiting = Boolean(
+    currentUserEntry &&
+    currentUserEntry.prizeClaimStatus === 'PENDING' &&
+    currentUserEntry.finalRank &&
+    currentUserEntry.currentEligibleRank &&
+    currentUserEntry.finalRank > currentUserEntry.currentEligibleRank
+  );
+  const isUserTurn = Boolean(
+    currentUserEntry &&
+    currentUserEntry.prizeClaimStatus === 'PENDING' &&
+    currentUserEntry.finalRank &&
+    currentUserEntry.currentEligibleRank &&
+    currentUserEntry.finalRank === currentUserEntry.currentEligibleRank
+  );
+  const isClaimWindowSoon = isUserTurn && currentUserTimer === 'Claim Window Soon';
+  const timeLabel = currentUserTimer || 'Updating...';
+  const canClaimNow = isUserTurn && currentUserTimer && currentUserTimer !== 'EXPIRED' && currentUserTimer !== 'Claim Window Soon';
+
   const getAllRankedEntries = () => {
     return [...leaderboard];
   };
@@ -439,6 +459,23 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
     if (rank === 1) return 'h-32';
     if (rank === 2) return 'h-24';
     return 'h-20';
+  };
+
+  const getRankEmoji = (rank?: number) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return '🏅';
+  };
+
+  const getRankSuffix = (rank?: number) => {
+    if (!rank) return '';
+    const j = rank % 10;
+    const k = rank % 100;
+    if (j === 1 && k !== 11) return `${rank}st`;
+    if (j === 2 && k !== 12) return `${rank}nd`;
+    if (j === 3 && k !== 13) return `${rank}rd`;
+    return `${rank}th`;
   };
 
   // Calculate stats
@@ -745,8 +782,91 @@ export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          {top3Groups.length > 0 ? (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+            {currentUserEntry && currentUserEntry.prizeClaimStatus === 'PENDING' && (
+              <div className="mb-6 space-y-3">
+                {isUserTurn && isClaimWindowSoon && (
+                  <div className="p-4 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-200 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white shadow">
+                        <Clock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                          {getRankEmoji(currentUserEntry.finalRank || 1)} Claim window opening soon
+                        </p>
+                        <p className="text-xs text-amber-700">You're next in line. The claim button will appear in a moment.</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 border border-amber-200">
+                      <div className="animate-spin w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full" />
+                      <span className="text-sm font-bold text-amber-800">Claim Window Soon</span>
+                    </div>
+                  </div>
+                )}
+
+                {isUserTurn && !isClaimWindowSoon && currentUserTimer !== 'EXPIRED' && (
+                  <div className="p-4 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow">
+                          <Gift className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                            {getRankEmoji(currentUserEntry.finalRank || 1)} Claim your prize
+                          </p>
+                          <p className="text-xs text-amber-700">Time left: {timeLabel}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 border border-amber-200">
+                        <Clock className="w-4 h-4 text-amber-800" />
+                        <span className={`text-sm font-bold ${timeLabel === 'EXPIRED' ? 'text-red-600' : 'text-amber-900'}`}>{timeLabel}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold">
+                        <IndianRupee className="w-4 h-4" />
+                        <span>{(currentUserEntry.lastRoundBidAmount || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      <button
+                        onClick={() => handleClaimPrize(currentUserEntry)}
+                        disabled={!canClaimNow || isProcessing}
+                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-sm rounded-xl hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg transition-all"
+                      >
+                        <Gift className="w-4 h-4" />
+                        {isProcessing ? 'Processing...' : 'Claim Prize'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isUserWaiting && (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 border-2 border-blue-200 rounded-2xl shadow-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white shadow">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-blue-900 flex items-center gap-2">
+                            {getRankEmoji(currentUserEntry.finalRank || 1)} Waiting for your turn ({getRankSuffix(currentUserEntry.finalRank || 1)})
+                          </p>
+                          <p className="text-xs text-blue-700">We'll open your claim window soon.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white/70 rounded-lg px-3 py-2 border border-blue-200">
+                        <Clock className="w-4 h-4 text-blue-700" />
+                        <span className="text-sm font-bold text-blue-900">{timeLabel}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {top3Groups.length > 0 ? (
+
             <div className="space-y-8">
               {/* Top 3 Podium with Player Count */}
               <motion.div

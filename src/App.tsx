@@ -2081,20 +2081,22 @@ const App = () => {
                       </div>
                       <div>
                         <p className="text-sm text-emerald-700 font-semibold">Winners Announced</p>
-                        <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
+                          <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
+                        </div>
                       </div>
+                            <button
+                              onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
+                              className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                            >
+                              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-emerald-100 animate-pulse" aria-hidden="true" />
+                              View winners
+                            </button>
+
+
                     </div>
-                          <button
-                            onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                          >
-                            View winners
-                          </button>
-
-
                   </div>
-                </div>
-              )}
+                )}
+
 
               {/* Prize Showcase */}
 

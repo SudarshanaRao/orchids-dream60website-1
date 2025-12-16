@@ -43,55 +43,30 @@ export function Header({ user, onNavigate, onLogin, onLogout }: HeaderProps) {
   }, []);
 
     const handleInstallClick = async () => {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/.test(navigator.userAgent);
-      const isMobile = isIOS || isAndroid;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
 
-      // For mobile devices, try to trigger native install prompt or show instructions
-      if (isMobile) {
-        if (deferredPrompt) {
-          // Android with beforeinstallprompt support
-          try {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            
-            if (outcome === 'accepted') {
-              setShowInstallButton(false);
-            }
-            
-            setDeferredPrompt(null);
-          } catch (error) {
-            console.error('Error triggering install prompt:', error);
+      if (isStandalone) {
+        setShowInstallButton(false);
+        return;
+      }
+
+      if (deferredPrompt) {
+        try {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          setDeferredPrompt(null);
+
+          if (outcome === 'accepted') {
+            setShowInstallButton(false);
           }
-        } else {
-          // iOS or Android without beforeinstallprompt - show instructions in a better modal
-          const instructions = isIOS
-            ? 'To install Dream60 on iOS:\n\n1. Tap the Share button (□↑) at the bottom\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to install the app\n\nYou\'ll then be able to open Dream60 like any other app!'
-            : 'To install Dream60 on Android:\n\n1. Tap the menu (⋮) in your browser\n2. Look for "Install app" or "Add to Home screen"\n3. Tap it and follow the prompts\n\nThe app will be added to your home screen!';
-          
-          alert(instructions);
+        } catch (error) {
+          console.error('Error triggering install prompt:', error);
         }
         return;
       }
 
-      // Desktop flow
-      if (!deferredPrompt) {
-        alert('To install Dream60:\n\nLook for the install icon (⊕) in your browser\'s address bar, or check your browser menu for "Install" or "Add to Home Screen" option.');
-        return;
-      }
-
-      try {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          setShowInstallButton(false);
-        }
-        
-        setDeferredPrompt(null);
-      } catch (error) {
-        console.error('Error triggering install prompt:', error);
-      }
+      // No captured prompt available
+      alert('Install prompt is not available on this device right now.');
     };
 
   // Fetch user stats from backend API
