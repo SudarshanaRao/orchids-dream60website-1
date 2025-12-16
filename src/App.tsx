@@ -267,7 +267,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         return 'game';
       });
 
-  const TUTORIAL_ID = 'pwa_schedule_download_notify_v1';
+  const TUTORIAL_ID = 'dream60_christmas_walkthrough_v2';
   const [tutorialStartToken, setTutorialStartToken] = useState(0);
   const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
 
