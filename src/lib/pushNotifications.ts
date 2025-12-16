@@ -16,106 +16,119 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-// Request notification permission
+const supportsPush = () =>
+  typeof window !== 'undefined' &&
+  'serviceWorker' in navigator &&
+  'PushManager' in window &&
+  'Notification' in window;
+
+// Request notification permission (no auto-prompt if already decided)
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-  if (!('Notification' in window)) {
-    console.warn('This browser does not support notifications');
+  if (!supportsPush()) {
+    console.warn('Push/Notifications not supported in this browser');
     return 'denied';
   }
 
-  if (Notification.permission === 'granted') {
-    return 'granted';
-  }
+  if (Notification.permission === 'denied') return 'denied';
+  if (Notification.permission === 'granted') return 'granted';
 
-  const permission = await Notification.requestPermission();
-  return permission;
+  return Notification.requestPermission();
 }
 
 // Get VAPID public key from server
 async function getVAPIDPublicKey(): Promise<string> {
-  try {
-    const response = await fetch(`${API_ENDPOINTS.pushNotification.vapidPublicKey}`);
-    const data = await response.json();
-    
-    if (!data.success || !data.publicKey) {
-      throw new Error('Failed to get VAPID public key');
+  const response = await fetch(`${API_ENDPOINTS.pushNotification.vapidPublicKey}`);
+  const data = await response.json();
+  if (!data.success || !data.publicKey) {
+    throw new Error('Failed to get VAPID public key');
+  }
+  return data.publicKey;
+}
+
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (!supportsPush()) return null;
+
+  let registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) {
+    registration = await navigator.serviceWorker.register('/service-worker.js');
+  }
+
+  // Wait until the SW is active/ready
+  await navigator.serviceWorker.ready;
+  return registration;
+}
+
+function detectDeviceType(): 'PWA' | 'Web' {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+  return isStandalone ? 'PWA' : 'Web';
+}
+
+async function createOrRefreshSubscription(registration: ServiceWorkerRegistration) {
+  const existing = await registration.pushManager.getSubscription();
+
+  // If existing is close to expiring, refresh
+  if (existing && existing.expirationTime && existing.expirationTime - Date.now() < 3 * 24 * 60 * 60 * 1000) {
+    try {
+      await existing.unsubscribe();
+    } catch (err) {
+      console.warn('Unable to unsubscribe expired push subscription', err);
     }
-    
-    return data.publicKey;
-  } catch (error) {
-    console.error('Error getting VAPID public key:', error);
-    throw error;
+  } else if (existing) {
+    return existing;
+  }
+
+  const publicKey = await getVAPIDPublicKey();
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey)
+  });
+}
+
+async function persistSubscription(userId: string, subscription: PushSubscription, deviceType: 'PWA' | 'Web') {
+  const payload = subscription.toJSON();
+
+  const response = await fetch(`${API_ENDPOINTS.pushNotification.subscribe}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      userId,
+      subscription: {
+        endpoint: payload.endpoint,
+        keys: payload.keys
+      },
+      deviceType
+    })
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || 'Failed to persist push subscription');
   }
 }
 
-// Subscribe to push notifications
+// Subscribe (or refresh) push notifications for a user
 export async function subscribeToPushNotifications(userId: string): Promise<boolean> {
   try {
-    // Check if service worker is supported
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push notifications are not supported in this browser');
-      return false;
-    }
+    if (!userId) return false;
+    if (!supportsPush()) return false;
 
-    // Request notification permission
     const permission = await requestNotificationPermission();
     if (permission !== 'granted') {
-      console.log('Notification permission denied');
+      console.warn('Notification permission not granted');
       return false;
     }
 
-    // Register service worker if not already registered
-    let registration = await navigator.serviceWorker.getRegistration();
-    
-    if (!registration) {
-      registration = await navigator.serviceWorker.register('/service-worker.js');
-      console.log('Service worker registered for push notifications');
-    }
+    const registration = await getServiceWorkerRegistration();
+    if (!registration) return false;
 
-    // Wait for service worker to be ready
-    await navigator.serviceWorker.ready;
+    const subscription = await createOrRefreshSubscription(registration);
+    const deviceType = detectDeviceType();
 
-    // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
-    
-    if (!subscription) {
-      // Get VAPID public key
-      const publicKey = await getVAPIDPublicKey();
-      
-      // Subscribe to push notifications
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-      
-      console.log('Push subscription created:', subscription);
-    }
-
-    // Send subscription to server
-    const response = await fetch(`${API_ENDPOINTS.pushNotification.subscribe}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId,
-        subscription: {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.toJSON().keys?.p256dh || '',
-            auth: subscription.toJSON().keys?.auth || ''
-          }
-        }
-      })
-    });
-
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to subscribe to push notifications');
-    }
-
-    console.log('✅ Successfully subscribed to push notifications');
+    await persistSubscription(userId, subscription, deviceType);
+    localStorage.setItem('push-subscribed', 'true');
+    localStorage.setItem('push-permission-asked', 'true');
     return true;
   } catch (error) {
     console.error('Error subscribing to push notifications:', error);
@@ -126,34 +139,20 @@ export async function subscribeToPushNotifications(userId: string): Promise<bool
 // Unsubscribe from push notifications
 export async function unsubscribeFromPushNotifications(userId: string): Promise<boolean> {
   try {
+    if (!supportsPush()) return false;
+
     const registration = await navigator.serviceWorker.getRegistration();
-    
-    if (!registration) {
-      return false;
-    }
+    const subscription = await registration?.pushManager.getSubscription();
+    if (!subscription) return false;
 
-    const subscription = await registration.pushManager.getSubscription();
-    
-    if (!subscription) {
-      return false;
-    }
-
-    // Unsubscribe on client side
     await subscription.unsubscribe();
 
-    // Notify server
     await fetch(`${API_ENDPOINTS.pushNotification.unsubscribe}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userId,
-        endpoint: subscription.endpoint
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, endpoint: subscription.endpoint })
     });
 
-    console.log('✅ Successfully unsubscribed from push notifications');
     return true;
   } catch (error) {
     console.error('Error unsubscribing from push notifications:', error);
@@ -164,15 +163,10 @@ export async function unsubscribeFromPushNotifications(userId: string): Promise<
 // Check if user is subscribed to push notifications
 export async function isSubscribedToPushNotifications(): Promise<boolean> {
   try {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      return false;
-    }
+    if (!supportsPush()) return false;
 
     const registration = await navigator.serviceWorker.getRegistration();
-    
-    if (!registration) {
-      return false;
-    }
+    if (!registration) return false;
 
     const subscription = await registration.pushManager.getSubscription();
     return subscription !== null;
@@ -181,3 +175,9 @@ export async function isSubscribedToPushNotifications(): Promise<boolean> {
     return false;
   }
 }
+
+// Helper: high-level support status for UI
+export const getPushSupportStatus = () => ({
+  supported: supportsPush(),
+  permission: typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+});

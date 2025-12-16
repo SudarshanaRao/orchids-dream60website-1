@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { CheckCircle2, Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
@@ -1979,9 +1979,19 @@ const App = () => {
                   </div>
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
                       <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
-                      <div className="text-lg sm:text-xl font-bold">
-                        {currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}
-                      </div>
+                      {currentAuction.winnersAnnounced ? (
+                        <div className="flex items-start gap-2 mt-1">
+                          <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-200 mt-0.5" />
+                          <div>
+                            <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
+                            <div className="text-xs sm:text-sm text-white/80">Results are live for this slot</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-lg sm:text-xl font-bold">
+                          {`Round ${currentAuction.currentRound}`}
+                        </div>
+                      )}
                     </div>
                 </div>
               </div>
