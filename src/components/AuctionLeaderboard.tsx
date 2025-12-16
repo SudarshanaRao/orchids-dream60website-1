@@ -33,8 +33,10 @@ interface WinnerData {
   playerUsername: string;
   prizeAmount: number;
   isPrizeClaimed: boolean;
+  prizeClaimStatus?: string;
   prizeClaimedAt: string | null;
   prizeClaimedBy: string | null;
+  claimNotes?: string | null;
   isCurrentUser: boolean;
 }
 
@@ -80,19 +82,19 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
           const data = await response.json();
 
           if (response.ok && data.success) {
-            const normalizedWinners: WinnerData[] = (data.auction?.winners || []).map((winner: any) => {
-              const isClaimed = winner?.isPrizeClaimed === true
-                || winner?.isPrizeClaimed === 'true'
-                || winner?.isPrizeClaimStatus === 'CLAIMED'
-                || winner?.prizeClaimStatus === 'CLAIMED'
-                || !!winner?.prizeClaimedAt;
+              const normalizedWinners: WinnerData[] = (data.auction?.winners || []).map((winner: any) => {
+                const status = winner?.prizeClaimStatus || (winner?.isPrizeClaimed ? 'CLAIMED' : undefined);
+                const isClaimed = status === 'CLAIMED';
 
-              return {
-                ...winner,
-                isPrizeClaimed: isClaimed,
-                prizeClaimedBy: winner?.prizeClaimedBy || null,
-              } as WinnerData;
-            });
+                return {
+                  ...winner,
+                  prizeClaimStatus: status,
+                  isPrizeClaimed: isClaimed,
+                  prizeClaimedBy: winner?.prizeClaimedBy || null,
+                  claimNotes: winner?.claimNotes || null,
+                } as WinnerData;
+              });
+
 
             if (data.auction) {
               setAuction({ ...data.auction, winners: normalizedWinners });
@@ -408,21 +410,36 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
                         <IndianRupee className="w-3 h-3" />
                         Prize: {winner.prizeAmount.toLocaleString('en-IN')}
                       </div>
-                      <div className={`text-xs mt-2 flex items-center gap-1 ${
-                        winner.isPrizeClaimed ? 'text-green-600' : 'text-orange-600'
-                      }`}>
-                        {winner.isPrizeClaimed ? (
-                          <>
-                            <Gift className="w-3 h-3" />
-                            Claimed by {winner.prizeClaimedBy}
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle className="w-3 h-3" />
-                            Prize not claimed yet
-                          </>
-                        )}
-                      </div>
+                        <div className={`text-xs mt-2 flex items-center gap-1 ${
+                          winner.prizeClaimStatus === 'CLAIMED'
+                            ? 'text-green-600'
+                            : winner.prizeClaimStatus === 'CANCELLED' || winner.prizeClaimStatus === 'EXPIRED'
+                            ? 'text-orange-600'
+                            : 'text-purple-600'
+                        }`}>
+                          {winner.prizeClaimStatus === 'CLAIMED' ? (
+                            <>
+                              <Gift className="w-3 h-3" />
+                              Claimed by {winner.prizeClaimedBy || winner.playerUsername}
+                            </>
+                          ) : winner.prizeClaimStatus === 'CANCELLED' ? (
+                            <>
+                              <AlertCircle className="w-3 h-3" />
+                              Claim cancelled
+                            </>
+                          ) : winner.prizeClaimStatus === 'EXPIRED' ? (
+                            <>
+                              <AlertCircle className="w-3 h-3" />
+                              Claim expired
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3 h-3" />
+                              Prize not claimed yet
+                            </>
+                          )}
+                        </div>
+
                     </div>
                   ))}
                 </div>

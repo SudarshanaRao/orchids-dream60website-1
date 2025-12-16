@@ -1802,6 +1802,29 @@ const getAuctionLeaderboard = async (req, res) => {
       };
     }) || [];
     
+    // Build winners list from AuctionHistory (source of truth) and merge prize amounts from hourly auction
+    const historyWinners = await AuctionHistory.find({ hourlyAuctionId, isWinner: true }).lean();
+    const hourlyWinnerByRank = new Map((auction.winners || []).map(w => [w.rank, w]));
+
+    const winnersFromHistory = historyWinners
+      .sort((a, b) => (a.finalRank || 0) - (b.finalRank || 0))
+      .map(hw => {
+        const hourlyWinner = hourlyWinnerByRank.get(hw.finalRank);
+        const prizeAmount = hw.prizeAmountWon ?? hourlyWinner?.prizeAmount ?? 0;
+        return {
+          rank: hw.finalRank,
+          playerId: hw.userId,
+          playerUsername: hw.username,
+          prizeAmount,
+          prizeClaimStatus: hw.prizeClaimStatus || 'PENDING',
+          isPrizeClaimed: hw.prizeClaimStatus === 'CLAIMED',
+          prizeClaimedAt: hw.claimedAt || null,
+          prizeClaimedBy: hw.claimedBy || null,
+          claimNotes: hw.claimNotes || null,
+          isCurrentUser: hw.userId === userId,
+        };
+      });
+
     // Get auction summary with prize claim info for winners
     const auctionSummary = {
       hourlyAuctionId: auction.hourlyAuctionId,
@@ -1814,23 +1837,20 @@ const getAuctionLeaderboard = async (req, res) => {
       status: auction.Status,
       totalParticipants: auction.participants?.length || 0,
       totalRounds: auction.roundCount || 4,
-    winners: auction.winners?.map(w => {
-      const isPrizeClaimed = w.isPrizeClaimed === true
-        || w.isPrizeClaimed === 'true'
-        || w.prizeClaimStatus === 'CLAIMED'
-        || !!w.prizeClaimedAt;
-
-      return {
-        rank: w.rank,
-        playerId: w.playerId,
-        playerUsername: w.playerUsername,
-        prizeAmount: w.prizeAmount,
-        isPrizeClaimed,
-        prizeClaimedAt: w.prizeClaimedAt || null,
-        prizeClaimedBy: w.prizeClaimedBy || w.claimedBy || null,
-        isCurrentUser: w.playerId === userId,
-      };
-    }) || [],
+      winners: winnersFromHistory.length > 0
+        ? winnersFromHistory
+        : (auction.winners || []).map(w => ({
+            rank: w.rank,
+            playerId: w.playerId,
+            playerUsername: w.playerUsername,
+            prizeAmount: w.prizeAmount,
+            prizeClaimStatus: w.prizeClaimStatus || 'PENDING',
+            isPrizeClaimed: w.prizeClaimStatus === 'CLAIMED' || w.isPrizeClaimed === true,
+            prizeClaimedAt: w.prizeClaimedAt || null,
+            prizeClaimedBy: w.prizeClaimedBy || w.claimedBy || null,
+            claimNotes: w.claimNotes || null,
+            isCurrentUser: w.playerId === userId,
+          })),
 
     };
     
