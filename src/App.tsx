@@ -2004,12 +2004,12 @@ const App = () => {
                         <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
                       </div>
                     </div>
-                    <a
-                      href="/auction-history"
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                    >
-                      View winners
-                    </a>
+                      <button
+                        onClick={() => setCurrentPage('auction-leaderboard')}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                      >
+                        View winners
+                      </button>
                   </div>
                 </div>
               )}
