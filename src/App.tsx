@@ -2089,13 +2089,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-    // Default game page
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-              <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
-              <Sonner />
-
+  // Default game page
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+          <div className="min-h-screen bg-background">
+            <Sonner />
             
             <Header
               user={currentUser}
@@ -2105,104 +2104,114 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               onStartTutorial={() => triggerTutorial()}
             />
 
-              <TutorialOverlay
-                steps={tutorialSteps}
-                tutorialId={TUTORIAL_ID}
-                startToken={tutorialStartToken}
-                forceShow={tutorialStartToken > 0}
-                returnTo="home"
-                onComplete={() => {
-                  setTutorialStartToken(0);
-                  setCurrentPage('game');
-                  window.history.pushState({}, '', '/');
-                }}
-              />
+            <TutorialOverlay
+              steps={tutorialSteps}
+              tutorialId={TUTORIAL_ID}
+              startToken={tutorialStartToken}
+              forceShow={tutorialStartToken > 0}
+              returnTo={tutorialReturnTo}
+              onComplete={() => setTutorialStartToken(0)}
+            />
 
 
-            <main className="relative container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8 overflow-hidden">
-              
+          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+            {/* Hero Section */}
+            <div className="text-center space-y-4 px-2 sm:px-4">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
+  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
+  bg-clip-text text-transparent">
+  DREAM60
+</h1>
 
-              <div className="relative text-center space-y-5 px-4 sm:px-8 py-8 bg-white rounded-3xl border border-purple-100 shadow-xl">
-                <p className="text-sm font-semibold text-purple-600 tracking-wide uppercase">Daily 60-minute auctions</p>
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-700 to-indigo-600 bg-clip-text text-transparent">
-                  DREAM60
-                </h1>
-                <p className="text-base sm:text-lg text-purple-700 max-w-3xl mx-auto">
-                  Bid smart, win faster. Join live hourly auctions with transparent rounds and instant results.
-                </p>
+              <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
+  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
+  bg-clip-text text-transparent">
+  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
+</p>
+
                 {!currentUser && (
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-4">
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
                     <button
                       onClick={handleShowLogin}
-                      className="inline-flex justify-center items-center px-8 sm:px-10 py-3 rounded-xl bg-purple-700 text-white font-semibold shadow-lg hover:bg-purple-800 transition"
+                      className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
                     >
-                      Login to bid
+                      Join Now & Start Playing
                     </button>
                     <button
                       onClick={handleSwitchToSignup}
-                      className="inline-flex justify-center items-center px-8 sm:px-10 py-3 rounded-xl border border-purple-200 text-purple-800 font-semibold bg-white hover:bg-purple-50 transition"
+                      className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
                     >
-                      Create account
+                      Create Account
                     </button>
                   </div>
                 )}
+
               </div>
 
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
               {serverTime && getCurrentAuctionSlot(serverTime) && (
-                <div className="bg-gradient-to-r from-purple-700 to-indigo-600 text-white rounded-3xl p-5 sm:p-6 shadow-xl">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-white/15 rounded-full p-3">
-                        <Clock className="w-7 h-7 sm:w-9 sm:h-9" />
-                      </div>
+                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                       <div>
-                        <div className="text-sm sm:text-base font-semibold opacity-90">Current auction</div>
+                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
                         <div className="text-xl sm:text-2xl font-bold">
                           {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white/10 rounded-2xl px-5 py-3 border border-white/15 shadow-inner">
-                      <div className="text-xs sm:text-sm font-semibold opacity-90 mb-1">Status</div>
-                      {liveAuctionData?.winnersAnnounced ? (
-                        <div className="flex items-start gap-2">
-                          <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-200" />
-                          <div>
-                            <div className="text-lg sm:text-xl font-bold">Winners announced</div>
-                            <div className="text-xs sm:text-sm text-white/90">Check the results</div>
+                      <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                        <div className="text-xs sm:text-sm opacity-90">Status</div>
+                        {liveAuctionData?.winnersAnnounced ? (
+                          <div className="flex items-start gap-2 mt-1">
+                            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-200 mt-0.5" />
+                            <div>
+                              <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
+                              <div className="text-xs sm:text-sm text-white/80">Results are live for this slot</div>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
-                          Round {liveAuctionData?.currentRound || currentAuction.currentRound}
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className="text-lg sm:text-xl font-bold">
+                            {`Round ${liveAuctionData?.currentRound || currentAuction.currentRound}`}
+                          </div>
+                        )}
+                      </div>
                   </div>
                 </div>
               )}
 
               {currentAuction.winnersAnnounced && (
-                <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-lg border border-purple-100">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                      <Trophy className="w-6 h-6 text-purple-700" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-purple-600 font-semibold">Winners announced</p>
-                      <p className="text-lg sm:text-xl font-bold text-purple-900">Celebrate the champions of this auction slot</p>
+                <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-emerald-100">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-emerald-700" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-emerald-700 font-semibold">Winners Announced</p>
+                          <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
+                        </div>
+                      </div>
+                              <button
+                                onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
+                                className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
+                                data-tutorial-target="view-winners"
+                              >
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-emerald-100 animate-pulse" aria-hidden="true" />
+                                View winners
+                              </button>
+
+
+
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
 
-
-                {/* Prize Showcase */}
-
+              {/* Prize Showcase */}
 
             <PrizeShowcase
               currentPrize={currentAuction as any}

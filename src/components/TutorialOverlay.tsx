@@ -145,20 +145,20 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   };
 
   const handleComplete = () => {
-    unlockScroll();
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(tutorialId, 'completed');
-    }
+    localStorage.setItem(`tutorial_completed_${tutorialId}`, 'true');
     setIsVisible(false);
-    
-    if (returnTo === 'home') {
-      setTimeout(() => {
-        window.history.pushState({}, '', '/');
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, 300);
+    unlockScroll();
+
+    if (onComplete) {
+      onComplete();
     }
-    
-    onComplete?.();
+
+    if (returnTo && window.location.pathname !== `/${returnTo}`) {
+      setTimeout(() => {
+        window.history.pushState({}, '', `/${returnTo}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }, 200);
+    }
   };
 
   if (!isVisible || steps.length === 0) return null;
