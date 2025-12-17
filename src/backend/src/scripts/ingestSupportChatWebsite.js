@@ -9,7 +9,35 @@ global.File = File;
   ...
 */
 
-require('dotenv').config();
+const path = require('node:path');
+const fs = require('node:fs');
+const dotenv = require('dotenv');
+
+// Load .env even when this script is executed from a different working directory.
+// Priority: current working dir → backend root → project root.
+const loadEnv = () => {
+  const candidates = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '.env.local'),
+
+    // __dirname = src/backend/src/scripts
+    path.resolve(__dirname, '../../../.env'),
+    path.resolve(__dirname, '../../../.env.local'),
+
+    // project root
+    path.resolve(__dirname, '../../../../.env'),
+    path.resolve(__dirname, '../../../../.env.local'),
+  ];
+
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      dotenv.config({ path: p });
+    }
+  }
+};
+
+loadEnv();
+
 const cheerio = require('cheerio');
 const { connectDB } = require('../config/db');
 const SupportChatKnowledgeChunk = require('../models/SupportChatKnowledgeChunk');
