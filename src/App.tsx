@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Support } from './components/Support';
+import { SupportChatPage } from './components/SupportChatPage';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
@@ -253,10 +254,11 @@ const App = () => {
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
     if (path === '/terms') return 'terms';
-    if (path === '/privacy') return 'privacy';
-    if (path === '/support') return 'support';
-    if (path === '/contact') return 'contact';
-    if (path === '/profile') return 'profile';
+      if (path === '/privacy') return 'privacy';
+      if (path === '/support') return 'support';
+      if (path === '/support-chat') return 'support-chat';
+      if (path === '/contact') return 'contact';
+      if (path === '/profile') return 'profile';
     if (path === '/history') return 'history';
     if (path.startsWith('/history/')) return 'history';
     if (path === '/leaderboard') return 'leaderboard';
@@ -277,12 +279,13 @@ const App = () => {
       else if (path === '/forgot-password') setCurrentPage('forgot');
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
-      else if (path === '/terms') setCurrentPage('terms');
-      else if (path === '/privacy') setCurrentPage('privacy');
-      else if (path === '/support') setCurrentPage('support');
-      else if (path === '/contact') setCurrentPage('contact');
-      else if (path === '/profile') setCurrentPage('profile');
-      else if (path === '/history' || path.startsWith('/history/')) {
+        else if (path === '/terms') setCurrentPage('terms');
+        else if (path === '/privacy') setCurrentPage('privacy');
+        else if (path === '/support') setCurrentPage('support');
+        else if (path === '/support-chat') setCurrentPage('support-chat');
+        else if (path === '/contact') setCurrentPage('contact');
+        else if (path === '/profile') setCurrentPage('profile');
+        else if (path === '/history' || path.startsWith('/history/')) {
         setCurrentPage('history');
         // ✅ If navigating back from details to history list, clear selected auction
         if (path === '/history') {
@@ -1280,23 +1283,24 @@ const App = () => {
     setCurrentPage(page);
     
     // ✅ Update browser URL to match the page
-    const urlMap: { [key: string]: string } = {
-      'game': '/',
-      'login': '/login',
-      'signup': '/signup',
-      'forgot': '/forgot-password',
-      'rules': '/rules',
-      'participation': '/participation',
-      'terms': '/terms',
-      'privacy': '/privacy',
-      'support': '/support',
-      'contact': '/contact',
-      'profile': '/profile',
-      'history': '/history',
-      'leaderboard': '/leaderboard',
-      'admin-login': '/admin',
-      'admin-dashboard': '/admin'
-    };
+      const urlMap: { [key: string]: string } = {
+        'game': '/',
+        'login': '/login',
+        'signup': '/signup',
+        'forgot': '/forgot-password',
+        'rules': '/rules',
+        'participation': '/participation',
+        'terms': '/terms',
+        'privacy': '/privacy',
+        'support': '/support',
+        'support-chat': '/support-chat',
+        'contact': '/contact',
+        'profile': '/profile',
+        'history': '/history',
+        'leaderboard': '/leaderboard',
+        'admin-login': '/admin',
+        'admin-dashboard': '/admin',
+      };
     
     const url = urlMap[page] || '/';
     window.history.pushState({}, '', url);
@@ -1894,16 +1898,27 @@ const App = () => {
     );
   }
 
-  if (currentPage === 'support') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Support onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'support') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Support onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'support-chat') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <SupportChatPage onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
   if (currentPage === 'contact') {
     return (
