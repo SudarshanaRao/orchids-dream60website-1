@@ -1,11 +1,7 @@
 const express = require('express');
 const SupportChatMessage = require('../models/SupportChat');
 const SupportChatKnowledgeChunk = require('../models/SupportChatKnowledgeChunk');
-const {
-  cosineSimilarity,
-  embedTexts,
-  generateAnswerFromContext,
-} = require('../utils/supportChatAi');
+const { generateAnswerFromContext } = require('../utils/supportChatAi');
 
 const router = express.Router();
 
@@ -47,7 +43,7 @@ router.post('/message', async (req, res) => {
   }
 });
 
-// AI chat endpoint (OpenAI + Dream60 website knowledge)
+// AI chat endpoint (Open-source models only)
 router.post('/ask', async (req, res) => {
   try {
     const { sessionId, userId, message } = req.body;
@@ -62,32 +58,40 @@ router.post('/ask', async (req, res) => {
     // Persist the user message
     await saveMessage({ sessionId, userId, role: 'user', message });
 
-    // Load website knowledge chunks
-    const chunks = await SupportChatKnowledgeChunk.find({})
-      .select('sourceUrl content embedding')
-      .lean();
+      // Retrieve top chunks via MongoDB text search (free; no embeddings)
+      // If indexes aren't created yet, fall back to a simple regex search.
+      let chunks = [];
 
-    let context = '';
-    let sources = [];
+      try {
+        chunks = await SupportChatKnowledgeChunk.find(
+          { $text: { $search: message } },
+          { score: { $meta: 'textScore' } }
+        )
+          .select('sourceUrl content')
+          .sort({ score: { $meta: 'textScore' } })
+          .limit(6)
+          .lean();
+      } catch (e) {
+        const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const terms = String(message || '')
+          .split(/\s+/)
+          .map((t) => t.trim())
+          .filter((t) => t.length >= 3)
+          .slice(0, 6);
 
-    if (chunks.length > 0) {
-      // Embed user query and retrieve top-k chunks by cosine similarity
-      const [queryEmbedding] = await embedTexts([message]);
+        if (terms.length > 0) {
+          const regex = new RegExp(terms.map(escapeRegExp).join('|'), 'i');
+          chunks = await SupportChatKnowledgeChunk.find({ content: regex })
+            .select('sourceUrl content')
+            .limit(6)
+            .lean();
+        }
+      }
 
-      const scored = chunks
-        .map((c) => ({
-          sourceUrl: c.sourceUrl,
-          content: c.content,
-          score: cosineSimilarity(queryEmbedding, c.embedding),
-        }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 6);
-
-      sources = Array.from(new Set(scored.map((s) => s.sourceUrl)));
-      context = scored
-        .map((s) => `Source: ${s.sourceUrl}\n${s.content}`)
-        .join('\n\n---\n\n');
-    }
+    const sources = Array.from(new Set(chunks.map((c) => c.sourceUrl)));
+    const context = chunks
+      .map((c) => `Source: ${c.sourceUrl}\n${c.content}`)
+      .join('\n\n---\n\n');
 
     // Provide short conversation history for coherence (last 6 messages)
     const historyDocs = await SupportChatMessage.find({ sessionId })
@@ -95,12 +99,10 @@ router.post('/ask', async (req, res) => {
       .limit(6)
       .lean();
 
-    const conversation = historyDocs
-      .reverse()
-      .map((m) => ({
-        role: m.role === 'bot' ? 'assistant' : 'user',
-        content: m.message,
-      }));
+    const conversation = historyDocs.reverse().map((m) => ({
+      role: m.role === 'bot' ? 'assistant' : 'user',
+      content: m.message,
+    }));
 
     const reply = await generateAnswerFromContext({
       query: message,
@@ -121,11 +123,16 @@ router.post('/ask', async (req, res) => {
     const msg = String(error?.message || error);
     console.error('❌ [SUPPORT-CHAT] /ask error:', msg);
 
-    // Provide a clear error when OpenAI key isn't configured
-    if (msg.includes('OPENAI_API_KEY')) {
+    // Common missing-key messages
+    if (
+      msg.includes('GROQ_API_KEY') ||
+      msg.includes('OPENROUTER_API_KEY') ||
+      msg.includes('TOGETHER_API_KEY') ||
+      msg.includes('SUPPORT_CHAT_OPENAI_COMPAT_API_KEY')
+    ) {
       return res.status(503).json({
         success: false,
-        message: 'AI chatbot is not configured (missing OPENAI_API_KEY).',
+        message: `AI chatbot is not configured (${msg}).`,
       });
     }
 
@@ -138,9 +145,7 @@ router.get('/session/:sessionId', async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    const messages = await SupportChatMessage.find({ sessionId })
-      .sort({ timestamp: 1 })
-      .lean();
+    const messages = await SupportChatMessage.find({ sessionId }).sort({ timestamp: 1 }).lean();
 
     return res.status(200).json({ success: true, data: messages });
   } catch (error) {
@@ -154,9 +159,7 @@ router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const messages = await SupportChatMessage.find({ userId })
-      .sort({ timestamp: 1 })
-      .lean();
+    const messages = await SupportChatMessage.find({ userId }).sort({ timestamp: 1 }).lean();
 
     return res.status(200).json({ success: true, data: messages });
   } catch (error) {

@@ -378,14 +378,26 @@ Dream60 is committed to fair and transparent gameplay:
 
 Dream60 includes a **real AI chatbot** on **Support → Start Chat**.
 
+It uses **only open‑source LLMs** (no OpenAI). Website training is done by ingesting your website pages into MongoDB, and retrieval is done with MongoDB text search (free; no embeddings).
+
 ### Backend configuration
 Set these environment variables in the backend deployment:
 
-- `OPENAI_API_KEY` *(required)*
-- `OPENAI_CHAT_MODEL` *(optional, default: `gpt-4o-mini`)*
-- `OPENAI_EMBEDDING_MODEL` *(optional, default: `text-embedding-3-small`)*
+- `SUPPORT_CHAT_PROVIDER` *(optional; default: `ollama`)*
+  - Allowed: `ollama`, `groq`, `openrouter`, `together`
+- `SUPPORT_CHAT_MODEL` *(optional; defaults depend on provider)*
 - `FRONTEND_URL` *(recommended; used for ingestion, e.g. `https://test.dream60.com`)*
 - `SUPPORT_CHAT_INGEST_URLS` *(optional; comma-separated full URLs to ingest)*
+
+Provider-specific variables:
+- If `SUPPORT_CHAT_PROVIDER=ollama`:
+  - `OLLAMA_BASE_URL` *(optional; default: `http://localhost:11434`)*
+- If `SUPPORT_CHAT_PROVIDER=groq`:
+  - `GROQ_API_KEY` *(required)*
+- If `SUPPORT_CHAT_PROVIDER=openrouter`:
+  - `OPENROUTER_API_KEY` *(required)*
+- If `SUPPORT_CHAT_PROVIDER=together`:
+  - `TOGETHER_API_KEY` *(required)*
 
 ### Train it on your website content (RAG ingestion)
 From the backend folder:

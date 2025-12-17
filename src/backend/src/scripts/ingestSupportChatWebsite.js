@@ -1,11 +1,13 @@
 /*
   Ingest Dream60 website pages into MongoDB for the Support Chat AI.
 
+  This ingestion is FREE (no paid embeddings). It stores website text chunks in MongoDB and
+  the /support-chat/ask endpoint retrieves relevant chunks via MongoDB text search.
+
   Usage (from src/backend):
     node src/scripts/ingestSupportChatWebsite.js
 
   Env:
-    OPENAI_API_KEY (required)
     FRONTEND_URL or CLIENT_URL (recommended)
     SUPPORT_CHAT_INGEST_URLS (optional comma-separated full URLs)
 */
@@ -14,7 +16,7 @@ require('dotenv').config();
 const cheerio = require('cheerio');
 const { connectDB } = require('../config/db');
 const SupportChatKnowledgeChunk = require('../models/SupportChatKnowledgeChunk');
-const { chunkText, embedTexts, normalizeText } = require('../utils/supportChatAi');
+const { chunkText, normalizeText } = require('../utils/supportChatAi');
 
 const getDefaultUrls = () => {
   const base = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
@@ -68,26 +70,17 @@ const ingestUrl = async (url) => {
   // Replace prior chunks for the same URL
   await SupportChatKnowledgeChunk.deleteMany({ sourceUrl: url });
 
-  // Embed in batches to avoid request limits
-  const batchSize = 48;
-  let created = 0;
+  const docs = chunks.map((content, idx) => ({
+    sourceUrl: url,
+    chunkIndex: idx,
+    content,
+  }));
 
-  for (let i = 0; i < chunks.length; i += batchSize) {
-    const batch = chunks.slice(i, i + batchSize);
-    const embeddings = await embedTexts(batch);
-
-    const docs = batch.map((content, idx) => ({
-      sourceUrl: url,
-      chunkIndex: i + idx,
-      content,
-      embedding: embeddings[idx],
-    }));
-
+  if (docs.length > 0) {
     await SupportChatKnowledgeChunk.insertMany(docs, { ordered: false });
-    created += docs.length;
   }
 
-  return { url, chunks: chunks.length, stored: created };
+  return { url, chunks: chunks.length, stored: docs.length };
 };
 
 const main = async () => {
@@ -98,6 +91,7 @@ const main = async () => {
   }
 
   await connectDB();
+  await SupportChatKnowledgeChunk.syncIndexes();
 
   console.log(`🔎 Ingesting ${urls.length} pages into SupportChatKnowledgeChunk...`);
   const results = [];
