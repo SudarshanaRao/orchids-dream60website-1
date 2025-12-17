@@ -102,6 +102,7 @@ export const API_ENDPOINTS = {
 
   supportChat: {
     sendMessage: `${API_BASE_URL}/support-chat/message`,
+    ask: `${API_BASE_URL}/support-chat/ask`,
     getSession: (sessionId: string) => `${API_BASE_URL}/support-chat/session/${sessionId}`,
     getUserMessages: (userId: string) => `${API_BASE_URL}/support-chat/user/${userId}`,
     deleteSession: (sessionId: string) => `${API_BASE_URL}/support-chat/session/${sessionId}`,

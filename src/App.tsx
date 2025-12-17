@@ -1410,20 +1410,16 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         }
       },
     },
-    {
-      id: 'enable-notifications',
-      title: 'Enable auction notifications',
-      description: 'Turn on alerts from Profile to get round and winner updates.',
-      targetElement: '[data-whatsnew-target="enable-notifications"]',
-      position: 'bottom' as const,
-      shouldSkip: () => {
-        if (typeof Notification === 'undefined') return false;
-        return Notification.permission === 'granted';
+      {
+        id: 'enable-notifications',
+        title: 'Enable auction notifications',
+        description: 'Turn on alerts from Profile to get round and winner updates.',
+        targetElement: '[data-whatsnew-target="enable-notifications"]',
+        position: 'bottom' as const,
+        action: () => {
+          handleNavigate('profile');
+        },
       },
-      action: () => {
-        handleNavigate('profile');
-      },
-    },
     {
       id: 'auction-schedule',
       title: 'Check today’s auction schedule',

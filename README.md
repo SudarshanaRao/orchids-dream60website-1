@@ -12,7 +12,9 @@ Welcome to **Dream60**, an exciting real-time auction game where players compete
 - [Prize Claiming](#prize-claiming)
 - [Auction History](#auction-history)
 - [Game Strategy Tips](#game-strategy-tips)
-- [Technical Stack](#technical-stack)
+  - [Technical Stack](#technical-stack)
+  - [AI Support Chatbot](#ai-support-chatbot)
+
 
 ---
 
@@ -369,6 +371,36 @@ Dream60 is committed to fair and transparent gameplay:
 - ✅ **Secure Platform**: Anti-fraud measures in place
 - ✅ **Equal Opportunity**: All players compete on a level playing field
 - ✅ **Automated Systems**: Cron jobs ensure consistency and fairness
+
+---
+
+## 🤖 AI Support Chatbot
+
+Dream60 includes a **real AI chatbot** on **Support → Start Chat**.
+
+### Backend configuration
+Set these environment variables in the backend deployment:
+
+- `OPENAI_API_KEY` *(required)*
+- `OPENAI_CHAT_MODEL` *(optional, default: `gpt-4o-mini`)*
+- `OPENAI_EMBEDDING_MODEL` *(optional, default: `text-embedding-3-small`)*
+- `FRONTEND_URL` *(recommended; used for ingestion, e.g. `https://test.dream60.com`)*
+- `SUPPORT_CHAT_INGEST_URLS` *(optional; comma-separated full URLs to ingest)*
+
+### Train it on your website content (RAG ingestion)
+From the backend folder:
+
+```bash
+cd src/backend
+npm install
+node src/scripts/ingestSupportChatWebsite.js
+```
+
+To provide extra pages for training, set `SUPPORT_CHAT_INGEST_URLS`, for example:
+
+```text
+SUPPORT_CHAT_INGEST_URLS=https://test.dream60.com/,https://test.dream60.com/rules,https://test.dream60.com/terms
+```
 
 ---
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
@@ -31,82 +31,30 @@ export function SupportChatPage({ onBack, onNavigate }: SupportChatPageProps) {
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
-  const [currentBotMessage, setCurrentBotMessage] = useState('');
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const knowledgeBase = [
-    {
-      question: 'How do prize claims work?',
-      answer: 'If you win, you pay only your final round bid amount to claim. You then receive an Amazon voucher equal to the full product worth. Example: pay ₹1,000, get ₹20,000 voucher.',
-    },
-    {
-      question: 'What is the entry fee?',
-      answer: 'You must pay the entry fee before Round 1. After that, you can place one bid per round as boxes open every 15 minutes.',
-    },
-    {
-      question: 'How do I contact support?',
-      answer: 'You can chat here, submit a ticket, or email support@dream60.com. For urgent issues, use live chat.',
-    },
-    {
-      question: 'When are auctions scheduled?',
-      answer: 'Auctions run hourly (10 daily). Check Today\'s Schedule to see fixed auction numbers and time slots.',
-    },
-    {
-      question: 'How does the bidding work?',
-      answer: 'There are 4 bidding rounds after entry. One bid per round. Each next round opens every 15 minutes. Highest final bid wins.',
-    },
-    {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept UPI, cards, and net banking through Razorpay. UPI is the fastest and most convenient method.',
-    },
-  ];
-
-  const getBotReply = (query: string): string => {
-    const normalized = query.toLowerCase();
-    
-    if (normalized.includes('prize') || normalized.includes('claim') || normalized.includes('voucher')) {
-      return 'You pay only your final round bid to claim. We then issue an Amazon voucher equal to the full product worth for that auction.';
-    }
-    if (normalized.includes('entry')) {
-      return 'Pay the entry fee before Round 1. After entry, you can bid once per 15-minute round (4 rounds). Entry fees are non-refundable.';
-    }
-    if (normalized.includes('bid') || normalized.includes('round')) {
-      return 'There are 4 bidding rounds after entry. One bid per round. Each next round opens every 15 minutes. Highest final bid wins.';
-    }
-    if (normalized.includes('schedule') || normalized.includes('auction number')) {
-      return 'Today\'s Schedule shows fixed auction numbers for the day (they do not reset). You can preview time slots and prizes there.';
-    }
-    if (normalized.includes('payment') || normalized.includes('upi') || normalized.includes('pay')) {
-      return 'We accept UPI, cards, and net banking through Razorpay. All payments are secure and instant. Entry fees and bids are non-refundable.';
-    }
-    if (normalized.includes('win') || normalized.includes('winner')) {
-      return 'Winners are announced immediately when the auction ends. The highest bidder in the final round wins and can claim the prize by paying their final bid amount.';
-    }
-    
-    const match = knowledgeBase.find(
-      (item) =>
-        item.question.toLowerCase().includes(normalized) ||
-        item.answer.toLowerCase().includes(normalized)
-    );
-    
-    return match?.answer || "I couldn't find that yet. Ask about entry fees, bids, prize claims, vouchers, or scheduling.";
-  };
-
-  const saveMessageToDatabase = async (role: 'user' | 'bot', message: string) => {
+  const fetchBotReply = async (query: string): Promise<string> => {
     try {
-      await fetch(API_ENDPOINTS.supportChat.sendMessage, {
+      const res = await fetch(API_ENDPOINTS.supportChat.ask, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessionId,
-          role,
-          message,
+          message: query,
         }),
       });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        return data?.message || "I'm having trouble answering right now. Please try again.";
+      }
+
+      return String(data?.data?.reply || "I don't have that information on the Dream60 website yet.");
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error('Error fetching AI reply:', error);
+      return "I'm having trouble answering right now. Please try again.";
     }
   };
 
@@ -124,47 +72,40 @@ export function SupportChatPage({ onBack, onNavigate }: SupportChatPageProps) {
     return interval;
   };
 
-  const handleSendMessage = async (e?: React.FormEvent, overrideText?: string) => {
-    if (e) e.preventDefault();
-    const text = (overrideText ?? chatInput).trim();
-    if (!text || isTyping) return;
+    const handleSendMessage = async (e?: React.FormEvent, overrideText?: string) => {
+      if (e) e.preventDefault();
+      const text = (overrideText ?? chatInput).trim();
+      if (!text || isTyping) return;
 
-    const userMessage: Message = {
-      role: 'user',
-      text,
-      timestamp: Date.now(),
-    };
+      const userMessage: Message = {
+        role: 'user',
+        text,
+        timestamp: Date.now(),
+      };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setChatInput('');
-    
-    await saveMessageToDatabase('user', text);
+      setMessages((prev) => [...prev, userMessage]);
+      setChatInput('');
 
-    setIsTyping(true);
-    
-    setTimeout(() => {
-      const reply = getBotReply(text);
-      setCurrentBotMessage(reply);
-      setDisplayedText('');
+      setIsTyping(true);
 
-      const intervalId = typewriterEffect(reply, async () => {
-        const botMessage: Message = {
-          role: 'bot',
-          text: reply,
-          timestamp: Date.now(),
-        };
-        
-        setMessages((prev) => [...prev, botMessage]);
-        setIsTyping(false);
+      // Give a small delay so the typing indicator feels natural
+      setTimeout(async () => {
+        const reply = await fetchBotReply(text);
         setDisplayedText('');
-        setCurrentBotMessage('');
-        
-        await saveMessageToDatabase('bot', reply);
-      });
 
-      return () => clearInterval(intervalId);
-    }, 800);
-  };
+        typewriterEffect(reply, () => {
+          const botMessage: Message = {
+            role: 'bot',
+            text: reply,
+            timestamp: Date.now(),
+          };
+
+          setMessages((prev) => [...prev, botMessage]);
+          setIsTyping(false);
+          setDisplayedText('');
+        });
+      }, 500);
+    };
 
   useEffect(() => {
     if (chatContainerRef.current) {

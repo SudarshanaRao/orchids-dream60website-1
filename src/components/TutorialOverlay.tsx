@@ -136,7 +136,8 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   if (!isVisible || steps.length === 0) return null;
 
   const step = steps[currentStep];
-  const progress = Math.min(100, Math.round(((currentStep + 1) / steps.length) * 100));
+  // Progress must be exact: 1/5, 2/5, ... 5/5 (100% on final step)
+  const progress = Math.min(100, Math.max(0, ((currentStep + 1) / steps.length) * 100));
   const isLastStep = currentStep === steps.length - 1;
 
   return (
