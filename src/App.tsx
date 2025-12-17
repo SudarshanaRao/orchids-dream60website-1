@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, Clock, Trophy } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
@@ -16,17 +16,12 @@ import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
-import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
-import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
-import { WinningTips } from './components/WinningTips';
-import { ViewGuide } from './components/ViewGuide';
-import { SupportChatPage } from './components/SupportChatPage';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -36,7 +31,6 @@ import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { TutorialOverlay } from './components/TutorialOverlay';
 
 // ✅ Create QueryClient instance
 const queryClient = new QueryClient();
@@ -241,48 +235,36 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-  const App = () => {
-    // ✅ Add server time state
-    const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+const App = () => {
+  // ✅ Add server time state
+  const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
-    // Initialize currentPage based on URL path
-      const [currentPage, setCurrentPage] = useState(() => {
-        const path = window.location.pathname;
+  // Initialize currentPage based on URL path
+  const [currentPage, setCurrentPage] = useState(() => {
+    const path = window.location.pathname;
 
-        if (path === '/admin' || path === '/admin/') {
-          const adminUserId = localStorage.getItem('admin_user_id');
-          return adminUserId ? 'admin-dashboard' : 'admin-login';
-        }
-        if (path === '/login') return 'login';
-        if (path === '/signup') return 'signup';
-        if (path === '/forgot-password') return 'forgot';
-        if (path === '/rules') return 'rules';
-        if (path === '/participation') return 'participation';
-        if (path === '/terms') return 'terms';
-        if (path === '/privacy') return 'privacy';
-        if (path === '/support') return 'support';
-        if (path === '/contact') return 'contact';
-        if (path === '/winning-tips') return 'winning-tips';
-        if (path === '/view-guide') return 'view-guide';
-        if (path === '/support-chat') return 'support-chat';
-        if (path === '/profile') return 'profile';
-        if (path === '/history') return 'history';
-        if (path.startsWith('/history/')) return 'history';
-        if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
-        if (path === '/leaderboard') return 'leaderboard';
-        if (path === '/auction-leaderboard') return 'auction-leaderboard';
+    if (path === '/admin' || path === '/admin/') {
+      const adminUserId = localStorage.getItem('admin_user_id');
+      return adminUserId ? 'admin-dashboard' : 'admin-login';
+    }
+    if (path === '/login') return 'login';
+    if (path === '/signup') return 'signup';
+    if (path === '/forgot-password') return 'forgot';
+    if (path === '/rules') return 'rules';
+    if (path === '/participation') return 'participation';
+    if (path === '/terms') return 'terms';
+    if (path === '/privacy') return 'privacy';
+    if (path === '/support') return 'support';
+    if (path === '/contact') return 'contact';
+    if (path === '/profile') return 'profile';
+    if (path === '/history') return 'history';
+    if (path.startsWith('/history/')) return 'history';
+    if (path === '/leaderboard') return 'leaderboard';
 
-        return 'game';
-      });
+    return 'game';
+  });
 
-  const TUTORIAL_ID = 'whatsnew_transactions_5steps_v2';
-  const [tutorialStartToken, setTutorialStartToken] = useState(0);
-  const [tutorialReturnTo, setTutorialReturnTo] = useState<string>('');
-
-
-
-    // ✅ Sync URL with page state and handle browser back/forward
-
+  // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
@@ -296,35 +278,19 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/terms') setCurrentPage('terms');
-        else if (path === '/privacy') setCurrentPage('privacy');
-          else if (path === '/support') setCurrentPage('support');
-          else if (path === '/contact') setCurrentPage('contact');
-          else if (path === '/winning-tips') setCurrentPage('winning-tips');
-          else if (path === '/view-guide') setCurrentPage('view-guide');
-          else if (path === '/support-chat') setCurrentPage('support-chat');
-          else if (path === '/profile') setCurrentPage('profile');
-
-          else if (path === '/history' || path.startsWith('/history/')) {
-            setCurrentPage('history');
-            // ✅ If navigating back from details to history list, clear selected auction
-            if (path === '/history') {
-              setSelectedAuctionDetails(null);
-            }
-          } else if (path === '/transactions' || path.startsWith('/transactions/')) {
-            setCurrentPage('transactions');
-          } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-          else if (path === '/auction-leaderboard') {
-            setCurrentPage('auction-leaderboard');
-            const params = new URLSearchParams(window.location.search);
-            const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
-            if (urlHourlyId) {
-              setCurrentHourlyAuctionId(urlHourlyId);
-              sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
-            }
-          }
-          else setCurrentPage('game');
-      };
-
+      else if (path === '/privacy') setCurrentPage('privacy');
+      else if (path === '/support') setCurrentPage('support');
+      else if (path === '/contact') setCurrentPage('contact');
+      else if (path === '/profile') setCurrentPage('profile');
+      else if (path === '/history' || path.startsWith('/history/')) {
+        setCurrentPage('history');
+        // ✅ If navigating back from details to history list, clear selected auction
+        if (path === '/history') {
+          setSelectedAuctionDetails(null);
+        }
+      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+      else setCurrentPage('game');
+    };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -469,17 +435,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           console.error('Error parsing stored auction:', error);
           localStorage.removeItem('selectedAuctionDetails');
         }
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (window.location.pathname === '/auction-leaderboard') {
-      const params = new URLSearchParams(window.location.search);
-      const urlHourlyId = params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
-      if (urlHourlyId) {
-        setCurrentHourlyAuctionId(urlHourlyId);
-        sessionStorage.setItem('last_hourly_auction_id', urlHourlyId);
       }
     }
   }, []);
@@ -684,11 +639,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }
   }, [serverTime]); // Run when server time first loads
 
-  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('hourlyAuctionId') || sessionStorage.getItem('last_hourly_auction_id');
-  });
-
+  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   // ✅ NEW: Track previous round to detect round changes
   const [previousRound, setPreviousRound] = useState<number>(1);
@@ -697,10 +648,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   // ✅ NEW: Track if user just logged in to trigger immediate refresh
   const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
   // ✅ NEW: Store live auction data to pass to PrizeShowcase
-    const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
-    const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
-    const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
-
+  const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
+  // ✅ NEW: Track if we're currently fetching live auction data
+  const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
 
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
@@ -741,55 +691,52 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }, []); // Run once on mount
 
   // Check for existing session on app initialization
-    useEffect(() => {
-      const checkExistingSession = async () => {
-        try {
-          // Check for admin session first
-          const adminUserId = localStorage.getItem("admin_user_id");
-          if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
-            const adminEmail = localStorage.getItem("admin_email");
-            setAdminUser({
-              user_id: adminUserId,
-              username: 'admin_dream60',
-              email: adminEmail || 'dream60@gmail.com',
-              userType: 'ADMIN',
-              userCode: '#ADMIN',
-            });
-            if (currentPage === 'admin-login') {
-              setCurrentPage("admin-dashboard");
-            }
-            return;
-          }
-
-          // ✅ Check for regular user session - restore from localStorage only
-          const userId = localStorage.getItem("user_id");
-          const username = localStorage.getItem("username");
-          const email = localStorage.getItem("email");
-
-          if (!userId || !username) return; // No valid session
-
-          // ✅ Restore user from localStorage without API call
-          const user = mapUserData({
-            user_id: userId,
-            username: username,
-            email: email || '',
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        // Check for admin session first
+        const adminUserId = localStorage.getItem("admin_user_id");
+        if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
+          const adminEmail = localStorage.getItem("admin_email");
+          setAdminUser({
+            user_id: adminUserId,
+            username: 'admin_dream60',
+            email: adminEmail || 'dream60@gmail.com',
+            userType: 'ADMIN',
+            userCode: '#ADMIN',
           });
-
-          setCurrentUser(user);
-          console.log('✅ Session restored from localStorage');
-        } catch (error) {
-          console.error("Session restore error:", error);
-          localStorage.removeItem("user_id");
-          localStorage.removeItem("username");
-          localStorage.removeItem("email");
-        } finally {
-          setIsRestoringSession(false);
+          if (currentPage === 'admin-login') {
+            setCurrentPage("admin-dashboard");
+          }
+          return;
         }
-      };
 
-      checkExistingSession();
-    }, [currentPage]);
+        // ✅ Check for regular user session - restore from localStorage only
+        const userId = localStorage.getItem("user_id");
+        const username = localStorage.getItem("username");
+        const email = localStorage.getItem("email");
 
+        if (!userId || !username) return; // No valid session
+
+        // ✅ Restore user from localStorage without API call
+        const user = mapUserData({
+          user_id: userId,
+          username: username,
+          email: email || '',
+        });
+
+        setCurrentUser(user);
+        console.log('✅ Session restored from localStorage');
+      } catch (error) {
+        console.error("Session restore error:", error);
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
+        localStorage.removeItem("email");
+      }
+    };
+
+    checkExistingSession();
+  }, [currentPage]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -811,21 +758,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }
   }, [currentPage, currentUser?.id]);
 
-    // ✅ NEW: Detect round changes and trigger refetch
-    useEffect(() => {
-      if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
+  // ✅ NEW: Detect round changes and trigger refetch
+  useEffect(() => {
+    if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
+    
+    const currentRound = getCurrentRoundByTime(serverTime);
+    
+    // Check if round has changed
+    if (currentRound !== previousRound) {
+      console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
+      setPreviousRound(currentRound);
       
-      const currentRound = getCurrentRoundByTime(serverTime);
+      // Trigger immediate refetch by incrementing the trigger
+      setForceRefetchTrigger(prev => prev + 1);
       
-      // Check if round has changed
-      if (currentRound !== previousRound) {
-        console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
-        setPreviousRound(currentRound);
-        
-        // Trigger immediate refetch by incrementing the trigger
-        setForceRefetchTrigger(prev => prev + 1);
-      }
-    }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+      toast.info(`Round ${currentRound} Started`, {
+        description: 'Auction data refreshed with latest information',
+        duration: 3000,
+      });
+    }
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
   useEffect(() => {
@@ -1324,135 +1276,38 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-    const handleNavigate = (page: string, data?: { hourlyAuctionId?: string }) => {
-      let targetHourlyAuctionId = data?.hourlyAuctionId || currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId || sessionStorage.getItem('last_hourly_auction_id');
-
-      if (page === 'auction-leaderboard' && targetHourlyAuctionId) {
-        setCurrentHourlyAuctionId(targetHourlyAuctionId);
-        sessionStorage.setItem('last_hourly_auction_id', targetHourlyAuctionId);
-      }
-
-      setCurrentPage(page);
-      
-      // ✅ Update browser URL to match the page
-          const urlMap: { [key: string]: string } = {
-            'game': '/',
-            'login': '/login',
-            'signup': '/signup',
-            'forgot': '/forgot-password',
-            'rules': '/rules',
-            'participation': '/participation',
-            'terms': '/terms',
-            'privacy': '/privacy',
-            'support': '/support',
-            'contact': '/contact',
-            'winning-tips': '/winning-tips',
-            'view-guide': '/view-guide',
-            'support-chat': '/support-chat',
-            'profile': '/profile',
-            'history': '/history',
-            'transactions': '/transactions',
-            'leaderboard': '/leaderboard',
-            'auction-leaderboard': `/auction-leaderboard${targetHourlyAuctionId ? `?hourlyAuctionId=${targetHourlyAuctionId}` : ''}`,
-            'admin-login': '/admin',
-            'admin-dashboard': '/admin'
-          };
-
-
-      
-      const url = urlMap[page] || '/';
-      window.history.pushState({}, '', url);
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
+    
+    // ✅ Update browser URL to match the page
+    const urlMap: { [key: string]: string } = {
+      'game': '/',
+      'login': '/login',
+      'signup': '/signup',
+      'forgot': '/forgot-password',
+      'rules': '/rules',
+      'participation': '/participation',
+      'terms': '/terms',
+      'privacy': '/privacy',
+      'support': '/support',
+      'contact': '/contact',
+      'profile': '/profile',
+      'history': '/history',
+      'leaderboard': '/leaderboard',
+      'admin-login': '/admin',
+      'admin-dashboard': '/admin'
     };
+    
+    const url = urlMap[page] || '/';
+    window.history.pushState({}, '', url);
+  };
 
-    const triggerTutorial = (returnTo: string = '') => {
-      const currentPath = window.location.pathname.replace(/^\//, '');
-      const targetReturn = returnTo || currentPath;
-      localStorage.removeItem(`tutorial_completed_${TUTORIAL_ID}`);
-      setTutorialReturnTo(targetReturn);
-      setTutorialStartToken(Date.now());
-    };
-
-  const tutorialSteps = [
-    {
-      id: 'transactions',
-      title: 'Transaction History (new)',
-      description: 'See every payment and payout in one place.',
-      targetElement: '[data-whatsnew-target="transactions-hero"]',
-      position: 'bottom' as const,
-      action: () => {
-        handleNavigate('transactions');
-      },
-    },
-    {
-      id: 'transaction-details',
-      title: 'Drill into transaction details',
-      description: 'Tap any card to see order IDs, payment method, round, and time slot.',
-      targetElement: '[data-whatsnew-target="transactions-list"]',
-      position: 'bottom' as const,
-      action: () => {
-        handleNavigate('transactions');
-      },
-    },
-    {
-      id: 'install-app',
-      title: 'Install Dream60 to your device',
-      description: 'Tap the install button for a 1-tap home-screen shortcut.',
-      targetElement: '[data-whatsnew-target="pwa-install"]',
-      position: 'bottom' as const,
-      shouldSkip: () => {
-        if (typeof window === 'undefined') return false;
-        return window.matchMedia('(display-mode: standalone)').matches || (navigator as any)?.standalone;
-      },
-      action: () => {
-        if (currentPage !== 'game') {
-          setCurrentPage('game');
-          window.history.pushState({}, '', '/');
-        }
-      },
-    },
-      {
-        id: 'enable-notifications',
-        title: 'Enable auction notifications',
-        description: 'Turn on alerts from Profile to get round and winner updates.',
-        targetElement: '[data-whatsnew-target="enable-notifications"]',
-        position: 'bottom' as const,
-        action: () => {
-          handleNavigate('profile');
-        },
-      },
-    {
-      id: 'auction-schedule',
-      title: 'Check today’s auction schedule',
-      description: 'Preview every slot and prize for the day.',
-      targetElement: '[data-whatsnew-target="auction-schedule"]',
-      position: 'bottom' as const,
-      action: () => {
-        handleNavigate('game');
-      },
-    },
-  ];
-
-
-
-  const tutorialOverlay = (
-    <TutorialOverlay
-      steps={tutorialSteps}
-      tutorialId={TUTORIAL_ID}
-      startToken={tutorialStartToken}
-      forceShow={tutorialStartToken > 0}
-      returnTo={tutorialReturnTo}
-      onComplete={() => setTutorialStartToken(0)}
-    />
-  );
-
-
-    const handleBackToGame = () => {
-      setCurrentPage('game');
-      window.history.pushState({}, '', '/');
-      setSelectedLeaderboard(null);
-      setSelectedAuctionDetails(null);
-    };
-
+  const handleBackToGame = () => {
+    setCurrentPage('game');
+    window.history.pushState({}, '', '/');
+    setSelectedLeaderboard(null);
+    setSelectedAuctionDetails(null);
+  };
 
   const handleShowLeaderboard = (
     roundNumber: number,
@@ -1529,32 +1384,29 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       // setCurrentHourlyAuctionId(null);
       
       // ✅ Force immediate refetch by incrementing trigger
-        setForceRefetchTrigger(prev => prev + 1);
+      setForceRefetchTrigger(prev => prev + 1);
 
-        setCurrentPage("game");
-        window.history.pushState({}, '', '/');
-        triggerTutorial();
-      } catch (error) {
-        console.error("Error while login:", error);
-      }
-    };
+      setCurrentPage("game");
+      window.history.pushState({}, '', '/');
+    } catch (error) {
+      console.error("Error while login:", error);
+    }
+  };
 
-    const handleSignup = async (user: any) => {
-      try {
-        // ✅ User data is already passed from SignupForm, map and set it directly
-        const mappedUser = mapUserData(user);
-        setCurrentUser(mappedUser);
-        
-        console.log('✅ User signed up successfully:', mappedUser.username);
+  const handleSignup = async (user: any) => {
+    try {
+      // ✅ User data is already passed from SignupForm, map and set it directly
+      const mappedUser = mapUserData(user);
+      setCurrentUser(mappedUser);
+      
+      console.log('✅ User signed up successfully:', mappedUser.username);
 
-        setCurrentPage("game");
-        window.history.pushState({}, '', '/');
-        triggerTutorial();
-      } catch (error) {
-        console.error("Error while signup:", error);
-      }
-    };
-
+      setCurrentPage("game");
+      window.history.pushState({}, '', '/');
+    } catch (error) {
+      console.error("Error while signup:", error);
+    }
+  };
 
   const handleLogout = () => {
     try {
@@ -1849,147 +1701,87 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'auction-leaderboard') {
-      const canShowLeaderboard = currentUser && currentHourlyAuctionId;
-
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            {canShowLeaderboard ? (
-              <AuctionLeaderboard
-                hourlyAuctionId={currentHourlyAuctionId as string}
-                userId={currentUser?.id as string}
-                onBack={handleBackToGame}
-              />
-            ) : isRestoringSession ? (
-              <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
-                <div className="text-center space-y-3">
-                  <div className="inline-block w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-                  <p className="text-sm text-purple-700">Restoring your session...</p>
-                </div>
-              </div>
-            ) : (
-              <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-violet-50 flex items-center justify-center px-4">
-                <div className="text-center space-y-4">
-                  <p className="text-xl font-semibold text-purple-800">Auction leaderboard unavailable</p>
-                  <p className="text-sm text-purple-600">Please return to the auction page and try again.</p>
-                  <button
-                    onClick={handleBackToGame}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow"
-                  >
-                    Back to auctions
-                  </button>
-                </div>
-              </div>
-            )}
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-
   if (currentPage === 'profile' && currentUser) {
     return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            {tutorialOverlay}
-            <AccountSettings
-              user={currentUser}
-              onBack={handleBackToGame}
-              onNavigate={handleNavigate}
-              onDeleteAccount={() => {
-                try {
-                  // Clear user session data
-                  localStorage.removeItem("user_id");
-                  localStorage.removeItem("user_name");
-                  localStorage.removeItem("user_email");
-                  localStorage.removeItem("user_mobile");
-                  
-                  // Clear additional user fields
-                  localStorage.removeItem("email");
-                  localStorage.removeItem("username");
-                  
-                  // Clear all Razorpay session data
-                  localStorage.removeItem("rzp_checkout_anon_id");
-                  localStorage.removeItem("rzp_device_id");
-                  localStorage.removeItem("rzp_stored_checkout_id");
-                  
-                  // Clear any other Razorpay keys
-                  Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith('rzp_')) {
-                      localStorage.removeItem(key);
-                    }
-                  });
-                  
-                  console.log('✅ Account deleted - all user and Razorpay data cleared');
-                } catch (error) {
-                  console.error("Error clearing session:", error);
-                }
-
-                setCurrentUser(null);
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AccountSettings
+            user={currentUser}
+            onBack={handleBackToGame}
+            onNavigate={handleNavigate}
+            onDeleteAccount={() => {
+              try {
+                // Clear user session data
+                localStorage.removeItem("user_id");
+                localStorage.removeItem("user_name");
+                localStorage.removeItem("user_email");
+                localStorage.removeItem("user_mobile");
                 
-                // Reset auction state
-                setCurrentAuction(prev => ({
-                  ...prev,
-                  userHasPaidEntry: false,
-                  userBidsPerRound: {},
-                  userQualificationPerRound: {},
-                  boxes: prev.boxes.map(box => {
-                    if (box.type === 'entry') {
-                      return {
-                        ...box,
-                        hasPaid: false,
-                        currentBid: 0,
-                        bidder: null
-                      };
-                    }
-                    return box;
-                  })
-                }));
+                // Clear additional user fields
+                localStorage.removeItem("email");
+                localStorage.removeItem("username");
                 
-                setCurrentHourlyAuctionId(null);
-                setCurrentPage("login");
-              }}
-              onLogout={handleLogout}
-            />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+                // Clear all Razorpay session data
+                localStorage.removeItem("rzp_checkout_anon_id");
+                localStorage.removeItem("rzp_device_id");
+                localStorage.removeItem("rzp_stored_checkout_id");
+                
+                // Clear any other Razorpay keys
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('rzp_')) {
+                    localStorage.removeItem(key);
+                  }
+                });
+                
+                console.log('✅ Account deleted - all user and Razorpay data cleared');
+              } catch (error) {
+                console.error("Error clearing session:", error);
+              }
 
+              setCurrentUser(null);
+              
+              // Reset auction state
+              setCurrentAuction(prev => ({
+                ...prev,
+                userHasPaidEntry: false,
+                userBidsPerRound: {},
+                userQualificationPerRound: {},
+                boxes: prev.boxes.map(box => {
+                  if (box.type === 'entry') {
+                    return {
+                      ...box,
+                      hasPaid: false,
+                      currentBid: 0,
+                      bidder: null
+                    };
+                  }
+                  return box;
+                })
+              }));
+              
+              setCurrentHourlyAuctionId(null);
+              setCurrentPage("login");
+            }}
+            onLogout={handleLogout}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
-    if (currentPage === 'history' && currentUser) {
-      if (selectedAuctionDetails) {
-        return (
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <Sonner />
-              <AuctionDetailsPage
-                auction={selectedAuctionDetails}
-                onBack={() => {
-                  setSelectedAuctionDetails(null);
-                  localStorage.removeItem('selectedAuctionDetails');
-                  window.history.pushState({}, '', '/history');
-                }}
-              />
-            </TooltipProvider>
-          </QueryClientProvider>
-        );
-      }
-
+  if (currentPage === 'history' && currentUser) {
+    if (selectedAuctionDetails) {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <AuctionHistory
-              user={currentUser}
-              onBack={handleBackToGame}
-              onViewDetails={(auction) => {
-                setSelectedAuctionDetails(auction);
-                localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
-                window.history.pushState({}, '', '/history/details');
+            <AuctionDetailsPage
+              auction={selectedAuctionDetails}
+              onBack={() => {
+                setSelectedAuctionDetails(null);
+                localStorage.removeItem('selectedAuctionDetails');
+                window.history.pushState({}, '', '/history');
               }}
             />
           </TooltipProvider>
@@ -1997,43 +1789,39 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       );
     }
 
-    if (currentPage === 'transactions') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            {tutorialOverlay}
-            {currentUser ? (
-              <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
-            ) : (
-              <LoginForm
-                onLogin={handleLogin}
-                onSwitchToSignup={handleSwitchToSignup}
-                onBack={handleBackToGame}
-                onNavigate={handleNavigate}
-              />
-            )}
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <AuctionHistory
+            user={currentUser}
+            onBack={handleBackToGame}
+            onViewDetails={(auction) => {
+              setSelectedAuctionDetails(auction);
+              localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
+              window.history.pushState({}, '', '/history/details');
+            }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
-    if (currentPage === 'login') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <LoginForm
-              onLogin={handleLogin}
-              onSwitchToSignup={handleSwitchToSignup}
-              onBack={handleBackToGame}
-              onNavigate={handleNavigate}
-            />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
+  if (currentPage === 'login') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <LoginForm
+            onLogin={handleLogin}
+            onSwitchToSignup={handleSwitchToSignup}
+            onBack={handleBackToGame}
+            onNavigate={handleNavigate}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   if (currentPage === 'signup') {
     return (
@@ -2106,52 +1894,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-    if (currentPage === 'support') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <Support onBack={handleBackToGame} onNavigate={handleNavigate} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+  if (currentPage === 'support') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Support onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
-    if (currentPage === 'winning-tips') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <WinningTips onBack={handleBackToGame} onNavigate={handleNavigate} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'view-guide') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <ViewGuide onBack={handleBackToGame} onNavigate={handleNavigate} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'support-chat') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <SupportChatPage onBack={handleBackToGame} onNavigate={handleNavigate} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'contact') {
-
+  if (currentPage === 'contact') {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -2166,19 +1920,15 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-          <div className="min-h-screen bg-background">
-            <Sonner />
-            
-            <Header
-              user={currentUser}
-              onNavigate={handleNavigate}
-              onLogin={handleShowLogin}
-              onLogout={handleLogout}
-              onStartTutorial={() => triggerTutorial()}
-            />
-
-            {tutorialOverlay}
-
+        <div className="min-h-screen bg-background">
+          <Sonner />
+          
+          <Header
+            user={currentUser}
+            onNavigate={handleNavigate}
+            onLogin={handleShowLogin}
+            onLogout={handleLogout}
+          />
 
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Hero Section */}
@@ -2195,90 +1945,47 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
 </p>
 
-                {!currentUser && (
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
-                    <button
-                      onClick={handleShowLogin}
-                      className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
-                    >
-                      Join Now & Start Playing
-                    </button>
-                    <button
-                      onClick={handleSwitchToSignup}
-                      className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
-                    >
-                      Create Account
-                    </button>
-                  </div>
-                )}
-
-              </div>
-
+              {!currentUser && (
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
+                  <button
+                    onClick={handleShowLogin}
+                    className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
+                  >
+                    Join Now & Start Playing
+                  </button>
+                  <button
+                    onClick={handleSwitchToSignup}
+                    className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
+                  >
+                    Create Account
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
-              {serverTime && getCurrentAuctionSlot(serverTime) && (
-                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                      <div>
-                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                        <div className="text-xl sm:text-2xl font-bold">
-                          {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </div>
+            {serverTime && getCurrentAuctionSlot(serverTime) && (
+              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <div>
+                      <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
+                      <div className="text-xl sm:text-2xl font-bold">
+                        {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
                       </div>
                     </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                        <div className="text-xs sm:text-sm opacity-90">Status</div>
-                        {liveAuctionData?.winnersAnnounced ? (
-                          <div className="flex items-start gap-2 mt-1">
-                            <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-200 mt-0.5" />
-                            <div>
-                              <div className="text-lg sm:text-xl font-bold">Winners Announced</div>
-                              <div className="text-xs sm:text-sm text-white/80">Results are live for this slot</div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-lg sm:text-xl font-bold">
-                            {`Round ${liveAuctionData?.currentRound || currentAuction.currentRound}`}
-                          </div>
-                        )}
-                      </div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                    <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
+                    <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}</div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {currentAuction.winnersAnnounced && (
-                <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-lg border border-emerald-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <Trophy className="w-6 h-6 text-emerald-700" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-emerald-700 font-semibold">Winners Announced</p>
-                          <p className="text-base sm:text-lg font-bold text-emerald-900">Celebrate the champions of this auction slot</p>
-                        </div>
-                      </div>
-                              <button
-                                onClick={() => handleNavigate('auction-leaderboard', { hourlyAuctionId: currentHourlyAuctionId || liveAuctionData?.hourlyAuctionId })}
-                                className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow"
-                                data-tutorial-target="view-winners"
-                              >
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full ring-2 ring-emerald-100 animate-pulse" aria-hidden="true" />
-                                View winners
-                              </button>
-
-
-
-                    </div>
-                  </div>
-                )}
-
-
-              {/* Prize Showcase */}
-
+            {/* Prize Showcase */}
             <PrizeShowcase
               currentPrize={currentAuction as any}
               isLoggedIn={!!currentUser}
@@ -2326,12 +2033,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                   serverTime={serverTime} // ✅ Pass server time to AuctionGrid
                 />
 
-                  <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
-                </>
-              ) : (
-                <>
-                  <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
-
+                <AuctionSchedule />
+              </>
+            ) : (
+              <>
+                <AuctionSchedule />
                 {/* Guest View - Show login prompt instead of auction  */}
                 <div className="text-center py-8 sm:py-12 md:py-16 px-4">
                   <div className="max-w-2xl mx-auto space-y-6">
