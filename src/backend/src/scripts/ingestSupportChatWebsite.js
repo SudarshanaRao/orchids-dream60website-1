@@ -1,15 +1,12 @@
+/**
+ * Polyfill for undici / fetch (Node.js)
+ */
+const { File } = require('node:buffer');
+global.File = File;
+
 /*
   Ingest Dream60 website pages into MongoDB for the Support Chat AI.
-
-  This ingestion is FREE (no paid embeddings). It stores website text chunks in MongoDB and
-  the /support-chat/ask endpoint retrieves relevant chunks via MongoDB text search.
-
-  Usage (from src/backend):
-    node src/scripts/ingestSupportChatWebsite.js
-
-  Env:
-    FRONTEND_URL or CLIENT_URL (recommended)
-    SUPPORT_CHAT_INGEST_URLS (optional comma-separated full URLs)
+  ...
 */
 
 require('dotenv').config();
@@ -17,6 +14,7 @@ const cheerio = require('cheerio');
 const { connectDB } = require('../config/db');
 const SupportChatKnowledgeChunk = require('../models/SupportChatKnowledgeChunk');
 const { chunkText, normalizeText } = require('../utils/supportChatAi');
+
 
 const getDefaultUrls = () => {
   const base = (process.env.FRONTEND_URL || process.env.CLIENT_URL || '').replace(/\/$/, '');
