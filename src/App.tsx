@@ -9,7 +9,7 @@ import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Support } from './components/Support';
 import { SupportChatPage } from './components/SupportChatPage';
-import { HeroBannerCarousel, type HeroSlide } from './components/HeroBannerCarousel';
+
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
@@ -1932,65 +1932,6 @@ const App = () => {
     );
   }
 
-    const scrollToAuctions = () => {
-      const el = document.getElementById('auction-grid');
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
-    const heroSlides: HeroSlide[] = [
-      {
-        id: 'payday-party',
-        theme: 'payday',
-        badge: 'Limited Time',
-        title: 'PAY-DAY PARTY',
-        subtitle:
-          'Fresh auctions every hour. Join the next slot and start bidding in seconds with a premium, campaign-style experience.',
-        urgency: 'Next auctions are live today',
-        cta: {
-          label: currentUser ? 'Explore Auctions' : 'Enter the Party',
-          onClick: currentUser ? scrollToAuctions : handleShowLogin,
-        },
-        media: {
-          src: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=60',
-          alt: 'Campaign hero image',
-        },
-      },
-      {
-        id: 'diwali-bonanza',
-        theme: 'diwali',
-        badge: 'Flat OFF',
-        title: 'DIWALI BONANZA',
-        subtitle:
-          'Festival vibes, bigger prizes. Bid smart, stay active, and claim fast — designed for mobile-first performance.',
-        urgency: 'Limited slots • Limited time',
-        cta: {
-          label: currentUser ? 'Bid Now' : 'Create Account',
-          onClick: currentUser ? scrollToAuctions : handleSwitchToSignup,
-        },
-        media: {
-          src: 'https://media.giphy.com/media/3o7qE1YN7aBOFPRw8E/giphy.gif',
-          alt: 'Festive animation',
-        },
-      },
-      {
-        id: 'offers-lottie',
-        theme: 'default',
-        badge: 'New',
-        title: 'SPIN • BID • WIN',
-        subtitle:
-          'Media-agnostic banners: images, GIF promos, short muted videos, and Lottie animations — with lazy-loading and off-screen pause.',
-        urgency: 'Auto-slide every 4–6s',
-        cta: {
-          label: 'Explore Offers',
-          onClick: scrollToAuctions,
-        },
-        media: {
-          src: 'https://assets10.lottiefiles.com/packages/lf20_tll0j4bb.json',
-          alt: 'Confetti animation',
-          type: 'lottie',
-        },
-      },
-    ];
 
     // Default game page
     return (
@@ -2006,14 +1947,7 @@ const App = () => {
             onLogout={handleLogout}
           />
 
-            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-              {/* Hero Banner (campaign carousel) */}
-              <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] px-3 sm:px-4">
-                <div className="mx-auto max-w-7xl">
-                  <HeroBannerCarousel slides={heroSlides} autoSlideMs={5000} />
-                </div>
-              </div>
-
+              <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
