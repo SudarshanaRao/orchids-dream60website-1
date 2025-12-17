@@ -9,6 +9,7 @@ import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { Support } from './components/Support';
 import { SupportChatPage } from './components/SupportChatPage';
+import { HeroBannerCarousel, type HeroSlide } from './components/HeroBannerCarousel';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
@@ -1931,9 +1932,69 @@ const App = () => {
     );
   }
 
-  // Default game page
-  return (
-    <QueryClientProvider client={queryClient}>
+    const scrollToAuctions = () => {
+      const el = document.getElementById('auction-grid');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    const heroSlides: HeroSlide[] = [
+      {
+        id: 'payday-party',
+        theme: 'payday',
+        badge: 'Limited Time',
+        title: 'PAY-DAY PARTY',
+        subtitle:
+          'Fresh auctions every hour. Join the next slot and start bidding in seconds with a premium, campaign-style experience.',
+        urgency: 'Next auctions are live today',
+        cta: {
+          label: currentUser ? 'Explore Auctions' : 'Enter the Party',
+          onClick: currentUser ? scrollToAuctions : handleShowLogin,
+        },
+        media: {
+          src: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=60',
+          alt: 'Campaign hero image',
+        },
+      },
+      {
+        id: 'diwali-bonanza',
+        theme: 'diwali',
+        badge: 'Flat OFF',
+        title: 'DIWALI BONANZA',
+        subtitle:
+          'Festival vibes, bigger prizes. Bid smart, stay active, and claim fast — designed for mobile-first performance.',
+        urgency: 'Limited slots • Limited time',
+        cta: {
+          label: currentUser ? 'Bid Now' : 'Create Account',
+          onClick: currentUser ? scrollToAuctions : handleSwitchToSignup,
+        },
+        media: {
+          src: 'https://media.giphy.com/media/3o7qE1YN7aBOFPRw8E/giphy.gif',
+          alt: 'Festive animation',
+        },
+      },
+      {
+        id: 'offers-lottie',
+        theme: 'default',
+        badge: 'New',
+        title: 'SPIN • BID • WIN',
+        subtitle:
+          'Media-agnostic banners: images, GIF promos, short muted videos, and Lottie animations — with lazy-loading and off-screen pause.',
+        urgency: 'Auto-slide every 4–6s',
+        cta: {
+          label: 'Explore Offers',
+          onClick: scrollToAuctions,
+        },
+        media: {
+          src: 'https://assets10.lottiefiles.com/packages/lf20_tll0j4bb.json',
+          alt: 'Confetti animation',
+          type: 'lottie',
+        },
+      },
+    ];
+
+    // Default game page
+    return (
+      <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen bg-background">
           <Sonner />
@@ -1945,38 +2006,14 @@ const App = () => {
             onLogout={handleLogout}
           />
 
-          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-            {/* Hero Section */}
-            <div className="text-center space-y-4 px-2 sm:px-4">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
-  bg-clip-text text-transparent">
-  DREAM60
-</h1>
-
-              <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
-  bg-clip-text text-transparent">
-  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
-</p>
-
-              {!currentUser && (
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
-                  <button
-                    onClick={handleShowLogin}
-                    className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
-                  >
-                    Join Now & Start Playing
-                  </button>
-                  <button
-                    onClick={handleSwitchToSignup}
-                    className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
-                  >
-                    Create Account
-                  </button>
+            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+              {/* Hero Banner (campaign carousel) */}
+              <div className="relative left-1/2 right-1/2 w-screen -ml-[50vw] -mr-[50vw] px-3 sm:px-4">
+                <div className="mx-auto max-w-7xl">
+                  <HeroBannerCarousel slides={heroSlides} autoSlideMs={5000} />
                 </div>
-              )}
-            </div>
+              </div>
+
 
             {/* Current Auction Time Slot Banner */}
             {/* ✅ Only show banner after server time is loaded */}
@@ -2030,8 +2067,9 @@ const App = () => {
 
             {currentUser ? (
               <>
-                {/* Auction Grid */}
-                <AuctionGrid
+                  {/* Auction Grid */}
+                  <div id="auction-grid" className="scroll-mt-28">
+                    <AuctionGrid
                   auction={{
                     boxes: currentAuction.boxes as any,
                     prizeValue: currentAuction.prizeValue,
@@ -2045,10 +2083,11 @@ const App = () => {
                   user={currentUser}
                   onShowLeaderboard={handleShowLeaderboard}
                   onBid={handlePlaceBid}
-                  serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                />
+                    serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                  />
+                  </div>
 
-                <AuctionSchedule />
+                  <AuctionSchedule />
               </>
             ) : (
               <>
