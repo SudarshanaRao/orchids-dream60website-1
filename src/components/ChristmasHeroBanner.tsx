@@ -3,10 +3,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles } from 'lucide-react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export const ChristmasHeroBanner: React.FC = () => {
   return (
-    <section className="relative w-full h-[520px] sm:h-[580px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+    <section className="relative w-full h-[650px] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 
@@ -100,7 +101,7 @@ export const ChristmasHeroBanner: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex items-center justify-center md:justify-start">
+      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex flex-col-reverse md:flex-row items-center justify-center md:justify-between gap-8 md:gap-12 pt-20 md:pt-0">
         <div className="max-w-2xl space-y-8 md:space-y-10 text-center md:text-left">
           {/* Christmas Special Badge */}
           <motion.div
@@ -170,6 +171,21 @@ export const ChristmasHeroBanner: React.FC = () => {
             </motion.button>
           </motion.div>
         </div>
+
+        {/* Christmas Tree Lottie Animation */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
+          className="w-56 h-56 sm:w-72 sm:h-72 md:w-[450px] md:h-[450px] lg:w-[550px] lg:h-[550px] z-40"
+        >
+          <DotLottieReact
+            src="/Christmas Tree.lottie"
+            loop
+            autoplay
+            className="w-full h-full"
+          />
+        </motion.div>
       </div>
 
 
