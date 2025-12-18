@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trophy, Sparkles, ChevronRight, Crown, Star } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { motion } from 'motion/react';
@@ -7,12 +7,50 @@ interface WinnersAnnouncedBannerProps {
   onBidNow?: () => void;
 }
 
+const BANNER_VISIBILITY_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
+const STORAGE_KEY = 'winnersAnnouncedBannerData';
+
+interface StoredBannerData {
+  winnersHash: string;
+  lastUpdatedAt: number;
+}
+
+function generateWinnersHash(winners: any[], auctionName: string): string {
+  const winnerIds = winners.map(w => w.playerId || w.id).sort().join('-');
+  return `${auctionName}-${winnerIds}`;
+}
+
 export function WinnersAnnouncedBanner({
   onBidNow
 }: WinnersAnnouncedBannerProps) {
   const [winners, setWinners] = useState<any[]>([]);
   const [auctionName, setAuctionName] = useState('');
   const [isVisible, setIsVisible] = useState(false);
+  const [isWithin15Minutes, setIsWithin15Minutes] = useState(false);
+  const lastWinnersHashRef = useRef<string>('');
+
+  useEffect(() => {
+    const checkVisibilityTimeout = () => {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const data: StoredBannerData = JSON.parse(stored);
+        const elapsed = Date.now() - data.lastUpdatedAt;
+        if (elapsed < BANNER_VISIBILITY_DURATION) {
+          setIsWithin15Minutes(true);
+          // Set a timeout to hide the banner when 15 minutes expire
+          const remainingTime = BANNER_VISIBILITY_DURATION - elapsed;
+          const timeout = setTimeout(() => {
+            setIsWithin15Minutes(false);
+          }, remainingTime);
+          return () => clearTimeout(timeout);
+        } else {
+          setIsWithin15Minutes(false);
+        }
+      }
+    };
+
+    checkVisibilityTimeout();
+  }, []);
 
   useEffect(() => {
     const fetchRecentWinners = async () => {
@@ -22,6 +60,9 @@ export function WinnersAnnouncedBanner({
 
         const result = await response.json();
 
+        let fetchedWinners: any[] = [];
+        let fetchedAuctionName = '';
+
         if (result.success && result.data && result.data.winnersAnnounced) {
           const liveAuction = result.data;
 
@@ -29,9 +70,8 @@ export function WinnersAnnouncedBanner({
           if (lbResponse.ok) {
             const lbResult = await lbResponse.json();
             if (lbResult.success && lbResult.data) {
-              setWinners(lbResult.data.slice(0, 3));
-              setAuctionName(liveAuction.auctionName || liveAuction.productName);
-              setIsVisible(true);
+              fetchedWinners = lbResult.data.slice(0, 3);
+              fetchedAuctionName = liveAuction.auctionName || liveAuction.productName;
             }
           }
         } else {
@@ -47,14 +87,49 @@ export function WinnersAnnouncedBanner({
                 if (lbResponse.ok) {
                   const lbResult = await lbResponse.json();
                   if (lbResult.success && lbResult.data) {
-                    setWinners(lbResult.data.slice(0, 3));
-                    setAuctionName(lastAuction.auctionName);
-                    setIsVisible(true);
+                    fetchedWinners = lbResult.data.slice(0, 3);
+                    fetchedAuctionName = lastAuction.auctionName;
                   }
                 }
               }
             }
           }
+        }
+
+        if (fetchedWinners.length > 0) {
+          const newHash = generateWinnersHash(fetchedWinners, fetchedAuctionName);
+          
+          // Check if data has changed
+          const stored = localStorage.getItem(STORAGE_KEY);
+          let storedData: StoredBannerData | null = stored ? JSON.parse(stored) : null;
+          
+          if (!storedData || storedData.winnersHash !== newHash) {
+            // Data changed - update timestamp and show banner for 15 minutes
+            const newData: StoredBannerData = {
+              winnersHash: newHash,
+              lastUpdatedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+            setIsWithin15Minutes(true);
+            lastWinnersHashRef.current = newHash;
+            
+            // Set timeout to hide after 15 minutes
+            setTimeout(() => {
+              setIsWithin15Minutes(false);
+            }, BANNER_VISIBILITY_DURATION);
+          } else {
+            // Data hasn't changed - check if still within 15 minutes
+            const elapsed = Date.now() - storedData.lastUpdatedAt;
+            if (elapsed < BANNER_VISIBILITY_DURATION) {
+              setIsWithin15Minutes(true);
+            } else {
+              setIsWithin15Minutes(false);
+            }
+          }
+          
+          setWinners(fetchedWinners);
+          setAuctionName(fetchedAuctionName);
+          setIsVisible(true);
         }
       } catch (error) {
         console.error('Error fetching recent winners:', error);
@@ -67,8 +142,8 @@ export function WinnersAnnouncedBanner({
   }, []);
 
   const shouldShowBanner = () => {
-    // Show winners announced banner anytime there are winners
-    if (isVisible && winners.length > 0) {
+    // Only show banner if there are winners AND we're within 15 minutes of data change
+    if (isVisible && winners.length > 0 && isWithin15Minutes) {
       return true;
     }
 
