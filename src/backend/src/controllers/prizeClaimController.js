@@ -17,48 +17,48 @@ const syncWinnerStatuses = async (hourlyAuctionId) => {
       return acc;
     }, {});
 
-        if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
-          let actualClaimer = null;
+    if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
+      let actualClaimer = null;
+      let allExpired = true;
 
-          hourlyAuction.winners = hourlyAuction.winners.map(w => {
-            const hist = byRank[w.rank];
-            if (hist) {
-              w.prizeClaimStatus = hist.prizeClaimStatus;
-              w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-              w.prizeClaimedAt = hist.claimedAt || null;
-              w.prizeClaimedBy = hist.username || hist.claimedBy || null; // Ensure username is captured
-              w.claimNotes = hist.claimNotes || null;
+      hourlyAuction.winners = hourlyAuction.winners.map(w => {
+        const hist = byRank[w.rank];
+        if (hist) {
+          w.prizeClaimStatus = hist.prizeClaimStatus;
+          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+          w.prizeClaimedAt = hist.claimedAt || null;
+          w.prizeClaimedBy = hist.claimedBy || hist.username || null;
+          w.claimNotes = hist.claimNotes || null;
 
-              if (w.isPrizeClaimed) {
-                actualClaimer = w;
-              }
-            }
-            return w;
-          });
-
-          // ✅ Update top-level winner info IF first winner (rank 1) claimed
-          // Or if anyone claimed, update based on who actually took the prize
-          const rank1Winner = hourlyAuction.winners.find(w => w.rank === 1);
-          
-          if (rank1Winner && rank1Winner.isPrizeClaimed) {
-            // Rank 1 claimed - they are the definitive winner
-            hourlyAuction.winnerId = rank1Winner.playerId;
-            hourlyAuction.winnerUsername = rank1Winner.playerUsername;
-            hourlyAuction.winningBid = rank1Winner.finalAuctionAmount;
-            console.log(`🏆 [SYNC_WINNERS] Rank 1 claimed. Updated root winner to ${rank1Winner.playerUsername}`);
-          } else if (actualClaimer) {
-            // Someone else claimed (Rank 1 failed) - update root to the actual claimer
-            hourlyAuction.winnerId = actualClaimer.playerId;
-            hourlyAuction.winnerUsername = actualClaimer.playerUsername;
-            hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
-            console.log(`🏆 [SYNC_WINNERS] Rank ${actualClaimer.rank} claimed. Updated root winner to ${actualClaimer.playerUsername}`);
+          if (w.isPrizeClaimed) {
+            actualClaimer = w;
+            allExpired = false;
           }
+          if (hist.prizeClaimStatus === 'PENDING') {
+            allExpired = false;
+          }
+        }
+        return w;
+      });
 
-
-        hourlyAuction.markModified('winners');
-        await hourlyAuction.save();
+      // Update top-level winner info based on who actually claimed
+      if (actualClaimer) {
+        hourlyAuction.winnerId = actualClaimer.playerId;
+        hourlyAuction.winnerUsername = actualClaimer.playerUsername;
+        hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
+        console.log(`🏆 [SYNC_WINNERS] Rank ${actualClaimer.rank} claimed. Updated root winner to ${actualClaimer.playerUsername}`);
       }
 
+      // If all winners expired/failed to claim, log it
+      if (allExpired && !actualClaimer) {
+        console.log(`⚠️ [SYNC_WINNERS] All winners for auction ${hourlyAuctionId} have expired without claiming`);
+      }
+
+      hourlyAuction.markModified('winners');
+      await hourlyAuction.save();
+    }
+
+    // Sync to DailyAuction
     const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
     if (!dailyAuction) return;
 
@@ -68,20 +68,34 @@ const syncWinnerStatuses = async (hourlyAuctionId) => {
     if (configIndex === -1) return;
 
     if (dailyAuction.dailyAuctionConfig[configIndex].topWinners) {
+      let dailyActualClaimer = null;
+
       dailyAuction.dailyAuctionConfig[configIndex].topWinners = dailyAuction.dailyAuctionConfig[configIndex].topWinners.map(tw => {
         const hist = byRank[tw.rank];
         if (hist) {
           tw.prizeClaimStatus = hist.prizeClaimStatus;
           tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
           tw.prizeClaimedAt = hist.claimedAt || null;
-          tw.prizeClaimedBy = hist.claimedBy || null;
+          tw.prizeClaimedBy = hist.claimedBy || hist.username || null;
           tw.claimNotes = hist.claimNotes || null;
+
+          if (tw.isPrizeClaimed) {
+            dailyActualClaimer = tw;
+          }
         }
         return tw;
       });
+
+      // Update hourlyAuctionId entry in dailyAuctionConfig if needed
+      if (dailyActualClaimer && dailyAuction.dailyAuctionConfig[configIndex]) {
+        dailyAuction.dailyAuctionConfig[configIndex].isAuctionCompleted = true;
+      }
+
       dailyAuction.markModified('dailyAuctionConfig');
       await dailyAuction.save();
     }
+
+    console.log(`✅ [SYNC_WINNERS] Synced claim statuses for auction ${hourlyAuctionId} to HourlyAuction and DailyAuction`);
   } catch (error) {
     console.error('❌ [SYNC_WINNERS] Error syncing winner statuses:', error.message);
   }
