@@ -25,12 +25,25 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+
+  // Auto-close PWA instructions
+  useEffect(() => {
+    if (showInstallInstructions) {
+      const timer = setTimeout(() => {
+        setShowInstallInstructions(false);
+      }, 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [showInstallInstructions]);
+
   // PWA Install prompt handler
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallButton(true);
+      console.log('✅ PWA Install prompt captured');
     };
 
     window.addEventListener('beforeinstallprompt', handler);
@@ -50,43 +63,43 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-    const handleInstallClick = async () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+  const handleInstallClick = async () => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
 
-      // Hide button if already installed
-      if (isStandalone) {
-        setShowInstallButton(false);
-        return;
-      }
+    if (isStandalone) {
+      setShowInstallButton(false);
+      return;
+    }
 
-      // Detect iOS
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
-      if (isIOS) {
-        // Show instructions for iOS
-        alert('To install this app on your iPhone:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
-        return;
-      }
+    // Detect iOS
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    if (isIOS) {
+      setShowInstallInstructions(true);
+      return;
+    }
 
-      // Android/Desktop: trigger native prompt
-      if (deferredPrompt) {
-        try {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          setDeferredPrompt(null);
+    // Android/Desktop: trigger native prompt
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to install prompt: ${outcome}`);
+        setDeferredPrompt(null);
 
-          if (outcome === 'accepted') {
-            setShowInstallButton(false);
-          }
-        } catch (error) {
-          console.error('Error triggering install prompt:', error);
+        if (outcome === 'accepted') {
+          setShowInstallButton(false);
         }
-        return;
+      } catch (error) {
+        console.error('Error triggering install prompt:', error);
       }
+      return;
+    }
 
-      // No captured prompt available (shouldn't reach here on Android/Desktop)
-      alert('Install prompt is not available right now. Please try again later.');
-    };
+    // If no prompt captured but not iOS, it might be already installed or browser doesn't support it
+    alert('To install: Use your browser menu and select "Add to Home Screen" or "Install App"');
+  };
+
 
   // Fetch user stats from backend API
   useEffect(() => {
@@ -892,6 +905,68 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
               </motion.div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* PWA Install Instructions for iOS */}
+      <AnimatePresence>
+        {showInstallInstructions && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden relative"
+            >
+              <div className="bg-gradient-to-br from-purple-600 to-purple-800 p-6 text-center text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <button onClick={() => setShowInstallInstructions(false)} className="text-white/80 hover:text-white">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl backdrop-blur-md border border-white/20">
+                  <Download className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold mb-1">Install Dream60</h3>
+                <p className="text-purple-100 text-sm">Add to your home screen for the best experience</p>
+              </div>
+              
+              <div className="p-6 space-y-5">
+                <div className="flex items-start gap-4 group">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">1</div>
+                  <div className="pt-1">
+                    <p className="text-sm font-semibold text-gray-800">Tap the Share button</p>
+                    <p className="text-xs text-gray-500">Look for the square icon with an arrow at the bottom of Safari.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4 group">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">2</div>
+                  <div className="pt-1">
+                    <p className="text-sm font-semibold text-gray-800">Select "Add to Home Screen"</p>
+                    <p className="text-xs text-gray-500">Scroll down the share menu to find this option.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4 group">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">3</div>
+                  <div className="pt-1">
+                    <p className="text-sm font-semibold text-gray-800">Tap "Add" in the corner</p>
+                    <p className="text-xs text-gray-500">Finalize the installation to see Dream60 on your home screen.</p>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={() => setShowInstallInstructions(false)}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-6 font-bold shadow-lg shadow-purple-200"
+                >
+                  Got it!
+                </Button>
+
+                <p className="text-[10px] text-center text-gray-400 italic">This guide will close automatically in 15 seconds</p>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

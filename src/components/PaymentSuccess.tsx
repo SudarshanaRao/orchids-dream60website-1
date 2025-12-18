@@ -1,6 +1,6 @@
 
 import { motion } from 'motion/react';
-import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star } from 'lucide-react';
+import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
 

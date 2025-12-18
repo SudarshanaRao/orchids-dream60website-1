@@ -1,5 +1,5 @@
-import React from 'react';
-import { Check, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Check, X, Clock } from 'lucide-react';
 
 interface SuccessModalProps {
   title: string;
@@ -14,13 +14,30 @@ export function SuccessModal({
   icon,
   onClose 
 }: SuccessModalProps) {
+  const [countdown, setCountdown] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-2">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-2 relative">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -44,6 +61,12 @@ export function SuccessModal({
           <p className="text-sm sm:text-base text-gray-600">
             {message}
           </p>
+
+          {/* Countdown Timer */}
+          <div className="mt-4 flex items-center justify-center gap-2 text-purple-600">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-bold">Closing in {countdown}s</span>
+          </div>
         </div>
 
         {/* Success Badge */}

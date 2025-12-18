@@ -58,28 +58,43 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     );
   };
 
-  const highlightTarget = (selector: string, attempt = 0) => {
-    const element = getVisibleTarget(selector);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      element.classList.add('whatsnew-highlight');
-      setTimeout(() => element.classList.remove('whatsnew-highlight'), 2200);
-      return;
-    }
-    if (attempt < 6) {
-      setTimeout(() => highlightTarget(selector, attempt + 1), 200);
-    }
-  };
+    const highlightTarget = (selector: string, attempt = 0) => {
+      const element = getVisibleTarget(selector);
+      if (element) {
+        // Use behavior: 'smooth', block: 'center' and inline: 'nearest' to avoid horizontal layout disturbance
+        element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        
+        // Remove existing highlights
+        document.querySelectorAll('.whatsnew-highlight').forEach(el => el.classList.remove('whatsnew-highlight'));
+        
+        // Add highlight class
+        element.classList.add('whatsnew-highlight');
+        return;
+      }
+      if (attempt < 10) { // Increased attempts for dynamic elements
+        setTimeout(() => highlightTarget(selector, attempt + 1), 300);
+      }
+    };
 
-  // Auto-highlight when step changes
-  useEffect(() => {
-    if (!isVisible) return;
-    const step = steps[currentStep];
-    if (step?.targetElement) {
-      setTimeout(() => highlightTarget(step.targetElement), 250);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, isVisible]);
+    // Auto-highlight when step changes
+    useEffect(() => {
+      if (!isVisible) {
+        // Clean up highlights when overlay closes
+        document.querySelectorAll('.whatsnew-highlight').forEach(el => el.classList.remove('whatsnew-highlight'));
+        return;
+      }
+      
+      const step = steps[currentStep];
+      if (step?.targetElement) {
+        setTimeout(() => highlightTarget(step.targetElement), 250);
+      }
+      
+      return () => {
+        // Optional: clean up when moving between steps
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentStep, isVisible]);
+
 
   const handleNext = (fromSkip?: boolean) => {
     if (currentStep < steps.length - 1) {
