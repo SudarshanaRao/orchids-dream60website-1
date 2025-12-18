@@ -95,9 +95,15 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   }>({ message: '' });
   const [isVisible, setIsVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchLiveAuction = useCallback(async () => {
-    if (!userId) return;
+    if (!userId) {
+      setIsLoading(false);
+      setHasFetched(true);
+      return;
+    }
 
     try {
       const [liveResponse, historyResponse] = await Promise.all([
@@ -164,6 +170,8 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       if (!liveAuctionData) {
         setLiveAuction(null);
         setBannerType(null);
+        setIsLoading(false);
+        setHasFetched(true);
         return;
       }
 
@@ -173,6 +181,9 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       console.error('Error fetching banner data:', error);
       setLiveAuction(null);
       setBannerType(null);
+    } finally {
+      setIsLoading(false);
+      setHasFetched(true);
     }
   }, [userId, serverTime]);
 
@@ -470,6 +481,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     return `${rank}th`;
   };
 
+  if (!hasFetched || isLoading) return null;
   if (!isVisible || !bannerType) return null;
 
   const getBannerConfig = () => {
