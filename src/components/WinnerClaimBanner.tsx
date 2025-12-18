@@ -21,17 +21,20 @@ interface WinnerClaimBannerProps {
   onNavigate: (page: string) => void;
 }
 
+// Helper to get IST-adjusted current time for comparison with backend timestamps
+const getISTNow = () => Date.now() + (5.5 * 60 * 60 * 1000);
+
 export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps) {
     const [unclaimedPrizes, setUnclaimedPrizes] = useState<UnclaimedPrize[]>([]);
     const [lostAuctions, setLostAuctions] = useState<any[]>([]);
     const [liveStatus, setLiveStatus] = useState<{
       message: string;
-      type: 'QUALIFIED' | 'ELIMINATED' | 'BID_NOW';
+      type: 'QUALIFIED' | 'ELIMINATED' | 'BID_NOW' | 'WINNERS_ANNOUNCED';
       round: number;
     } | null>(null);
     const [isVisible, setIsVisible] = useState(true);
     const [timeLeftText, setTimeLeftText] = useState('');
-    const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
+    const [waitingMessage, setWaitingMessage] = useState<string>('');
 
     useEffect(() => {
       const fetchUserAuctionStatus = async () => {
@@ -49,62 +52,69 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
               if (detailsResponse.ok) {
                 const detailsResult = await detailsResponse.json();
                 if (detailsResult.success) {
-                  const { auction, rounds, userParticipation } = detailsResult.data;
-                  const currentRound = auction.currentRound || 1;
+                  const { auction, rounds } = detailsResult.data;
                   
-                    // 1. Get completed rounds to determine "Announced" status
-                    const completedRounds = rounds.filter((r: any) => r.status === 'COMPLETED');
-                    const latestCompletedRound = completedRounds.length > 0 
-                      ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
-                      : 0;
-                    
-                    // If winners are announced, we clear live status and let the winner/lost logic take over
-                    if (auction.winnersAnnounced || auction.Status === 'COMPLETED') {
-                      setLiveStatus(null);
-                    } 
-                    // Only show status for rounds that have been "Announced" (COMPLETED)
-                    else if (latestCompletedRound > 0) {
-                      const participant = liveAuction.participants?.find((p: any) => p.playerId === userId);
-                      if (participant) {
-                        if (participant.isEliminated && participant.eliminatedInRound <= latestCompletedRound) {
-                          setLiveStatus({
-                            message: `Results Announced - Round ${participant.eliminatedInRound}: You are eliminated from the auction.`,
-                            type: 'ELIMINATED',
-                            round: participant.eliminatedInRound
-                          });
-                        } else {
-                          // Check if qualified in the latest completed round
-                          const lastRoundResults = rounds.find((r: any) => r.roundNumber === latestCompletedRound);
-                          if (lastRoundResults && lastRoundResults.userQualified) {
-                            // If it's not the final round, encourage bidding in the next one
-                            if (latestCompletedRound < (auction.roundCount || 4)) {
-                              setLiveStatus({
-                                message: `Results Announced - Round ${latestCompletedRound}: You are qualified! Bid in Round ${latestCompletedRound + 1} to win.`,
-                                type: 'QUALIFIED',
-                                round: latestCompletedRound
-                              });
-                            } else {
-                              // Round 4 completed, winners should be announced soon
-                              setLiveStatus(null);
-                            }
-                          } else {
-                            setLiveStatus(null);
-                          }
-                        }
-                      } else {
-                        setLiveStatus(null);
-                      }
+                  // 1. Get completed rounds to determine "Announced" status
+                  const completedRounds = rounds.filter((r: any) => r.status === 'COMPLETED');
+                  const latestCompletedRound = completedRounds.length > 0 
+                    ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
+                    : 0;
+                  
+                  // If winners are announced, we clear live status and let the winner/lost logic take over
+                  if (auction.winnersAnnounced || auction.Status === 'COMPLETED') {
+                    // Check if user is a winner
+                    const isWinner = auction.winners?.some((w: any) => w.playerId === userId);
+                    if (!isWinner) {
+                      setLiveStatus({
+                        message: 'Winners Announced - Better luck next time!',
+                        type: 'WINNERS_ANNOUNCED',
+                        round: latestCompletedRound
+                      });
                     } else {
-                      // No rounds completed yet, don't show anything (results not announced)
                       setLiveStatus(null);
                     }
+                  } 
+                  // Only show status for rounds that have been "Announced" (COMPLETED)
+                  else if (latestCompletedRound > 0) {
+                    const participant = liveAuction.participants?.find((p: any) => p.playerId === userId);
+                    if (participant) {
+                      if (participant.isEliminated && participant.eliminatedInRound <= latestCompletedRound) {
+                        setLiveStatus({
+                          message: `Results Announced - Round ${participant.eliminatedInRound}: You are eliminated from the auction.`,
+                          type: 'ELIMINATED',
+                          round: participant.eliminatedInRound
+                        });
+                      } else {
+                        // Check if qualified in the latest completed round
+                        const lastRoundResults = rounds.find((r: any) => r.roundNumber === latestCompletedRound);
+                        if (lastRoundResults && lastRoundResults.userQualified) {
+                          // If it's not the final round, encourage bidding in the next one
+                          if (latestCompletedRound < (auction.roundCount || 4)) {
+                            setLiveStatus({
+                              message: `Results Announced - Round ${latestCompletedRound}: You are qualified! Bid in Round ${latestCompletedRound + 1} to win.`,
+                              type: 'QUALIFIED',
+                              round: latestCompletedRound
+                            });
+                          } else {
+                            // Round 4 completed, winners should be announced soon
+                            setLiveStatus(null);
+                          }
+                        } else {
+                          setLiveStatus(null);
+                        }
+                      }
+                    } else {
+                      setLiveStatus(null);
+                    }
+                  } else {
+                    // No rounds completed yet
+                    setLiveStatus(null);
+                  }
                 }
               }
             } else {
               setLiveStatus(null);
             }
-          } else {
-            setLiveStatus(null);
           }
 
           // 2. Fetch completed auctions for winners/claim status
@@ -117,10 +127,9 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
             const result = await wonResponse.json();
             
             if (result.success && result.data) {
-              const now = Date.now();
+              const now = getISTNow();
               const auctions = Array.isArray(result.data) ? result.data : result.data.auctions || [];
               
-              // ✅ CRITICAL FIX: Explicitly filter out already CLAIMED prizes and limit to top 3
               const unclaimed = auctions
                 .filter((auction: any) => {
                   const status = (auction.prizeClaimStatus || '').toUpperCase();
@@ -156,26 +165,17 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                 });
 
               setUnclaimedPrizes(unclaimed);
-
-              const waitingPrizes = unclaimed.filter((p: UnclaimedPrize) => p.finalRank > (p.currentEligibleRank || 0));
-              if (waitingPrizes.length > 0) {
-                const firstWaiting = waitingPrizes[0];
-                setWaitingPosition(firstWaiting.finalRank - (firstWaiting.currentEligibleRank || 0));
-              } else {
-                setWaitingPosition(null);
-              }
             }
           }
 
-            if (lostResponse.ok) {
-              const lostResult = await lostResponse.json();
-              if (lostResult.success && lostResult.data) {
-                const lostAuctionsList = Array.isArray(lostResult.data) ? lostResult.data : lostResult.data.auctions || [];
-                // ✅ UPDATED: Show lost auctions UNTIL they are settled
-                const activeLost = lostAuctionsList.filter((auction: any) => !auction.isSettled);
-                setLostAuctions(activeLost);
-              }
+          if (lostResponse.ok) {
+            const lostResult = await lostResponse.json();
+            if (lostResult.success && lostResult.data) {
+              const lostAuctionsList = Array.isArray(lostResult.data) ? lostResult.data : lostResult.data.auctions || [];
+              const activeLost = lostAuctionsList.filter((auction: any) => !auction.isSettled);
+              setLostAuctions(activeLost);
             }
+          }
         } catch (error) {
           console.error('Error fetching auction status:', error);
         }
@@ -189,31 +189,54 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
     useEffect(() => {
       if (unclaimedPrizes.length === 0) {
         setTimeLeftText('');
+        setWaitingMessage('');
         return;
       }
 
       const updateTimeLeft = () => {
-        const now = Date.now();
-        const activeClaims = unclaimedPrizes.filter(p => p.finalRank === p.currentEligibleRank && p.claimDeadline);
+        const istNow = getISTNow();
+        const firstPrize = unclaimedPrizes[0];
         
-        if (activeClaims.length > 0) {
-          const nearestDeadline = Math.min(...activeClaims.map(p => p.claimDeadline!));
-          const diff = nearestDeadline - now;
+        if (!firstPrize) return;
 
+        const { finalRank, currentEligibleRank, claimDeadline, winnersAnnouncedAt } = firstPrize;
+
+        // CASE 1: It's my turn to claim
+        if (finalRank === currentEligibleRank && claimDeadline) {
+          const diff = claimDeadline - istNow;
           if (diff <= 0) {
             setTimeLeftText('Expired');
             return;
           }
-
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
           setTimeLeftText(`${minutes}m ${seconds}s left`);
-        } else {
-          const waitingQueue = unclaimedPrizes.filter(p => p.finalRank > (p.currentEligibleRank || 0));
-          if (waitingQueue.length > 0) {
-            setTimeLeftText(`Wait for your turn...`);
+          setWaitingMessage('');
+        } 
+        // CASE 2: Waiting in queue
+        else {
+          let waitingTimeMs = 0;
+          
+          if (finalRank === 2) {
+            // Rank 2 waits 15 mins total from announcement
+            const startTime = winnersAnnouncedAt || (istNow - 1000);
+            const targetTime = startTime + (15 * 60 * 1000);
+            waitingTimeMs = Math.max(0, targetTime - istNow);
+          } else if (finalRank === 3) {
+            // Rank 3 waits 30 mins total from announcement
+            const startTime = winnersAnnouncedAt || (istNow - 1000);
+            const targetTime = startTime + (30 * 60 * 1000);
+            waitingTimeMs = Math.max(0, targetTime - istNow);
+          }
+
+          if (waitingTimeMs > 0) {
+            const minutes = Math.floor(waitingTimeMs / (1000 * 60));
+            const seconds = Math.floor((waitingTimeMs % (1000 * 60)) / 1000);
+            setWaitingMessage(`${minutes}m ${seconds}s more mins`);
+            setTimeLeftText('Waiting queue...');
           } else {
-            setTimeLeftText('');
+            setWaitingMessage('Almost your turn!');
+            setTimeLeftText('Wait for your turn...');
           }
         }
       };
@@ -223,21 +246,29 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
       return () => clearInterval(interval);
     }, [unclaimedPrizes]);
 
-    const isMyTurn = unclaimedPrizes.some(p => p.finalRank === p.currentEligibleRank);
-    const isWaiting = unclaimedPrizes.some(p => p.finalRank > (p.currentEligibleRank || 0));
+    const myActivePrize = unclaimedPrizes.find(p => p.finalRank === p.currentEligibleRank);
+    const myWaitingPrize = unclaimedPrizes.find(p => p.finalRank > (p.currentEligibleRank || 0));
+    
+    const isMyTurn = !!myActivePrize;
+    const isWaiting = !!myWaitingPrize;
     const hasLostRecently = lostAuctions.length > 0;
-    const hasUrgentClaim = unclaimedPrizes.some(p => {
-      if (p.finalRank !== p.currentEligibleRank || !p.claimDeadline) return false;
-      const timeLeft = p.claimDeadline - Date.now();
-      return timeLeft < 5 * 60 * 1000;
-    });
 
     const shouldShow = isVisible && (unclaimedPrizes.length > 0 || hasLostRecently || liveStatus !== null);
     
     if (!shouldShow) return null;
 
     const getBannerConfig = () => {
+      // 1. Live status (Qualified/Eliminated during rounds)
       if (liveStatus) {
+        if (liveStatus.type === 'WINNERS_ANNOUNCED') {
+          return {
+            gradient: 'from-rose-600 via-red-600 to-orange-600',
+            icon: <AlertTriangle className="w-5 h-5 text-white" />,
+            message: 'Winners announced - Better luck next time!',
+            buttonText: 'TRY AGAIN',
+            buttonClass: 'bg-white text-red-600 hover:bg-red-50'
+          };
+        }
         if (liveStatus.type === 'ELIMINATED') {
           return {
             gradient: 'from-gray-700 via-gray-600 to-gray-800',
@@ -256,6 +287,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
         };
       }
 
+      // 2. Prize Claim logic
       if (timeLeftText === 'Expired') {
         return {
           gradient: 'from-amber-600 via-orange-600 to-red-600',
@@ -265,33 +297,30 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
           buttonClass: 'bg-white text-orange-600 hover:bg-orange-50'
         };
       }
-      if (hasUrgentClaim) {
-        return {
-          gradient: 'from-red-600 via-orange-500 to-amber-500',
-          icon: <Clock className="w-5 h-5 text-white animate-pulse" />,
-          message: `URGENT! Claim your prize NOW - Time is running out!`,
-          buttonText: 'CLAIM NOW',
-          buttonClass: 'bg-white text-red-600 hover:bg-red-50 animate-pulse'
-        };
-      }
-      if (isMyTurn) {
+
+      if (isMyTurn && myActivePrize) {
+        const rankText = myActivePrize.finalRank === 1 ? '1st' : myActivePrize.finalRank === 2 ? '2nd' : '3rd';
         return {
           gradient: 'from-emerald-500 via-green-500 to-teal-500',
           icon: <Gift className="w-5 h-5 text-white animate-bounce" />,
-          message: `Congratulations! Your prize is ready to claim - Don't miss out!`,
+          message: `${rankText} place winner - Clock is ticking claim the prize now hurry up!`,
           buttonText: 'CLAIM PRIZE',
           buttonClass: 'bg-white text-emerald-600 hover:bg-emerald-50'
         };
       }
-      if (isWaiting) {
+
+      if (isWaiting && myWaitingPrize) {
+        const rankText = myWaitingPrize.finalRank === 2 ? '2nd' : '3rd';
         return {
           gradient: 'from-blue-600 via-indigo-500 to-violet-500',
           icon: <Clock className="w-5 h-5 text-white animate-spin-slow" />,
-          message: `Wait wait you have a chance to claim the prize! Your turn is coming soon.`,
+          message: `${rankText} place winner just few more minutes to go you are in waiting queue ${waitingMessage}`,
           buttonText: 'CHECK STATUS',
           buttonClass: 'bg-white text-blue-600 hover:bg-blue-50'
         };
       }
+
+      // 3. General Lost Status
       if (hasLostRecently) {
         return {
           gradient: 'from-red-700 via-red-600 to-rose-600',
@@ -301,6 +330,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
           buttonClass: 'bg-white text-red-600 hover:bg-red-50'
         };
       }
+
       return {
         gradient: 'from-purple-600 via-violet-600 to-fuchsia-600',
         icon: <Trophy className="w-5 h-5 text-yellow-300" />,
@@ -313,7 +343,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
     const config = getBannerConfig();
 
     const handleActionClick = () => {
-      if (liveStatus) {
+      if (liveStatus && liveStatus.type !== 'WINNERS_ANNOUNCED') {
         onNavigate('game');
         return;
       }
@@ -374,7 +404,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
           }
           .marquee-content {
             display: flex;
-            animation: scroll-marquee 20s linear infinite;
+            animation: scroll-marquee 25s linear infinite;
             width: fit-content;
           }
           .marquee-content:hover {

@@ -7,12 +7,23 @@ const DailyAuction = require('./DailyAuction');
 
 /**
  * Helper function to get current IST time
- * Returns a Date object representing the current time in IST timezone
+ * Returns a Date object where UTC components match IST components
+ * (e.g. if it's 3 PM IST, result.getUTCHours() will be 15)
  */
 const getISTTime = () => {
   const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-  return new Date(now.getTime() + istOffset);
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(now.getTime() + istOffset);
+  
+  return new Date(Date.UTC(
+    istDate.getUTCFullYear(),
+    istDate.getUTCMonth(),
+    istDate.getUTCDate(),
+    istDate.getUTCHours(),
+    istDate.getUTCMinutes(),
+    istDate.getUTCSeconds(),
+    istDate.getUTCMilliseconds()
+  ));
 };
 
 /**
@@ -194,7 +205,7 @@ const auctionHistorySchema = new mongoose.Schema(
       default: 'NOT_APPLICABLE',
     },
 
-    // Deadline to claim prize (30 minutes from completion for rank 1)
+    // Deadline to claim prize (15 minutes from completion for rank 1)
     claimDeadline: {
       type: Date,
       default: null,
@@ -237,7 +248,7 @@ const auctionHistorySchema = new mongoose.Schema(
       max: 3,
     },
 
-    // When the current rank's 30-minute claim window started
+    // When the current rank's 15-minute claim window started
     claimWindowStartedAt: {
       type: Date,
       default: null,

@@ -8,33 +8,25 @@ const { syncUserStats } = require('./userController');
 
 /**
  * ✅ Helper function to get current IST time
- * Returns a Date object representing the current time in IST timezone
- * Stores IST time components as UTC so they appear correct in database
+ * Returns a Date object where UTC components match IST components
+ * (e.g. if it's 3 PM IST, result.getUTCHours() will be 15)
  */
 const getISTTime = () => {
-  // Get current time
   const now = new Date();
-  
-  // IST is UTC+5:30 (5 hours and 30 minutes ahead)
   const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(now.getTime() + istOffset);
   
-  // Get IST timestamp
-  const istTimestamp = now.getTime() + istOffset;
-  const istDate = new Date(istTimestamp);
+  const result = new Date(Date.UTC(
+    istDate.getUTCFullYear(),
+    istDate.getUTCMonth(),
+    istDate.getUTCDate(),
+    istDate.getUTCHours(),
+    istDate.getUTCMinutes(),
+    istDate.getUTCSeconds(),
+    istDate.getUTCMilliseconds()
+  ));
   
-  // Extract IST components as UTC
-  const year = istDate.getUTCFullYear();
-  const month = istDate.getUTCMonth();
-  const day = istDate.getUTCDate();
-  const hours = istDate.getUTCHours();
-  const minutes = istDate.getUTCMinutes();
-  const seconds = istDate.getUTCSeconds();
-  const milliseconds = istDate.getUTCMilliseconds();
-  
-  // Create a new date with IST components as UTC (so it appears as IST in database)
-  const result = new Date(Date.UTC(year, month, day, hours, minutes, seconds, milliseconds));
-  
-  console.log(`🕐 [IST-TIME] Current IST: ${hours}:${minutes}:${seconds}, Stored as UTC: ${result.toISOString()}`);
+  console.log(`🕐 [IST-TIME] Current IST: ${istDate.getUTCHours()}:${istDate.getUTCMinutes()}, Stored as UTC: ${result.toISOString()}`);
   
   return result;
 };
