@@ -375,7 +375,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
       const interval = setInterval(updateTimer, 1000);
 
       return () => clearInterval(interval);
-    }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank, localAuction.currentEligibleRank, localAuction.winnersAnnouncedAt]);
+    }, [localAuction.claimDeadline, localAuction.prizeClaimStatus, localAuction.claimWindowStartedAt, localAuction.finalRank, localAuction.currentEligibleRank, localAuction.winnersAnnouncedAt, serverTime]);
 
 
   const handleClaimPrize = async () => {
@@ -1032,7 +1032,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
   );
 };
 
-export function AuctionHistory({ user, onBack, onViewDetails, serverTime = null }: AuctionHistoryProps) {
+export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryProps) {
   const [activeTab, setActiveTab] = useState('all');
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);

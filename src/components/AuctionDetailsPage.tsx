@@ -81,7 +81,7 @@ interface AuctionDetailsData {
   }
 
 
-export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime = null }: AuctionDetailsPageProps) {
+export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
   const [auction, setAuction] = useState(initialAuction);
   const [isLoading, setIsLoading] = useState(true);
   const [detailedData, setDetailedData] = useState<any>(null);
@@ -342,102 +342,101 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-      // Countdown timer for prize claim
-      useEffect(() => {
-        if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return;
-
-        const updateTimer = () => {
-          // ✅ Use server time from prop if available, otherwise fallback to local time
-          const now = serverTime?.timestamp || Date.now();
-
-          // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
-          // Each winner gets exactly 15 minutes
-          // 1st winner: starts immediately after winners announced
-          // 2nd winner: starts 15 mins after winners announced  
-          // 3rd winner: starts 30 mins after winners announced
-          const getActiveWindow = () => {
-            const activeRank = auction.currentEligibleRank || 1;
-            const userRank = auction.finalRank || 1;
-            
-            // Use winnersAnnouncedAt as base time (must exist for claim system to work)
-            const winnersAnnouncedTime = auction.winnersAnnouncedAt;
-            if (!winnersAnnouncedTime) return null;
-            
-            // Calculate when current active rank's window started
-            const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
-            const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
-            
-            // Calculate user's own window
-            const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
-            const userWindowEnd = userWindowStart + (15 * 60 * 1000);
-
-            return {
-              start: activeWindowStart,
-              end: activeWindowEnd,
-              userStart: userWindowStart,
-              userEnd: userWindowEnd,
+        // Countdown timer for prize claim
+        useEffect(() => {
+          if (!auction.isWinner || auction.prizeClaimStatus !== "PENDING") return;
+      
+          const updateTimer = () => {
+            // ✅ Use server time from prop if available, otherwise fallback to local time
+            const now = (serverTime as any)?.timestamp || Date.now();
+      
+            // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
+            // Each winner gets exactly 15 minutes
+            // 1st winner: starts immediately after winners announced
+            // 2nd winner: starts 15 mins after winners announced  
+            // 3rd winner: starts 30 mins after winners announced
+            const getActiveWindow = () => {
+              const activeRank = auction.currentEligibleRank || 1;
+              const userRank = auction.finalRank || 1;
+              
+              // Use winnersAnnouncedAt as base time (must exist for claim system to work)
+              const winnersAnnouncedTime = auction.winnersAnnouncedAt;
+              if (!winnersAnnouncedTime) return null;
+              
+              // Calculate when current active rank's window started
+              const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+              const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
+              
+              // Calculate user's own window
+              const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
+              const userWindowEnd = userWindowStart + (15 * 60 * 1000);
+  
+              return {
+                start: activeWindowStart,
+                end: activeWindowEnd,
+                userStart: userWindowStart,
+                userEnd: userWindowEnd,
+              };
             };
-          };
-
-          const activeWindow = getActiveWindow();
-
-          // ✅ If in waiting queue, show time remaining until user's claim window starts
-          if (isInWaitingQueue() && activeWindow) {
-            // Show time until user's window starts (not current active window end)
-            let diff = activeWindow.userStart - now;
-
-            if (diff > 0) {
+  
+            const activeWindow = getActiveWindow();
+  
+            // ✅ If in waiting queue, show time remaining until user's claim window starts
+            if (isInWaitingQueue() && activeWindow) {
+              // Show time until user's window starts (not current active window end)
+              let diff = activeWindow.userStart - now;
+  
+              if (diff > 0) {
+                const minutes = Math.floor(diff / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft(`${minutes}m ${seconds}s`);
+                return;
+              }
+  
+              setTimeLeft('Claim Window Soon');
+              return;
+            }
+  
+            // ✅ Check if in "Claim Window Soon" period (backend delay)
+            if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
+              // If it should be user's turn but within 1 min of window start
+              if (auction.finalRank === auction.currentEligibleRank) {
+                let diff = activeWindow.start - now;
+                if (diff <= 0 && diff > -(60 * 1000)) {
+                  setTimeLeft('Claim Window Soon');
+                  return;
+                }
+              }
+            }
+  
+            // ✅ Show time left in user's claim window (when it's their turn)
+            if (activeWindow && auction.finalRank === auction.currentEligibleRank) {
+              // Use user's window end as deadline (15 min window)
+              const deadline = activeWindow.userEnd;
+              let diff = deadline - now;
+  
+              if (diff <= 0) {
+                setTimeLeft('EXPIRED');
+                return;
+              }
+  
+              // Cap at 15 minutes max
+              const maxClaimTime = 15 * 60 * 1000;
+              if (diff > maxClaimTime) {
+                diff = maxClaimTime;
+              }
+  
               const minutes = Math.floor(diff / (1000 * 60));
               const seconds = Math.floor((diff % (1000 * 60)) / 1000);
               setTimeLeft(`${minutes}m ${seconds}s`);
-              return;
             }
-
-            setTimeLeft('Claim Window Soon');
-            return;
-          }
-
-          // ✅ Check if in "Claim Window Soon" period (backend delay)
-          if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
-            // If it should be user's turn but within 1 min of window start
-            if (auction.finalRank === auction.currentEligibleRank) {
-              let diff = activeWindow.start - now;
-              if (diff <= 0 && diff > -(60 * 1000)) {
-                setTimeLeft('Claim Window Soon');
-                return;
-              }
-            }
-          }
-
-          // ✅ Show time left in user's claim window (when it's their turn)
-          if (activeWindow && auction.finalRank === auction.currentEligibleRank) {
-            // Use user's window end as deadline (15 min window)
-            const deadline = activeWindow.userEnd;
-            let diff = deadline - now;
-
-            if (diff <= 0) {
-              setTimeLeft('EXPIRED');
-              return;
-            }
-
-            // Cap at 15 minutes max
-            const maxClaimTime = 15 * 60 * 1000;
-            if (diff > maxClaimTime) {
-              diff = maxClaimTime;
-            }
-
-            const minutes = Math.floor(diff / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeLeft(`${minutes}m ${seconds}s`);
-          }
-        };
-
-
-      updateTimer();
-      const interval = setInterval(updateTimer, 1000);
-
-      return () => clearInterval(interval);
-    }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt]);
+          };
+  
+          updateTimer();
+          const interval = setInterval(updateTimer, 1000);
+  
+          return () => clearInterval(interval);
+        }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt, serverTime]);
 
   const handleClaimPrize = async () => {
     if (timeLeft === 'EXPIRED') {
