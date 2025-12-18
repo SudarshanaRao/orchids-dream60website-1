@@ -100,20 +100,20 @@ export const ChristmasHeroBanner: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-            <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
-              <div className="max-w-3xl space-y-8 md:space-y-10 text-center opacity-60">
-                {/* Christmas Special Badge */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C]/40 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.2)]"
-                >
-                  <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
-                    Christmas Special
-                  </span>
-                </motion.div>
+          <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
+            <div className="max-w-3xl space-y-8 md:space-y-10 text-center opacity-70">
+              {/* Christmas Special Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C]/80 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
+              >
+                <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+                <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
+                  Christmas Special
+                </span>
+              </motion.div>
 
                 {/* Headline & Subheadline */}
                 <div className="space-y-6">
@@ -149,21 +149,20 @@ export const ChristmasHeroBanner: React.FC = () => {
                 </div>
 
                 {/* CTA Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 0.8 }}
-                    className="pt-4 flex justify-center max-w-lg mx-auto w-full"
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.8 }}
+                  className="pt-4 flex justify-center max-w-lg mx-auto w-full"
+                >
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/80 text-white px-12 py-4 rounded-full font-bold text-lg shadow-2xl backdrop-blur-sm"
                   >
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      whileHover={{ scale: 1 }}
-                      className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/40 text-white px-12 py-4 rounded-full font-bold text-lg shadow-2xl"
-                    >
-                    <span className="relative z-10">Join Now</span>
-                    <ChevronRight className="w-5 h-5 relative z-10" />
-                  </motion.button>
-                </motion.div>
+                  <span className="relative z-10">Join Now</span>
+                  <ChevronRight className="w-5 h-5 relative z-10" />
+                </motion.button>
+              </motion.div>
             </div>
           </div>
 
