@@ -118,7 +118,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
     };
 
     fetchUserAuctionStatus();
-    const interval = setInterval(fetchUserAuctionStatus, 10000);
+    const interval = setInterval(fetchUserAuctionStatus, 60000);
     return () => clearInterval(interval);
   }, [userId]);
 

@@ -1,0 +1,151 @@
+import { useState, useEffect } from 'react';
+import { Trophy, Sparkles, ChevronRight, Award, Crown, Star } from 'lucide-react';
+import { API_ENDPOINTS } from '@/lib/api-config';
+import { motion, AnimatePresence } from 'motion/react';
+
+export function WinnersAnnouncedBanner() {
+  const [winners, setWinners] = useState<any[]>([]);
+  const [auctionName, setAuctionName] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchRecentWinners = async () => {
+      try {
+        // Fetch all auctions to find the most recently completed one
+        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.winnersAnnounced) {
+          const liveAuction = result.data;
+          
+          // Fetch leaderboard for this auction
+          const lbResponse = await fetch(`${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${liveAuction.hourlyAuctionId}`);
+          if (lbResponse.ok) {
+            const lbResult = await lbResponse.json();
+            if (lbResult.success && lbResult.data) {
+              // Take top 3 winners
+              setWinners(lbResult.data.slice(0, 3));
+              setAuctionName(liveAuction.auctionName || liveAuction.productName);
+              setIsVisible(true);
+            }
+          }
+        } else {
+            // If no live auction has winners announced, try to find the last completed one from daily auction
+            const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
+            if (dailyResponse.ok) {
+                const dailyResult = await dailyResponse.json();
+                if (dailyResult.success && dailyResult.data && dailyResult.data.auctions) {
+                    const completedAuctions = dailyResult.data.auctions.filter((a: any) => a.winnersAnnounced || a.status === 'COMPLETED');
+                    if (completedAuctions.length > 0) {
+                        const lastAuction = completedAuctions[completedAuctions.length - 1];
+                        
+                        const lbResponse = await fetch(`${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${lastAuction.hourlyAuctionId}`);
+                        if (lbResponse.ok) {
+                            const lbResult = await lbResponse.json();
+                            if (lbResult.success && lbResult.data) {
+                                setWinners(lbResult.data.slice(0, 3));
+                                setAuctionName(lastAuction.auctionName);
+                                setIsVisible(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+      } catch (error) {
+        console.error('Error fetching recent winners:', error);
+      }
+    };
+
+    fetchRecentWinners();
+    const interval = setInterval(fetchRecentWinners, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!isVisible || winners.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full bg-gradient-to-r from-[#1a0b2e] via-[#2d1b4d] to-[#1a0b2e] border-y border-purple-500/30 overflow-hidden relative"
+    >
+      {/* Background Effects */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 left-1/4 w-32 h-full bg-purple-500 blur-[80px] animate-pulse" />
+        <div className="absolute top-0 right-1/4 w-32 h-full bg-indigo-500 blur-[80px] animate-pulse delay-700" />
+      </div>
+
+      <div className="relative py-2 sm:py-3">
+        <div className="marquee-container overflow-hidden">
+          <div className="marquee-content flex items-center whitespace-nowrap">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-8 mx-4">
+                <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/20 rounded-full border border-purple-400/30 backdrop-blur-sm">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                  <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tighter">
+                    Winners Announced: {auctionName}
+                  </span>
+                </div>
+
+                {winners.map((winner, idx) => (
+                  <div key={winner.playerId} className="flex items-center gap-3">
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-sm ${
+                      idx === 0 
+                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-200' 
+                        : idx === 1 
+                        ? 'bg-slate-300/10 border-slate-300/30 text-slate-200'
+                        : 'bg-amber-600/10 border-amber-600/30 text-amber-200'
+                    }`}>
+                      {idx === 0 ? <Crown className="w-3.5 h-3.5 fill-yellow-500/20" /> : <Star className="w-3.5 h-3.5" />}
+                      <span className="text-xs font-bold">#{idx + 1}</span>
+                      <span className="text-xs sm:text-sm font-black tracking-wide uppercase">
+                        {winner.playerUsername || winner.username}
+                      </span>
+                      <div className="w-px h-3 bg-white/20 mx-1" />
+                      <span className="text-[10px] sm:text-xs font-mono font-bold opacity-80">
+                        ₹{winner.auctionPlacedAmount?.toLocaleString() || winner.bid?.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex items-center gap-1 group cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'leaderboard' }))}>
+                  <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:animate-spin" />
+                  <span className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:text-white transition-colors">
+                    VIEW ALL WINNERS
+                  </span>
+                  <ChevronRight className="w-3 h-3 text-purple-400" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .marquee-container {
+          width: 100%;
+        }
+        .marquee-content {
+          display: flex;
+          animation: scroll-winners 30s linear infinite;
+          width: fit-content;
+        }
+        .marquee-content:hover {
+          animation-play-state: paused;
+        }
+        @keyframes scroll-winners {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-25%);
+          }
+        }
+      `}</style>
+    </motion.div>
+  );
+}

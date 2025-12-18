@@ -28,6 +28,7 @@ import { SupportChatPage } from './components/SupportChatPage';
 import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
+import { WinnersAnnouncedBanner } from './components/WinnersAnnouncedBanner';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -2098,6 +2099,8 @@ if (currentPage === 'support') {
                 </div>
               </div>
             )}
+
+            <WinnersAnnouncedBanner />
 
             <PrizeShowcase
               currentPrize={currentAuction as any}
