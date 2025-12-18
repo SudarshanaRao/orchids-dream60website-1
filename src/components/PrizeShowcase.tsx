@@ -431,7 +431,7 @@ interface PrizeShowcaseProps {
   }
 
   return (
-    <div className="relative group/main">
+    <div className="relative group/main" data-whatsnew-target="prize-showcase">
       {/* Outer gradient glow */}
       <div className="absolute -inset-[2px] bg-gradient-to-br from-[#9F7ACB]/30 via-[#B99FD9]/20 to-[#8456BC]/30 rounded-[26px] blur-xl opacity-60 group-hover/main:opacity-80 transition-opacity duration-700"></div>
 

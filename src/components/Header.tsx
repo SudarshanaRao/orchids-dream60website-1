@@ -445,33 +445,35 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                           </Button>
                         </motion.div>
 
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={() => onNavigate?.('transactions')}
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                              size="sm"
-                            >
-                              <IndianRupee className="w-4 h-4 mr-1.5" />
-                              Transactions
-                            </Button>
-                          </motion.div>
+<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                onClick={() => onNavigate?.('transactions')}
+                                variant="ghost"
+                                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                                size="sm"
+                                data-whatsnew-target="transactions"
+                              >
+                                <IndianRupee className="w-4 h-4 mr-1.5" />
+                                Transactions
+                              </Button>
+                            </motion.div>
 
 
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={() => onNavigate?.('support')}
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                              size="sm"
-                            >
-                              <LifeBuoy className="w-4 h-4 mr-1.5" />
-                              Support
-                            </Button>
-                          </motion.div>
+<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                onClick={() => onNavigate?.('support')}
+                                variant="ghost"
+                                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                                size="sm"
+                                data-whatsnew-target="support"
+                              >
+                                <LifeBuoy className="w-4 h-4 mr-1.5" />
+                                Support
+                              </Button>
+                            </motion.div>
 
 
-                    </div>
+                      </div>
 
 
                   {/* Logout Button - Only on large screens */}

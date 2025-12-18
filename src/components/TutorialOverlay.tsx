@@ -168,15 +168,18 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
           <p className="text-sm text-purple-700 leading-relaxed">{step.description}</p>
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-xs text-purple-600">
-          <div className="h-1.5 w-28 bg-purple-50 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500"
-              style={{ width: `${progress}%` }}
-            />
+        <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-xs text-purple-600">
+              <span className="font-medium">Progress</span>
+              <span>Step {currentStep + 1} of {steps.length}</span>
+            </div>
+            <div className="h-2 w-full bg-purple-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-          <span>Step {currentStep + 1} / {steps.length}</span>
-        </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <button

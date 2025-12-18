@@ -27,6 +27,7 @@ import { WinningTips } from './components/WinningTips';
 import { SupportChatPage } from './components/SupportChatPage';
 import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
+import { WinnerClaimBanner } from './components/WinnerClaimBanner';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -667,8 +668,16 @@ const App = () => {
   // ✅ NEW: Track tutorial/whatsnew token
   const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
 
-  // Tutorial steps for What's New
+  // Tutorial steps for What's New (5 steps)
   const whatsNewSteps: TutorialStep[] = [
+    {
+      id: 'welcome',
+      title: 'Welcome to Dream60!',
+      description: 'Win amazing prizes with just ₹60! Pay your entry fee, place bids in 4 rounds, and compete to win prizes worth up to ₹3,50,000.',
+      targetElement: '[data-whatsnew-target="prize-showcase"]',
+      position: 'bottom',
+      action: () => handleNavigate('game'),
+    },
     {
       id: 'transactions',
       title: 'Transaction History',
@@ -678,19 +687,27 @@ const App = () => {
       action: () => handleNavigate('transactions'),
     },
     {
-      id: 'pwa-install',
-      title: 'Install App',
-      description: 'Install Dream60 on your device for faster access and notifications. Look for the "Install App" button.',
-      targetElement: '[data-whatsnew-target="pwa-install"]',
-      position: 'bottom',
-    },
-    {
       id: 'auction-schedule',
-      title: 'Auction Schedule',
-      description: 'View all daily auctions from 9 AM to 7 PM. Click any slot to see details and join.',
+      title: 'Daily Auction Schedule',
+      description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
       targetElement: '[data-whatsnew-target="auction-schedule"]',
       position: 'top',
       action: () => handleNavigate('game'),
+    },
+    {
+      id: 'support',
+      title: 'Need Help?',
+      description: 'Access 24/7 support, view guides, winning tips, and FAQs. Our support team is always ready to assist you.',
+      targetElement: '[data-whatsnew-target="support"]',
+      position: 'bottom',
+      action: () => handleNavigate('support'),
+    },
+    {
+      id: 'pwa-install',
+      title: 'Install Dream60 App',
+      description: 'Install Dream60 on your device for faster access, offline support, and instant notifications about auctions.',
+      targetElement: '[data-whatsnew-target="pwa-install"]',
+      position: 'bottom',
     },
   ];
 
@@ -813,16 +830,11 @@ const App = () => {
     // Check if round has changed
     if (currentRound !== previousRound) {
       console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
-      setPreviousRound(currentRound);
-      
-      // Trigger immediate refetch by incrementing the trigger
-      setForceRefetchTrigger(prev => prev + 1);
-      
-      toast.info(`Round ${currentRound} Started`, {
-        description: 'Auction data refreshed with latest information',
-        duration: 3000,
-      });
-    }
+        setPreviousRound(currentRound);
+        
+        // Trigger immediate refetch by incrementing the trigger
+        setForceRefetchTrigger(prev => prev + 1);
+      }
   }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
 
   // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
@@ -2025,7 +2037,14 @@ if (currentPage === 'support') {
               onStartTutorial={handleStartTutorial}
             />
 
-          <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+            {currentUser && (
+              <WinnerClaimBanner
+                userId={currentUser.id}
+                onNavigate={handleNavigate}
+              />
+            )}
+
+            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Hero Section */}
             <div className="text-center space-y-4 px-2 sm:px-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
@@ -2207,15 +2226,17 @@ if (currentPage === 'support') {
               />
             )}
 
-            {/* What's New Tutorial Overlay */}
-            <TutorialOverlay
-              steps={whatsNewSteps}
-              tutorialId="dream60-whatsnew-v1"
-              startToken={tutorialStartToken}
-              forceShow={tutorialStartToken > 0}
-              onComplete={() => handleNavigate('game')}
-              returnTo=""
-            />
+            {/* What's New Tutorial Overlay - Only show to logged in users */}
+              {currentUser && (
+                <TutorialOverlay
+                  steps={whatsNewSteps}
+                  tutorialId="dream60-whatsnew-v2"
+                  startToken={tutorialStartToken}
+                  forceShow={tutorialStartToken > 0}
+                  onComplete={() => handleNavigate('game')}
+                  returnTo=""
+                />
+              )}
           </div>
         </TooltipProvider>
       </QueryClientProvider>
