@@ -10,6 +10,7 @@ import { motion } from 'motion/react';
     currentRound?: number;
     winnersAnnounced?: boolean;
     userHasPaidEntry?: boolean;
+    serverTime?: { timestamp: number; minute: number } | null;
   }
 
   export function WinnersAnnouncedBanner({ 
@@ -18,25 +19,33 @@ import { motion } from 'motion/react';
     userBidsPerRound = {}, 
     currentRound = 1,
     winnersAnnounced = false,
-    userHasPaidEntry = false
+    userHasPaidEntry = false,
+    serverTime = null
   }: WinnersAnnouncedBannerProps) {
 
   const [winners, setWinners] = useState<any[]>([]);
   const [auctionName, setAuctionName] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [hasUserBidInCurrentRound, setHasUserBidInCurrentRound] = useState(false);
+  const [isFirst15Minutes, setIsFirst15Minutes] = useState(false);
 
   useEffect(() => {
-    const checkUserBidStatus = () => {
+    const checkTimeAndBidStatus = () => {
+      // Check if within first 15 minutes of the hour
+      const currentMinute = serverTime?.minute ?? new Date().getMinutes();
+      setIsFirst15Minutes(currentMinute < 15);
+      
       if (currentUserId && userBidsPerRound && currentRound) {
         const hasBid = !!userBidsPerRound[currentRound];
         setHasUserBidInCurrentRound(hasBid);
-        console.log(`🔍 [BANNER] User bid check - Round ${currentRound}: ${hasBid ? 'HAS BID' : 'NO BID'}`);
+        console.log(`🔍 [BANNER] User bid check - Round ${currentRound}: ${hasBid ? 'HAS BID' : 'NO BID'}, First 15 mins: ${currentMinute < 15}`);
       }
     };
 
-    checkUserBidStatus();
-  }, [currentUserId, userBidsPerRound, currentRound]);
+    checkTimeAndBidStatus();
+    const interval = setInterval(checkTimeAndBidStatus, 1000);
+    return () => clearInterval(interval);
+  }, [currentUserId, userBidsPerRound, currentRound, serverTime]);
 
   useEffect(() => {
     const fetchRecentWinners = async () => {
@@ -91,11 +100,13 @@ import { motion } from 'motion/react';
   }, []);
 
   const shouldShowBanner = () => {
+    // Show winners announced banner anytime there are winners
     if (winnersAnnounced && isVisible && winners.length > 0) {
       return true;
     }
     
-    if (currentUserId && !hasUserBidInCurrentRound && !winnersAnnounced) {
+    // Only show "Round X is LIVE" banner during first 15 minutes of each hour
+    if (currentUserId && !hasUserBidInCurrentRound && !winnersAnnounced && isFirst15Minutes) {
       return true;
     }
     

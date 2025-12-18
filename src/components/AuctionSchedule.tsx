@@ -76,17 +76,20 @@ interface AuctionScheduleProps {
     username?: string;
   } | null;
   onNavigate?: (page: string, data?: any) => void;
+  serverTime?: { timestamp: number; minute: number; hour: number } | null;
 }
 
 type TabFilter = 'all' | 'live' | 'upcoming' | 'completed';
 
-export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
+export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionScheduleProps) {
   const now = getCurrentIST();
   const currentHour = now.getHours();
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [userParticipation, setUserParticipation] = useState<Record<string, boolean>>({});
+  const [userBidsPerAuction, setUserBidsPerAuction] = useState<Record<string, Record<number, boolean>>>({});
   const [scheduleStats, setScheduleStats] = useState({
     totalAuctions: 0,
     earliestTime: '',
@@ -128,26 +131,57 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
               status = 'upcoming';
             }
             
-            return {
-              time: timeStr,
-              hour: auctionHour,
-              minute: auctionMinute,
-              status,
-              sequenceNumber: auction.auctionNumber || index + 1,
-              hourlyAuctionId: auction.hourlyAuctionId,
-              auctionId: auction.auctionId,
-              prize: {
-                name: auction.auctionName || `Auction ${index + 1}`,
-                value: auction.prizeValue || 0,
-                image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
-              },
-              winner,
-              roundCount: auction.roundCount || 4,
-              totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
-            };
-          });
+              // Check if user has joined this auction
+              const hasUserJoined = user?.id && auction.participants?.some(
+                (p: ParticipantInfo) => p.playerId === user.id
+              );
+              
+              // Check user's bids per round
+              const userRoundBids: Record<number, boolean> = {};
+              if (user?.id && auction.rounds) {
+                auction.rounds.forEach((round: RoundInfo) => {
+                  const userBid = round.playersData?.find(p => p.playerId === user.id);
+                  if (userBid) {
+                    userRoundBids[round.roundNumber] = true;
+                  }
+                });
+              }
+
+              return {
+                time: timeStr,
+                hour: auctionHour,
+                minute: auctionMinute,
+                status,
+                sequenceNumber: auction.auctionNumber || index + 1,
+                hourlyAuctionId: auction.hourlyAuctionId,
+                auctionId: auction.auctionId,
+                prize: {
+                  name: auction.auctionName || `Auction ${index + 1}`,
+                  value: auction.prizeValue || 0,
+                  image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
+                },
+                winner,
+                roundCount: auction.roundCount || 4,
+                totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
+                hasUserJoined: hasUserJoined || false,
+                userRoundBids,
+                currentRound: auction.currentRound || 1,
+              };
+            });
 
           setScheduleData(auctions);
+          
+          // Update user participation map
+          const participationMap: Record<string, boolean> = {};
+          const bidsMap: Record<string, Record<number, boolean>> = {};
+          auctions.forEach((a: any) => {
+            if (a.hourlyAuctionId) {
+              participationMap[a.hourlyAuctionId] = a.hasUserJoined;
+              bidsMap[a.hourlyAuctionId] = a.userRoundBids;
+            }
+          });
+          setUserParticipation(participationMap);
+          setUserBidsPerAuction(bidsMap);
             
             if (auctions.length > 0) {
             const sortedByTime = [...auctions].sort((a, b) => {
@@ -352,15 +386,106 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                             Results
                           </Button>
                         )}
-                        {auction.status === 'active' && (
-                          <Button
-                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            size="sm"
-                            className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
-                          >
-                            BID NOW
-                          </Button>
-                        )}
+                        {auction.status === 'active' && (() => {
+                          const currentMinute = serverTime?.minute ?? new Date().getMinutes();
+                          const isFirst15Mins = currentMinute < 15;
+                          const hasJoined = auction.hasUserJoined;
+                          
+                          // Calculate current round based on server time
+                          let currentRound = 1;
+                          if (currentMinute >= 45) currentRound = 4;
+                          else if (currentMinute >= 30) currentRound = 3;
+                          else if (currentMinute >= 15) currentRound = 2;
+                          
+                          // Check if user has bid in current round
+                          const hasBidInCurrentRound = auction.userRoundBids?.[currentRound] || false;
+                          const previousRound = currentRound > 1 ? currentRound - 1 : 0;
+                          
+                          // Logic: 
+                          // 1. First 15 mins && not joined -> Join (enabled)
+                          // 2. After 15 mins && not joined -> Join (disabled)
+                          // 3. Joined && not bid in current round -> Bid Now
+                          // 4. Joined && bid in current round -> View Leaderboard (previous round)
+                          
+                          if (!hasJoined) {
+                            return (
+                              <Button
+                                onClick={() => {
+                                  if (isFirst15Mins) {
+                                    // Scroll to auction boxes to join
+                                    const auctionGrid = document.querySelector('[data-auction-grid]') || document.querySelector('#auction-grid');
+                                    if (auctionGrid) {
+                                      auctionGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    } else {
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
+                                  }
+                                }}
+                                size="sm"
+                                disabled={!isFirst15Mins}
+                                className={`h-8 text-xs font-bold px-4 ${
+                                  isFirst15Mins 
+                                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                              >
+                                <PlayCircle className="w-3.5 h-3.5 mr-1" />
+                                Join
+                              </Button>
+                            );
+                          }
+                          
+                          if (!hasBidInCurrentRound) {
+                            return (
+                              <Button
+                                onClick={() => {
+                                  // Scroll to auction boxes and highlight current round
+                                  const auctionGrid = document.querySelector('[data-auction-grid]') || document.querySelector('#auction-grid');
+                                  if (auctionGrid) {
+                                    auctionGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    // Add highlight effect to current round box
+                                    setTimeout(() => {
+                                      const roundBox = document.querySelector(`[data-round="${currentRound}"]`);
+                                      if (roundBox) {
+                                        roundBox.classList.add('ring-4', 'ring-purple-500', 'ring-offset-2');
+                                        setTimeout(() => {
+                                          roundBox.classList.remove('ring-4', 'ring-purple-500', 'ring-offset-2');
+                                        }, 3000);
+                                      }
+                                    }, 800);
+                                  } else {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }}
+                                size="sm"
+                                className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
+                              >
+                                <Trophy className="w-3.5 h-3.5 mr-1" />
+                                Bid Now
+                              </Button>
+                            );
+                          }
+                          
+                          // User has bid in current round - show View Leaderboard for previous round
+                          return (
+                            <Button
+                              onClick={() => {
+                                if (previousRound > 0 && auction.hourlyAuctionId) {
+                                  onNavigate?.('leaderboard', { 
+                                    hourlyAuctionId: auction.hourlyAuctionId,
+                                    roundNumber: previousRound 
+                                  });
+                                }
+                              }}
+                              size="sm"
+                              variant="outline"
+                              className="text-purple-600 border-purple-300 hover:bg-purple-50 h-8 text-xs font-bold px-3"
+                            >
+                              <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                              Leaderboard
+                            </Button>
+                          );
+                        })()}
                       </div>
                   </div>
                 </motion.div>

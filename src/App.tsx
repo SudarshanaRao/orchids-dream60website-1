@@ -2150,19 +2150,20 @@ if (currentPage === 'support') {
               </div>
             )}
 
-                  {/* Winners Announced Banner - Shows when:
-                      1. Winners are announced (shows winner info)
-                      2. User has NOT placed bid in current round (shows "BID NOW" prompt) */}
-                  {currentUser && (
-                    <WinnersAnnouncedBanner 
-                      onBidNow={handleBidNowScroll}
-                      currentUserId={currentUser.id}
-                      userBidsPerRound={currentAuction.userBidsPerRound}
-                      currentRound={currentAuction.currentRound}
-                      winnersAnnounced={currentAuction.winnersAnnounced}
-                      userHasPaidEntry={currentAuction.userHasPaidEntry}
-                    />
-                  )}
+              {/* Winners Announced Banner - Shows when:
+                  1. Winners are announced (shows winner info)
+                  2. User has NOT placed bid in current round and within first 15 mins (shows "PARTICIPATE NOW" prompt) */}
+              {currentUser && (
+                <WinnersAnnouncedBanner 
+                  onBidNow={handleBidNowScroll}
+                  currentUserId={currentUser.id}
+                  userBidsPerRound={currentAuction.userBidsPerRound}
+                  currentRound={currentAuction.currentRound}
+                  winnersAnnounced={currentAuction.winnersAnnounced}
+                  userHasPaidEntry={currentAuction.userHasPaidEntry}
+                  serverTime={serverTime}
+                />
+              )}
 
 
               <PrizeShowcase
@@ -2243,7 +2244,7 @@ if (currentPage === 'support') {
                 </>
               )}
 
-                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
                 <AuctionScheduleInfo />
               </main>
 

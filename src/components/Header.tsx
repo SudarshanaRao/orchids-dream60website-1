@@ -228,14 +228,14 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
     }
   };
 
-  return (
-    <>
-      <motion.header
-        className="bg-white/70 backdrop-blur-xl border-b border-purple-200/50 shadow-lg shadow-purple-500/5 sticky top-0 z-50 overflow-hidden"
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
-      >
+    return (
+      <>
+        <motion.header
+          className="bg-white/50 backdrop-blur-xl border-b border-purple-200/30 shadow-lg shadow-purple-500/10 sticky top-0 z-50 overflow-hidden"
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
+        >
         {/* Animated shine effect */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"

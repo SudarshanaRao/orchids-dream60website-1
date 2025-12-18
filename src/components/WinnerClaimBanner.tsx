@@ -299,21 +299,34 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           
         if (!winnersAnnouncedTime) return null;
         
+        // Calculate when current active rank's window started
+        const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+        const activeWindowEnd = activeWindowStart + (15 * 60 * 1000);
+        
         // Calculate user's own window
         const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
         const userWindowEnd = userWindowStart + (15 * 60 * 1000);
 
         return {
+          start: activeWindowStart,
+          end: activeWindowEnd,
           userStart: userWindowStart,
           userEnd: userWindowEnd,
         };
       };
 
-      const window = getActiveWindow();
-      if (!window) return;
+      const activeWindow = getActiveWindow();
+      if (!activeWindow) return;
 
-      if (bannerType === 'WINNER_WAITING') {
-        let diff = window.userStart - now;
+      // Check if user is in waiting queue (winner but not their turn yet)
+      const userWinner = liveAuction.winners.find(w => w.playerId === userId);
+      const userRank = userWinner?.rank || 1;
+      const currentEligibleRank = liveAuction.currentEligibleRank || 1;
+      const isInWaitingQueue = userRank > currentEligibleRank;
+
+      if (bannerType === 'WINNER_WAITING' || isInWaitingQueue) {
+        // Show time until user's window starts
+        let diff = activeWindow.userStart - now;
         if (diff > 0) {
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -322,18 +335,33 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           setTimeLeft('Claim Window Soon');
         }
       } else if (bannerType === 'WINNER_CLAIM') {
-        let diff = window.userEnd - now;
+        // Check if in "Claim Window Soon" period (backend delay)
+        if (userRank === currentEligibleRank) {
+          let diff = activeWindow.start - now;
+          if (diff <= 0 && diff > -(60 * 1000)) {
+            setTimeLeft('Claim Window Soon');
+            return;
+          }
+        }
+        
+        // Show time left in user's claim window
+        const deadline = activeWindow.userEnd;
+        let diff = deadline - now;
+
         if (diff <= 0) {
           setTimeLeft('EXPIRED');
-        } else {
-          // Cap at 15 minutes
-          const maxClaimTime = 15 * 60 * 1000;
-          if (diff > maxClaimTime) diff = maxClaimTime;
-          
-          const minutes = Math.floor(diff / (1000 * 60));
-          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          setTimeLeft(`${minutes}m ${seconds}s`);
+          return;
         }
+
+        // Cap at 15 minutes max
+        const maxClaimTime = 15 * 60 * 1000;
+        if (diff > maxClaimTime) {
+          diff = maxClaimTime;
+        }
+
+        const minutes = Math.floor(diff / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft(`${minutes}m ${seconds}s`);
       }
     };
 
