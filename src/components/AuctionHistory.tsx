@@ -1032,7 +1032,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
   );
 };
 
-export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryProps) {
+export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
   const [activeTab, setActiveTab] = useState('all');
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1888,16 +1888,17 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
 
                 <TabsContent value="all" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
                   {history.length > 0 ? (
-                    history.map((auction, index) => <AuctionCard 
-                      key={`${activeTab}-${auction.id}`}
-                      auction={auction}
-                      index={index}
-                      tabPrefix={activeTab}
-                      user={user}
-                      onViewDetails={onViewDetails}
-                      onClaimSuccess={() => fetchAuctionHistory()}
-                      userProfile={userProfile}
-                    />)
+                  history.map((auction, index) => <AuctionCard 
+                        key={`${activeTab}-${auction.id}`}
+                        auction={auction}
+                        index={index}
+                        tabPrefix={activeTab}
+                        user={user}
+                        onViewDetails={onViewDetails}
+                        onClaimSuccess={() => fetchAuctionHistory()}
+                        userProfile={userProfile}
+                        serverTime={serverTime}
+                      />)
                   ) : (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -1924,16 +1925,17 @@ export function AuctionHistory({ user, onBack, onViewDetails }: AuctionHistoryPr
 
                 <TabsContent value="won" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
                   {wonAuctions.length > 0 ? (
-                    wonAuctions.map((auction, index) => <AuctionCard 
-                      key={`${activeTab}-${auction.id}`}
-                      auction={auction}
-                      index={index}
-                      tabPrefix={activeTab}
-                      user={user}
-                      onViewDetails={onViewDetails}
-                      onClaimSuccess={() => fetchAuctionHistory()}
-                      userProfile={userProfile}
-                    />)
+                  wonAuctions.map((auction, index) => <AuctionCard 
+                        key={`${activeTab}-${auction.id}`}
+                        auction={auction}
+                        index={index}
+                        tabPrefix={activeTab}
+                        user={user}
+                        onViewDetails={onViewDetails}
+                        onClaimSuccess={() => fetchAuctionHistory()}
+                        userProfile={userProfile}
+                        serverTime={serverTime}
+                      />)
                   ) : (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}
