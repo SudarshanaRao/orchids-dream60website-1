@@ -3,7 +3,11 @@ import { Trophy, Sparkles, ChevronRight, Award, Crown, Star } from 'lucide-react
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { motion, AnimatePresence } from 'motion/react';
 
-export function WinnersAnnouncedBanner() {
+interface WinnersAnnouncedBannerProps {
+  onBidNow?: () => void;
+}
+
+export function WinnersAnnouncedBanner({ onBidNow }: WinnersAnnouncedBannerProps) {
   const [winners, setWinners] = useState<any[]>([]);
   const [auctionName, setAuctionName] = useState('');
   const [isVisible, setIsVisible] = useState(false);
@@ -112,13 +116,29 @@ export function WinnersAnnouncedBanner() {
                   </div>
                 ))}
 
-                <div className="flex items-center gap-1 group cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'leaderboard' }))}>
-                  <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:animate-spin" />
-                  <span className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:text-white transition-colors">
-                    VIEW ALL WINNERS
-                  </span>
-                  <ChevronRight className="w-3 h-3 text-purple-400" />
-                </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1 group cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'leaderboard' }))}>
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:animate-spin" />
+                      <span className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:text-white transition-colors">
+                        VIEW ALL WINNERS
+                      </span>
+                      <ChevronRight className="w-3 h-3 text-purple-400" />
+                    </div>
+
+                    {onBidNow && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onBidNow();
+                        }}
+                        className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full text-[10px] sm:text-xs font-black text-white hover:from-purple-500 hover:to-violet-500 transition-all shadow-lg active:scale-95"
+                      >
+                        <Trophy className="w-3 h-3" />
+                        BID NOW
+                      </button>
+                    )}
+                  </div>
+
               </div>
             ))}
           </div>

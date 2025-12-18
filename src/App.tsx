@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
+import { AuctionScheduleInfo } from './components/AuctionScheduleInfo';
 import { PrizeShowcase } from './components/PrizeShowcase';
 import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
@@ -244,6 +245,21 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 };
 
 const App = () => {
+  const auctionGridRef = useRef<HTMLDivElement>(null);
+
+  const handleBidNowScroll = () => {
+    if (auctionGridRef.current) {
+      auctionGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Add a brief highlight effect
+      auctionGridRef.current.classList.add('highlight-auction-grid');
+      setTimeout(() => {
+        auctionGridRef.current?.classList.remove('highlight-auction-grid');
+      }, 2000);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // ✅ Add server time state
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
@@ -395,7 +411,7 @@ const App = () => {
   const fetchAndSetUser = async (userId: string) => {
     try {
       console.log('🔄 Fetching user data from API for userId:', userId);
-      const response = await fetch(`${API_ENDPOINTS.auth.me}?user_id=${userId}`);
+      const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
       
       const contentType = response.headers.get("content-type");
       if (!response.ok || !contentType || !contentType.includes("application/json")) {
@@ -2102,91 +2118,106 @@ if (currentPage === 'support') {
               </div>
             )}
 
-              {/* Winners Announced Banner */}
-              {currentAuction.winnersAnnounced && (
-                <WinnersAnnouncedBanner />
-              )}
+                {/* Winners Announced Banner */}
+                {currentAuction.winnersAnnounced && (
+                  <WinnersAnnouncedBanner onBidNow={handleBidNowScroll} />
+                )}
 
-            <PrizeShowcase
-              currentPrize={currentAuction as any}
-              isLoggedIn={!!currentUser}
-              serverTime={serverTime} // ✅ Pass server time from parent
-              liveAuctionData={liveAuctionData} // ✅ Pass live auction data from parent
-              isLoadingLiveAuction={isLoadingLiveAuction} // ✅ NEW: Pass loading state from parent
-              onPayEntry={(_boxId, totalEntryFee) => {
-                if (!currentUser) return;
-                
-                // ✅ CRITICAL FIX: Trigger IMMEDIATE refresh when payment succeeds
-                console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                setForceRefetchTrigger(prev => prev + 1);
-                
-                setShowEntrySuccess({
-                  entryFee: totalEntryFee,
-                  boxNumber: 0
-                });
-              }}
-              onPaymentFailure={(totalEntryFee, errorMessage) => {
-                setShowEntryFailure({
-                  entryFee: totalEntryFee,
-                  errorMessage
-                });
-              }}
-              onUserParticipationChange={handleUserParticipationChange}
-            />
+              <PrizeShowcase
+                currentPrize={currentAuction as any}
+                isLoggedIn={!!currentUser}
+                serverTime={serverTime} // ✅ Pass server time from parent
+                liveAuctionData={liveAuctionData} // ✅ Pass live auction data from parent
+                isLoadingLiveAuction={isLoadingLiveAuction} // ✅ NEW: Pass loading state from parent
+                onPayEntry={(_boxId, totalEntryFee) => {
+                  if (!currentUser) return;
+                  
+                  // ✅ CRITICAL FIX: Trigger IMMEDIATE refresh when payment succeeds
+                  console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                  setForceRefetchTrigger(prev => prev + 1);
+                  
+                  setShowEntrySuccess({
+                    entryFee: totalEntryFee,
+                    boxNumber: 0
+                  });
+                }}
+                onPaymentFailure={(totalEntryFee, errorMessage) => {
+                  setShowEntryFailure({
+                    entryFee: totalEntryFee,
+                    errorMessage
+                  });
+                }}
+                onUserParticipationChange={handleUserParticipationChange}
+              />
 
-            {currentUser ? (
-              <>
-                {/* Auction Grid */}
-                <AuctionGrid
-                  auction={{
-                    boxes: currentAuction.boxes as any,
-                    prizeValue: currentAuction.prizeValue,
-                    userBidsPerRound: currentAuction.userBidsPerRound,
-                    userHasPaidEntry: currentAuction.userHasPaidEntry,
-                    userQualificationPerRound: currentAuction.userQualificationPerRound,
-                    winnersAnnounced: currentAuction.winnersAnnounced,
-                    userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
-                    hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
-                  }}
-                  user={currentUser}
-                  onShowLeaderboard={handleShowLeaderboard}
-                  onBid={handlePlaceBid}
-                  serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                />
-              </>
-            ) : (
-              <>
-                {/* Guest View - Show login prompt instead of auction  */}
-                <div className="text-center py-8 sm:py-12 md:py-16 px-4">
-                  <div className="max-w-2xl mx-auto space-y-6">
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
-                    <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
-                      Create your free account and start bidding on amazing prizes with direct payment!
-                    </p>
-                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
-                      <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
-                      <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
-                          <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">6x</div>
-                          <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
-                        </div>
-                        <div>
-                          <div className="text-xl sm:text-2xl font-bold text-purple-700">₹3,50,000+</div>
-                          <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+              {currentUser ? (
+                <div ref={auctionGridRef}>
+                  {/* Auction Grid */}
+                  <AuctionGrid
+                    auction={{
+                      boxes: currentAuction.boxes as any,
+                      prizeValue: currentAuction.prizeValue,
+                      userBidsPerRound: currentAuction.userBidsPerRound,
+                      userHasPaidEntry: currentAuction.userHasPaidEntry,
+                      userQualificationPerRound: currentAuction.userQualificationPerRound,
+                      winnersAnnounced: currentAuction.winnersAnnounced,
+                      userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
+                      hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
+                    }}
+                    user={currentUser}
+                    onShowLeaderboard={handleShowLeaderboard}
+                    onBid={handlePlaceBid}
+                    serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Guest View - Show login prompt instead of auction  */}
+                  <div className="text-center py-8 sm:py-12 md:py-16 px-4">
+                    <div className="max-w-2xl mx-auto space-y-6">
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
+                      <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
+                        Create your free account and start bidding on amazing prizes with direct payment!
+                      </p>
+                      <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
+                        <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
+                        <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
+                            <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
+                          </div>
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-purple-700">6x</div>
+                            <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
+                          </div>
+                          <div>
+                            <div className="text-xl sm:text-2xl font-bold text-purple-700">₹3,50,000+</div>
+                            <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
-            <AuctionSchedule />
-          </main>
+              <AuctionScheduleInfo />
+              <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+            </main>
+
+            <style>{`
+              @keyframes highlight-fade {
+                0% { box-shadow: 0 0 0 0px rgba(139, 92, 246, 0.7); border-radius: 1.5rem; }
+                50% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0.3); border-radius: 1.5rem; }
+                100% { box-shadow: 0 0 0 0px rgba(139, 92, 246, 0); border-radius: 1.5rem; }
+              }
+              .highlight-auction-grid {
+                animation: highlight-fade 2s ease-in-out infinite;
+                z-index: 50;
+                position: relative;
+              }
+            `}</style>
+
 
           <Footer onNavigate={handleNavigate} />
 

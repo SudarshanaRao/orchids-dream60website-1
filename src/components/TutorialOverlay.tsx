@@ -140,79 +140,97 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   const progress = Math.min(100, Math.max(0, ((currentStep + 1) / steps.length) * 100));
   const isLastStep = currentStep === steps.length - 1;
 
-  return (
-    <div className="fixed bottom-4 right-4 z-[9999] max-w-[calc(100vw-24px)]">
-      <style>{`
-        .whatsnew-highlight {
-          outline: 3px solid rgba(139, 92, 246, 0.75);
-          box-shadow: 0 12px 30px -12px rgba(76, 29, 149, 0.35), 0 0 0 6px rgba(167, 139, 250, 0.35);
-          border-radius: 14px;
-        }
-      `}</style>
-      <div className="w-[360px] max-w-full bg-white border border-purple-100 shadow-xl rounded-2xl p-4 sm:p-5 relative overflow-hidden">
-        <button
-          onClick={handleClose}
-          aria-label="Close what's new"
-          className="absolute top-3 right-3 p-2 rounded-full hover:bg-purple-50 text-purple-700"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        <div className="flex items-center gap-2 text-[11px] font-semibold text-purple-600 uppercase tracking-[0.1em] mb-2">
-          <Sparkles className="w-4 h-4" />
-          <span>What&apos;s new</span>
-        </div>
-
-        <div className="space-y-2 pr-8">
-          <h3 className="text-lg font-bold text-purple-900 leading-tight">{step.title}</h3>
-          <p className="text-sm text-purple-700 leading-relaxed">{step.description}</p>
-        </div>
-
-        <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between text-xs text-purple-600">
-              <span className="font-medium">Progress</span>
-              <span>Step {currentStep + 1} of {steps.length}</span>
-            </div>
-            <div className="h-2 w-full bg-purple-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+    return (
+      <div className="fixed bottom-4 right-4 z-[9999] max-w-[calc(100vw-32px)] sm:max-w-[400px]">
+        <style>{`
+          .whatsnew-highlight {
+            outline: 4px solid rgba(139, 92, 246, 0.85);
+            box-shadow: 0 0 0 8px rgba(167, 139, 250, 0.4), 0 20px 40px -12px rgba(76, 29, 149, 0.5);
+            border-radius: 1.5rem;
+            z-index: 40;
+            position: relative;
+          }
+          @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          .animate-slide-up {
+            animation: slide-up 0.4s ease-out forwards;
+          }
+        `}</style>
+        <div className="w-full bg-white/95 backdrop-blur-2xl border-2 border-purple-100 shadow-[0_20px_50px_rgba(76,29,149,0.15)] rounded-[2rem] p-5 sm:p-6 relative overflow-hidden animate-slide-up">
+          {/* Decorative background gradient */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-100/50 blur-3xl -z-10 rounded-full" />
+          
           <button
-            onClick={handleSkip}
-            className="px-3 py-2 text-sm font-semibold text-purple-700 hover:text-purple-900"
+            onClick={handleClose}
+            aria-label="Close what's new"
+            className="absolute top-4 right-4 p-2 rounded-2xl hover:bg-purple-50 text-purple-400 hover:text-purple-700 transition-colors"
           >
-            Skip
+            <X className="w-5 h-5" />
           </button>
-
-          <div className="ml-auto flex items-center gap-2">
+  
+          <div className="flex items-center gap-2.5 text-[11px] font-black text-purple-600 uppercase tracking-[0.2em] mb-4">
+            <div className="w-6 h-6 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <span>New Feature</span>
+          </div>
+  
+          <div className="space-y-3 pr-6">
+            <h3 className="text-xl sm:text-2xl font-black text-purple-950 leading-tight tracking-tight">{step.title}</h3>
+            <p className="text-sm sm:text-base text-purple-800/80 leading-relaxed font-medium">{step.description}</p>
+          </div>
+  
+          <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-between text-[10px] font-bold text-purple-400 uppercase tracking-widest">
+                <span>Progress</span>
+                <span>{currentStep + 1} / {steps.length}</span>
+              </div>
+              <div className="h-2 w-full bg-purple-50 rounded-full overflow-hidden border border-purple-100/50 p-0.5">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+  
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <button
-              onClick={handleBack}
-              disabled={currentStep === 0}
-              className="px-3 py-2 text-sm font-semibold rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleSkip}
+              className="px-4 py-2 text-sm font-bold text-purple-400 hover:text-purple-700 transition-colors"
             >
-              <span className="inline-flex items-center gap-1"><ChevronLeft className="w-4 h-4" /> Back</span>
+              Skip
             </button>
-            <button
-              onClick={handleTryNow}
-              className="px-3 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow-sm"
-            >
-              Try now
-            </button>
-            <button
-              onClick={() => (isLastStep ? handleComplete(false) : handleNext())}
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600 text-white shadow-md hover:shadow-lg"
-            >
-              {isLastStep ? 'Start journey' : (step.actionLabel || 'Next')}
-              <ChevronRight className="w-4 h-4 inline ml-1" />
-            </button>
+  
+            <div className="ml-auto flex items-center gap-2">
+              {currentStep > 0 && (
+                <button
+                  onClick={handleBack}
+                  className="p-3 rounded-2xl border-2 border-purple-50 text-purple-600 hover:bg-purple-50 transition-all active:scale-95"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              
+              <button
+                onClick={handleTryNow}
+                className="px-5 py-2.5 text-sm font-bold rounded-2xl bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all active:scale-95"
+              >
+                Try Now
+              </button>
+  
+              <button
+                onClick={() => (isLastStep ? handleComplete(false) : handleNext())}
+                className="px-6 py-2.5 text-sm font-black rounded-2xl bg-gradient-to-r from-purple-600 to-violet-700 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all active:scale-95 flex items-center gap-2"
+              >
+                {isLastStep ? 'Get Started' : (step.actionLabel || 'Next')}
+                {!isLastStep && <ChevronRight className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+
 }
