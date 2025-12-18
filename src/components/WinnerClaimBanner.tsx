@@ -54,28 +54,38 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                 if (detailsResult.success) {
                   const { auction, rounds } = detailsResult.data;
                   
-                  // 1. Get completed rounds to determine "Announced" status
-                  const completedRounds = rounds.filter((r: any) => r.status === 'COMPLETED');
-                  const latestCompletedRound = completedRounds.length > 0 
-                    ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
-                    : 0;
-                  
+                    // 1. Get completed rounds to determine "Announced" status
+                    const completedRounds = rounds.filter((r: any) => r.status === 'COMPLETED');
+                    const latestCompletedRound = completedRounds.length > 0 
+                      ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
+                      : 0;
+                    
+                    const lastRoundResults = latestCompletedRound > 0 
+                      ? rounds.find((r: any) => r.roundNumber === latestCompletedRound)
+                      : null;
+
                     // If winners are announced, we clear live status and let the winner/lost logic take over
-                    if (auction.winnersAnnounced || auction.Status === 'COMPLETED' || (auction.winners && auction.winners.length > 0)) {
-                    // Check if user is a winner
-                    const isWinner = auction.winners?.some((w: any) => w.playerId === userId);
-                    if (!isWinner) {
-                      setLiveStatus({
-                        message: 'Winners Announced - Better luck next time!',
-                        type: 'WINNERS_ANNOUNCED',
-                        round: latestCompletedRound
-                      });
-                    } else {
-                      setLiveStatus(null);
-                    }
-                  } 
-                  // Only show status for rounds that have been "Announced" (COMPLETED)
-                  else if (latestCompletedRound > 0) {
+                    // We check for winnersAnnounced flag, COMPLETED status, or if we are at the final stage (<=3 qualified)
+                    const isFinalStage = lastRoundResults && lastRoundResults.qualifiedCount > 0 && lastRoundResults.qualifiedCount <= 3;
+                    
+                    if (auction.winnersAnnounced || auction.status === 'COMPLETED' || (auction.winners && auction.winners.length > 0) || isFinalStage) {
+                      // Check if user is a winner
+                      const isWinner = auction.winners?.some((w: any) => w.playerId === userId) || 
+                                     (isFinalStage && lastRoundResults?.userQualified);
+                      
+                      if (!isWinner) {
+                        setLiveStatus({
+                          message: 'Winners Announced - Better luck next time!',
+                          type: 'WINNERS_ANNOUNCED',
+                          round: latestCompletedRound
+                        });
+                      } else {
+                        // If winner, either unclaimedPrizes will handle it or we wait for them to be processed
+                        setLiveStatus(null);
+                      }
+                    } 
+                    // Only show status for rounds that have been "Announced" (COMPLETED)
+                    else if (latestCompletedRound > 0) {
                     const participant = liveAuction.participants?.find((p: any) => p.playerId === userId);
                     if (participant) {
                       if (participant.isEliminated && participant.eliminatedInRound <= latestCompletedRound) {

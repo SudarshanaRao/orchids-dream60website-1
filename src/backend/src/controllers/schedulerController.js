@@ -1626,6 +1626,8 @@ const getAuctionDetails = async (req, res) => {
           status: auction.Status,
           timeSlot: auction.TimeSlot,
           totalParticipants: auction.participants?.length || 0,
+          winnersAnnounced: auction.winnersAnnounced,
+          winners: auction.winners || []
         },
         rounds: roundsData,
         userParticipation: {
