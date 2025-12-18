@@ -33,6 +33,7 @@ import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
 import { WinnersAnnouncedBanner } from './components/WinnersAnnouncedBanner';
 import { AmazonVoucherModal } from './components/AmazonVoucherModal';
+import { ChristmasHeroBanner } from './components/ChristmasHeroBanner';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -2143,8 +2144,9 @@ if (currentPage === 'support') {
               )}
 
 
-            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-            {/* Hero Section */}
+              <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+              <ChristmasHeroBanner />
+              {/* Hero Section */}
             <div className="text-center space-y-4 px-2 sm:px-4">
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
   bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
