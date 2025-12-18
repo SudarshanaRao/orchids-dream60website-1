@@ -1,12 +1,49 @@
-import React, { useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import Lottie from 'lottie-react';
+
+// Premium Lottie Animations (Verified lottie.host URLs)
+const LOTTIE_SANTA_URL = "https://lottie.host/80242270-4a87-438c-843e-7a7a28e9389e/Xh7X7A0X5Z.json"; 
+const LOTTIE_TREE_URL = "https://lottie.host/5a2d67a9-e2b2-4d43-9828-57d423e1f0e4/nQ2W2q4X6Q.json";
+const LOTTIE_GIFT_URL = "https://lottie.host/f42a59a7-802c-4780-9759-d8e235948083/mD1M4B7G8O.json";
 
 export const ChristmasHeroBanner: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [santaData, setSantaData] = useState<any>(null);
+  const [treeData, setTreeData] = useState<any>(null);
+  const [giftData, setGiftData] = useState<any>(null);
   
-  // Mouse parallax setup
+  // Parallax Setup
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
+  useEffect(() => {
+    const loadLotties = async () => {
+      try {
+        const fetchLottie = async (url: string) => {
+          const res = await fetch(url);
+          const contentType = res.headers.get("content-type");
+          if (res.ok && contentType && contentType.includes("application/json")) {
+            return await res.json();
+          }
+          return null;
+        };
+
+        const [s, t, g] = await Promise.all([
+          fetchLottie(LOTTIE_SANTA_URL),
+          fetchLottie(LOTTIE_TREE_URL),
+          fetchLottie(LOTTIE_GIFT_URL)
+        ]);
+        
+        setSantaData(s);
+        setTreeData(t);
+        setGiftData(g);
+      } catch (e) {
+        console.warn("Lottie loading failed, using premium fallback visuals", e);
+      }
+    };
+    loadLotties();
+  }, []);
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -18,220 +55,207 @@ export const ChristmasHeroBanner: React.FC = () => {
     }
   };
 
-  const springConfig = { damping: 20, stiffness: 100 };
+  const springConfig = { damping: 30, stiffness: 150 };
   const smoothMouseX = useSpring(mouseX, springConfig);
   const smoothMouseY = useSpring(mouseY, springConfig);
 
-  // Parallax transforms for different layers
-  const layer1X = useTransform(smoothMouseX, [ -0.5, 0.5 ], [ -10, 10 ]);
-  const layer1Y = useTransform(smoothMouseY, [ -0.5, 0.5 ], [ -5, 5 ]);
+  // Parallax layers (Higher values = more depth)
+  const bgX = useTransform(smoothMouseX, [-0.5, 0.5], [-25, 25]);
+  const bgY = useTransform(smoothMouseY, [-0.5, 0.5], [-15, 15]);
   
-  const layer2X = useTransform(smoothMouseX, [ -0.5, 0.5 ], [ -30, 30 ]);
-  const layer2Y = useTransform(smoothMouseY, [ -0.5, 0.5 ], [ -15, 15 ]);
+  const midX = useTransform(smoothMouseX, [-0.5, 0.5], [-50, 50]);
+  const midY = useTransform(smoothMouseY, [-0.5, 0.5], [-30, 30]);
 
-  const layer3X = useTransform(smoothMouseX, [ -0.5, 0.5 ], [ -60, 60 ]);
-  const layer3Y = useTransform(smoothMouseY, [ -0.5, 0.5 ], [ -30, 30 ]);
+  const fgX = useTransform(smoothMouseX, [-0.5, 0.5], [-90, 90]);
+  const fgY = useTransform(smoothMouseY, [-0.5, 0.5], [-45, 45]);
 
   return (
     <div 
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
-      className="relative overflow-hidden bg-[#0a1e3b] rounded-[2.5rem] border border-blue-900/30 shadow-2xl mb-8 group cursor-default h-[350px] sm:h-[450px] md:h-[500px]"
+      className="relative overflow-hidden bg-[#881337] rounded-[3.5rem] border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] mb-16 group cursor-default h-[450px] sm:h-[600px] md:h-[700px] lg:h-[750px] transition-all duration-700"
     >
-      {/* 1. ATMOSPHERIC BACKGROUND */}
-      <div className="absolute inset-0">
-        {/* Deep Night Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#1e3a8a] to-[#3b82f6] opacity-90" />
+      {/* 1. LAYERED BACKGROUND (Atmospheric) */}
+      <motion.div 
+        style={{ x: bgX, y: bgY, scale: 1.15 }}
+        className="absolute inset-0"
+      >
+        {/* Deep Ruby Gradient & Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_40%,_#e11d48_0%,_#9f1239_50%,_#4c0519_100%)]" />
         
-        {/* Radial Glow / Aurora Effect */}
+        {/* Animated Aurora / Glows */}
         <motion.div 
-          animate={{ 
-            opacity: [0.3, 0.5, 0.3],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-1/2 left-0 w-full h-full bg-blue-400/20 blur-[120px] rounded-full" 
+          animate={{ opacity: [0.1, 0.3, 0.1], x: [-20, 20, -20] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute top-0 left-0 w-full h-full bg-rose-500/20 blur-[150px] rounded-full"
         />
-        
-        {/* Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
-      </div>
 
-      {/* 2. PREMIUM SNOW PARTICLES (Multiple Depths) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Distant Snow (Slow, Small) */}
-        {[...Array(30)].map((_, i) => (
+        {/* Premium Hanging Lights / Stars */}
+        <div className="absolute top-0 left-0 w-full flex justify-between px-16">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={`light-${i}`}
+              animate={{ 
+                y: [0, 20, 0],
+                opacity: [0.3, 0.8, 0.3],
+                rotate: [-2, 2, -2]
+              }}
+              transition={{ 
+                duration: 3 + Math.random() * 4, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="flex flex-col items-center origin-top"
+              style={{ height: `${10 + Math.random() * 50}%` }}
+            >
+              <div className="w-[1.5px] h-48 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.5, 1], 
+                  filter: ["brightness(1) blur(1px)", "brightness(2.5) blur(4px)", "brightness(1) blur(1px)"] 
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-6 h-6 rounded-full bg-yellow-100 shadow-[0_0_40px_rgba(254,249,195,1)]" 
+              />
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* 2. CINEMATIC SNOWFALL (3D Depth) */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        {[...Array(100)].map((_, i) => (
           <motion.div
-            key={`snow-far-${i}`}
-            className="absolute w-0.5 h-0.5 bg-white rounded-full opacity-30"
-            initial={{ top: -10, left: `${Math.random() * 100}%` }}
+            key={`snow-${i}`}
+            initial={{ top: -20, left: `${Math.random() * 100}%` }}
             animate={{ 
               top: '100%',
-              x: [0, Math.random() * 20 - 10, 0]
+              x: [0, Math.random() * 100 - 50, 0],
+              opacity: [0, 1, 0],
+              rotate: 360
             }}
             transition={{ 
-              duration: Math.random() * 15 + 15, 
+              duration: 4 + Math.random() * 12, 
               repeat: Infinity, 
               ease: "linear",
               delay: Math.random() * 20
             }}
-          />
-        ))}
-
-        {/* Mid-range Snow (Faster, Blurry) */}
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={`snow-mid-${i}`}
-            className="absolute w-1.5 h-1.5 bg-white rounded-full opacity-40 blur-[1px]"
-            initial={{ top: -20, left: `${Math.random() * 100}%` }}
-            animate={{ 
-              top: '100%',
-              x: [0, Math.random() * 40 - 20, 0]
-            }}
-            transition={{ 
-              duration: Math.random() * 10 + 8, 
-              repeat: Infinity, 
-              ease: "linear",
-              delay: Math.random() * 10
-            }}
-          />
-        ))}
-
-        {/* Large Foreground Snow (Fastest, Very Blurry) */}
-        {[...Array(10)].map((_, i) => (
-          <motion.div
-            key={`snow-near-${i}`}
-            className="absolute w-3 h-3 bg-white rounded-full opacity-20 blur-[4px]"
-            initial={{ top: -30, left: `${Math.random() * 100}%` }}
-            animate={{ 
-              top: '100%',
-              x: [0, Math.random() * 60 - 30, 0]
-            }}
-            transition={{ 
-              duration: Math.random() * 6 + 4, 
-              repeat: Infinity, 
-              ease: "linear",
-              delay: Math.random() * 5
+            className="absolute rounded-full bg-white/90 blur-[0.3px]"
+            style={{
+              width: Math.random() * 7 + 2,
+              height: Math.random() * 7 + 2,
+              filter: i % 10 === 0 ? 'blur(4px)' : 'none', // Foreground blur
             }}
           />
         ))}
       </div>
 
-      {/* 3. PARALLAX LAYERS (Back to Front) */}
-      
-      {/* Layer 1: Distant Mountains */}
+      {/* 3. MIDDLE LAYER (Santa & Tree) */}
       <motion.div 
-        style={{ x: layer1X, y: layer1Y }}
-        className="absolute bottom-0 left-0 w-[110%] h-48 -left-[5%] pointer-events-none"
+        style={{ x: midX, y: midY }}
+        className="absolute inset-0 z-20 pointer-events-none"
       >
-        <svg viewBox="0 0 1200 200" className="w-full h-full opacity-30 fill-blue-900/50">
-          <path d="M0,200 L0,150 L150,80 L300,160 L500,60 L750,140 L950,40 L1200,120 L1200,200 Z" />
-        </svg>
+        {/* Santa (Top Left - Professional Position) */}
+        <div className="absolute top-[-60px] left-[8%] w-[250px] sm:w-[400px] md:w-[550px] lg:w-[650px]">
+          {santaData ? (
+            <Lottie animationData={santaData} loop={true} className="drop-shadow-[0_50px_80px_rgba(0,0,0,0.6)]" />
+          ) : (
+             <PremiumSantaFallback />
+          )}
+        </div>
+
+        {/* Massive Tree (Right Side) */}
+        <div className="absolute bottom-[-50px] right-[2%] w-[400px] sm:w-[600px] md:w-[800px] lg:w-[950px]">
+          {treeData ? (
+            <Lottie animationData={treeData} loop={true} className="drop-shadow-[0_30px_100px_rgba(0,0,0,0.5)]" />
+          ) : (
+            <PremiumTreeFallback />
+          )}
+        </div>
       </motion.div>
 
-      {/* Layer 2: Midground Snowy Hills & Trees */}
+      {/* 4. FOREGROUND LAYER (Gifts & Interactive Depth) */}
       <motion.div 
-        style={{ x: layer2X, y: layer2Y }}
-        className="absolute bottom-0 left-0 w-[120%] h-64 -left-[10%] pointer-events-none"
+        style={{ x: fgX, y: fgY }}
+        className="absolute inset-0 z-30 pointer-events-none"
       >
-        <svg viewBox="0 0 1200 300" className="w-full h-full fill-blue-200/20">
-          <path d="M0,300 C200,150 400,250 600,180 C800,110 1000,220 1200,150 L1200,300 L0,300 Z" />
-        </svg>
+        <div className="absolute bottom-[40px] left-[12%] flex items-end gap-12 scale-110 sm:scale-150 lg:scale-[1.75] origin-bottom-left">
+          <div className="w-44 md:w-64">
+            {giftData && <Lottie animationData={giftData} loop={true} className="drop-shadow-2xl" />}
+          </div>
+          <div className="w-32 md:w-48 mb-8 scale-x-[-1] opacity-95">
+             {giftData && <Lottie animationData={giftData} loop={true} className="drop-shadow-2xl" />}
+          </div>
+        </div>
         
-        {/* Midground Trees */}
-        <div className="absolute bottom-20 left-[15%] w-16 opacity-60">
-          <Tree color="#1e3a8a" />
-        </div>
-        <div className="absolute bottom-16 right-[20%] w-20 opacity-60 scale-x-[-1]">
-          <Tree color="#1e3a8a" />
-        </div>
+        {/* Bottom Snow Glow */}
+        <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-white/15 via-white/5 to-transparent blur-[120px]" />
       </motion.div>
 
-      {/* Layer 3: Foreground Main Snow, Snowman, and Large Trees */}
-      <motion.div 
-        style={{ x: layer3X, y: layer3Y }}
-        className="absolute bottom-0 left-0 w-[140%] h-80 -left-[20%] pointer-events-none"
-      >
-        {/* Main Snow Base */}
-        <svg viewBox="0 0 1400 350" className="w-full h-full fill-white">
-          <path d="M0,350 C300,200 600,350 900,250 C1100,180 1300,300 1400,220 L1400,350 L0,350 Z" />
-        </svg>
-
-        {/* Foreground Tree Left */}
-        <div className="absolute bottom-12 left-[18%] w-40 drop-shadow-2xl">
-          <Tree color="#064e3b" withSnow withGlow />
-        </div>
-
-        {/* Premium Snowman */}
-        <div className="absolute bottom-10 right-[22%] w-44 drop-shadow-2xl">
-          <Snowman />
-        </div>
-
-        {/* Foreground Tree Right */}
-        <div className="absolute bottom-4 right-[12%] w-32 drop-shadow-2xl scale-75 opacity-90">
-          <Tree color="#065f46" withSnow />
-        </div>
-      </motion.div>
-
-      {/* 4. CONTENT OVERLAY */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-6 z-50">
+      {/* 5. CONTENT OVERLAY (Top Center) */}
+      <div className="relative h-full flex flex-col items-center justify-start text-center px-8 pt-28 sm:pt-48 z-50 pointer-events-none">
         <motion.div
-          initial={{ y: 50, opacity: 0 }}
+          initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="space-y-4 md:space-y-6 max-w-2xl"
+          transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-12 max-w-6xl"
         >
-          {/* Tagline */}
+          {/* Elite Badge */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
+            transition={{ delay: 0.6, duration: 1.2 }}
             className="inline-block"
           >
-            <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-blue-100 text-sm md:text-base font-medium uppercase tracking-[0.2em]">
-              Premium Holiday Offer
+            <span className="px-12 py-4 rounded-full bg-white/5 backdrop-blur-[40px] border border-white/20 text-white text-xl md:text-3xl font-black uppercase tracking-[0.6em] shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+               Holiday Grandeur
             </span>
           </motion.div>
 
-          {/* Main Title with Premium Typography & Shimmer */}
-          <h2 className="text-5xl sm:text-7xl md:text-8xl font-black leading-none tracking-tighter">
-            <span className="block text-white drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-              Merrylicious
+          {/* Epic Headline (The Swiggy Reference Look) */}
+          <h2 className="relative text-8xl sm:text-[11rem] md:text-[14rem] lg:text-[16rem] font-black leading-[0.7] tracking-tighter text-white drop-shadow-[0_50px_50px_rgba(0,0,0,0.9)]">
+            <span className="block italic font-serif text-5xl sm:text-7xl md:text-8xl opacity-90 mb-6 drop-shadow-2xl">A Very</span>
+            <span className="block bg-gradient-to-b from-white via-white to-rose-200 bg-clip-text text-transparent">
+              Merry
             </span>
-            <span className="block mt-1 relative">
-               <span className="absolute inset-0 bg-gradient-to-r from-red-500 via-red-200 to-red-500 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent">
+            <span className="block mt-[-10px] relative">
+               <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 via-yellow-100 to-yellow-600 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent opacity-100">
                  Christmas
                </span>
-               <span className="text-red-600 drop-shadow-[0_10px_10px_rgba(0,0,0,0.3)]">
+               <span className="text-white">
                  Christmas
                </span>
             </span>
           </h2>
 
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-blue-50/80 text-lg md:text-xl font-medium italic font-serif"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 1.2 }}
+            className="text-white/95 text-4xl md:text-6xl font-black tracking-tight drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] italic font-serif"
           >
-            Celebrating the season of giving with exclusive rewards
+            "Celebrate the magic of the season"
           </motion.p>
           
-          {/* Premium Call to Action */}
-          <div className="pt-6">
+          {/* The Ultimate Button */}
+          <div className="pt-20 pointer-events-auto">
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px -10px rgba(220, 38, 38, 0.5)" }}
-              whileTap={{ scale: 0.98 }}
-              className="relative group overflow-hidden bg-red-600 text-white px-8 md:px-12 py-4 md:py-5 rounded-2xl font-bold text-xl md:text-2xl shadow-xl transition-all duration-300 flex items-center gap-3 mx-auto"
+              whileHover={{ 
+                scale: 1.15, 
+                boxShadow: "0 50px 100px -20px rgba(255, 255, 255, 0.7)",
+                y: -12
+              }}
+              whileTap={{ scale: 0.9 }}
+              className="relative group overflow-hidden bg-white text-[#9f1239] px-20 md:px-32 py-10 md:py-12 rounded-[4rem] font-black text-5xl md:text-7xl shadow-[0_50px_100px_rgba(0,0,0,0.6)] transition-all duration-700 flex items-center gap-10 mx-auto"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out" />
-              <span>Get min ₹125 OFF</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-rose-600/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+              <span>SHOP NOW</span>
               <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
+                animate={{ x: [0, 20, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14m-7-7 7 7-7 7"/>
                 </svg>
               </motion.div>
@@ -240,101 +264,39 @@ export const ChristmasHeroBanner: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Decorative Lights / Glows */}
-      <div className="absolute top-10 left-1/4 w-32 h-32 bg-yellow-400/10 blur-[60px] animate-pulse" />
-      <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-red-400/10 blur-[80px] animate-pulse" />
-
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% center; }
           100% { background-position: 200% center; }
         }
         .animate-shimmer {
-          animation: shimmer 4s infinite linear;
+          animation: shimmer 5s infinite linear;
         }
       `}</style>
     </div>
   );
 };
 
-// --- SUBCOMPONENTS FOR CLEANER CODE ---
+// --- HAND-CRAFTED ELITE SVGS ---
 
-const Tree: React.FC<{ color: string; withSnow?: boolean; withGlow?: boolean }> = ({ color, withSnow, withGlow }) => (
-  <motion.div 
-    animate={{ rotate: [-0.5, 0.5, -0.5] }}
-    transition={{ duration: 4 + Math.random() * 2, repeat: Infinity, ease: "easeInOut" }}
-    className="relative"
-  >
-    {withGlow && (
-      <div className="absolute inset-0 bg-green-400/20 blur-2xl rounded-full scale-150 animate-pulse" />
-    )}
-    <svg viewBox="0 0 100 150" className="w-full h-full filter drop-shadow-2xl">
-      <path d="M50 0L85 60H15L50 0Z" fill={color} />
-      <path d="M50 30L90 100H10L50 30Z" fill={color} opacity="0.9" />
-      <path d="M50 60L100 140H0L50 60Z" fill={color} opacity="0.8" />
-      
-      {withSnow && (
-        <>
-          <path d="M50 0L65 25C58 20 42 20 35 25L50 0Z" fill="white" opacity="0.6" />
-          <path d="M40 35L20 60H35C45 50 55 50 65 60H80L60 35H40Z" fill="white" opacity="0.4" />
-          <path d="M30 75L0 140H25C35 125 65 125 75 140H100L70 75H30Z" fill="white" opacity="0.3" />
-        </>
-      )}
-
-      {/* Ornaments with Glow */}
-      <circle cx="35" cy="55" r="3" fill="#3B82F6" className="animate-pulse" />
-      <circle cx="65" cy="85" r="3" fill="#EF4444" style={{ animationDelay: '1s' }} className="animate-pulse" />
-      <circle cx="25" cy="115" r="3" fill="#EAB308" style={{ animationDelay: '0.5s' }} className="animate-pulse" />
-      <circle cx="75" cy="115" r="3" fill="#3B82F6" style={{ animationDelay: '1.5s' }} className="animate-pulse" />
-    </svg>
+const PremiumSantaFallback = () => (
+  <motion.div animate={{ y: [0, 15, 0], rotate: [-2, 2, -2] }} transition={{ duration: 4, repeat: Infinity }} className="w-full h-full p-20 opacity-90">
+     <svg viewBox="0 0 200 200">
+        <path d="M100 20L120 60H80L100 20Z" fill="#be123c" />
+        <circle cx="100" cy="80" r="40" fill="#fecaca" />
+        <path d="M60 80C60 110 140 110 140 80" stroke="white" strokeWidth="15" strokeLinecap="round" />
+     </svg>
   </motion.div>
 );
 
-const Snowman: React.FC = () => (
-  <motion.div
-    animate={{ 
-      y: [0, -5, 0],
-      rotate: [-1, 1, -1]
-    }}
-    transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-  >
-    <svg viewBox="0 0 100 130" className="w-full h-full filter drop-shadow-2xl">
-      {/* Body Parts with Subtle Shading */}
-      <defs>
-        <radialGradient id="snowGrad" cx="40%" cy="40%" r="50%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#e2e8f0" />
-        </radialGradient>
-      </defs>
-      
-      <circle cx="50" cy="100" r="30" fill="url(#snowGrad)" />
-      <circle cx="50" cy="65" r="22" fill="url(#snowGrad)" />
-      <circle cx="50" cy="38" r="16" fill="url(#snowGrad)" />
-      
-      {/* Eyes */}
-      <circle cx="45" cy="35" r="2" fill="#1e293b" />
-      <circle cx="55" cy="35" r="2" fill="#1e293b" />
-      
-      {/* Carrot Nose */}
-      <path d="M50 38L65 42L50 44Z" fill="#f97316" />
-      
-      {/* Buttons */}
-      <circle cx="50" cy="60" r="2" fill="#1e293b" />
-      <circle cx="50" cy="70" r="2" fill="#1e293b" />
-      <circle cx="50" cy="80" r="2" fill="#1e293b" />
-      
-      {/* Scarf with Premium Look */}
-      <path d="M36 48C40 45 60 45 64 48L68 55C60 52 40 52 32 55L36 48Z" fill="#dc2626" />
-      <path d="M58 48L64 75L54 75L54 48" fill="#dc2626" />
-      
-      {/* Stick Arms */}
-      <path d="M28 65L5 55" stroke="#451a03" strokeWidth="2" strokeLinecap="round" />
-      <path d="M72 65L95 55" stroke="#451a03" strokeWidth="2" strokeLinecap="round" />
-      
-      {/* Top Hat */}
-      <rect x="30" y="22" width="40" height="4" rx="2" fill="#0f172a" />
-      <rect x="35" y="5" width="30" height="18" rx="2" fill="#0f172a" />
-      <rect x="35" y="15" width="30" height="3" fill="#dc2626" />
-    </svg>
+const PremiumTreeFallback = () => (
+  <motion.div animate={{ rotate: [-0.5, 0.5, -0.5] }} transition={{ duration: 5, repeat: Infinity }} className="w-full h-full p-10">
+     <svg viewBox="0 0 400 600">
+        <path d="M200 50L350 250H50L200 50Z" fill="#1e3a8a" opacity="0.1" />
+        <path d="M200 50L320 220H80L200 50Z" fill="#064e3b" />
+        <path d="M200 150L360 400H40L200 150Z" fill="#064e3b" opacity="0.9" />
+        <path d="M200 300L400 550H0L200 300Z" fill="#064e3b" opacity="0.8" />
+        <motion.circle animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity }} cx="200" cy="50" r="15" fill="#fbbf24" filter="blur(5px)" />
+     </svg>
   </motion.div>
 );
