@@ -2099,6 +2099,9 @@ if (currentPage === 'support') {
               </div>
             )}
 
+            {/* View Winners / Auction Schedule Banner - Moved here as requested */}
+            <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+
             {/* Prize Showcase */}
             <PrizeShowcase
               currentPrize={currentAuction as any}
@@ -2129,30 +2132,27 @@ if (currentPage === 'support') {
 
             {currentUser ? (
               <>
-                {/* Auction Grid */}
-                <AuctionGrid
-                  auction={{
-                    boxes: currentAuction.boxes as any,
-                    prizeValue: currentAuction.prizeValue,
-                    userBidsPerRound: currentAuction.userBidsPerRound,
-                    userHasPaidEntry: currentAuction.userHasPaidEntry,
-                    userQualificationPerRound: currentAuction.userQualificationPerRound,
-                    winnersAnnounced: currentAuction.winnersAnnounced,
-                    userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
-                    hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
-                  }}
-                  user={currentUser}
-                  onShowLeaderboard={handleShowLeaderboard}
-                  onBid={handlePlaceBid}
-                  serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                />
-
-                <AuctionSchedule />
-              </>
-            ) : (
-              <>
-                <AuctionSchedule />
-                {/* Guest View - Show login prompt instead of auction  */}
+                  {/* Auction Grid */}
+                  <AuctionGrid
+                    auction={{
+                      boxes: currentAuction.boxes as any,
+                      prizeValue: currentAuction.prizeValue,
+                      userBidsPerRound: currentAuction.userBidsPerRound,
+                      userHasPaidEntry: currentAuction.userHasPaidEntry,
+                      userQualificationPerRound: currentAuction.userQualificationPerRound,
+                      winnersAnnounced: currentAuction.winnersAnnounced,
+                      userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
+                      hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
+                    }}
+                    user={currentUser}
+                    onShowLeaderboard={handleShowLeaderboard}
+                    onBid={handlePlaceBid}
+                    serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                  />
+                </>
+              ) : (
+                <>
+                  {/* Guest View - Show login prompt instead of auction  */}
                 <div className="text-center py-8 sm:py-12 md:py-16 px-4">
                   <div className="max-w-2xl mx-auto space-y-6">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>

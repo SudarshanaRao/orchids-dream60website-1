@@ -11,6 +11,8 @@ interface UnclaimedPrize {
   winnersAnnouncedAt?: number;
   finalRank: number;
   isCurrentAuction: boolean;
+  currentEligibleRank?: number;
+  isWaiting?: boolean;
 }
 
 interface WinnerClaimBannerProps {
@@ -28,6 +30,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
       if (!userId) return;
 
       try {
+        // Fetch winners first
         const response = await fetch(
           `${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}&status=won&limit=10`
         );
@@ -42,13 +45,19 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
             .filter((auction: any) => {
               const isPending = auction.prizeClaimStatus === 'PENDING';
               const deadline = auction.claimDeadline;
-              const isNotExpired = deadline && deadline > now;
+              // If it's a waiting user, deadline might not be set yet or might be in the future
+              const isNotExpired = !deadline || deadline > now;
               return isPending && isNotExpired;
             })
             .map((auction: any) => {
               const winnersAnnouncedAt = auction.winnersAnnouncedAt || auction.auctionEndTime;
               const timeSinceAnnouncement = now - new Date(winnersAnnouncedAt).getTime();
               const isCurrentAuction = timeSinceAnnouncement < 2 * 60 * 60 * 1000;
+              
+              // Logic for waiting queue
+              const finalRank = auction.finalRank || auction.myRank || 1;
+              const currentEligibleRank = auction.currentEligibleRank || 1;
+              const isWaiting = finalRank > currentEligibleRank;
 
               return {
                 hourlyAuctionId: auction.hourlyAuctionId,
@@ -57,8 +66,10 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                 prizeClaimStatus: auction.prizeClaimStatus,
                 claimDeadline: auction.claimDeadline,
                 winnersAnnouncedAt: new Date(winnersAnnouncedAt).getTime(),
-                finalRank: auction.finalRank || auction.myRank,
-                isCurrentAuction
+                finalRank,
+                isCurrentAuction,
+                currentEligibleRank,
+                isWaiting
               };
             });
 
@@ -79,7 +90,16 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
 
     const updateTimeLeft = () => {
       const now = Date.now();
-      const nearestDeadline = Math.min(...unclaimedPrizes.map(p => p.claimDeadline));
+      // Only consider prizes that are NOT waiting for deadline
+      const prizesWithDeadlines = unclaimedPrizes.filter(p => p.claimDeadline && !p.isWaiting);
+      
+      if (prizesWithDeadlines.length === 0) {
+        // If all are waiting, show waiting message
+        setTimeLeftText('Waiting for turn');
+        return;
+      }
+
+      const nearestDeadline = Math.min(...prizesWithDeadlines.map(p => p.claimDeadline));
       const diff = nearestDeadline - now;
 
       if (diff <= 0) {
@@ -104,76 +124,91 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
 
   if (!isVisible || unclaimedPrizes.length === 0) return null;
 
-  const hasCurrentAuctionPrize = unclaimedPrizes.some(p => p.isCurrentAuction);
+  const hasWaitingMember = unclaimedPrizes.some(p => p.isWaiting);
+  const hasCurrentAuctionPrize = unclaimedPrizes.some(p => p.isCurrentAuction && !p.isWaiting);
   const hasUrgentClaim = unclaimedPrizes.some(p => {
+    if (p.isWaiting || !p.claimDeadline) return false;
     const timeLeft = p.claimDeadline - Date.now();
     return timeLeft < 2 * 60 * 60 * 1000;
   });
 
-  const bannerMessage = hasCurrentAuctionPrize
-    ? `Congratulations! Your prize is waiting - Claim Now!`
-    : hasUrgentClaim
-    ? `Your prize claim window closes soon - Hurry up!`
-    : `You have ${unclaimedPrizes.length} unclaimed prize${unclaimedPrizes.length > 1 ? 's' : ''} waiting!`;
+  let bannerMessage = '';
+  if (hasCurrentAuctionPrize) {
+    bannerMessage = `Congratulations! Your prize is waiting - Claim Now!`;
+  } else if (hasUrgentClaim) {
+    bannerMessage = `Your prize claim window closes soon - Hurry up!`;
+  } else if (hasWaitingMember) {
+    bannerMessage = `You're in the winners queue! Waiting for your turn to claim.`;
+  } else {
+    bannerMessage = `You have ${unclaimedPrizes.length} unclaimed prize${unclaimedPrizes.length > 1 ? 's' : ''} waiting!`;
+  }
 
   const handleClaimClick = () => {
     onNavigate('history');
   };
 
   return (
-    <div className="sticky top-[64px] z-40 overflow-hidden">
+    <div className="sticky top-[64px] sm:top-[72px] z-[40] w-full border-b border-white/20 shadow-xl overflow-hidden">
       <div
-        className={`relative py-2.5 ${
+        className={`relative py-3 sm:py-4 flex items-center transition-all duration-500 ${
           hasCurrentAuctionPrize
-            ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500'
+            ? 'bg-gradient-to-r from-emerald-600 via-green-500 to-teal-600 shadow-[0_0_20px_rgba(16,185,129,0.4)]'
             : hasUrgentClaim
-            ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-red-500'
-            : 'bg-gradient-to-r from-purple-600 via-violet-600 to-fuchsia-600'
+            ? 'bg-gradient-to-r from-orange-600 via-amber-500 to-red-600 shadow-[0_0_20px_rgba(245,158,11,0.4)]'
+            : hasWaitingMember
+            ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+            : 'bg-gradient-to-r from-purple-700 via-violet-600 to-fuchsia-700 shadow-[0_0_20px_rgba(124,58,237,0.4)]'
         }`}
       >
         <button
           onClick={() => setIsVisible(false)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-10"
+          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/20 hover:bg-black/40 transition-all z-50 group border border-white/10"
           aria-label="Close banner"
         >
-          <X className="w-3.5 h-3.5 text-white" />
+          <X className="w-4 h-4 text-white group-hover:scale-110" />
         </button>
 
         <div className="flex items-center animate-marquee whitespace-nowrap">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex items-center gap-8 mx-8">
-              <div className="flex items-center gap-2">
-                {hasCurrentAuctionPrize ? (
-                  <Gift className="w-4 h-4 text-white animate-bounce" />
-                ) : hasUrgentClaim ? (
-                  <Clock className="w-4 h-4 text-white animate-pulse" />
-                ) : (
-                  <Trophy className="w-4 h-4 text-yellow-300" />
-                )}
-                <span className="text-sm font-bold text-white">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-12 mx-6 sm:mx-12">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                  {hasCurrentAuctionPrize ? (
+                    <Gift className="w-5 h-5 text-white animate-bounce" />
+                  ) : hasUrgentClaim ? (
+                    <Clock className="w-5 h-5 text-white animate-pulse" />
+                  ) : hasWaitingMember ? (
+                    <Users className="w-5 h-5 text-white animate-pulse" />
+                  ) : (
+                    <Trophy className="w-5 h-5 text-yellow-300" />
+                  )}
+                </div>
+                <span className="text-sm sm:text-base font-black text-white tracking-wide uppercase drop-shadow-md">
                   {bannerMessage}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-yellow-300" />
-                <span className="text-sm text-white/90">
-                  {timeLeftText && `(${timeLeftText})`}
+                <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
+                <span className="text-sm font-bold text-white/95 bg-black/10 px-3 py-1 rounded-lg backdrop-blur-sm">
+                  {timeLeftText}
                 </span>
               </div>
 
               <button
                 onClick={handleClaimClick}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all hover:scale-105 ${
+                className={`flex items-center gap-2 px-5 py-1.5 rounded-xl text-sm font-black transition-all hover:scale-105 shadow-lg active:scale-95 ${
                   hasCurrentAuctionPrize
-                    ? 'bg-white text-emerald-600 hover:bg-emerald-50'
+                    ? 'bg-white text-emerald-700 hover:bg-emerald-50'
                     : hasUrgentClaim
-                    ? 'bg-white text-orange-600 hover:bg-orange-50'
-                    : 'bg-white text-purple-600 hover:bg-purple-50'
+                    ? 'bg-white text-orange-700 hover:bg-orange-50'
+                    : hasWaitingMember
+                    ? 'bg-white text-blue-700 hover:bg-blue-50'
+                    : 'bg-white text-purple-700 hover:bg-purple-50'
                 }`}
               >
-                Claim Now
-                <ChevronRight className="w-3 h-3" />
+                {hasWaitingMember ? 'View Queue' : 'Claim Now'}
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -186,11 +221,11 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
             transform: translateX(0);
           }
           100% {
-            transform: translateX(-33.33%);
+            transform: translateX(-25%);
           }
         }
         .animate-marquee {
-          animation: marquee 15s linear infinite;
+          animation: marquee 20s linear infinite;
         }
         .animate-marquee:hover {
           animation-play-state: paused;
