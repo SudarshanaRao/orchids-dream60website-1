@@ -31,6 +31,11 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
       message: string;
       type: 'QUALIFIED' | 'ELIMINATED' | 'BID_NOW' | 'WINNERS_ANNOUNCED';
       round: number;
+      stats?: {
+        participants: number;
+        qualified: number;
+        winners: Array<{ name: string; rank: number; claimed: boolean }>;
+      };
     } | null>(null);
     const [isVisible, setIsVisible] = useState(true);
     const [timeLeftText, setTimeLeftText] = useState('');
@@ -64,6 +69,31 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                       ? rounds.find((r: any) => r.roundNumber === latestCompletedRound)
                       : null;
 
+                    // Extract stats for the banner
+                    const participantsCount = auction.participants?.length || 0;
+                    const qualifiedCount = lastRoundResults?.qualifiedPlayers?.length || 0;
+                    const winnersStats = (auction.winners || []).map((w: any) => ({
+                      name: w.playerUsername,
+                      rank: w.rank,
+                      claimed: w.isPrizeClaimed
+                    }));
+
+                    const stats = {
+                      participants: participantsCount,
+                      qualified: qualifiedCount,
+                      winners: winnersStats
+                    };
+
+                    const claimedNames = winnersStats
+                      .filter(w => w.claimed)
+                      .map(w => w.name)
+                      .join(', ');
+
+                    const winnerMsgPart = winnersStats.length > 0 
+                      ? ` | Winners: ${winnersStats.map(w => `${w.name} (Rank ${w.rank}${w.claimed ? ' - CLAIMED' : ''})`).join(', ')}`
+                      : '';
+                    const statsMsgPart = ` | Participants: ${participantsCount} | Qualified: ${qualifiedCount}`;
+
                     // If winners are announced, we clear live status and let the winner/lost logic take over
                     // We check for winnersAnnounced flag, COMPLETED status, or if we are at the final stage (<=3 qualified)
                     const isFinalStage = lastRoundResults && lastRoundResults.qualifiedCount > 0 && lastRoundResults.qualifiedCount <= 3;
@@ -75,9 +105,10 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                       
                       if (!isWinner) {
                         setLiveStatus({
-                          message: 'Winners Announced - Better luck next time!',
+                          message: `Winners Announced - Better luck next time!${winnerMsgPart}${statsMsgPart}`,
                           type: 'WINNERS_ANNOUNCED',
-                          round: latestCompletedRound
+                          round: latestCompletedRound,
+                          stats
                         });
                       } else {
                         // If winner, either unclaimedPrizes will handle it or we wait for them to be processed
@@ -90,9 +121,10 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                     if (participant) {
                       if (participant.isEliminated && participant.eliminatedInRound <= latestCompletedRound) {
                         setLiveStatus({
-                          message: `Results Announced - Round ${participant.eliminatedInRound}: You are eliminated from the auction.`,
+                          message: `Results Announced - Round ${participant.eliminatedInRound}: You are eliminated.${statsMsgPart}`,
                           type: 'ELIMINATED',
-                          round: participant.eliminatedInRound
+                          round: participant.eliminatedInRound,
+                          stats
                         });
                       } else {
                         // Check if qualified in the latest completed round
@@ -101,9 +133,10 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                           // If it's not the final round, encourage bidding in the next one
                           if (latestCompletedRound < (auction.roundCount || 4)) {
                             setLiveStatus({
-                              message: `Results Announced - Round ${latestCompletedRound}: You are qualified! Bid in Round ${latestCompletedRound + 1} to win.`,
+                              message: `Results Announced - Round ${latestCompletedRound}: You are qualified! Bid in Round ${latestCompletedRound + 1} to win.${statsMsgPart}`,
                               type: 'QUALIFIED',
-                              round: latestCompletedRound
+                              round: latestCompletedRound,
+                              stats
                             });
                           } else {
                             // Round 4 completed, winners should be announced soon
@@ -117,8 +150,17 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                       setLiveStatus(null);
                     }
                   } else {
-                    // No rounds completed yet
-                    setLiveStatus(null);
+                    // No rounds completed yet but maybe show participation
+                    if (participantsCount > 0) {
+                      setLiveStatus({
+                        message: `Auction Live: ${auction.auctionName}${statsMsgPart}`,
+                        type: 'BID_NOW',
+                        round: 0,
+                        stats
+                      });
+                    } else {
+                      setLiveStatus(null);
+                    }
                   }
                 }
               }
@@ -274,7 +316,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
           return {
             gradient: 'from-rose-600 via-red-600 to-orange-600',
             icon: <AlertTriangle className="w-5 h-5 text-white" />,
-            message: 'Winners announced - Better luck next time!',
+            message: liveStatus.message,
             buttonText: 'TRY AGAIN',
             buttonClass: 'bg-white text-red-600 hover:bg-red-50'
           };
