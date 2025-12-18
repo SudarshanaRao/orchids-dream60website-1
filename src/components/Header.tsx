@@ -16,10 +16,16 @@ interface HeaderProps {
   onLogin?: () => void;
   onLogout?: () => void;
   onStartTutorial?: () => void;
+  mobileMenuOpen?: boolean;
+  setMobileMenuOpen?: (open: boolean) => void;
 }
 
-export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }: HeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, mobileMenuOpen: externalMobileMenuOpen, setMobileMenuOpen: externalSetMobileMenuOpen }: HeaderProps) {
+  const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
+  const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
   const [hasNewHistory, setHasNewHistory] = useState(false);
   const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>({ totalWins: 0, totalLosses: 0 });
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -709,17 +715,18 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                         </button>
                       </motion.div>
 
-                      <motion.div variants={menuItemVariants}>
-                          <button
-                            onClick={() => { onNavigate?.('support'); setMobileMenuOpen(false); }}
-                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                          >
-                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                              <LifeBuoy className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <span className="font-medium text-purple-900">Support</span>
-                          </button>
-                        </motion.div>
+<motion.div variants={menuItemVariants}>
+                            <button
+                              onClick={() => { onNavigate?.('support'); setMobileMenuOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                              data-whatsnew-target="mobile-support"
+                            >
+                              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                <LifeBuoy className="w-5 h-5 text-purple-600" />
+                              </div>
+                              <span className="font-medium text-purple-900">Support</span>
+                            </button>
+                          </motion.div>
 
 
                         <motion.div variants={menuItemVariants}>
@@ -773,17 +780,18 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial }:
                           </button>
                         </motion.div>
 
-                        <motion.div variants={menuItemVariants}>
-                            <button
-                              onClick={() => { onNavigate?.('transactions'); setMobileMenuOpen(false); }}
-                              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                            >
-                              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                                <IndianRupee className="w-5 h-5 text-purple-600" />
-                              </div>
-                              <span className="font-medium text-purple-900">Transactions</span>
-                            </button>
-                          </motion.div>
+<motion.div variants={menuItemVariants}>
+                              <button
+                                onClick={() => { onNavigate?.('transactions'); setMobileMenuOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                                data-whatsnew-target="mobile-transactions"
+                              >
+                                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                  <IndianRupee className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <span className="font-medium text-purple-900">Transactions</span>
+                              </button>
+                            </motion.div>
 
 
                         <motion.div variants={menuItemVariants}>

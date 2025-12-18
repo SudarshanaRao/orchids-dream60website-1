@@ -6,8 +6,10 @@ export interface TutorialStep {
   title: string;
   description: string;
   targetElement: string; // CSS selector for the element to highlight
+  mobileTargetElement?: string; // CSS selector for mobile-specific element
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
   action?: () => void; // Optional action to open the right page/section
+  mobileAction?: () => void; // Optional action for mobile (e.g., open menu first)
   shouldSkip?: () => boolean; // Skip this step automatically if already done
   actionLabel?: string; // Custom CTA label per step
 }
@@ -47,6 +49,11 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, isVisible, steps]);
 
+  const isMobile = () => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 1024; // lg breakpoint
+  };
+
   const getVisibleTarget = (selector: string) => {
     if (typeof document === 'undefined') return null;
     const nodes = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
@@ -68,6 +75,23 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     }
     if (attempt < 6) {
       setTimeout(() => highlightTarget(selector, attempt + 1), 200);
+    }
+  };
+
+  const highlightMobileTarget = (step: TutorialStep) => {
+    // For mobile, use mobileTargetElement if available, otherwise fall back to targetElement
+    const selector = step.mobileTargetElement || step.targetElement;
+    
+    // If there's a mobile action (like opening menu), execute it first
+    if (isMobile() && step.mobileAction) {
+      step.mobileAction();
+      // Wait for menu animation to complete before highlighting
+      setTimeout(() => highlightTarget(selector), 500);
+    } else if (step.action) {
+      step.action();
+      setTimeout(() => highlightTarget(selector), 450);
+    } else {
+      highlightTarget(selector);
     }
   };
 
@@ -106,13 +130,8 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
     const step = steps[currentStep];
     if (!step) return;
 
-    if (step.action) {
-      step.action();
-    }
-
-    if (step.targetElement) {
-      setTimeout(() => highlightTarget(step.targetElement), 450);
-    }
+    // Use the mobile-aware highlight function
+    highlightMobileTarget(step);
   };
 
   const handleComplete = (fromSkip?: boolean) => {
@@ -144,11 +163,14 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
       <div className="fixed bottom-4 right-4 z-[9999] max-w-[calc(100vw-32px)] sm:max-w-[400px]">
         <style>{`
           .whatsnew-highlight {
-            outline: 4px solid rgba(139, 92, 246, 0.85);
-            box-shadow: 0 0 0 8px rgba(167, 139, 250, 0.4), 0 20px 40px -12px rgba(76, 29, 149, 0.5);
-            border-radius: 1.5rem;
-            z-index: 40;
-            position: relative;
+            outline: 4px solid rgba(139, 92, 246, 0.85) !important;
+            outline-offset: 4px !important;
+            box-shadow: 0 0 0 8px rgba(167, 139, 250, 0.4), 0 20px 40px -12px rgba(76, 29, 149, 0.5) !important;
+            border-radius: 1rem !important;
+            z-index: 40 !important;
+            position: relative !important;
+            transform: none !important;
+            transition: outline 0.3s ease, box-shadow 0.3s ease !important;
           }
           @keyframes slide-up {
             from { transform: translateY(20px); opacity: 0; }

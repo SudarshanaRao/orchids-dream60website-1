@@ -32,6 +32,7 @@ import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
 import { WinnersAnnouncedBanner } from './components/WinnersAnnouncedBanner';
+import { AmazonVoucherModal } from './components/AmazonVoucherModal';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -688,6 +689,12 @@ const App = () => {
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
   // ✅ NEW: Track tutorial/whatsnew token
   const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
+  // ✅ NEW: Mobile menu state for header (to control from tutorial)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  // ✅ NEW: Show Amazon Voucher modal after first login/signup
+  const [showAmazonVoucherModal, setShowAmazonVoucherModal] = useState<boolean>(false);
+  // ✅ NEW: Track if this is user's first login/signup for tutorial
+  const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
 
   // Tutorial steps for What's New (5 steps)
   const whatsNewSteps: TutorialStep[] = [
@@ -704,8 +711,10 @@ const App = () => {
       title: 'Transaction History',
       description: 'Track all your entry fees, prize claims, and vouchers in one place. Click "Transactions" in the header to view your payment history.',
       targetElement: '[data-whatsnew-target="transactions"]',
+      mobileTargetElement: '[data-whatsnew-target="mobile-transactions"]',
       position: 'bottom',
-      action: () => handleNavigate('transactions'),
+      action: () => handleNavigate('game'),
+      mobileAction: () => setMobileMenuOpen(true),
     },
     {
       id: 'auction-schedule',
@@ -713,15 +722,18 @@ const App = () => {
       description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
       targetElement: '[data-whatsnew-target="auction-schedule"]',
       position: 'top',
-      action: () => handleNavigate('game'),
+      action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
+      mobileAction: () => setMobileMenuOpen(false),
     },
     {
       id: 'support',
       title: 'Need Help?',
       description: 'Access 24/7 support, view guides, winning tips, and FAQs. Our support team is always ready to assist you.',
       targetElement: '[data-whatsnew-target="support"]',
+      mobileTargetElement: '[data-whatsnew-target="mobile-support"]',
       position: 'bottom',
-      action: () => handleNavigate('support'),
+      action: () => handleNavigate('game'),
+      mobileAction: () => setMobileMenuOpen(true),
     },
     {
       id: 'pwa-install',
@@ -729,6 +741,8 @@ const App = () => {
       description: 'Install Dream60 on your device for faster access, offline support, and instant notifications about auctions.',
       targetElement: '[data-whatsnew-target="pwa-install"]',
       position: 'bottom',
+      action: () => setMobileMenuOpen(false),
+      mobileAction: () => setMobileMenuOpen(false),
     },
   ];
 
@@ -1416,6 +1430,24 @@ const App = () => {
       
       console.log('✅ User logged in successfully:', mappedUser.username);
 
+      // ✅ Check if this is user's first login (tutorial not completed)
+      const tutorialCompleted = localStorage.getItem('tutorial_completed_dream60-whatsnew-v2') === 'true';
+      const hasSeenVoucher = localStorage.getItem(`amazon_voucher_shown_${mappedUser.id}`) === 'true';
+      
+      if (!tutorialCompleted) {
+        // First time login - show tutorial after a delay
+        setIsFirstLogin(true);
+        setTimeout(() => {
+          setTutorialStartToken(Date.now());
+        }, 1500);
+      }
+      
+      if (!hasSeenVoucher) {
+        // First time login - show Amazon voucher modal
+        setShowAmazonVoucherModal(true);
+        localStorage.setItem(`amazon_voucher_shown_${mappedUser.id}`, 'true');
+      }
+
       // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee
       // This prevents showing incorrect "Outbid Now" buttons before data is refreshed
       try {
@@ -1491,6 +1523,16 @@ const App = () => {
       setCurrentUser(mappedUser);
       
       console.log('✅ User signed up successfully:', mappedUser.username);
+
+      // ✅ First signup - always show tutorial and Amazon voucher
+      setIsFirstLogin(true);
+      setTimeout(() => {
+        setTutorialStartToken(Date.now());
+      }, 1500);
+      
+      // Show Amazon voucher modal for new users
+      setShowAmazonVoucherModal(true);
+      localStorage.setItem(`amazon_voucher_shown_${mappedUser.id}`, 'true');
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');
@@ -2088,6 +2130,8 @@ if (currentPage === 'support') {
               onLogin={handleShowLogin}
               onLogout={handleLogout}
               onStartTutorial={handleStartTutorial}
+              mobileMenuOpen={mobileMenuOpen}
+              setMobileMenuOpen={setMobileMenuOpen}
             />
 
               {currentUser && (
@@ -2304,17 +2348,23 @@ if (currentPage === 'support') {
             )}
           </AnimatePresence>
 
-            {/* What's New Tutorial Overlay - Only show to logged in users */}
+            {/* What's New Tutorial Overlay - Only show on first login/signup or when manually triggered */}
               {currentUser && (
                 <TutorialOverlay
                   steps={whatsNewSteps}
                   tutorialId="dream60-whatsnew-v2"
                   startToken={tutorialStartToken}
                   forceShow={tutorialStartToken > 0}
-                  onComplete={() => handleNavigate('game')}
+                  onComplete={() => { setMobileMenuOpen(false); handleNavigate('game'); }}
                   returnTo=""
                 />
               )}
+
+              {/* Amazon Voucher Modal - Shows on first login/signup */}
+              <AmazonVoucherModal
+                isVisible={showAmazonVoucherModal}
+                onClose={() => setShowAmazonVoucherModal(false)}
+              />
           </div>
         </TooltipProvider>
       </QueryClientProvider>
