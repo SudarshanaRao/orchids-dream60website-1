@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle, XCircle, Users, Award, Timer } from 'lucide-react';
+import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle, XCircle, Award, Timer } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface Winner {
@@ -395,30 +395,21 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
           <div className="marquee-content flex items-center whitespace-nowrap">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex items-center gap-10 mx-6">
-                <div className="flex items-center gap-3">
-                  {config.icon}
-                  <div className="flex flex-col">
-                    <span className="text-sm sm:text-base font-bold text-white tracking-wide drop-shadow-md">
-                      {bannerData.message}
-                    </span>
-                    {bannerData.subMessage && (
-                      <span className="text-xs text-white/80">
-                        {bannerData.subMessage}
+                  <div className="flex items-center gap-3">
+                    {config.icon}
+                    <div className="flex flex-col">
+                      <span className="text-sm sm:text-base font-bold text-white tracking-wide drop-shadow-md">
+                        {bannerData.message}
                       </span>
-                    )}
+                      {bannerData.subMessage && (
+                        <span className="text-xs text-white/80">
+                          {bannerData.subMessage}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {bannerData.participants !== undefined && (
-                  <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full border border-white/30 backdrop-blur-sm">
-                    <Users className="w-4 h-4 text-white/80" />
-                    <span className="text-xs sm:text-sm font-medium text-white">
-                      {bannerData.participants} players
-                    </span>
-                  </div>
-                )}
-
-                {(bannerType === 'WINNER_CLAIM' || bannerType === 'WINNER_WAITING') && timeLeftMs > 0 && (
+                  {(bannerType === 'WINNER_CLAIM' || bannerType === 'WINNER_WAITING') && timeLeftMs > 0 && (
                   <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full border border-white/30 backdrop-blur-sm">
                     <Timer className="w-4 h-4 text-yellow-300 animate-pulse" />
                     <span className="text-xs sm:text-sm font-bold text-white">
