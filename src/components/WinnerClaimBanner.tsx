@@ -179,8 +179,8 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       determineUserStatus(liveAuctionData, serverTime);
     } catch (error) {
       console.error('Error fetching banner data:', error);
-      setLiveAuction(null);
-      setBannerType(null);
+      // Don't reset to null on error to prevent flickering
+      // If we already have data, keep it until next successful fetch
     } finally {
       setIsLoading(false);
       setHasFetched(true);

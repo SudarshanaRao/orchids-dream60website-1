@@ -21,12 +21,19 @@ export const ChristmasHeroBanner: React.FC = () => {
           }}
           className="absolute inset-0 w-full h-full"
         >
-          {/* Main Cinematic GIF */}
-          <img 
-            src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/document-uploads/Whisk_ajn3cjm1gtmzajmw0iyxctotyjmmrtlkddz30yy-1766089590869.gif?width=2000&height=2000&resize=contain"
-            alt="Cinematic Christmas Scene"
-            className="w-full h-full object-cover object-center scale-110"
-          />
+            {/* Main Cinematic Video */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover object-center scale-110"
+            >
+              <source 
+                src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/document-uploads/Whisk_ajn3cjm1gtmzajmw0iyxctotyjmmrtlkddz30yy-1766089590869.mp4" 
+                type="video/mp4" 
+              />
+            </video>
         </motion.div>
         
         {/* Elegant Overlays */}
@@ -165,22 +172,7 @@ export const ChristmasHeroBanner: React.FC = () => {
         </div>
       </div>
 
-      {/* Cinematic Cloud Cut Bottom Edge */}
-      <div className="absolute -bottom-[2px] left-0 w-full z-40 pointer-events-none select-none">
-        <svg 
-          viewBox="0 0 1440 120" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="w-full h-auto opacity-100"
-          preserveAspectRatio="none"
-          style={{ height: '100px' }}
-        >
-          <path 
-            d="M0 120H1440V54.4347C1440 54.4347 1341.5 24.5 1241.5 54.4347C1141.5 84.3694 1055.5 31.5 955.5 54.4347C855.5 77.3694 779.5 24.5 679.5 54.4347C579.5 84.3694 492.5 31.5 392.5 54.4347C292.5 77.3694 220.5 24.5 120.5 54.4347C20.5 84.3694 0 54.4347 0 54.4347V120Z" 
-            fill="white"
-          />
-        </svg>
-      </div>
+
 
       {/* Subtle Logo Branding */}
       <div className="absolute top-10 right-10 z-40 opacity-30 pointer-events-none hidden md:block">
