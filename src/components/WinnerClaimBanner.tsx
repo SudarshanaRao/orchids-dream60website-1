@@ -39,25 +39,27 @@ interface RoundData {
   }>;
 }
 
-interface LiveAuctionData {
-  hourlyAuctionId: string;
-  auctionName: string;
-  prizeValue: number;
-  Status: 'LIVE' | 'UPCOMING' | 'COMPLETED';
-  winnersAnnounced: boolean;
-  currentRound: number;
-  roundCount: number;
-  participants: Participant[];
-  rounds: RoundData[];
-  winners: Winner[];
-  winnerId?: string;
-  winnerUsername?: string;
-  completedAt?: string;
-  // Priority claim system fields
-  winnersAnnouncedAt?: string | number;
-  currentEligibleRank?: number;
-  claimWindowStartedAt?: string | number;
-}
+  interface LiveAuctionData {
+    hourlyAuctionId: string;
+    auctionName: string;
+    prizeValue: number;
+    Status: 'LIVE' | 'UPCOMING' | 'COMPLETED';
+    winnersAnnounced: boolean;
+    currentRound: number;
+    roundCount: number;
+    participants: Participant[];
+    rounds: RoundData[];
+    winners: Winner[];
+    winnerId?: string;
+    winnerUsername?: string;
+    completedAt?: string;
+    // Priority claim system fields
+    winnersAnnouncedAt?: string | number;
+    currentEligibleRank?: number;
+    claimWindowStartedAt?: string | number;
+    userHistoryRecord?: any;
+  }
+
 
   interface WinnerClaimBannerProps {
     userId: string;
@@ -73,6 +75,7 @@ type BannerType =
   | 'QUALIFIED_NEXT_ROUND' 
   | 'MISSED_BID' 
   | 'PRIZE_CLAIMED'
+  | 'CLAIM_EXPIRED'
   | 'NOT_PARTICIPANT'
   | null;
 
@@ -97,24 +100,77 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     if (!userId) return;
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.scheduler.liveAuction}`);
-      if (!response.ok) {
+      const [liveResponse, historyResponse] = await Promise.all([
+        fetch(`${API_ENDPOINTS.scheduler.liveAuction}`),
+        fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}`)
+      ]);
+
+      let liveAuctionData = null;
+      let userHistoryData = [];
+
+      if (liveResponse.ok) {
+        const liveResult = await liveResponse.json();
+        if (liveResult.success && liveResult.data) {
+          liveAuctionData = liveResult.data;
+        }
+      }
+
+      if (historyResponse.ok) {
+        const historyResult = await historyResponse.json();
+        if (historyResult.success && Array.isArray(historyResult.data)) {
+          userHistoryData = historyResult.data;
+        }
+      }
+
+      if (liveAuctionData) {
+        // Find user's record for this specific auction
+        const userRecord = userHistoryData.find((h: any) => h.hourlyAuctionId === liveAuctionData.hourlyAuctionId);
+        if (userRecord) {
+          liveAuctionData = {
+            ...liveAuctionData,
+            userHistoryRecord: userRecord
+          };
+        }
+      } else if (userHistoryData.length > 0) {
+        // Even if no live auction, we might want to show status for the most recent completed one
+        // Sort by hourlyAuctionId or createdAt to get latest
+        const latestRecord = [...userHistoryData].sort((a, b) => 
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        )[0];
+
+        // Check if the latest record is recent enough (e.g., within last 2 hours)
+        const isRecent = latestRecord && (Date.now() - new Date(latestRecord.createdAt).getTime()) < 2 * 60 * 60 * 1000;
+        
+        if (isRecent) {
+          liveAuctionData = {
+            hourlyAuctionId: latestRecord.hourlyAuctionId,
+            auctionName: latestRecord.auctionName,
+            prizeValue: latestRecord.prizeValue,
+            Status: latestRecord.auctionStatus === 'COMPLETED' ? 'COMPLETED' : 'LIVE',
+            winnersAnnounced: true,
+            currentRound: latestRecord.roundsParticipated,
+            roundCount: latestRecord.roundsParticipated,
+            participants: [], // Minimal data needed
+            rounds: [],
+            winners: [],
+            completedAt: latestRecord.completedAt,
+            winnersAnnouncedAt: latestRecord.claimWindowStartedAt,
+            currentEligibleRank: latestRecord.currentEligibleRank,
+            userHistoryRecord: latestRecord
+          };
+        }
+      }
+
+      if (!liveAuctionData) {
         setLiveAuction(null);
         setBannerType(null);
         return;
       }
 
-      const result = await response.json();
-      if (!result.success || !result.data) {
-        setLiveAuction(null);
-        setBannerType(null);
-        return;
-      }
-
-      setLiveAuction(result.data);
-      determineUserStatus(result.data, serverTime);
+      setLiveAuction(liveAuctionData);
+      determineUserStatus(liveAuctionData, serverTime);
     } catch (error) {
-      console.error('Error fetching live auction:', error);
+      console.error('Error fetching banner data:', error);
       setLiveAuction(null);
       setBannerType(null);
     }
@@ -136,8 +192,38 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     const lastRound = completedRounds.find(r => r.roundNumber === latestCompletedRound);
     const qualifiedCount = lastRound?.qualifiedPlayers?.length || 0;
 
-    if (auction.winnersAnnounced && auction.winners && auction.winners.length > 0) {
+    if (auction.winnersAnnounced && auction.winners) {
       const userWinner = auction.winners.find(w => w.playerId === userId);
+      const historyRecord = auction.userHistoryRecord;
+      
+      // Use history record if available for more detailed claim status
+      if (historyRecord && historyRecord.isWinner) {
+        if (historyRecord.prizeClaimStatus === 'CLAIMED') {
+          setBannerType('PRIZE_CLAIMED');
+          setBannerData({
+            message: `Congratulations! You claimed your prize!`,
+            subMessage: 'Check your email/profile for voucher details.',
+            participants: totalParticipants,
+            qualified: qualifiedCount
+          });
+          return;
+        }
+
+        if (historyRecord.prizeClaimStatus === 'EXPIRED') {
+          setBannerType('CLAIM_EXPIRED');
+          const claimedByText = historyRecord.claimedBy ? ` claimed by ${historyRecord.claimedBy}` : '';
+          const rankText = historyRecord.claimedByRank ? ` (Rank ${historyRecord.claimedByRank})` : '';
+          
+          setBannerData({
+            message: `Claim Window Expired!`,
+            subMessage: `Prize${claimedByText}${rankText}. Better luck next time!`,
+            participants: totalParticipants,
+            qualified: qualifiedCount
+          });
+          return;
+        }
+      }
+
       const claimedWinner = auction.winners.find(w => w.isPrizeClaimed || w.prizeClaimStatus === 'CLAIMED');
 
       if (claimedWinner) {
@@ -433,16 +519,26 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           navigateTo: 'game'
         };
 
-      case 'PRIZE_CLAIMED':
-        return {
-          gradient: 'from-amber-500 via-yellow-500 to-orange-500',
-          icon: <Trophy className="w-5 h-5 text-white" />,
-          buttonText: 'VIEW HISTORY',
-          buttonClass: 'bg-white text-amber-600 hover:bg-amber-50',
-          navigateTo: 'history'
-        };
+        case 'PRIZE_CLAIMED':
+          return {
+            gradient: 'from-amber-500 via-yellow-500 to-orange-500',
+            icon: <Trophy className="w-5 h-5 text-white" />,
+            buttonText: 'VIEW HISTORY',
+            buttonClass: 'bg-white text-amber-600 hover:bg-amber-50',
+            navigateTo: 'history'
+          };
 
-      default:
+        case 'CLAIM_EXPIRED':
+          return {
+            gradient: 'from-slate-600 via-slate-500 to-slate-700',
+            icon: <XCircle className="w-5 h-5 text-white" />,
+            buttonText: 'VIEW HISTORY',
+            buttonClass: 'bg-white text-slate-700 hover:bg-slate-50',
+            navigateTo: 'history'
+          };
+
+        default:
+
         return {
           gradient: 'from-purple-600 via-violet-600 to-fuchsia-600',
           icon: <Trophy className="w-5 h-5 text-yellow-300" />,

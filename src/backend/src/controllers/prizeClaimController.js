@@ -199,20 +199,34 @@ const submitPrizeClaim = async (req, res) => {
       claimData
     );
     
-    // ✅ Mark all OTHER pending winners' claims as EXPIRED since prize is now claimed
+    // ✅ Mark all OTHER winners' claims as EXPIRED and store who actually claimed
     await AuctionHistory.updateMany(
       { 
         hourlyAuctionId, 
-        prizeClaimStatus: 'PENDING',
-        userId: { $ne: userId } // Exclude the current user
+        isWinner: true,
+        userId: { $ne: userId } // Exclude the actual claimer
       },
       {
         $set: {
           prizeClaimStatus: 'EXPIRED',
-          claimNotes: `Prize claimed by rank ${updatedEntry.finalRank} winner before their turn`,
           claimedBy: updatedEntry.username,
           claimedByRank: updatedEntry.finalRank,
           claimedAt: updatedEntry.claimedAt
+        }
+      }
+    );
+    
+    // Also ensure we update the notes for those who were specifically PENDING
+    await AuctionHistory.updateMany(
+      {
+        hourlyAuctionId,
+        isWinner: true,
+        userId: { $ne: userId },
+        prizeClaimStatus: 'PENDING'
+      },
+      {
+        $set: {
+          claimNotes: `Prize claimed by rank ${updatedEntry.finalRank} winner before their turn`
         }
       }
     );
