@@ -2158,10 +2158,10 @@ if (currentPage === 'support') {
                 onUserParticipationChange={handleUserParticipationChange}
               />
 
-              {currentUser ? (
-                <div ref={auctionGridRef}>
-                  {/* Auction Grid */}
-                  <AuctionGrid
+            {currentUser ? (
+                  <div ref={auctionGridRef} data-auction-grid id="auction-grid">
+                    {/* Auction Grid */}
+                    <AuctionGrid
                     auction={{
                       boxes: currentAuction.boxes as any,
                       prizeValue: currentAuction.prizeValue,

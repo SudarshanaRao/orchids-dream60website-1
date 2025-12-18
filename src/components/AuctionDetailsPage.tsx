@@ -347,63 +347,89 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
       const updateTimer = () => {
         const now = Date.now();
 
+        // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
+        // Each winner gets exactly 15 minutes
+        // 1st winner: starts immediately after winners announced
+        // 2nd winner: starts 15 mins after winners announced  
+        // 3rd winner: starts 30 mins after winners announced
         const getActiveWindow = () => {
           const activeRank = auction.currentEligibleRank || 1;
-          let start = auction.claimWindowStartedAt;
-
-          if (!start && auction.winnersAnnouncedAt) {
-            start = auction.winnersAnnouncedAt + (activeRank - 1) * 15 * 60 * 1000;
-          }
-
-          if (!start) return null;
+          const userRank = auction.finalRank || 1;
+          
+          // Use winnersAnnouncedAt as base time (must exist for claim system to work)
+          const winnersAnnouncedTime = auction.winnersAnnouncedAt;
+          if (!winnersAnnouncedTime) return null;
+          
+          // Calculate when current active rank's window started
+          // Rank 1: starts at winnersAnnouncedAt + 0 mins
+          // Rank 2: starts at winnersAnnouncedAt + 15 mins
+          // Rank 3: starts at winnersAnnouncedAt + 30 mins
+          const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+          const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
+          
+          // Calculate user's own window
+          const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
+          const userWindowEnd = userWindowStart + (15 * 60 * 1000);
 
           return {
-            start,
-            end: start + 15 * 60 * 1000,
+            start: activeWindowStart,
+            end: activeWindowEnd,
+            userStart: userWindowStart,
+            userEnd: userWindowEnd,
           };
         };
 
         const activeWindow = getActiveWindow();
 
-          if (isInWaitingQueue() && activeWindow) {
-            let diff = activeWindow.end - now;
+        // ✅ If in waiting queue, show time remaining until user's claim window starts
+        if (isInWaitingQueue() && activeWindow) {
+          // Show time until user's window starts (not current active window end)
+          let diff = activeWindow.userStart - now;
 
-            if (diff > 0) {
-              const minutes = Math.floor(diff / (1000 * 60));
-              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-              setTimeLeft(`${minutes}m ${seconds}s`);
-              return;
-            }
-
-            setTimeLeft('Claim Window Soon');
+          if (diff > 0) {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}m ${seconds}s`);
             return;
           }
 
-          if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
-            let diff = activeWindow.start - now;
+          setTimeLeft('Claim Window Soon');
+          return;
+        }
 
+        // ✅ Check if in "Claim Window Soon" period (backend delay)
+        if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
+          // If it should be user's turn but within 1 min of window start
+          if (auction.finalRank === auction.currentEligibleRank) {
+            let diff = activeWindow.start - now;
             if (diff <= 0 && diff > -(60 * 1000)) {
               setTimeLeft('Claim Window Soon');
               return;
             }
           }
+        }
 
-          if (auction.claimDeadline || activeWindow) {
-            const deadline = auction.claimDeadline || activeWindow?.end;
-            if (!deadline) return;
+        // ✅ Show time left in user's claim window (when it's their turn)
+        if (activeWindow && auction.finalRank === auction.currentEligibleRank) {
+          // Use user's window end as deadline (15 min window)
+          const deadline = activeWindow.userEnd;
+          let diff = deadline - now;
 
-            let diff = deadline - now;
-
-            if (diff <= 0) {
-              setTimeLeft('EXPIRED');
-              return;
-            }
-
-            const minutes = Math.floor(diff / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeLeft(`${minutes}m ${seconds}s`);
+          if (diff <= 0) {
+            setTimeLeft('EXPIRED');
+            return;
           }
 
+          // Cap at 15 minutes max (to fix 343 mins bug)
+          const maxClaimTime = 15 * 60 * 1000; // 15 minutes
+          if (diff > maxClaimTime) {
+            diff = maxClaimTime;
+          }
+
+          const minutes = Math.floor(diff / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          setTimeLeft(`${minutes}m ${seconds}s`);
+        }
       };
 
       updateTimer();
@@ -765,15 +791,17 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
                         </div>
                       </div>
 
-                      {timeLeft && timeLeft !== 'EXPIRED' && (
-                        <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-lg p-3 border border-blue-300">
-                          <Clock className="w-5 h-5 text-blue-700" />
-                          <div className="text-center">
-                            <p className="text-xs text-blue-600 font-medium">Time left for {getRankSuffix(auction.currentEligibleRank || 1)} winner</p>
-                            <p className="text-lg font-bold text-blue-900">{timeLeft}</p>
+                        {timeLeft && timeLeft !== 'EXPIRED' && (
+                          <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-lg p-3 border border-blue-300">
+                            <Clock className="w-5 h-5 text-blue-700" />
+                            <div className="text-center">
+                              <p className="text-xs text-blue-600 font-medium">
+                                Wait time: {auction.finalRank === 2 ? '15 mins' : '30 mins'} + 15 mins claim window
+                              </p>
+                              <p className="text-lg font-bold text-blue-900">Wait: {timeLeft}</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </CardContent>
                 </Card>

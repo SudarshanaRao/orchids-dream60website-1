@@ -419,12 +419,30 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                 )}
 
                 <button
-                  onClick={() => onNavigate(config.navigateTo)}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase transition-all hover:scale-105 active:scale-95 shadow-lg ${config.buttonClass}`}
-                >
-                  {config.buttonText}
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                    onClick={() => {
+                      if (config.buttonText === 'BID NOW') {
+                        const auctionGrid = document.querySelector('[data-auction-grid]') || document.querySelector('#auction-grid');
+                        if (auctionGrid) {
+                          auctionGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      } else if (config.buttonText === 'TRY AGAIN' || config.buttonText === 'TRY NEXT') {
+                        const auctionSchedule = document.querySelector('[data-whatsnew-target="auction-schedule"]');
+                        if (auctionSchedule) {
+                          auctionSchedule.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else {
+                          onNavigate(config.navigateTo);
+                        }
+                      } else {
+                        onNavigate(config.navigateTo);
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase transition-all hover:scale-105 active:scale-95 shadow-lg ${config.buttonClass}`}
+                  >
+                    {config.buttonText}
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
               </div>
             ))}
           </div>
