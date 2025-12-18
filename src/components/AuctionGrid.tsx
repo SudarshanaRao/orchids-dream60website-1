@@ -138,13 +138,14 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
         </motion.div>
 
         {/* Bidding Rounds Section - Only show if user has paid entry */}
-        {canShowBoxes && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-4 sm:space-y-5"
-          >
+          {canShowBoxes && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-4 sm:space-y-5"
+              layout={false}
+            >
             {showGuestPreview && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -159,34 +160,13 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
               </motion.div>
             )}
 
-            <motion.div 
-              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: { opacity: 0 },
-                visible: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.1
-                  }
-                }
-              }}
-            >
-              {roundBoxes.map((box) => (
-                <motion.div
-                  key={box.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: {
-                        duration: 0.5
-                      }
-                    }
-                  }}
-                >
+            <div 
+                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
+              >
+                {roundBoxes.map((box) => (
+                  <div
+                    key={box.id}
+                  >
                   <AuctionBox
                     box={box}
                     onClick={() => handleBoxClick(box)}
@@ -199,9 +179,9 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                     serverTime={serverTime}
                     hourlyAuctionId={auction.hourlyAuctionId} 
                   />
-                </motion.div>
-              ))}
-            </motion.div>
+                  </div>
+                ))}
+              </div>
           </motion.div>
         )}
       </div>

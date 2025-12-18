@@ -2264,20 +2264,20 @@ if (currentPage === 'support') {
 
           <Footer onNavigate={handleNavigate} />
 
-          <AnimatePresence>
-            {/* Payment Success Modal */}
-            {showEntrySuccess && (
-              <PaymentSuccess
-                amount={showEntrySuccess.entryFee}
-                type="entry"
-                boxNumber={showEntrySuccess.boxNumber}
-                onBackToHome={() => {
-                  handleEntrySuccess();
-                  setCurrentPage('game');
-                }}
-                onClose={() => setShowEntrySuccess(null)}
-              />
-            )}
+          <AnimatePresence mode="wait">
+              {/* Payment Success Modal */}
+              {showEntrySuccess && (
+                <PaymentSuccess
+                  amount={showEntrySuccess.entryFee}
+                  type="entry"
+                  boxNumber={showEntrySuccess.boxNumber}
+                  onBackToHome={() => {
+                    handleEntrySuccess();
+                    setCurrentPage('game');
+                  }}
+                  onClose={() => setShowEntrySuccess(null)}
+                />
+              )}
 
             {/* Payment Failure Modal */}
             {showEntryFailure && (

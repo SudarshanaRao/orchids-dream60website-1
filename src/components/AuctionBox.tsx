@@ -344,12 +344,13 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
       whileHover={isClickable ? { scale: 1.02, transition: { duration: 0.2 } } : {}}
       whileTap={isClickable ? { scale: 0.98 } : {}}
       className="h-full w-full"
+      layout={false}
     >
       <Card 
         className={`

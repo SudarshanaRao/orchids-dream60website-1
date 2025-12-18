@@ -286,7 +286,8 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
 
       const updateTimer = () => {
         // ✅ Use server time from prop if available, otherwise fallback to local time
-        const now = serverTime?.timestamp || Date.now();
+        // Match AuctionDetails page logic exactly
+        const now = (serverTime as any)?.timestamp || Date.now();
 
         // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
         // Each winner gets exactly 15 minutes
@@ -318,23 +319,23 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
         };
 
         const activeWindow = getActiveWindow();
-        
+
         // ✅ If in waiting queue, show time remaining until user's claim window starts
         if (isInWaitingQueue() && activeWindow) {
-          // Show time until user's window starts
+          // Show time until user's window starts (not current active window end)
           let diff = activeWindow.userStart - now;
-          
+
           if (diff > 0) {
             const minutes = Math.floor(diff / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             setTimeLeft(`${minutes}m ${seconds}s`);
             return;
-          } else {
-            setTimeLeft('Claim Window Soon');
-            return;
           }
+
+          setTimeLeft('Claim Window Soon');
+          return;
         }
-        
+
         // ✅ Check if in "Claim Window Soon" period (backend delay)
         if (localAuction.finalRank && localAuction.currentEligibleRank && activeWindow) {
           // If it should be user's turn but within 1 min of window start
@@ -346,9 +347,10 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
             }
           }
         }
-        
+
         // ✅ Show time left in user's claim window (when it's their turn)
         if (activeWindow && localAuction.finalRank === localAuction.currentEligibleRank) {
+          // Use user's window end as deadline (15 min window)
           const deadline = activeWindow.userEnd;
           let diff = deadline - now;
 
@@ -368,8 +370,6 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
           setTimeLeft(`${minutes}m ${seconds}s`);
         }
       };
-
-
 
       updateTimer();
       const interval = setInterval(updateTimer, 1000);

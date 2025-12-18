@@ -148,40 +148,39 @@ export function PaymentSuccess({
         </div>
       </motion.div>
 
-      {/* Confetti-like elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        {[...Array(12)].map((_, i) => (
-          <motion.div
-            key={i}
-            initial={{ 
-              top: "50%", 
-              left: "50%", 
-              scale: 0,
-              x: 0,
-              y: 0
-            }}
-            animate={{ 
-              scale: [0, 1, 0],
-              x: (Math.random() - 0.5) * 400,
-              y: (Math.random() - 0.5) * 400,
-              rotate: Math.random() * 360
-            }}
-            transition={{ 
-              duration: 2, 
-              delay: 0.2,
-              repeat: Infinity,
-              repeatDelay: 1
-            }}
-            className="absolute"
-          >
-            {i % 2 === 0 ? (
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            ) : (
-              <Sparkles className="w-4 h-4 text-purple-400" />
-            )}
-          </motion.div>
-        ))}
-      </div>
+        {/* Confetti-like elements - reduced for smooth performance */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ 
+                top: "50%", 
+                left: "50%", 
+                scale: 0,
+                x: 0,
+                y: 0
+              }}
+              animate={{ 
+                scale: [0, 1, 0],
+                x: (Math.random() - 0.5) * 300,
+                y: (Math.random() - 0.5) * 300,
+                rotate: Math.random() * 360
+              }}
+              transition={{ 
+                duration: 2.5, 
+                delay: 0.3 + i * 0.1,
+                ease: "easeOut"
+              }}
+              className="absolute will-change-transform"
+            >
+              {i % 2 === 0 ? (
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              ) : (
+                <Sparkles className="w-4 h-4 text-purple-400" />
+              )}
+            </motion.div>
+          ))}
+        </div>
     </div>
   );
 }
