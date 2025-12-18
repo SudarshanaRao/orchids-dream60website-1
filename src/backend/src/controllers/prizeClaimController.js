@@ -17,21 +17,35 @@ const syncWinnerStatuses = async (hourlyAuctionId) => {
       return acc;
     }, {});
 
-    if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
-      hourlyAuction.winners = hourlyAuction.winners.map(w => {
-        const hist = byRank[w.rank];
-        if (hist) {
-          w.prizeClaimStatus = hist.prizeClaimStatus;
-          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-          w.prizeClaimedAt = hist.claimedAt || null;
-          w.prizeClaimedBy = hist.claimedBy || null;
-          w.claimNotes = hist.claimNotes || null;
+      if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
+        let actualClaimer = null;
+
+        hourlyAuction.winners = hourlyAuction.winners.map(w => {
+          const hist = byRank[w.rank];
+          if (hist) {
+            w.prizeClaimStatus = hist.prizeClaimStatus;
+            w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+            w.prizeClaimedAt = hist.claimedAt || null;
+            w.prizeClaimedBy = hist.claimedBy || null;
+            w.claimNotes = hist.claimNotes || null;
+
+            if (w.isPrizeClaimed) {
+              actualClaimer = w;
+            }
+          }
+          return w;
+        });
+
+        // ✅ Update top-level winner info if someone claimed (even if not rank 1)
+        if (actualClaimer) {
+          hourlyAuction.winnerId = actualClaimer.playerId;
+          hourlyAuction.winnerUsername = actualClaimer.playerUsername;
+          hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
         }
-        return w;
-      });
-      hourlyAuction.markModified('winners');
-      await hourlyAuction.save();
-    }
+
+        hourlyAuction.markModified('winners');
+        await hourlyAuction.save();
+      }
 
     const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
     if (!dailyAuction) return;
