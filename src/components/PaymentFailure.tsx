@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { XCircle, Home, RefreshCw, AlertTriangle, Info, Clock } from 'lucide-react';
+import { XCircle, Home, RefreshCw, AlertTriangle, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
 

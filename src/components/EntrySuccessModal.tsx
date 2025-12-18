@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, Trophy, Zap, X, ArrowRight, IndianRupee, Sparkles, Target, TrendingUp, Clock } from 'lucide-react';
+import { CheckCircle, Trophy, Zap, X, ArrowRight, IndianRupee, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface EntrySuccessModalProps {
@@ -11,7 +11,7 @@ interface EntrySuccessModalProps {
 }
 
 export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: EntrySuccessModalProps) {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
   const [showContinue, setShowContinue] = useState(false);
 
   useEffect(() => {
@@ -32,12 +32,9 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          clearInterval(timer);
-          onContinue(); // Auto continue after 5s
-          return 0;
-        }
-        if (prev <= 3) {
           setShowContinue(true);
+          clearInterval(timer);
+          return 0;
         }
         return prev - 1;
       });
@@ -49,7 +46,7 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
       document.removeEventListener('keydown', handleEscape);
       clearInterval(timer);
     };
-  }, [onClose, onContinue]);
+  }, [onClose]);
 
   return (
     <motion.div 
