@@ -2125,7 +2125,7 @@ if (currentPage === 'support') {
         <div className="min-h-screen bg-background">
           <Sonner />
           
-<Header
+            <Header
               user={currentUser}
               onNavigate={handleNavigate}
               onLogin={handleShowLogin}
@@ -2135,50 +2135,53 @@ if (currentPage === 'support') {
               setMobileMenuOpen={setMobileMenuOpen}
             />
 
-              {currentUser && (
-                <WinnerClaimBanner
-                  userId={currentUser.id}
-                  onNavigate={handleNavigate}
-                  serverTime={serverTime}
-                />
-              )}
+            {currentUser && (
+              <WinnerClaimBanner
+                userId={currentUser.id}
+                onNavigate={handleNavigate}
+                serverTime={serverTime}
+              />
+            )}
 
+              <ChristmasHeroBanner />
 
               <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-              <ChristmasHeroBanner />
-              {/* Hero Section */}
-            <div className="text-center space-y-4 px-2 sm:px-4">
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
-  bg-clip-text text-transparent">
-  DREAM60
-</h1>
+                {/* Redundant Hero Section hidden in favor of ChristmasHeroBanner */}
+                {/* 
+                <div className="text-center space-y-4 px-2 sm:px-4">
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
+      bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
+      bg-clip-text text-transparent">
+      DREAM60
+    </h1>
 
-              <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
-  bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
-  bg-clip-text text-transparent">
-  The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
-</p>
+                  <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
+      bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
+      bg-clip-text text-transparent">
+      The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
+    </p>
 
-              {!currentUser && (
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
-                  <button
-                    onClick={handleShowLogin}
-                    className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
-                  >
-                    Join Now & Start Playing
-                  </button>
-                  <button
-                    onClick={handleSwitchToSignup}
-                    className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
-                  >
-                    Create Account
-                  </button>
+                  {!currentUser && (
+                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
+                      <button
+                        onClick={handleShowLogin}
+                        className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
+                      >
+                        Join Now & Start Playing
+                      </button>
+                      <button
+                        onClick={handleSwitchToSignup}
+                        className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+                */}
 
-            {/* Current Auction Time Slot Banner */}
+                {/* Current Auction Time Slot Banner */}
+
             {/* ✅ Only show banner after server time is loaded */}
             {serverTime && getCurrentAuctionSlot(serverTime) && (
               <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
