@@ -1,21 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+'use client';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Lottie from 'lottie-react';
 
-// Premium Lottie Animations (Verified lottie.host URLs)
-const LOTTIE_SANTA_URL = "https://lottie.host/80242270-4a87-438c-843e-7a7a28e9389e/Xh7X7A0X5Z.json"; 
-const LOTTIE_TREE_URL = "https://lottie.host/5a2d67a9-e2b2-4d43-9828-57d423e1f0e4/nQ2W2q4X6Q.json";
-const LOTTIE_GIFT_URL = "https://lottie.host/f42a59a7-802c-4780-9759-d8e235948083/mD1M4B7G8O.json";
+const LOTTIE_SANTA_URL = "https://lottie.host/d6a4e4d9-4744-4d6e-b674-0c89a7e8c2d3/pQqL2Q8M8r.json";
+const LOTTIE_TREE_URL = "https://lottie.host/4f8d4f8d-4f8d-4f8d-4f8d-4f8d4f8d4f8d/christmas-tree.json";
+const LOTTIE_GIFT_URL = "https://lottie.host/embed/1c7f8d27-6c71-481b-b10d-1c4f5d5a5f1c/zGqzWjPuJB.json";
+const LOTTIE_SNOWFALL_URL = "https://lottie.host/b5c5e5c5-b5c5-4b5c-b5c5-b5c5e5c5b5c5/snowfall.json";
 
 export const ChristmasHeroBanner: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [santaData, setSantaData] = useState<any>(null);
-  const [treeData, setTreeData] = useState<any>(null);
   const [giftData, setGiftData] = useState<any>(null);
-  
-  // Parallax Setup
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
 
   useEffect(() => {
     const loadLotties = async () => {
@@ -29,274 +24,343 @@ export const ChristmasHeroBanner: React.FC = () => {
           return null;
         };
 
-        const [s, t, g] = await Promise.all([
+        const [s, g] = await Promise.all([
           fetchLottie(LOTTIE_SANTA_URL),
-          fetchLottie(LOTTIE_TREE_URL),
           fetchLottie(LOTTIE_GIFT_URL)
         ]);
-        
+
         setSantaData(s);
-        setTreeData(t);
         setGiftData(g);
       } catch (e) {
-        console.warn("Lottie loading failed, using premium fallback visuals", e);
+        console.warn("Lottie loading failed, using fallback visuals", e);
       }
     };
     loadLotties();
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      mouseX.set(x);
-      mouseY.set(y);
-    }
-  };
-
-  const springConfig = { damping: 30, stiffness: 150 };
-  const smoothMouseX = useSpring(mouseX, springConfig);
-  const smoothMouseY = useSpring(mouseY, springConfig);
-
-  // Parallax layers (Higher values = more depth)
-  const bgX = useTransform(smoothMouseX, [-0.5, 0.5], [-25, 25]);
-  const bgY = useTransform(smoothMouseY, [-0.5, 0.5], [-15, 15]);
-  
-  const midX = useTransform(smoothMouseX, [-0.5, 0.5], [-50, 50]);
-  const midY = useTransform(smoothMouseY, [-0.5, 0.5], [-30, 30]);
-
-  const fgX = useTransform(smoothMouseX, [-0.5, 0.5], [-90, 90]);
-  const fgY = useTransform(smoothMouseY, [-0.5, 0.5], [-45, 45]);
-
   return (
-    <div 
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
-      className="relative overflow-hidden bg-[#881337] rounded-[3.5rem] border border-white/5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] mb-16 group cursor-default h-[450px] sm:h-[600px] md:h-[700px] lg:h-[750px] transition-all duration-700"
-    >
-      {/* 1. LAYERED BACKGROUND (Atmospheric) */}
-      <motion.div 
-        style={{ x: bgX, y: bgY, scale: 1.15 }}
-        className="absolute inset-0"
-      >
-        {/* Deep Ruby Gradient & Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_40%,_#e11d48_0%,_#9f1239_50%,_#4c0519_100%)]" />
-        
-        {/* Animated Aurora / Glows */}
-        <motion.div 
-          animate={{ opacity: [0.1, 0.3, 0.1], x: [-20, 20, -20] }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute top-0 left-0 w-full h-full bg-rose-500/20 blur-[150px] rounded-full"
-        />
+    <div className="relative overflow-hidden rounded-[1.5rem] sm:rounded-[2rem] md:rounded-[2.5rem] shadow-2xl mb-4 sm:mb-6">
+      {/* Main Red Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#C41E3A] via-[#8B0000] to-[#5C0000]" />
+      
+      {/* Decorative Pattern Overlay */}
+      <div className="absolute inset-0 opacity-[0.08]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      }} />
 
-        {/* Premium Hanging Lights / Stars */}
-        <div className="absolute top-0 left-0 w-full flex justify-between px-16">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={`light-${i}`}
-              animate={{ 
-                y: [0, 20, 0],
-                opacity: [0.3, 0.8, 0.3],
-                rotate: [-2, 2, -2]
-              }}
-              transition={{ 
-                duration: 3 + Math.random() * 4, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              className="flex flex-col items-center origin-top"
-              style={{ height: `${10 + Math.random() * 50}%` }}
-            >
-              <div className="w-[1.5px] h-48 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
-              <motion.div 
-                animate={{ 
-                  scale: [1, 1.5, 1], 
-                  filter: ["brightness(1) blur(1px)", "brightness(2.5) blur(4px)", "brightness(1) blur(1px)"] 
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-6 h-6 rounded-full bg-yellow-100 shadow-[0_0_40px_rgba(254,249,195,1)]" 
-              />
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* 2. CINEMATIC SNOWFALL (3D Depth) */}
-      <div className="absolute inset-0 pointer-events-none z-10">
-        {[...Array(100)].map((_, i) => (
+      {/* Animated Snow Particles */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(40)].map((_, i) => (
           <motion.div
             key={`snow-${i}`}
-            initial={{ top: -20, left: `${Math.random() * 100}%` }}
-            animate={{ 
-              top: '100%',
-              x: [0, Math.random() * 100 - 50, 0],
-              opacity: [0, 1, 0],
-              rotate: 360
+            initial={{ top: -10, left: `${Math.random() * 100}%`, opacity: 0 }}
+            animate={{
+              top: '110%',
+              opacity: [0, 0.8, 0.8, 0],
+              x: [0, Math.sin(i) * 30, 0],
             }}
-            transition={{ 
-              duration: 4 + Math.random() * 12, 
-              repeat: Infinity, 
+            transition={{
+              duration: 6 + Math.random() * 8,
+              repeat: Infinity,
               ease: "linear",
-              delay: Math.random() * 20
+              delay: Math.random() * 10,
             }}
-            className="absolute rounded-full bg-white/90 blur-[0.3px]"
-            style={{
-              width: Math.random() * 7 + 2,
-              height: Math.random() * 7 + 2,
-              filter: i % 10 === 0 ? 'blur(4px)' : 'none', // Foreground blur
-            }}
+            className="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"
+            style={{ filter: 'blur(0.5px)' }}
           />
         ))}
       </div>
 
-      {/* 3. MIDDLE LAYER (Santa & Tree) */}
-      <motion.div 
-        style={{ x: midX, y: midY }}
-        className="absolute inset-0 z-20 pointer-events-none"
-      >
-        {/* Santa (Top Left - Professional Position) */}
-        <div className="absolute top-[-60px] left-[8%] w-[250px] sm:w-[400px] md:w-[550px] lg:w-[650px]">
-          {santaData ? (
-            <Lottie animationData={santaData} loop={true} className="drop-shadow-[0_50px_80px_rgba(0,0,0,0.6)]" />
-          ) : (
-             <PremiumSantaFallback />
-          )}
-        </div>
-
-        {/* Massive Tree (Right Side) */}
-        <div className="absolute bottom-[-50px] right-[2%] w-[400px] sm:w-[600px] md:w-[800px] lg:w-[950px]">
-          {treeData ? (
-            <Lottie animationData={treeData} loop={true} className="drop-shadow-[0_30px_100px_rgba(0,0,0,0.5)]" />
-          ) : (
-            <PremiumTreeFallback />
-          )}
-        </div>
-      </motion.div>
-
-      {/* 4. FOREGROUND LAYER (Gifts & Interactive Depth) */}
-      <motion.div 
-        style={{ x: fgX, y: fgY }}
-        className="absolute inset-0 z-30 pointer-events-none"
-      >
-        <div className="absolute bottom-[40px] left-[12%] flex items-end gap-12 scale-110 sm:scale-150 lg:scale-[1.75] origin-bottom-left">
-          <div className="w-44 md:w-64">
-            {giftData && <Lottie animationData={giftData} loop={true} className="drop-shadow-2xl" />}
-          </div>
-          <div className="w-32 md:w-48 mb-8 scale-x-[-1] opacity-95">
-             {giftData && <Lottie animationData={giftData} loop={true} className="drop-shadow-2xl" />}
-          </div>
-        </div>
-        
-        {/* Bottom Snow Glow */}
-        <div className="absolute bottom-0 left-0 w-full h-64 bg-gradient-to-t from-white/15 via-white/5 to-transparent blur-[120px]" />
-      </motion.div>
-
-      {/* 5. CONTENT OVERLAY (Top Center) */}
-      <div className="relative h-full flex flex-col items-center justify-start text-center px-8 pt-28 sm:pt-48 z-50 pointer-events-none">
-        <motion.div
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
-          className="space-y-12 max-w-6xl"
-        >
-          {/* Elite Badge */}
+      {/* Hanging Lights at Top */}
+      <div className="absolute top-0 left-0 w-full flex justify-around px-4 sm:px-8">
+        {[...Array(8)].map((_, i) => (
           <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 1.2 }}
-            className="inline-block"
+            key={`light-${i}`}
+            animate={{ 
+              y: [0, 5, 0],
+              opacity: [0.6, 1, 0.6],
+            }}
+            transition={{ 
+              duration: 2 + Math.random() * 2, 
+              repeat: Infinity,
+              delay: i * 0.3
+            }}
+            className="flex flex-col items-center"
           >
-            <span className="px-12 py-4 rounded-full bg-white/5 backdrop-blur-[40px] border border-white/20 text-white text-xl md:text-3xl font-black uppercase tracking-[0.6em] shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
-               Holiday Grandeur
-            </span>
-          </motion.div>
-
-          {/* Epic Headline (The Swiggy Reference Look) */}
-          <h2 className="relative text-8xl sm:text-[11rem] md:text-[14rem] lg:text-[16rem] font-black leading-[0.7] tracking-tighter text-white drop-shadow-[0_50px_50px_rgba(0,0,0,0.9)]">
-            <span className="block italic font-serif text-5xl sm:text-7xl md:text-8xl opacity-90 mb-6 drop-shadow-2xl">A Very</span>
-            <span className="block bg-gradient-to-b from-white via-white to-rose-200 bg-clip-text text-transparent">
-              Merry
-            </span>
-            <span className="block mt-[-10px] relative">
-               <span className="absolute inset-0 bg-gradient-to-r from-yellow-600 via-yellow-100 to-yellow-600 bg-[length:200%_auto] animate-shimmer bg-clip-text text-transparent opacity-100">
-                 Christmas
-               </span>
-               <span className="text-white">
-                 Christmas
-               </span>
-            </span>
-          </h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 1.2 }}
-            className="text-white/95 text-4xl md:text-6xl font-black tracking-tight drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] italic font-serif"
-          >
-            "Celebrate the magic of the season"
-          </motion.p>
-          
-          {/* The Ultimate Button */}
-          <div className="pt-20 pointer-events-auto">
-            <motion.button
-              whileHover={{ 
-                scale: 1.15, 
-                boxShadow: "0 50px 100px -20px rgba(255, 255, 255, 0.7)",
-                y: -12
+            <div className="w-[1px] h-6 sm:h-10 bg-gradient-to-b from-white/40 to-transparent" />
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.3, 1],
+                boxShadow: [
+                  '0 0 8px rgba(255,215,0,0.6)',
+                  '0 0 20px rgba(255,215,0,1)',
+                  '0 0 8px rgba(255,215,0,0.6)'
+                ]
               }}
-              whileTap={{ scale: 0.9 }}
-              className="relative group overflow-hidden bg-white text-[#9f1239] px-20 md:px-32 py-10 md:py-12 rounded-[4rem] font-black text-5xl md:text-7xl shadow-[0_50px_100px_rgba(0,0,0,0.6)] transition-all duration-700 flex items-center gap-10 mx-auto"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-rose-600/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-              <span>SHOP NOW</span>
-              <motion.div
-                animate={{ x: [0, 20, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              >
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14m-7-7 7 7-7 7"/>
-                </svg>
-              </motion.div>
-            </motion.button>
-          </div>
-        </motion.div>
+              transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+              className="w-3 h-3 sm:w-4 sm:h-4 rounded-full"
+              style={{ 
+                backgroundColor: ['#FFD700', '#FF6B6B', '#4ADE80', '#60A5FA', '#F472B6'][i % 5],
+              }}
+            />
+          </motion.div>
+        ))}
       </div>
 
+      {/* Main Content Container */}
+      <div className="relative z-10 px-4 sm:px-6 md:px-8 pt-12 sm:pt-16 pb-6 sm:pb-8">
+        
+        {/* Top Section - Santa and Title */}
+        <div className="flex items-start justify-between mb-6 sm:mb-8">
+          
+          {/* Left Side - Santa Animation */}
+          <div className="relative w-24 sm:w-36 md:w-48 lg:w-56 -mt-4 sm:-mt-8">
+            {santaData ? (
+              <Lottie 
+                animationData={santaData} 
+                loop={true} 
+                className="w-full drop-shadow-[0_10px_30px_rgba(0,0,0,0.4)]" 
+              />
+            ) : (
+              <motion.div
+                animate={{ y: [0, -8, 0], rotate: [-2, 2, -2] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="relative"
+              >
+                {/* Animated Santa SVG Fallback */}
+                <svg viewBox="0 0 120 140" className="w-full drop-shadow-2xl">
+                  {/* Hat */}
+                  <motion.path
+                    d="M30 50 L60 10 L90 50 Z"
+                    fill="#C41E3A"
+                    stroke="#FFFFFF"
+                    strokeWidth="3"
+                  />
+                  <circle cx="60" cy="10" r="8" fill="#FFFFFF" />
+                  <rect x="25" y="45" width="70" height="12" rx="6" fill="#FFFFFF" />
+                  
+                  {/* Face */}
+                  <ellipse cx="60" cy="75" rx="30" ry="25" fill="#FDBCB4" />
+                  
+                  {/* Eyes */}
+                  <motion.g animate={{ scaleY: [1, 0.1, 1] }} transition={{ duration: 4, repeat: Infinity }}>
+                    <circle cx="48" cy="70" r="4" fill="#1a1a1a" />
+                    <circle cx="72" cy="70" r="4" fill="#1a1a1a" />
+                  </motion.g>
+                  
+                  {/* Rosy Cheeks */}
+                  <circle cx="40" cy="78" r="6" fill="#FF9999" opacity="0.6" />
+                  <circle cx="80" cy="78" r="6" fill="#FF9999" opacity="0.6" />
+                  
+                  {/* Nose */}
+                  <circle cx="60" cy="78" r="6" fill="#E8A090" />
+                  
+                  {/* Beard */}
+                  <path d="M30 85 Q35 130 60 135 Q85 130 90 85" fill="#FFFFFF" />
+                  <ellipse cx="60" cy="90" rx="25" ry="8" fill="#F5F5F5" />
+                  
+                  {/* Mustache */}
+                  <path d="M45 85 Q52 78 60 85 Q68 78 75 85" fill="#FFFFFF" stroke="#F0F0F0" strokeWidth="1" />
+                </svg>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Center - Title */}
+          <div className="flex-1 text-center px-2 sm:px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-1 sm:space-y-2"
+            >
+              {/* Merry Text */}
+              <motion.p
+                animate={{ 
+                  textShadow: [
+                    '0 0 10px rgba(255,215,0,0.5)',
+                    '0 0 20px rgba(255,215,0,0.8)',
+                    '0 0 10px rgba(255,215,0,0.5)'
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="font-script text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-[#FFD700] italic"
+                style={{ fontFamily: "'Pacifico', 'Dancing Script', cursive" }}
+              >
+                Merry
+              </motion.p>
+              
+              {/* Christmas Text */}
+              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tight drop-shadow-[0_4px_8px_rgba(0,0,0,0.4)]"
+                style={{ fontFamily: "'Poppins', 'Inter', sans-serif" }}
+              >
+                Christmas
+              </h1>
+            </motion.div>
+
+            {/* Shop Now Button */}
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: '0 15px 40px rgba(0,0,0,0.4)' }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+              className="mt-4 sm:mt-6 inline-flex items-center gap-2 sm:gap-3 bg-[#1B5E20] hover:bg-[#2E7D32] text-white font-bold px-6 sm:px-10 py-2.5 sm:py-4 rounded-full text-sm sm:text-lg shadow-[0_8px_30px_rgba(0,0,0,0.3)] transition-all duration-300"
+            >
+              <span>SHOP NOW</span>
+              <motion.span
+                animate={{ x: [0, 5, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                </svg>
+              </motion.span>
+            </motion.button>
+          </div>
+
+          {/* Right Side - Christmas Tree */}
+          <div className="relative w-24 sm:w-36 md:w-48 lg:w-56 -mt-2 sm:-mt-4">
+            <motion.div
+              animate={{ rotate: [-1, 1, -1] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              {/* Animated Christmas Tree SVG */}
+              <svg viewBox="0 0 100 140" className="w-full drop-shadow-2xl">
+                {/* Star */}
+                <motion.path
+                  d="M50 5 L53 15 L63 15 L55 22 L58 32 L50 26 L42 32 L45 22 L37 15 L47 15 Z"
+                  fill="#FFD700"
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)']
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+                
+                {/* Tree Layers */}
+                <path d="M50 25 L75 55 L65 55 L85 85 L15 85 L35 55 L25 55 Z" fill="#0D5C1E" />
+                <path d="M50 45 L70 70 L62 70 L78 95 L22 95 L38 70 L30 70 Z" fill="#1B7A2E" />
+                <path d="M50 65 L68 90 L60 90 L75 115 L25 115 L40 90 L32 90 Z" fill="#228B3D" />
+                
+                {/* Trunk */}
+                <rect x="42" y="115" width="16" height="20" fill="#5D4037" rx="2" />
+                
+                {/* Ornaments */}
+                {[[35, 75], [65, 78], [45, 95], [58, 92], [50, 108], [38, 105], [62, 105]].map(([cx, cy], i) => (
+                  <motion.circle
+                    key={`ornament-${i}`}
+                    cx={cx}
+                    cy={cy}
+                    r="4"
+                    fill={['#FF0000', '#FFD700', '#FF0000', '#4FC3F7', '#FFD700', '#FF0000', '#4FC3F7'][i]}
+                    animate={{ 
+                      scale: [1, 1.3, 1],
+                      opacity: [0.8, 1, 0.8]
+                    }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                  />
+                ))}
+                
+                {/* Garland */}
+                <path 
+                  d="M30 80 Q50 75 70 80" 
+                  stroke="#FFD700" 
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeDasharray="4 2"
+                />
+                <path 
+                  d="M28 100 Q50 95 72 100" 
+                  stroke="#FFD700" 
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeDasharray="4 2"
+                />
+              </svg>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Category Icons Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6"
+        >
+          {[
+            { icon: '🎄', label: 'Trees & Decor', bg: 'from-emerald-600 to-emerald-800' },
+            { icon: '🍪', label: 'Cakes & Cookies', bg: 'from-amber-600 to-amber-800' },
+            { icon: '🎁', label: 'Gifting Store', bg: 'from-red-600 to-red-800' },
+            { icon: '🧁', label: 'Baking', bg: 'from-pink-600 to-pink-800' },
+            { icon: '👗', label: 'Fashion', bg: 'from-purple-600 to-purple-800', hideOnMobile: true },
+            { icon: '🎉', label: 'Party', bg: 'from-blue-600 to-blue-800', hideOnMobile: true },
+          ].map((item, i) => (
+            <motion.div
+              key={item.label}
+              whileHover={{ scale: 1.08, y: -5 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 + i * 0.1 }}
+              className={`flex flex-col items-center p-2 sm:p-3 md:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-b ${item.bg} cursor-pointer shadow-lg hover:shadow-xl transition-all ${item.hideOnMobile ? 'hidden sm:flex' : ''}`}
+            >
+              <div className="text-2xl sm:text-3xl md:text-4xl mb-1 sm:mb-2 drop-shadow-md">
+                {item.icon}
+              </div>
+              <span className="text-[10px] sm:text-xs md:text-sm text-white/90 font-medium text-center leading-tight">
+                {item.label}
+              </span>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Bottom Decorative Gift Boxes */}
+        <div className="absolute bottom-0 left-4 sm:left-8 w-16 sm:w-24 md:w-32 opacity-80">
+          {giftData ? (
+            <Lottie animationData={giftData} loop={true} />
+          ) : (
+            <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <svg viewBox="0 0 60 60" className="w-full">
+                <rect x="5" y="20" width="50" height="35" rx="4" fill="#E53935" />
+                <rect x="25" y="20" width="10" height="35" fill="#FFEB3B" />
+                <rect x="5" y="15" width="50" height="10" rx="2" fill="#C62828" />
+                <rect x="25" y="15" width="10" height="10" fill="#FDD835" />
+                <ellipse cx="30" cy="12" rx="12" ry="6" fill="#FFEB3B" />
+                <ellipse cx="22" cy="8" rx="6" ry="4" fill="#FFEB3B" />
+                <ellipse cx="38" cy="8" rx="6" ry="4" fill="#FFEB3B" />
+              </svg>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="absolute bottom-0 right-4 sm:right-8 w-12 sm:w-20 md:w-28 opacity-80">
+          <motion.div
+            animate={{ y: [0, -3, 0], rotate: [0, 2, 0] }}
+            transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+          >
+            <svg viewBox="0 0 50 50" className="w-full">
+              <rect x="5" y="18" width="40" height="28" rx="3" fill="#4CAF50" />
+              <rect x="20" y="18" width="10" height="28" fill="#FF5722" />
+              <rect x="5" y="14" width="40" height="8" rx="2" fill="#388E3C" />
+              <rect x="20" y="14" width="10" height="8" fill="#E64A19" />
+              <ellipse cx="25" cy="11" rx="10" ry="5" fill="#FF5722" />
+            </svg>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Bottom Snow Ground */}
+      <div className="absolute bottom-0 left-0 w-full h-4 sm:h-6 bg-gradient-to-t from-white/30 to-transparent" />
+
+      {/* Add Google Font for script text */}
       <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        .animate-shimmer {
-          animation: shimmer 5s infinite linear;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@700;900&display=swap');
       `}</style>
     </div>
   );
 };
-
-// --- HAND-CRAFTED ELITE SVGS ---
-
-const PremiumSantaFallback = () => (
-  <motion.div animate={{ y: [0, 15, 0], rotate: [-2, 2, -2] }} transition={{ duration: 4, repeat: Infinity }} className="w-full h-full p-20 opacity-90">
-     <svg viewBox="0 0 200 200">
-        <path d="M100 20L120 60H80L100 20Z" fill="#be123c" />
-        <circle cx="100" cy="80" r="40" fill="#fecaca" />
-        <path d="M60 80C60 110 140 110 140 80" stroke="white" strokeWidth="15" strokeLinecap="round" />
-     </svg>
-  </motion.div>
-);
-
-const PremiumTreeFallback = () => (
-  <motion.div animate={{ rotate: [-0.5, 0.5, -0.5] }} transition={{ duration: 5, repeat: Infinity }} className="w-full h-full p-10">
-     <svg viewBox="0 0 400 600">
-        <path d="M200 50L350 250H50L200 50Z" fill="#1e3a8a" opacity="0.1" />
-        <path d="M200 50L320 220H80L200 50Z" fill="#064e3b" />
-        <path d="M200 150L360 400H40L200 150Z" fill="#064e3b" opacity="0.9" />
-        <path d="M200 300L400 550H0L200 300Z" fill="#064e3b" opacity="0.8" />
-        <motion.circle animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity }} cx="200" cy="50" r="15" fill="#fbbf24" filter="blur(5px)" />
-     </svg>
-  </motion.div>
-);
