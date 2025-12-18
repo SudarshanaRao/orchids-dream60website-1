@@ -6,28 +6,67 @@ import { ChevronRight, Sparkles } from 'lucide-react';
 
 export const ChristmasHeroBanner: React.FC = () => {
   return (
-    <section className="relative w-full h-[520px] sm:h-[580px] md:h-[600px] overflow-hidden bg-[#F8F9FA]">
-      {/* Background Image Container */}
-      <div className="absolute inset-0 z-0">
+    <section className="relative w-full h-[520px] sm:h-[580px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+      {/* Background Cinematic Container */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="absolute inset-0 bg-cover bg-right sm:bg-center bg-no-repeat"
-          style={{ 
-            backgroundImage: `url('https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/document-uploads/Gemini_Generated_Image_zhjzuizhjzuizhjz-1766084966433.png?width=2000&height=2000&resize=contain')`,
+          animate={{ 
+            scale: [1, 1.05],
           }}
-        />
-        {/* Subtle Vignette & Lighting Enhancement */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/10 to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-black/5 z-10 pointer-events-none" />
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity, 
+            repeatType: "reverse", 
+            ease: "linear" 
+          }}
+          className="absolute inset-0 w-full h-full"
+        >
+          {/* Main Cinematic GIF */}
+          <img 
+            src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/document-uploads/Whisk_ajn3cjm1gtmzajmw0iyxctotyjmmrtlkddz30yy-1766089590869.gif?width=2000&height=2000&resize=contain"
+            alt="Cinematic Christmas Scene"
+            className="w-full h-full object-cover object-center scale-110"
+          />
+        </motion.div>
         
-        {/* Warm Festive Glow Overlay */}
-        <div className="absolute inset-0 bg-[#FFD700]/5 mix-blend-overlay z-10 pointer-events-none" />
+        {/* Elegant Overlays */}
+        {/* Darkening Gradient for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1a2f]/80 via-[#0a1a2f]/40 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1a2f]/60 via-transparent to-[#0a1a2f]/40 z-10" />
+        
+        {/* Soft Golden Bokeh/Glow */}
+        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-yellow-500/10 blur-[120px] rounded-full z-10 pointer-events-none animate-pulse" />
       </div>
 
-      {/* Falling Snow Particles - Swiggy Style */}
-      <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+      {/* Golden Particle System */}
+      <div className="absolute inset-0 pointer-events-none z-20">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={`gold-particle-${i}`}
+            initial={{ 
+              top: `${Math.random() * 100}%`, 
+              left: `${Math.random() * 100}%`, 
+              opacity: 0,
+              scale: Math.random() * 0.5 + 0.2
+            }}
+            animate={{
+              y: [0, -100],
+              opacity: [0, 0.6, 0],
+              x: [0, Math.sin(i) * 30],
+            }}
+            transition={{
+              duration: 5 + Math.random() * 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 5,
+            }}
+            className="absolute w-1 h-1 bg-yellow-300 rounded-full blur-[1px] shadow-[0_0_8px_rgba(253,224,71,0.8)]"
+          />
+        ))}
+      </div>
+
+      {/* Gentle Snowfall - Optimized */}
+      <div className="absolute inset-0 pointer-events-none z-20">
         {[...Array(40)].map((_, i) => (
           <motion.div
             key={`snow-${i}`}
@@ -39,50 +78,50 @@ export const ChristmasHeroBanner: React.FC = () => {
             }}
             animate={{
               top: '110%',
-              opacity: [0, 0.8, 0.8, 0],
-              x: [0, Math.sin(i) * 40, 0],
+              opacity: [0, 0.4, 0.4, 0],
+              x: [0, Math.sin(i) * 50, 0],
             }}
             transition={{
-              duration: 10 + Math.random() * 15,
+              duration: 12 + Math.random() * 15,
               repeat: Infinity,
               ease: "linear",
               delay: Math.random() * 10,
             }}
-            className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[0.5px] shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+            className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px]"
           />
         ))}
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex items-center">
-        <div className="max-w-2xl space-y-6 md:space-y-8">
+      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-6 sm:px-12 md:px-20 lg:px-24 flex items-center justify-center md:justify-start">
+        <div className="max-w-2xl space-y-8 md:space-y-10 text-center md:text-left">
           {/* Christmas Special Badge */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#C62828] rounded-full shadow-[0_4px_15px_rgba(198,40,40,0.3)]"
+            className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C] rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
           >
-            <Sparkles className="w-4 h-4 text-white animate-pulse" />
-            <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase">
+            <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+            <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
               Christmas Special
             </span>
           </motion.div>
 
           {/* Headline & Subheadline */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.4 }}
             >
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-[#B71C1C] leading-[1.1] drop-shadow-sm select-none"
+              <h1 className="text-5xl sm:text-7xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
                   style={{ fontFamily: "'Playfair Display', serif" }}>
                 Have a <br />
-                <span className="italic relative inline-block">
+                <span className="text-yellow-400 italic relative inline-block">
                   Merrylitious
                   <motion.span 
-                    className="absolute -bottom-1 left-0 w-full h-[3px] bg-[#B71C1C]/20 rounded-full"
+                    className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ delay: 1.2, duration: 1 }}
@@ -96,9 +135,9 @@ export const ChristmasHeroBanner: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.6 }}
-              className="text-lg sm:text-xl md:text-2xl text-gray-800/90 font-medium max-w-lg leading-relaxed select-none"
+              className="text-lg sm:text-xl md:text-2xl text-gray-200 font-medium max-w-lg leading-relaxed select-none"
             >
-              Win exciting prizes & festive rewards on <span className="font-bold text-[#B71C1C]">Dream60</span>
+              Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
             </motion.p>
           </div>
 
@@ -112,11 +151,11 @@ export const ChristmasHeroBanner: React.FC = () => {
             <motion.button
               whileHover={{ 
                 scale: 1.05, 
-                boxShadow: '0 10px 30px rgba(198, 40, 40, 0.4)',
+                boxShadow: '0 10px 40px rgba(183, 28, 28, 0.5)',
                 backgroundColor: '#D32F2F'
               }}
               whileTap={{ scale: 0.95 }}
-              className="group relative flex items-center justify-center gap-3 bg-[#C62828] text-white px-10 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300"
+              className="group relative flex items-center justify-center gap-3 bg-[#B71C1C] text-white px-12 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300"
             >
               <span className="relative z-10">Join Now</span>
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
@@ -126,28 +165,26 @@ export const ChristmasHeroBanner: React.FC = () => {
         </div>
       </div>
 
-      {/* Cloud / Snow Cut Bottom Edge - Swiggy Festive Style */}
+      {/* Cinematic Cloud Cut Bottom Edge */}
       <div className="absolute -bottom-[2px] left-0 w-full z-40 pointer-events-none select-none">
         <svg 
           viewBox="0 0 1440 120" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg" 
-          className="w-full h-auto"
+          className="w-full h-auto opacity-100"
           preserveAspectRatio="none"
-          style={{ height: '80px' }}
+          style={{ height: '100px' }}
         >
           <path 
             d="M0 120H1440V54.4347C1440 54.4347 1341.5 24.5 1241.5 54.4347C1141.5 84.3694 1055.5 31.5 955.5 54.4347C855.5 77.3694 779.5 24.5 679.5 54.4347C579.5 84.3694 492.5 31.5 392.5 54.4347C292.5 77.3694 220.5 24.5 120.5 54.4347C20.5 84.3694 0 54.4347 0 54.4347V120Z" 
             fill="white"
           />
         </svg>
-        {/* Extra Smoothness Layer */}
-        <div className="w-full h-[2px] bg-white -mt-[1px]" />
       </div>
 
       {/* Subtle Logo Branding */}
-      <div className="absolute top-10 right-10 z-40 opacity-40 pointer-events-none hidden md:block">
-        <span className="text-[#B71C1C] font-black text-3xl tracking-tighter italic drop-shadow-sm">
+      <div className="absolute top-10 right-10 z-40 opacity-30 pointer-events-none hidden md:block">
+        <span className="text-white font-black text-3xl tracking-tighter italic drop-shadow-lg">
           Dream60
         </span>
       </div>
