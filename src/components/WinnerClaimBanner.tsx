@@ -206,10 +206,18 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     if (auction.winnersAnnounced && auction.winners) {
       const userWinner = auction.winners.find(w => w.playerId === userId);
       const historyRecord = auction.userHistoryRecord;
+      const now = currentTime?.timestamp || Date.now();
+      const FIFTEEN_MINS = 15 * 60 * 1000;
       
       // Use history record if available for more detailed claim status
       if (historyRecord && historyRecord.isWinner) {
         if (historyRecord.prizeClaimStatus === 'CLAIMED') {
+          const claimedAt = historyRecord.prizeClaimedAt ? new Date(historyRecord.prizeClaimedAt).getTime() : null;
+          if (claimedAt && (now - claimedAt) > FIFTEEN_MINS) {
+            setBannerType(null);
+            return;
+          }
+
           setBannerType('PRIZE_CLAIMED');
           setBannerData({
             message: `Congratulations! You claimed your prize!`,
@@ -221,6 +229,21 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         }
 
         if (historyRecord.prizeClaimStatus === 'EXPIRED') {
+          // Calculate when it expired for this user
+          const winnersAnnouncedTime = auction.winnersAnnouncedAt 
+            ? (typeof auction.winnersAnnouncedAt === 'string' ? new Date(auction.winnersAnnouncedAt).getTime() : auction.winnersAnnouncedAt)
+            : (auction.completedAt ? new Date(auction.completedAt).getTime() : null);
+          
+          if (winnersAnnouncedTime) {
+            const userRank = historyRecord.rank || userWinner?.rank || 1;
+            const userWindowEnd = winnersAnnouncedTime + (userRank * 15 * 60 * 1000);
+            
+            if ((now - userWindowEnd) > FIFTEEN_MINS) {
+              setBannerType(null);
+              return;
+            }
+          }
+
           setBannerType('CLAIM_EXPIRED');
           const claimedByText = historyRecord.claimedBy ? ` claimed by ${historyRecord.claimedBy}` : '';
           const rankText = historyRecord.claimedByRank ? ` (Rank ${historyRecord.claimedByRank})` : '';
@@ -238,6 +261,12 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       const claimedWinner = auction.winners.find(w => w.isPrizeClaimed || w.prizeClaimStatus === 'CLAIMED');
 
       if (claimedWinner) {
+        const claimedAt = claimedWinner.prizeClaimedAt ? new Date(claimedWinner.prizeClaimedAt).getTime() : null;
+        if (claimedAt && (now - claimedAt) > FIFTEEN_MINS) {
+          setBannerType(null);
+          return;
+        }
+
         setBannerType('PRIZE_CLAIMED');
         setBannerData({
           message: `Prize claimed by ${claimedWinner.playerUsername}!`,
@@ -378,52 +407,63 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   }, [fetchLiveAuction]);
 
   useEffect(() => {
-    if (!liveAuction || !serverTime) return;
-    if (bannerType !== 'WINNER_CLAIM' && bannerType !== 'WINNER_WAITING') return;
+    if (!liveAuction || !serverTime || !bannerType) return;
 
     const updateTimer = () => {
       const now = serverTime?.timestamp || Date.now();
-      
-      const getActiveWindow = () => {
-        const activeRank = liveAuction.currentEligibleRank || 1;
-        const userWinner = liveAuction.winners.find(w => w.playerId === userId);
-        const userRank = userWinner?.rank || 1;
+      const FIFTEEN_MINS = 15 * 60 * 1000;
+
+      // Handle auto-hide for PRIZE_CLAIMED and CLAIM_EXPIRED
+      if (bannerType === 'PRIZE_CLAIMED') {
+        const historyRecord = liveAuction.userHistoryRecord;
+        const claimedWinner = liveAuction.winners?.find(w => w.isPrizeClaimed || w.prizeClaimStatus === 'CLAIMED');
+        const claimedAtStr = historyRecord?.prizeClaimedAt || claimedWinner?.prizeClaimedAt;
         
-        // Use winnersAnnouncedAt or completedAt as base time
+        if (claimedAtStr) {
+          const claimedAt = new Date(claimedAtStr).getTime();
+          if ((now - claimedAt) > FIFTEEN_MINS) {
+            setBannerType(null);
+            return;
+          }
+        }
+      }
+
+      if (bannerType === 'CLAIM_EXPIRED') {
+        const historyRecord = liveAuction.userHistoryRecord;
         const winnersAnnouncedTime = liveAuction.winnersAnnouncedAt 
           ? (typeof liveAuction.winnersAnnouncedAt === 'string' ? new Date(liveAuction.winnersAnnouncedAt).getTime() : liveAuction.winnersAnnouncedAt)
           : (liveAuction.completedAt ? new Date(liveAuction.completedAt).getTime() : null);
-          
-        if (!winnersAnnouncedTime) return null;
         
-        // Calculate when current active rank's window started
-        const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
-        const activeWindowEnd = activeWindowStart + (15 * 60 * 1000);
-        
-        // Calculate user's own window
-        const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
-        const userWindowEnd = userWindowStart + (15 * 60 * 1000);
+        if (winnersAnnouncedTime && historyRecord) {
+          const userRank = historyRecord.rank || 1;
+          const userWindowEnd = winnersAnnouncedTime + (userRank * 15 * 60 * 1000);
+          if ((now - userWindowEnd) > FIFTEEN_MINS) {
+            setBannerType(null);
+            return;
+          }
+        }
+      }
 
-        return {
-          start: activeWindowStart,
-          end: activeWindowEnd,
-          userStart: userWindowStart,
-          userEnd: userWindowEnd,
-        };
-      };
+      if (bannerType !== 'WINNER_CLAIM' && bannerType !== 'WINNER_WAITING') return;
 
-      const activeWindow = getActiveWindow();
-      if (!activeWindow) return;
-
-      // Check if user is in waiting queue (winner but not their turn yet)
+      const activeRank = liveAuction.currentEligibleRank || 1;
       const userWinner = liveAuction.winners.find(w => w.playerId === userId);
       const userRank = userWinner?.rank || 1;
-      const currentEligibleRank = liveAuction.currentEligibleRank || 1;
-      const isInWaitingQueue = userRank > currentEligibleRank;
+      
+      const winnersAnnouncedTime = liveAuction.winnersAnnouncedAt 
+        ? (typeof liveAuction.winnersAnnouncedAt === 'string' ? new Date(liveAuction.winnersAnnouncedAt).getTime() : liveAuction.winnersAnnouncedAt)
+        : (liveAuction.completedAt ? new Date(liveAuction.completedAt).getTime() : null);
+        
+      if (!winnersAnnouncedTime) return;
+      
+      const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+      const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
+      const userWindowEnd = userWindowStart + (15 * 60 * 1000);
+
+      const isInWaitingQueue = userRank > activeRank;
 
       if (bannerType === 'WINNER_WAITING' || isInWaitingQueue) {
-        // Show time until user's window starts
-        let diff = activeWindow.userStart - now;
+        let diff = userWindowStart - now;
         if (diff > 0) {
           const minutes = Math.floor(diff / (1000 * 60));
           const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -432,29 +472,22 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           setTimeLeft('Claim Window Soon');
         }
       } else if (bannerType === 'WINNER_CLAIM') {
-        // Check if in "Claim Window Soon" period (backend delay)
-        if (userRank === currentEligibleRank) {
-          let diff = activeWindow.start - now;
+        if (userRank === activeRank) {
+          let diff = activeWindowStart - now;
           if (diff <= 0 && diff > -(60 * 1000)) {
             setTimeLeft('Claim Window Soon');
             return;
           }
         }
         
-        // Show time left in user's claim window
-        const deadline = activeWindow.userEnd;
-        let diff = deadline - now;
-
+        let diff = userWindowEnd - now;
         if (diff <= 0) {
           setTimeLeft('EXPIRED');
           return;
         }
 
-        // Cap at 15 minutes max
         const maxClaimTime = 15 * 60 * 1000;
-        if (diff > maxClaimTime) {
-          diff = maxClaimTime;
-        }
+        if (diff > maxClaimTime) diff = maxClaimTime;
 
         const minutes = Math.floor(diff / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
