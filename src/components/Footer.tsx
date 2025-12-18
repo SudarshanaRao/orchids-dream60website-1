@@ -1,7 +1,6 @@
 
 import { motion } from 'motion/react';
 import { Clock, Shield, Zap, Users } from 'lucide-react';
-import { ChristmasCardBackground } from './ChristmasCardBackground';
 
 interface FooterProps {
   onNavigate?: (page: string) => void;
@@ -32,35 +31,31 @@ export function Footer({ onNavigate }: FooterProps) {
   };
 
     const features = [
-      {
-        icon: Clock,
-        title: '60-Minute Auctions',
-        description: 'Fast-paced hourly auctions with real prizes and real winners',
-        color: 'from-purple-600 via-purple-700 to-purple-800',
-        variant: 'fast' as const
-      },
-      {
-        icon: Shield,
-        title: 'Fair & Secure',
-        description: 'Transparent bidding process with secure payment handling',
-        color: 'from-purple-500 via-purple-600 to-purple-700',
-        variant: 'calm' as const
-      },
-      {
-        icon: Zap,
-        title: 'Instant Results',
-        description: 'Winners announced immediately, prizes shipped within 24 hours',
-        color: 'from-purple-600 via-purple-700 to-purple-800',
-        variant: 'dropping' as const
-      },
-      {
-        icon: Users,
-        title: 'Global Community',
-        description: 'Join thousands of players competing for amazing prizes daily',
-        color: 'from-purple-500 via-purple-600 to-purple-700',
-        variant: 'wide' as const
-      }
-    ];
+          {
+            icon: Clock,
+            title: '60-Minute Auctions',
+            description: 'Fast-paced hourly auctions with real prizes and real winners',
+            color: 'from-purple-600 via-purple-700 to-purple-800'
+          },
+          {
+            icon: Shield,
+            title: 'Fair & Secure',
+            description: 'Transparent bidding process with secure payment handling',
+            color: 'from-purple-500 via-purple-600 to-purple-700'
+          },
+          {
+            icon: Zap,
+            title: 'Instant Results',
+            description: 'Winners announced immediately, prizes shipped within 24 hours',
+            color: 'from-purple-600 via-purple-700 to-purple-800'
+          },
+          {
+            icon: Users,
+            title: 'Global Community',
+            description: 'Join thousands of players competing for amazing prizes daily',
+            color: 'from-purple-500 via-purple-600 to-purple-700'
+          }
+        ];
 
   const steps = [
     {
@@ -127,7 +122,6 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="group relative"
               >
                 <div className="text-center space-y-2 sm:space-y-3 bg-white/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-md shadow-purple-500/5 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
-                  <ChristmasCardBackground variant={feature.variant} />
                   <div className="relative z-10">
                     <motion.div 
                       className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30`}
