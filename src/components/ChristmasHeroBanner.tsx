@@ -115,55 +115,56 @@ export const ChristmasHeroBanner: React.FC = () => {
             </span>
           </motion.div>
 
-          {/* Headline & Subheadline */}
-          <div className="space-y-6">
+            {/* Headline & Subheadline */}
+            <div className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.4 }}
+                className="opacity-90"
+              >
+                <h1 className="text-5xl sm:text-7xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
+                    style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Have a <br />
+                  <span className="text-yellow-400 italic relative inline-block">
+                    Merrylitious
+                    <motion.span 
+                      className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ delay: 1.2, duration: 1 }}
+                    />
+                  </span> <br />
+                  Christmas
+                </h1>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.6 }}
+                className="text-lg sm:text-xl md:text-2xl text-gray-200/80 font-medium max-w-lg leading-relaxed select-none mx-auto"
+              >
+                Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
+              </motion.p>
+            </div>
+
+            {/* CTA Button */}
             <motion.div
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.4 }}
+              transition={{ duration: 1, delay: 0.8 }}
+              className="pt-4 flex justify-end max-w-lg mx-auto w-full"
             >
-              <h1 className="text-5xl sm:text-7xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
-                  style={{ fontFamily: "'Playfair Display', serif" }}>
-                Have a <br />
-                <span className="text-yellow-400 italic relative inline-block">
-                  Merrylitious
-                  <motion.span 
-                    className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ delay: 1.2, duration: 1 }}
-                  />
-                </span> <br />
-                Christmas
-              </h1>
-            </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.6 }}
-              className="text-lg sm:text-xl md:text-2xl text-gray-200 font-medium max-w-lg leading-relaxed select-none"
-            >
-              Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
-            </motion.p>
-          </div>
-
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.8 }}
-            className="pt-4"
-          >
-            <motion.button
-              whileHover={{ 
-                scale: 1.05, 
-                boxShadow: '0 10px 40px rgba(183, 28, 28, 0.5)',
-                backgroundColor: '#D32F2F'
-              }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative flex items-center justify-center gap-3 bg-[#B71C1C] text-white px-12 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300"
-            >
+              <motion.button
+                whileHover={{ 
+                  scale: 1.05, 
+                  boxShadow: '0 10px 40px rgba(183, 28, 28, 0.5)',
+                  backgroundColor: '#D32F2F'
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="group relative flex items-center justify-center gap-3 bg-[#B71C1C] text-white px-12 py-4 rounded-full font-bold text-lg shadow-2xl transition-all duration-300 opacity-90"
+              >
               <span className="relative z-10">Join Now</span>
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
