@@ -2201,9 +2201,9 @@ if (currentPage === 'support') {
                 </>
               )}
 
-              <AuctionScheduleInfo />
-              <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
-            </main>
+                <AuctionSchedule user={currentUser} onNavigate={handleNavigate} />
+                <AuctionScheduleInfo />
+              </main>
 
             <style>{`
               @keyframes highlight-fade {
