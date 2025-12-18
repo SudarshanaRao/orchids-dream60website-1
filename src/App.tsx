@@ -2118,9 +2118,17 @@ if (currentPage === 'support') {
               </div>
             )}
 
-                {/* Winners Announced Banner */}
-                {currentAuction.winnersAnnounced && (
-                  <WinnersAnnouncedBanner onBidNow={handleBidNowScroll} />
+                {/* Winners Announced Banner - Shows when:
+                    1. Winners are announced (shows winner info)
+                    2. User has NOT placed bid in current round (shows "BID NOW" prompt) */}
+                {currentUser && currentAuction.userHasPaidEntry && (
+                  <WinnersAnnouncedBanner 
+                    onBidNow={handleBidNowScroll}
+                    currentUserId={currentUser.id}
+                    userBidsPerRound={currentAuction.userBidsPerRound}
+                    currentRound={currentAuction.currentRound}
+                    winnersAnnounced={currentAuction.winnersAnnounced}
+                  />
                 )}
 
               <PrizeShowcase
