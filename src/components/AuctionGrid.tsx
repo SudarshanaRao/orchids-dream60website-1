@@ -176,18 +176,18 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                       ease: "easeOut"
                     }}
                   >
-                  <AuctionBox
-                    box={box}
-                    onClick={() => handleBoxClick(box)}
-                    isUserHighestBidder={box.bidder === user.username}
-                    onShowLeaderboard={onShowLeaderboard}
-                    userHasPaidEntry={auction.userHasPaidEntry}
-                    userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
-                    isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
-                    winnersAnnounced={auction.winnersAnnounced}
-                    serverTime={serverTime}
-                    hourlyAuctionId={auction.hourlyAuctionId} 
-                  />
+                    <AuctionBox
+                      box={box}
+                      onClick={() => handleBoxClick(box)}
+                      isUserHighestBidder={box.bidder === user.username}
+                      onShowLeaderboard={onShowLeaderboard}
+                      userHasPaidEntry={auction.userHasPaidEntry}
+                      userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
+                      isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
+                      winnersAnnounced={auction.winnersAnnounced}
+                      serverTime={serverTime}
+                      hourlyAuctionId={auction.hourlyAuctionId} 
+                    />
                   </motion.div>
                 ))}
               </div>
