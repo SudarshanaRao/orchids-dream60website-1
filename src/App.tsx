@@ -396,8 +396,9 @@ const App = () => {
       console.log('🔄 Fetching user data from API for userId:', userId);
       const response = await fetch(`${API_ENDPOINTS.auth.me}?user_id=${userId}`);
       
-      if (!response.ok) {
-        console.error('Failed to fetch user data:', response.statusText);
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || !contentType || !contentType.includes("application/json")) {
+        console.error('Failed to fetch user data: Invalid response from server', response.status);
         return;
       }
       

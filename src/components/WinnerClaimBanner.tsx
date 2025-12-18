@@ -60,8 +60,8 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                     ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
                     : 0;
                   
-                  // If winners are announced, we clear live status and let the winner/lost logic take over
-                  if (auction.winnersAnnounced || auction.Status === 'COMPLETED') {
+                    // If winners are announced, we clear live status and let the winner/lost logic take over
+                    if (auction.winnersAnnounced || auction.Status === 'COMPLETED' || (auction.winners && auction.winners.length > 0)) {
                     // Check if user is a winner
                     const isWinner = auction.winners?.some((w: any) => w.playerId === userId);
                     if (!isWinner) {

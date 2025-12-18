@@ -1535,14 +1535,20 @@ const getAuctionDetails = async (req, res) => {
     await AuctionHistory.processClaimQueues();
     
     // Find the auction
-    const auction = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
+    const auctionDoc = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
     
-    if (!auction) {
+    if (!auctionDoc) {
       return res.status(404).json({
         success: false,
         message: 'Auction not found',
       });
     }
+
+    // ✅ Ensure winnersAnnounced flag is consistent with winners array
+    const auction = {
+      ...auctionDoc,
+      winnersAnnounced: auctionDoc.winnersAnnounced || (auctionDoc.winners && auctionDoc.winners.length > 0)
+    };
     
     // Find user's auction history entry
     const userHistory = await AuctionHistory.findOne({ 
