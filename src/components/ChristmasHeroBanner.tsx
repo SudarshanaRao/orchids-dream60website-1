@@ -27,10 +27,10 @@ export const ChristmasHeroBanner: React.FC = () => {
               loop
               muted
               playsInline
-              className="w-full h-full object-cover object-center scale-110"
+              className="w-full h-full object-cover object-center"
             >
               <source 
-                src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/document-uploads/Whisk_ajn3cjm1gtmzajmw0iyxctotyjmmrtlkddz30yy-1766089590869.mp4" 
+                src="/christmas-santa.mp4" 
                 type="video/mp4" 
               />
             </video>

@@ -2180,9 +2180,10 @@ if (currentPage === 'support') {
                 </div>
                 */}
 
-                {/* Current Auction Time Slot Banner */}
+              {/* Current Auction Time Slot Banner */}
 
-            {/* ✅ Only show banner after server time is loaded */}
+              {/* ✅ Only show banner after server time is loaded */}
+
             {serverTime && getCurrentAuctionSlot(serverTime) && (
               <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
