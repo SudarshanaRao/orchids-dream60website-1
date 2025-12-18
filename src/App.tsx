@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
@@ -2186,35 +2187,36 @@ if (currentPage === 'support') {
 
           <Footer onNavigate={handleNavigate} />
 
-          {/* Payment Success Modal */}
-          {showEntrySuccess && (
-            <PaymentSuccess
-              amount={showEntrySuccess.entryFee}
-              type="entry"
-              boxNumber={showEntrySuccess.boxNumber}
-              onBackToHome={() => {
-                handleEntrySuccess();
-                setCurrentPage('game');
-              }}
-              onClose={() => setShowEntrySuccess(null)}
-            />
-          )}
+          <AnimatePresence>
+            {/* Payment Success Modal */}
+            {showEntrySuccess && (
+              <PaymentSuccess
+                amount={showEntrySuccess.entryFee}
+                type="entry"
+                boxNumber={showEntrySuccess.boxNumber}
+                onBackToHome={() => {
+                  handleEntrySuccess();
+                  setCurrentPage('game');
+                }}
+                onClose={() => setShowEntrySuccess(null)}
+              />
+            )}
 
-          {/* Payment Failure Modal */}
-          {showEntryFailure && (
-            <PaymentFailure
-              amount={showEntryFailure.entryFee}
-              errorMessage={showEntryFailure.errorMessage}
-              onRetry={handleRetryPayment}
-              onBackToHome={() => {
-                handleEntryFailure();
-                setCurrentPage('game');
-              }}
-              onClose={() => setShowEntryFailure(null)}
-            />
-          )}
+            {/* Payment Failure Modal */}
+            {showEntryFailure && (
+              <PaymentFailure
+                amount={showEntryFailure.entryFee}
+                errorMessage={showEntryFailure.errorMessage}
+                onRetry={handleRetryPayment}
+                onBackToHome={() => {
+                  handleEntryFailure();
+                  setCurrentPage('game');
+                }}
+                onClose={() => setShowEntryFailure(null)}
+              />
+            )}
 
-{/* Bid Success Modal */}
+            {/* Bid Success Modal */}
             {showBidSuccess && (
               <PaymentSuccess
                 amount={showBidSuccess.amount}
@@ -2227,6 +2229,7 @@ if (currentPage === 'support') {
                 onClose={() => setShowBidSuccess(null)}
               />
             )}
+          </AnimatePresence>
 
             {/* What's New Tutorial Overlay - Only show to logged in users */}
               {currentUser && (
