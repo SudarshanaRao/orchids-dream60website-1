@@ -31,32 +31,36 @@ export function Footer({ onNavigate }: FooterProps) {
     }
   };
 
-  const features = [
-    {
-      icon: Clock,
-      title: '60-Minute Auctions',
-      description: 'Fast-paced hourly auctions with real prizes and real winners',
-      color: 'from-purple-600 via-purple-700 to-purple-800'
-    },
-    {
-      icon: Shield,
-      title: 'Fair & Secure',
-      description: 'Transparent bidding process with secure payment handling',
-      color: 'from-purple-500 via-purple-600 to-purple-700'
-    },
-    {
-      icon: Zap,
-      title: 'Instant Results',
-      description: 'Winners announced immediately, prizes shipped within 24 hours',
-      color: 'from-purple-600 via-purple-700 to-purple-800'
-    },
-    {
-      icon: Users,
-      title: 'Global Community',
-      description: 'Join thousands of players competing for amazing prizes daily',
-      color: 'from-purple-500 via-purple-600 to-purple-700'
-    }
-  ];
+    const features = [
+      {
+        icon: Clock,
+        title: '60-Minute Auctions',
+        description: 'Fast-paced hourly auctions with real prizes and real winners',
+        color: 'from-purple-600 via-purple-700 to-purple-800',
+        variant: 'fast' as const
+      },
+      {
+        icon: Shield,
+        title: 'Fair & Secure',
+        description: 'Transparent bidding process with secure payment handling',
+        color: 'from-purple-500 via-purple-600 to-purple-700',
+        variant: 'calm' as const
+      },
+      {
+        icon: Zap,
+        title: 'Instant Results',
+        description: 'Winners announced immediately, prizes shipped within 24 hours',
+        color: 'from-purple-600 via-purple-700 to-purple-800',
+        variant: 'dropping' as const
+      },
+      {
+        icon: Users,
+        title: 'Global Community',
+        description: 'Join thousands of players competing for amazing prizes daily',
+        color: 'from-purple-500 via-purple-600 to-purple-700',
+        variant: 'wide' as const
+      }
+    ];
 
   const steps = [
     {
@@ -122,21 +126,23 @@ export function Footer({ onNavigate }: FooterProps) {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group relative"
               >
-                <div className="text-center space-y-2 sm:space-y-3 bg-white/5 backdrop-blur-md rounded-xl p-3 sm:p-4 md:p-5 border border-white/10 shadow-xl h-full transition-all hover:shadow-2xl hover:shadow-purple-500/20 overflow-hidden">
-                  <ChristmasCardBackground />
-                  <motion.div 
-                    className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30 relative z-10`}
-                    whileHover={{ rotate: 360, scale: 1.1 }}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-                  </motion.div>
-                  <h3 className="text-xs sm:text-sm md:text-base text-white font-semibold px-1 sm:px-2 relative z-10">
-                    {feature.title}
-                  </h3>
-                  <p className="text-[10px] sm:text-xs md:text-sm text-white/80 px-1 sm:px-2 leading-relaxed relative z-10">
-                    {feature.description}
-                  </p>
+                <div className="text-center space-y-2 sm:space-y-3 bg-white/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-md shadow-purple-500/5 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
+                  <ChristmasCardBackground variant={feature.variant} />
+                  <div className="relative z-10">
+                    <motion.div 
+                      className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30`}
+                      whileHover={{ rotate: 360, scale: 1.1 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+                    </motion.div>
+                    <h3 className="text-xs sm:text-sm md:text-base text-purple-800 font-semibold px-1 sm:px-2 mt-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 px-1 sm:px-2 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
           ))}
@@ -144,14 +150,12 @@ export function Footer({ onNavigate }: FooterProps) {
 
         {/* How it Works */}
         <motion.div 
-          className="relative bg-white/5 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-white/10 shadow-xl shadow-purple-500/10 overflow-hidden"
+          className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-purple-200/50 shadow-xl shadow-purple-500/10 relative overflow-hidden"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <ChristmasCardBackground />
-          
           {/* Card shine effect */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
@@ -166,7 +170,7 @@ export function Footer({ onNavigate }: FooterProps) {
           />
 
           <motion.h2 
-            className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 text-center relative z-10"
+            className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 text-center"
             initial={{ opacity: 0, y: -10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -175,7 +179,7 @@ export function Footer({ onNavigate }: FooterProps) {
             How Dream60 Works
           </motion.h2>
           
-          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 relative z-10">
+          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 relative">
             {steps.map((step, index) => (
               <motion.div
                 key={index}
@@ -187,16 +191,16 @@ export function Footer({ onNavigate }: FooterProps) {
                 whileHover={{ x: 4 }}
               >
                 <motion.div 
-                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md text-white border border-white/20 rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg shadow-lg"
+                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg shadow-lg shadow-purple-500/30"
                   whileHover={{ scale: 1.1, rotate: 360 }}
                   transition={{ duration: 0.6 }}
                 >
                   {step.number}
                 </motion.div>
-                <h3 className="text-sm sm:text-base md:text-lg text-white font-semibold">
+                <h3 className="text-sm sm:text-base md:text-lg text-purple-800 font-semibold">
                   {step.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-white/70 leading-relaxed">
+                <p className="text-xs sm:text-sm text-purple-600 leading-relaxed">
                   {step.description}
                 </p>
               </motion.div>

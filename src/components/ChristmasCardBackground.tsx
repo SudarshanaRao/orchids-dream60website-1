@@ -1,84 +1,165 @@
-import React from 'react';
 import { motion } from 'motion/react';
 
-export function ChristmasCardBackground() {
+interface ChristmasCardBackgroundProps {
+  variant?: 'fast' | 'calm' | 'dropping' | 'wide';
+  className?: string;
+}
+
+export function ChristmasCardBackground({ variant = 'calm', className = "" }: ChristmasCardBackgroundProps) {
+  const getSantaPath = () => {
+    switch (variant) {
+      case 'fast':
+        return "M -50,50 L 150,-20"; // Steep diagonal
+      case 'dropping':
+        return "M -20,20 Q 50,0 120,20"; // Slight curve
+      case 'wide':
+        return "M -100,80 L 200,20"; // Long horizontal-ish
+      default: // calm
+        return "M -30,40 L 130,10"; // Gentle diagonal
+    }
+  };
+
+  const getSleighRotation = () => {
+    switch (variant) {
+      case 'fast': return -15;
+      case 'dropping': return 5;
+      case 'wide': return -5;
+      default: return -10;
+    }
+  };
+
   return (
-    <div className="absolute inset-0 -z-10 overflow-hidden rounded-xl">
-      {/* Base Night Sky Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] opacity-90" />
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none rounded-inherit ${className}`}>
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-purple-900/10 to-transparent" />
       
-      {/* Subtle Snowflakes/Stars */}
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-white rounded-full"
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            opacity: Math.random() * 0.5 + 0.2,
-          }}
-          animate={{
-            opacity: [0.2, 0.6, 0.2],
-            y: [0, 10, 0],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-
-      {/* Stylized Santa Scene */}
-      <div className="absolute -right-4 top-4 w-32 h-24 opacity-40 transform -rotate-12 pointer-events-none">
-        <svg viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          {/* Santa & Sleigh Silhouette (Minimalist) */}
-          <path
-            d="M160 80C160 80 140 85 120 82C100 79 80 70 60 75C40 80 20 100 20 100L40 105C40 105 60 90 80 85C100 80 120 88 140 90C160 92 180 85 180 85L160 80Z"
-            fill="url(#santa-grad)"
+      {/* Snow Particles */}
+      <svg className="absolute inset-0 w-full h-full opacity-30">
+        {[...Array(20)].map((_, i) => (
+          <motion.circle
+            key={i}
+            r={Math.random() * 2 + 1}
+            fill="white"
+            initial={{ 
+              x: `${Math.random() * 100}%`, 
+              y: `${Math.random() * 100}%`,
+              opacity: Math.random() * 0.5 + 0.2
+            }}
+            animate={{
+              y: ['0%', '100%'],
+              x: [`${Math.random() * 100}%`, `${Math.random() * 100 + 5}%`],
+            }}
+            transition={{
+              duration: Math.random() * 10 + 10,
+              repeat: Infinity,
+              ease: "linear",
+              delay: Math.random() * -20
+            }}
           />
-          
-          {/* Large Sack */}
-          <circle cx="150" cy="75" r="15" fill="url(#sack-grad)" />
-          
-          {/* Trail of Gifts Glow */}
-          {[...Array(5)].map((_, i) => (
-            <motion.circle
-              key={i}
-              cx={140 - i * 20}
-              cy={75 + i * 5}
-              r={2 + Math.random() * 3}
-              fill="#fbbf24"
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: [0.2, 0.6, 0.2],
-                scale: [1, 1.2, 1],
-                x: [0, -5, 0]
-              }}
-              transition={{
-                duration: 2 + Math.random() * 2,
-                repeat: Infinity,
-                delay: i * 0.3
-              }}
-              className="blur-[2px]"
-            />
-          ))}
+        ))}
+      </svg>
 
-          <defs>
-            <linearGradient id="santa-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.1" />
-            </linearGradient>
-            <linearGradient id="sack-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f87171" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#991b1b" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
+      {/* Santa Illustration */}
+      <svg 
+        viewBox="0 0 100 100" 
+        className="absolute inset-0 w-full h-full opacity-10 filter blur-[1px]"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
 
-      {/* Bottom Glow */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-white/10 to-transparent" />
+        <motion.g
+          initial={{ offsetDistance: "0%" }}
+          animate={{ offsetDistance: "100%" }}
+          transition={{
+            duration: variant === 'fast' ? 12 : 25,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          style={{
+            offsetPath: `path('${getSantaPath()}')`,
+            offsetRotate: "auto"
+          }}
+        >
+          {/* Sleigh & Santa Silhouette */}
+          <g transform={`rotate(${getSleighRotation()}) scale(0.6)`}>
+            {/* Sleigh Runners */}
+            <path d="M-10,5 Q0,10 10,5" fill="none" stroke="white" strokeWidth="1" />
+            {/* Sleigh Body */}
+            <path d="M-12,-2 L8,-2 L10,5 L-10,5 Z" fill="white" />
+            {/* Santa */}
+            <circle cx="-2" cy="-6" r="3" fill="white" />
+            <path d="M-5,-3 L1,-3 L3,0 L-7,0 Z" fill="white" />
+            {/* Sack */}
+            <path d="M-15,-5 Q-20,-10 -15,-15 Q-10,-20 -5,-15 Q0,-10 -5,-5 Z" fill="white" />
+            
+            {/* Gift Trails */}
+            {['fast', 'wide'].includes(variant) && (
+              <g opacity="0.6">
+                <motion.path
+                  d="M-18,-10 Q-30,-12 -45,-10"
+                  fill="none"
+                  stroke="gold"
+                  strokeWidth="0.5"
+                  strokeDasharray="2 2"
+                  animate={{ strokeDashoffset: [0, -10] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <motion.path
+                  d="M-18,-14 Q-35,-18 -55,-15"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="0.3"
+                  strokeDasharray="1 3"
+                  animate={{ strokeDashoffset: [0, -10] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                />
+              </g>
+            )}
+
+            {/* Dropping Gift */}
+            {variant === 'dropping' && (
+              <motion.rect
+                width="3"
+                height="3"
+                fill="gold"
+                initial={{ x: -10, y: -5, opacity: 0 }}
+                animate={{ 
+                  y: [ -5, 40], 
+                  x: [-10, -20],
+                  opacity: [0, 1, 0],
+                  rotate: [0, 45, 90]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeIn",
+                  times: [0, 0.2, 0.8, 1]
+                }}
+                filter="url(#glow)"
+              />
+            )}
+            
+            {/* Calm Glow */}
+            {variant === 'calm' && (
+              <circle cx="-15" cy="-12" r="4" fill="gold" opacity="0.3" filter="url(#glow)">
+                <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite" />
+              </circle>
+            )}
+          </g>
+        </motion.g>
+      </svg>
+
+      {/* Corner Glows */}
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl" />
     </div>
   );
 }
