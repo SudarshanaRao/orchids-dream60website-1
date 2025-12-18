@@ -2148,12 +2148,9 @@ if (currentPage === 'support') {
                   onBid={handlePlaceBid}
                   serverTime={serverTime} // ✅ Pass server time to AuctionGrid
                 />
-
-                <AuctionSchedule />
               </>
             ) : (
               <>
-                <AuctionSchedule />
                 {/* Guest View - Show login prompt instead of auction  */}
                 <div className="text-center py-8 sm:py-12 md:py-16 px-4">
                   <div className="max-w-2xl mx-auto space-y-6">
