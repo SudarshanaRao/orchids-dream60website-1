@@ -18,6 +18,7 @@ import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
+import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
 import { AuctionHistory } from './components/AuctionHistory';
 import { AuctionDetailsPage } from './components/AuctionDetailsPage';
@@ -1776,20 +1777,37 @@ const App = () => {
     );
   }
 
-  // Render different pages based on currentPage state
-  if (currentPage === 'leaderboard' && selectedLeaderboard) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Leaderboard
-            roundNumber={selectedLeaderboard.roundNumber}
-            onBack={handleBackToGame}
-          />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    // Render different pages based on currentPage state
+    if (currentPage === 'leaderboard' && selectedLeaderboard) {
+      // If hourlyAuctionId is provided, show AuctionLeaderboard component
+      if (selectedLeaderboard.hourlyAuctionId) {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <AuctionLeaderboard
+                hourlyAuctionId={selectedLeaderboard.hourlyAuctionId}
+                userId={currentUser?.id}
+                onBack={handleBackToGame}
+              />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+      
+      // Otherwise show the regular Leaderboard component
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Leaderboard
+              roundNumber={selectedLeaderboard.roundNumber}
+              onBack={handleBackToGame}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
   if (currentPage === 'profile' && currentUser) {
     return (

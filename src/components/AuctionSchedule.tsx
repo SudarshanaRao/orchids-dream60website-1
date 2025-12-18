@@ -1,11 +1,10 @@
-import { Clock, Calendar, Trophy, Sparkles, IndianRupee, Radio, PlayCircle, BarChart2, Users } from 'lucide-react';
+import { Clock, Calendar, Trophy, Sparkles, Radio, PlayCircle, BarChart2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
 import { getCurrentIST } from '../utils/timezone';
-import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
+import { API_ENDPOINTS } from '../lib/api-config';
 import { Button } from './ui/button';
 
 interface WinnerInfo {
@@ -88,7 +87,6 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
-  const [participationMap, setParticipationMap] = useState<Record<string, boolean>>({});
   const [scheduleStats, setScheduleStats] = useState({
     totalAuctions: 0,
     earliestTime: '',
@@ -150,30 +148,8 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
           });
 
           setScheduleData(auctions);
-          
-          if (user?.id) {
-            const completedAuctions = auctions.filter((a: any) => a.status === 'completed' && a.hourlyAuctionId);
-            const participationPromises = completedAuctions.map(async (auction: any) => {
-              try {
-                const queryString = buildQueryString({ hourlyAuctionId: auction.hourlyAuctionId, userId: user.id });
-                const url = `${API_ENDPOINTS.scheduler.checkParticipation}${queryString}`;
-                const res = await fetch(url);
-                const result = await res.json();
-                return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: result.isParticipant || false };
-              } catch (error) {
-                return { hourlyAuctionId: auction.hourlyAuctionId, isParticipant: false };
-              }
-            });
             
-            const participationResults = await Promise.all(participationPromises);
-            const newParticipationMap: Record<string, boolean> = {};
-            participationResults.forEach(({ hourlyAuctionId, isParticipant }) => {
-              newParticipationMap[hourlyAuctionId] = isParticipant;
-            });
-            setParticipationMap(newParticipationMap);
-          }
-          
-          if (auctions.length > 0) {
+            if (auctions.length > 0) {
             const sortedByTime = [...auctions].sort((a, b) => {
               const timeA = a.hour * 60 + a.minute;
               const timeB = b.hour * 60 + b.minute;
@@ -204,7 +180,7 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
     fetchAuctionSchedule();
     const refreshInterval = setInterval(fetchAuctionSchedule, 60000);
     return () => clearInterval(refreshInterval);
-  }, [currentHour, user?.id, hasLoadedOnce]);
+  }, [currentHour, hasLoadedOnce]);
 
   const filteredAuctions = scheduleData.filter(auction => {
     if (activeFilter === 'all') return true;
@@ -360,32 +336,32 @@ export function AuctionSchedule({ user, onNavigate }: AuctionScheduleProps) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 sm:border-l sm:border-purple-100 sm:pl-4">
-                      <div className="text-center shrink-0">
-                        <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
-                        <div className="text-sm font-bold text-purple-900">{participantCount}</div>
+                      <div className="flex items-center gap-4 sm:border-l sm:border-purple-100 sm:pl-4">
+                        <div className="text-center shrink-0">
+                          <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
+                          <div className="text-sm font-bold text-purple-900">{participantCount}</div>
+                        </div>
+                        {auction.status === 'completed' && auction.hourlyAuctionId && (
+                          <Button
+                            onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                            size="sm"
+                            variant="ghost"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-bold px-2"
+                          >
+                            <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                            Results
+                          </Button>
+                        )}
+                        {auction.status === 'active' && (
+                          <Button
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            size="sm"
+                            className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
+                          >
+                            BID NOW
+                          </Button>
+                        )}
                       </div>
-                      {auction.status === 'completed' && auction.hourlyAuctionId && participationMap[auction.hourlyAuctionId] && (
-                        <Button
-                          onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                          size="sm"
-                          variant="ghost"
-                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-bold px-2"
-                        >
-                          <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                          Results
-                        </Button>
-                      )}
-                      {auction.status === 'active' && (
-                        <Button
-                          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                          size="sm"
-                          className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
-                        >
-                          BID NOW
-                        </Button>
-                      )}
-                    </div>
                   </div>
                 </motion.div>
               );
