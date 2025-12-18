@@ -2126,8 +2126,6 @@ if (currentPage === 'support') {
               onUserParticipationChange={handleUserParticipationChange}
             />
 
-            <AuctionSchedule />
-
             {currentUser ? (
               <>
                 {/* Auction Grid */}
@@ -2178,6 +2176,8 @@ if (currentPage === 'support') {
                 </div>
               </>
             )}
+
+            <AuctionSchedule />
           </main>
 
           <Footer onNavigate={handleNavigate} />

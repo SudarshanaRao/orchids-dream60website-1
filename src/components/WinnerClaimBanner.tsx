@@ -22,67 +22,81 @@ interface WinnerClaimBannerProps {
 }
 
 export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps) {
-  const [unclaimedPrizes, setUnclaimedPrizes] = useState<UnclaimedPrize[]>([]);
-  const [lostAuctions, setLostAuctions] = useState<any[]>([]);
-  const [isVisible, setIsVisible] = useState(true);
-  const [timeLeftText, setTimeLeftText] = useState('');
-  const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
+    const [unclaimedPrizes, setUnclaimedPrizes] = useState<UnclaimedPrize[]>([]);
+    const [lostAuctions, setLostAuctions] = useState<any[]>([]);
+    const [isVisible, setIsVisible] = useState(true);
+    const [timeLeftText, setTimeLeftText] = useState('');
+    const [waitingPosition, setWaitingPosition] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchUserAuctionStatus = async () => {
-      if (!userId) return;
+    useEffect(() => {
+      const fetchUserAuctionStatus = async () => {
+        if (!userId) return;
 
-      try {
-        const [wonResponse, lostResponse] = await Promise.all([
-          fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}&status=won&limit=10`),
-          fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}&status=lost&limit=5`)
-        ]);
-        
-        if (wonResponse.ok) {
-          const result = await wonResponse.json();
+        try {
+          const [wonResponse, lostResponse] = await Promise.all([
+            fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}&status=won&limit=10`),
+            fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${userId}&status=lost&limit=5`)
+          ]);
           
-          if (result.success && result.data) {
-            const now = Date.now();
-            const auctions = Array.isArray(result.data) ? result.data : result.data.auctions || [];
+          if (wonResponse.ok) {
+            const result = await wonResponse.json();
             
-            const unclaimed = auctions
-              .filter((auction: any) => {
-                const isPending = auction.prizeClaimStatus === 'PENDING';
-                const deadline = auction.claimDeadline ? new Date(auction.claimDeadline).getTime() : null;
-                const isNotExpired = !deadline || deadline > now;
-                return isPending && isNotExpired;
-              })
-              .map((auction: any) => {
-                const winnersAnnouncedAt = auction.winnersAnnouncedAt || auction.auctionEndTime || auction.completedAt;
-                const announcementTime = winnersAnnouncedAt ? new Date(winnersAnnouncedAt).getTime() : now;
-                const isCurrentAuction = (now - announcementTime) < 2 * 60 * 60 * 1000;
+            if (result.success && result.data) {
+              const now = Date.now();
+              const auctions = Array.isArray(result.data) ? result.data : result.data.auctions || [];
+              
+              // ✅ DEBUG: Log all won auctions to see their status
+              console.log('🏆 WinnerClaimBanner - Raw Won Auctions:', auctions.map((a: any) => ({
+                id: a.hourlyAuctionId,
+                status: a.prizeClaimStatus,
+                rank: a.finalRank || a.myRank
+              })));
 
-                return {
-                  hourlyAuctionId: auction.hourlyAuctionId,
-                  auctionName: auction.prize || auction.auctionName,
-                  prizeValue: auction.prizeValue || auction.prizeAmountWon,
-                  prizeClaimStatus: auction.prizeClaimStatus,
-                  claimDeadline: auction.claimDeadline ? new Date(auction.claimDeadline).getTime() : undefined,
-                  winnersAnnouncedAt: announcementTime,
-                  finalRank: auction.finalRank || auction.myRank,
-                  currentEligibleRank: auction.currentEligibleRank,
-                  claimWindowStartedAt: auction.claimWindowStartedAt ? new Date(auction.claimWindowStartedAt).getTime() : undefined,
-                  isCurrentAuction,
-                  isEliminated: auction.isEliminated
-                };
-              });
+              // ✅ CRITICAL FIX: Explicitly filter out already CLAIMED prizes
+              const unclaimed = auctions
+                .filter((auction: any) => {
+                  const status = (auction.prizeClaimStatus || '').toUpperCase();
+                  const isPending = status === 'PENDING';
+                  const deadline = auction.claimDeadline ? new Date(auction.claimDeadline).getTime() : null;
+                  const isNotExpired = !deadline || deadline > now;
+                  
+                  // If it's CLAIMED, we definitely don't want it in this list
+                  if (status === 'CLAIMED') return false;
+                  
+                  return isPending && isNotExpired;
+                })
+                .map((auction: any) => {
+                  const winnersAnnouncedAt = auction.winnersAnnouncedAt || auction.auctionEndTime || auction.completedAt;
+                  const announcementTime = winnersAnnouncedAt ? new Date(winnersAnnouncedAt).getTime() : now;
+                  const isCurrentAuction = (now - announcementTime) < 2 * 60 * 60 * 1000;
 
-            setUnclaimedPrizes(unclaimed);
+                  return {
+                    hourlyAuctionId: auction.hourlyAuctionId,
+                    auctionName: auction.prize || auction.auctionName,
+                    prizeValue: auction.prizeValue || auction.prizeAmountWon,
+                    prizeClaimStatus: auction.prizeClaimStatus,
+                    claimDeadline: auction.claimDeadline ? new Date(auction.claimDeadline).getTime() : undefined,
+                    winnersAnnouncedAt: announcementTime,
+                    finalRank: auction.finalRank || auction.myRank,
+                    currentEligibleRank: auction.currentEligibleRank,
+                    claimWindowStartedAt: auction.claimWindowStartedAt ? new Date(auction.claimWindowStartedAt).getTime() : undefined,
+                    isCurrentAuction,
+                    isEliminated: auction.isEliminated
+                  };
+                });
 
-            const waitingPrizes = unclaimed.filter((p: UnclaimedPrize) => p.finalRank > (p.currentEligibleRank || 0));
-            if (waitingPrizes.length > 0) {
-              const firstWaiting = waitingPrizes[0];
-              setWaitingPosition(firstWaiting.finalRank - (firstWaiting.currentEligibleRank || 0));
-            } else {
-              setWaitingPosition(null);
+              setUnclaimedPrizes(unclaimed);
+              console.log('🏆 WinnerClaimBanner - Unclaimed Prizes:', unclaimed.length);
+
+              const waitingPrizes = unclaimed.filter((p: UnclaimedPrize) => p.finalRank > (p.currentEligibleRank || 0));
+              if (waitingPrizes.length > 0) {
+                const firstWaiting = waitingPrizes[0];
+                setWaitingPosition(firstWaiting.finalRank - (firstWaiting.currentEligibleRank || 0));
+              } else {
+                setWaitingPosition(null);
+              }
             }
           }
-        }
 
         if (lostResponse.ok) {
           const lostResult = await lostResponse.json();
@@ -155,6 +169,8 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
   });
 
   const shouldShow = isVisible && (unclaimedPrizes.length > 0 || hasLostRecently);
+  
+  // ✅ CRITICAL FIX: If the user has claimed ALL prizes, and doesn't have a recent lost auction, hide the banner
   if (!shouldShow) return null;
 
   const getBannerConfig = () => {
@@ -223,7 +239,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
   };
 
   return (
-    <div className="sticky top-[64px] sm:top-[72px] z-[45] w-full overflow-hidden shadow-lg border-b border-white/10">
+    <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-lg border-b border-white/10">
       <div className={`relative py-3 bg-gradient-to-r ${config.gradient}`}>
         <button
           onClick={() => setIsVisible(false)}
