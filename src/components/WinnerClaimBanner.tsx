@@ -52,31 +52,52 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
                   const { auction, rounds, userParticipation } = detailsResult.data;
                   const currentRound = auction.currentRound || 1;
                   
-                  // Check elimination status
-                  const participant = liveAuction.participants?.find((p: any) => p.playerId === userId);
-                  if (participant) {
-                    if (participant.isEliminated) {
-                      setLiveStatus({
-                        message: `You are eliminated from round ${participant.eliminatedInRound || 1}`,
-                        type: 'ELIMINATED',
-                        round: participant.eliminatedInRound || 1
-                      });
-                    } else {
-                      // Check if qualified for current round
-                      const prevRound = rounds.find((r: any) => r.roundNumber === currentRound - 1);
-                      if (currentRound === 1 || (prevRound && prevRound.userQualified)) {
-                        setLiveStatus({
-                          message: `You are qualified, bid the next round to get qualified and win`,
-                          type: 'QUALIFIED',
-                          round: currentRound
-                        });
+                    // 1. Get completed rounds to determine "Announced" status
+                    const completedRounds = rounds.filter((r: any) => r.status === 'COMPLETED');
+                    const latestCompletedRound = completedRounds.length > 0 
+                      ? Math.max(...completedRounds.map((r: any) => r.roundNumber)) 
+                      : 0;
+                    
+                    // If winners are announced, we clear live status and let the winner/lost logic take over
+                    if (auction.winnersAnnounced || auction.Status === 'COMPLETED') {
+                      setLiveStatus(null);
+                    } 
+                    // Only show status for rounds that have been "Announced" (COMPLETED)
+                    else if (latestCompletedRound > 0) {
+                      const participant = liveAuction.participants?.find((p: any) => p.playerId === userId);
+                      if (participant) {
+                        if (participant.isEliminated && participant.eliminatedInRound <= latestCompletedRound) {
+                          setLiveStatus({
+                            message: `Results Announced - Round ${participant.eliminatedInRound}: You are eliminated from the auction.`,
+                            type: 'ELIMINATED',
+                            round: participant.eliminatedInRound
+                          });
+                        } else {
+                          // Check if qualified in the latest completed round
+                          const lastRoundResults = rounds.find((r: any) => r.roundNumber === latestCompletedRound);
+                          if (lastRoundResults && lastRoundResults.userQualified) {
+                            // If it's not the final round, encourage bidding in the next one
+                            if (latestCompletedRound < (auction.roundCount || 4)) {
+                              setLiveStatus({
+                                message: `Results Announced - Round ${latestCompletedRound}: You are qualified! Bid in Round ${latestCompletedRound + 1} to win.`,
+                                type: 'QUALIFIED',
+                                round: latestCompletedRound
+                              });
+                            } else {
+                              // Round 4 completed, winners should be announced soon
+                              setLiveStatus(null);
+                            }
+                          } else {
+                            setLiveStatus(null);
+                          }
+                        }
                       } else {
                         setLiveStatus(null);
                       }
+                    } else {
+                      // No rounds completed yet, don't show anything (results not announced)
+                      setLiveStatus(null);
                     }
-                  } else {
-                    setLiveStatus(null);
-                  }
                 }
               }
             } else {
@@ -146,20 +167,15 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
             }
           }
 
-          if (lostResponse.ok) {
-            const lostResult = await lostResponse.json();
-            if (lostResult.success && lostResult.data) {
-              const now = Date.now();
-              const lostAuctionsList = Array.isArray(lostResult.data) ? lostResult.data : lostResult.data.auctions || [];
-              const recentLost = lostAuctionsList.filter((auction: any) => {
-                const endTime = auction.auctionEndTime || auction.completedAt;
-                if (!endTime) return false;
-                const timeSinceEnd = now - new Date(endTime).getTime();
-                return timeSinceEnd < 30 * 60 * 1000;
-              });
-              setLostAuctions(recentLost);
+            if (lostResponse.ok) {
+              const lostResult = await lostResponse.json();
+              if (lostResult.success && lostResult.data) {
+                const lostAuctionsList = Array.isArray(lostResult.data) ? lostResult.data : lostResult.data.auctions || [];
+                // ✅ UPDATED: Show lost auctions UNTIL they are settled
+                const activeLost = lostAuctionsList.filter((auction: any) => !auction.isSettled);
+                setLostAuctions(activeLost);
+              }
             }
-          }
         } catch (error) {
           console.error('Error fetching auction status:', error);
         }

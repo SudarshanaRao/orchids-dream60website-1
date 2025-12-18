@@ -1469,7 +1469,7 @@ const getUserAuctionHistory = async (req, res) => {
     // ✅ UPDATED: Calculate correct totalAmountSpent for each auction entry
     // Logic: If won AND claimed, totalSpent = entryFee + lastRoundBidAmount
     //        Otherwise, totalSpent = entryFee only
-    const enrichedHistory = history.map(entry => {
+    const enrichedHistory = await Promise.all(history.map(async (entry) => {
       // Calculate correct totalSpent for this auction
       let calculatedTotalSpent = entry.entryFeePaid || 0;
       
@@ -1478,16 +1478,31 @@ const getUserAuctionHistory = async (req, res) => {
         calculatedTotalSpent += (entry.lastRoundBidAmount || 0);
       }
       
+      // ✅ NEW: Check if the auction is "Settled" (completely closed)
+      let isSettled = false;
+      const auction = await HourlyAuction.findOne({ hourlyAuctionId: entry.hourlyAuctionId }).lean();
+      if (auction) {
+        if (auction.winners && auction.winners.length > 0) {
+          const hasClaimed = auction.winners.some(w => w.prizeClaimStatus === 'CLAIMED');
+          const allExpired = auction.winners.every(w => w.prizeClaimStatus === 'EXPIRED');
+          isSettled = hasClaimed || allExpired;
+        } else if (auction.Status === 'COMPLETED') {
+          // No winners found at all
+          isSettled = true;
+        }
+      }
+      
       return {
         ...entry,
         // Override totalAmountSpent with correct calculation
         totalAmountSpent: calculatedTotalSpent,
+        isSettled,
         // Priority claim system fields
         currentEligibleRank: entry.currentEligibleRank || null,
         claimWindowStartedAt: entry.claimWindowStartedAt || null,
         ranksOffered: entry.ranksOffered || [],
       };
-    });
+    }));
     
     return res.status(200).json({
       success: true,
