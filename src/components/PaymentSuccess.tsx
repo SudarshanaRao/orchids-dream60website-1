@@ -36,23 +36,24 @@ export function PaymentSuccess({
   }, [onBackToHome]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
       {/* Backdrop */}
       <motion.div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-md"
+        className="absolute inset-0 bg-black/60 backdrop-blur-md will-change-transform"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
         onClick={onClose || onBackToHome}
       />
 
       {/* Success Modal */}
       <motion.div 
-        className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden will-change-transform"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
       >
         {/* Close Button */}
         <button 
@@ -148,39 +149,6 @@ export function PaymentSuccess({
         </div>
       </motion.div>
 
-        {/* Confetti-like elements - reduced for smooth performance */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ 
-                top: "50%", 
-                left: "50%", 
-                scale: 0,
-                x: 0,
-                y: 0
-              }}
-              animate={{ 
-                scale: [0, 1, 0],
-                x: (Math.random() - 0.5) * 300,
-                y: (Math.random() - 0.5) * 300,
-                rotate: Math.random() * 360
-              }}
-              transition={{ 
-                duration: 2.5, 
-                delay: 0.3 + i * 0.1,
-                ease: "easeOut"
-              }}
-              className="absolute will-change-transform"
-            >
-              {i % 2 === 0 ? (
-                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              ) : (
-                <Sparkles className="w-4 h-4 text-purple-400" />
-              )}
-            </motion.div>
-          ))}
-        </div>
     </div>
   );
 }

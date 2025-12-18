@@ -1582,39 +1582,43 @@ const App = () => {
       description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
     });
 
-    setCurrentAuction(prev => {
-      const now = new Date();
+    // ✅ FIX: Close modal first, then update state after a brief delay to prevent shaking
+    setShowEntrySuccess(null);
+    
+    // ✅ Use requestAnimationFrame to batch state updates after modal closes
+    requestAnimationFrame(() => {
+      setCurrentAuction(prev => {
+        const now = new Date();
 
-      const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
-        if (b.type === 'entry') {
-          const entry = b as EntryBox;
-          return {
-            ...entry,
-            currentBid: entry.entryFee || 0,
-            bidder: currentUser.username,
-            hasPaid: true,
-          };
-        }
-        if (b.type === 'round') {
-          const roundBox = b as RoundBox;
-          const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
-          return { ...roundBox, isOpen: isNowOpen };
-        }
-        return b;
+        const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
+          if (b.type === 'entry') {
+            const entry = b as EntryBox;
+            return {
+              ...entry,
+              currentBid: entry.entryFee || 0,
+              bidder: currentUser.username,
+              hasPaid: true,
+            };
+          }
+          if (b.type === 'round') {
+            const roundBox = b as RoundBox;
+            const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
+            return { ...roundBox, isOpen: isNowOpen };
+          }
+          return b;
+        });
+
+        return {
+          ...prev,
+          boxes: updatedBoxes,
+          userHasPaidEntry: true
+        };
       });
 
-      return {
-        ...prev,
-        boxes: updatedBoxes,
-        userHasPaidEntry: true
-      };
+      // ✅ Trigger refetch after state update
+      console.log('💳 Payment successful - triggering auction data refresh');
+      setForceRefetchTrigger(prev => prev + 1);
     });
-
-    // ✅ CRITICAL FIX: Trigger IMMEDIATE refetch of auction data after payment (no delay)
-    console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-    setForceRefetchTrigger(prev => prev + 1);
-
-    setShowEntrySuccess(null);
   };
 
   const handleEntryFailure = () => {
@@ -2264,17 +2268,14 @@ if (currentPage === 'support') {
 
           <Footer onNavigate={handleNavigate} />
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
               {/* Payment Success Modal */}
               {showEntrySuccess && (
                 <PaymentSuccess
                   amount={showEntrySuccess.entryFee}
                   type="entry"
                   boxNumber={showEntrySuccess.boxNumber}
-                  onBackToHome={() => {
-                    handleEntrySuccess();
-                    setCurrentPage('game');
-                  }}
+                  onBackToHome={handleEntrySuccess}
                   onClose={() => setShowEntrySuccess(null)}
                 />
               )}

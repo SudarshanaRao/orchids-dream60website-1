@@ -505,7 +505,7 @@ interface PrizeShowcaseProps {
               <div className="space-y-2 sm:space-y-2.5">
                 {/* Entry Fee Payment Section - Show only if user hasn't paid */}
                 {!hasAnyPaidEntry && (
-                  <div className="relative group/entry">
+                  <div className="relative group/entry transition-all duration-300 ease-out">
                     {/* Animated glow effect */}
                     <div className="absolute -inset-[1px] bg-gradient-to-r from-[#8456BC]/30 via-[#9F7ACB]/30 to-[#B99FD9]/30 rounded-[18px] blur-md opacity-30 group-hover/entry:opacity-50 transition-opacity duration-500"></div>
 
@@ -649,9 +649,9 @@ interface PrizeShowcaseProps {
                   </div>
                 )}
 
-                {/* Entry Paid Success */}
-                {hasAnyPaidEntry && (
-                  <div className="relative group/success">
+              {/* Entry Paid Success */}
+              {hasAnyPaidEntry && (
+                <div className="relative group/success transition-all duration-300 ease-out">
                     <div className="absolute -inset-[1px] bg-gradient-to-r from-emerald-400/30 to-green-500/30 rounded-[18px] blur-md opacity-40"></div>
                     <div className="relative backdrop-blur-2xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl">
                       <div className="flex items-center gap-1.5 sm:gap-2 text-emerald-700">

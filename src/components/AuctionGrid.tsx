@@ -142,7 +142,8 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               className="space-y-4 sm:space-y-5"
               layout={false}
             >
@@ -162,10 +163,18 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
 
             <div 
                 className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
+                style={{ minHeight: roundBoxes.length > 0 ? 'auto' : '300px' }}
               >
-                {roundBoxes.map((box) => (
-                  <div
+                {roundBoxes.map((box, index) => (
+                  <motion.div
                     key={box.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: index * 0.05,
+                      ease: "easeOut"
+                    }}
                   >
                   <AuctionBox
                     box={box}
@@ -179,7 +188,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                     serverTime={serverTime}
                     hourlyAuctionId={auction.hourlyAuctionId} 
                   />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
           </motion.div>
