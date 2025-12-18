@@ -18,6 +18,7 @@ const {
   getHourlyAuctionById,
   getAuctionLeaderboard,
   checkAuctionParticipation,
+  forceCompleteAuction,
 } = require('../controllers/schedulerController');
 
 /**
@@ -899,5 +900,35 @@ router.get('/auction-leaderboard', getAuctionLeaderboard);
  *         description: Internal server error
  */
 router.get('/check-participation', checkAuctionParticipation);
+
+/**
+ * @swagger
+ * /scheduler/force-complete/{hourlyAuctionId}:
+ *   post:
+ *     summary: Force complete an auction with all its rounds
+ *     description: |
+ *       Manually completes an auction that should have finished.
+ *       Completes all rounds, calculates winners, and syncs to daily auction config.
+ *       
+ *       **Use this endpoint to:**
+ *       - Fix auctions that didn't complete automatically
+ *       - Manually end a stuck auction
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: path
+ *         name: hourlyAuctionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Hourly auction UUID
+ *     responses:
+ *       200:
+ *         description: Auction completed successfully
+ *       404:
+ *         description: Auction not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/force-complete/:hourlyAuctionId', forceCompleteAuction);
 
 module.exports = router;

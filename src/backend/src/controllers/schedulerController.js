@@ -1939,6 +1939,184 @@ const checkAuctionParticipation = async (req, res) => {
   }
 };
 
+/**
+ * Force complete an auction with all its rounds
+ * POST /scheduler/force-complete/:hourlyAuctionId
+ * Used to manually complete an auction that should have finished
+ */
+const forceCompleteAuction = async (req, res) => {
+  try {
+    const { hourlyAuctionId } = req.params;
+    
+    if (!hourlyAuctionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'hourlyAuctionId is required',
+      });
+    }
+    
+    // Find the auction
+    const auction = await HourlyAuction.findOne({ hourlyAuctionId });
+    
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hourly auction not found',
+      });
+    }
+    
+    console.log(`🔧 [FORCE-COMPLETE] Starting force completion for auction ${auction.hourlyAuctionCode} (${auction.TimeSlot})`);
+    console.log(`   Current Status: ${auction.Status}, Current Round: ${auction.currentRound}`);
+    
+    const now = getISTTime();
+    
+    // Helper function to calculate ranks
+    const calculateRanksAndQualified = (playersData) => {
+      if (!playersData || playersData.length === 0) {
+        return { rankedPlayers: [], qualifiedPlayerIds: [] };
+      }
+      
+      const sortedPlayers = [...playersData].sort((a, b) => {
+        if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
+          return b.auctionPlacedAmount - a.auctionPlacedAmount;
+        }
+        return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
+      });
+      
+      const rankedPlayers = [];
+      let currentRank = 1;
+      let previousAmount = null;
+      
+      for (let i = 0; i < sortedPlayers.length; i++) {
+        const player = sortedPlayers[i];
+        const plainPlayer = player.toObject ? player.toObject() : { ...player };
+        
+        if (previousAmount !== null && plainPlayer.auctionPlacedAmount !== previousAmount) {
+          currentRank += 1;
+        }
+        
+        previousAmount = plainPlayer.auctionPlacedAmount;
+        
+        rankedPlayers.push({
+          ...plainPlayer,
+          rank: currentRank,
+          isQualified: currentRank <= 3,
+        });
+      }
+      
+      const qualifiedPlayerIds = rankedPlayers
+        .filter(p => p.rank <= 3 && p.playerId)
+        .map(p => String(p.playerId));
+      
+      return { rankedPlayers, qualifiedPlayerIds };
+    };
+    
+    // Complete all rounds
+    for (let i = 0; i < auction.rounds.length; i++) {
+      const round = auction.rounds[i];
+      
+      if (round.status !== 'COMPLETED') {
+        const { rankedPlayers, qualifiedPlayerIds } = calculateRanksAndQualified(round.playersData);
+        
+        auction.rounds[i].status = 'COMPLETED';
+        auction.rounds[i].completedAt = auction.rounds[i].completedAt || now;
+        auction.rounds[i].playersData = rankedPlayers;
+        auction.rounds[i].qualifiedPlayers = qualifiedPlayerIds;
+        auction.rounds[i].totalParticipants = rankedPlayers.length;
+        
+        console.log(`   ✓ Round ${round.roundNumber} completed: ${rankedPlayers.length} participants, ${qualifiedPlayerIds.length} qualified`);
+      }
+    }
+    
+    auction.markModified('rounds');
+    
+    // Calculate winners from round 4 (or last round with participants)
+    let winners = [];
+    const lastRoundWithPlayers = [...auction.rounds].reverse().find(r => r.playersData && r.playersData.length > 0);
+    
+    if (lastRoundWithPlayers) {
+      // Get qualified players from the last round
+      const qualifiedPlayers = lastRoundWithPlayers.qualifiedPlayers || [];
+      
+      // Build winners from qualified players
+      for (let i = 0; i < Math.min(qualifiedPlayers.length, 3); i++) {
+        const playerId = qualifiedPlayers[i];
+        const playerData = lastRoundWithPlayers.playersData.find(p => String(p.playerId) === String(playerId));
+        const participant = auction.participants?.find(p => String(p.playerId) === String(playerId));
+        
+        if (playerData) {
+          winners.push({
+            rank: i + 1,
+            playerId: playerData.playerId,
+            playerUsername: playerData.playerUsername,
+            finalAuctionAmount: playerData.auctionPlacedAmount,
+            totalAmountPaid: participant?.totalAmountBid || playerData.auctionPlacedAmount,
+            prizeAmount: auction.prizeValue || 0,
+            isPrizeClaimed: false,
+            prizeClaimStatus: 'PENDING',
+            prizeClaimedAt: null,
+          });
+          
+          console.log(`   🏆 Winner ${i + 1}: ${playerData.playerUsername} - ₹${playerData.auctionPlacedAmount}`);
+        }
+      }
+    }
+    
+    // Update auction
+    auction.Status = 'COMPLETED';
+    auction.completedAt = now;
+    auction.currentRound = auction.roundCount || 4;
+    
+    if (winners.length > 0) {
+      auction.winners = winners;
+      auction.winnerId = winners[0].playerId;
+      auction.winnerUsername = winners[0].playerUsername;
+      auction.winningBid = winners[0].finalAuctionAmount;
+      auction.winnersAnnounced = true;
+      auction.markModified('winners');
+    }
+    
+    await auction.save();
+    
+    // Sync status to dailyAuctionConfig
+    const syncResult = await syncHourlyStatusToDailyConfig(hourlyAuctionId, 'COMPLETED');
+    
+    // Mark winners in auction history
+    if (winners.length > 0) {
+      const totalParticipants = auction.participants?.length || 0;
+      await AuctionHistory.markWinners(hourlyAuctionId, winners, totalParticipants);
+      await AuctionHistory.markNonWinners(hourlyAuctionId, totalParticipants);
+    }
+    
+    console.log(`✅ [FORCE-COMPLETE] Auction ${auction.hourlyAuctionCode} completed successfully`);
+    
+    return res.status(200).json({
+      success: true,
+      message: `Auction ${auction.hourlyAuctionCode} force completed successfully`,
+      data: {
+        hourlyAuctionId: auction.hourlyAuctionId,
+        hourlyAuctionCode: auction.hourlyAuctionCode,
+        status: auction.Status,
+        completedAt: auction.completedAt,
+        winnersCount: winners.length,
+        winners: winners.map(w => ({
+          rank: w.rank,
+          username: w.playerUsername,
+          amount: w.finalAuctionAmount,
+        })),
+      },
+      sync: syncResult,
+    });
+  } catch (error) {
+    console.error('❌ [FORCE-COMPLETE] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -1961,4 +2139,5 @@ module.exports = {
   getHourlyAuctionById,
   getAuctionLeaderboard,
   checkAuctionParticipation,
+  forceCompleteAuction,
 };
