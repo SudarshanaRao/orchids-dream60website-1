@@ -2157,17 +2157,12 @@ if (currentPage === 'support') {
               {/* Winners Announced Banner - Shows when:
                   1. Winners are announced (shows winner info)
                   2. User has NOT placed bid in current round and within first 15 mins (shows "PARTICIPATE NOW" prompt) */}
-              {currentUser && (
-                <WinnersAnnouncedBanner 
-                  onBidNow={handleBidNowScroll}
-                  currentUserId={currentUser.id}
-                  userBidsPerRound={currentAuction.userBidsPerRound}
-                  currentRound={currentAuction.currentRound}
-                  winnersAnnounced={currentAuction.winnersAnnounced}
-                  userHasPaidEntry={currentAuction.userHasPaidEntry}
-                  serverTime={serverTime}
-                />
-              )}
+                {currentUser && (
+                  <WinnersAnnouncedBanner 
+                    onBidNow={handleBidNowScroll}
+                  />
+                )}
+
 
 
               <PrizeShowcase

@@ -1,63 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Sparkles, ChevronRight, Crown, Star, ArrowRight } from 'lucide-react';
+import { Trophy, Sparkles, ChevronRight, Crown, Star } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { motion } from 'motion/react';
 
-  interface WinnersAnnouncedBannerProps {
-    onBidNow?: () => void;
-    currentUserId?: string;
-    userBidsPerRound?: Record<number, number>;
-    currentRound?: number;
-    winnersAnnounced?: boolean;
-    userHasPaidEntry?: boolean;
-    serverTime?: { timestamp: number; minute: number } | null;
-  }
+interface WinnersAnnouncedBannerProps {
+  onBidNow?: () => void;
+}
 
-  export function WinnersAnnouncedBanner({ 
-    onBidNow, 
-    currentUserId, 
-    userBidsPerRound = {}, 
-    currentRound = 1,
-    winnersAnnounced = false,
-    userHasPaidEntry = false,
-    serverTime = null
-  }: WinnersAnnouncedBannerProps) {
-
+export function WinnersAnnouncedBanner({
+  onBidNow
+}: WinnersAnnouncedBannerProps) {
   const [winners, setWinners] = useState<any[]>([]);
   const [auctionName, setAuctionName] = useState('');
   const [isVisible, setIsVisible] = useState(false);
-  const [hasUserBidInCurrentRound, setHasUserBidInCurrentRound] = useState(false);
-  const [isFirst15Minutes, setIsFirst15Minutes] = useState(false);
-
-  useEffect(() => {
-    const checkTimeAndBidStatus = () => {
-      // Check if within first 15 minutes of the hour
-      const currentMinute = serverTime?.minute ?? new Date().getMinutes();
-      setIsFirst15Minutes(currentMinute < 15);
-      
-      if (currentUserId && userBidsPerRound && currentRound) {
-        const hasBid = !!userBidsPerRound[currentRound];
-        setHasUserBidInCurrentRound(hasBid);
-        console.log(`🔍 [BANNER] User bid check - Round ${currentRound}: ${hasBid ? 'HAS BID' : 'NO BID'}, First 15 mins: ${currentMinute < 15}`);
-      }
-    };
-
-    checkTimeAndBidStatus();
-    const interval = setInterval(checkTimeAndBidStatus, 1000);
-    return () => clearInterval(interval);
-  }, [currentUserId, userBidsPerRound, currentRound, serverTime]);
 
   useEffect(() => {
     const fetchRecentWinners = async () => {
       try {
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
         if (!response.ok) return;
-        
+
         const result = await response.json();
-        
+
         if (result.success && result.data && result.data.winnersAnnounced) {
           const liveAuction = result.data;
-          
+
           const lbResponse = await fetch(`${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${liveAuction.hourlyAuctionId}`);
           if (lbResponse.ok) {
             const lbResult = await lbResponse.json();
@@ -75,7 +42,7 @@ import { motion } from 'motion/react';
               const completedAuctions = dailyResult.data.auctions.filter((a: any) => a.winnersAnnounced || a.status === 'COMPLETED');
               if (completedAuctions.length > 0) {
                 const lastAuction = completedAuctions[completedAuctions.length - 1];
-                
+
                 const lbResponse = await fetch(`${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${lastAuction.hourlyAuctionId}`);
                 if (lbResponse.ok) {
                   const lbResult = await lbResponse.json();
@@ -101,172 +68,110 @@ import { motion } from 'motion/react';
 
   const shouldShowBanner = () => {
     // Show winners announced banner anytime there are winners
-    if (winnersAnnounced && isVisible && winners.length > 0) {
+    if (isVisible && winners.length > 0) {
       return true;
     }
-    
-    // Only show "Round X is LIVE" banner during first 15 minutes of each hour
-    if (currentUserId && !hasUserBidInCurrentRound && !winnersAnnounced && isFirst15Minutes) {
-      return true;
-    }
-    
+
     return false;
   };
 
   if (!shouldShowBanner()) return null;
 
-  if (winnersAnnounced && isVisible && winners.length > 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-gradient-to-r from-[#1a0b2e] via-[#2d1b4d] to-[#1a0b2e] border-y border-purple-500/30 overflow-hidden relative"
-      >
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-1/4 w-32 h-full bg-purple-500 blur-[80px] animate-pulse" />
-          <div className="absolute top-0 right-1/4 w-32 h-full bg-indigo-500 blur-[80px] animate-pulse delay-700" />
-        </div>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full bg-gradient-to-r from-[#1a0b2e] via-[#2d1b4d] to-[#1a0b2e] border-y border-purple-500/30 overflow-hidden relative"
+    >
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 left-1/4 w-32 h-full bg-purple-500 blur-[80px] animate-pulse" />
+        <div className="absolute top-0 right-1/4 w-32 h-full bg-indigo-500 blur-[80px] animate-pulse delay-700" />
+      </div>
 
-        <div className="relative py-2 sm:py-3">
-          <div className="marquee-container overflow-hidden">
-            <div className="marquee-content flex items-center whitespace-nowrap">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center gap-8 mx-4">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/20 rounded-full border border-purple-400/30 backdrop-blur-sm">
-                    <Trophy className="w-4 h-4 text-yellow-400" />
-                    <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tighter">
-                      Winners Announced: {auctionName}
+      <div className="relative py-2 sm:py-3">
+        <div className="marquee-container overflow-hidden">
+          <div className="marquee-content flex items-center whitespace-nowrap">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-8 mx-4">
+                <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/20 rounded-full border border-purple-400/30 backdrop-blur-sm">
+                  <Trophy className="w-4 h-4 text-yellow-400" />
+                  <span className="text-xs sm:text-sm font-black text-white uppercase tracking-tighter">
+                    Winners Announced: {auctionName}
+                  </span>
+                </div>
+
+                {winners.map((winner, idx) => (
+                  <div key={winner.playerId} className="flex items-center gap-3">
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-sm ${
+                      idx === 0
+                        ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-200'
+                        : idx === 1
+                        ? 'bg-slate-300/10 border-slate-300/30 text-slate-200'
+                        : 'bg-amber-600/10 border-amber-600/30 text-amber-200'
+                    }`}>
+                      {idx === 0 ? <Crown className="w-3.5 h-3.5 fill-yellow-500/20" /> : <Star className="w-3.5 h-3.5" />}
+                      <span className="text-xs font-bold">#{idx + 1}</span>
+                      <span className="text-xs sm:text-sm font-black tracking-wide uppercase">
+                        {winner.playerUsername || winner.username}
+                      </span>
+                      <div className="w-px h-3 bg-white/20 mx-1" />
+                      <span className="text-[10px] sm:text-xs font-mono font-bold opacity-80">
+                        ₹{winner.auctionPlacedAmount?.toLocaleString() || winner.bid?.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1 group cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'leaderboard' }))}>
+                    <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:animate-spin" />
+                    <span className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:text-white transition-colors">
+                      VIEW ALL WINNERS
                     </span>
+                    <ChevronRight className="w-3 h-3 text-purple-400" />
                   </div>
 
-                  {winners.map((winner, idx) => (
-                    <div key={winner.playerId} className="flex items-center gap-3">
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border backdrop-blur-md shadow-sm ${
-                        idx === 0 
-                          ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-200' 
-                          : idx === 1 
-                          ? 'bg-slate-300/10 border-slate-300/30 text-slate-200'
-                          : 'bg-amber-600/10 border-amber-600/30 text-amber-200'
-                      }`}>
-                        {idx === 0 ? <Crown className="w-3.5 h-3.5 fill-yellow-500/20" /> : <Star className="w-3.5 h-3.5" />}
-                        <span className="text-xs font-bold">#{idx + 1}</span>
-                        <span className="text-xs sm:text-sm font-black tracking-wide uppercase">
-                          {winner.playerUsername || winner.username}
-                        </span>
-                        <div className="w-px h-3 bg-white/20 mx-1" />
-                        <span className="text-[10px] sm:text-xs font-mono font-bold opacity-80">
-                          ₹{winner.auctionPlacedAmount?.toLocaleString() || winner.bid?.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1 group cursor-pointer" onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'leaderboard' }))}>
-                        <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:animate-spin" />
-                        <span className="text-[10px] sm:text-xs font-bold text-purple-300 group-hover:text-white transition-colors">
-                          VIEW ALL WINNERS
-                        </span>
-                        <ChevronRight className="w-3 h-3 text-purple-400" />
-                      </div>
-
-                      {onBidNow && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onBidNow();
-                          }}
-                          className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full text-[10px] sm:text-xs font-black text-white hover:from-purple-500 hover:to-violet-500 transition-all shadow-lg active:scale-95"
-                        >
-                          <Trophy className="w-3 h-3" />
-                          BID NOW
-                        </button>
-                      )}
-                    </div>
-
+                  {onBidNow && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBidNow();
+                      }}
+                      className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-purple-600 to-violet-600 rounded-full text-[10px] sm:text-xs font-black text-white hover:from-purple-500 hover:to-violet-500 transition-all shadow-lg active:scale-95"
+                    >
+                      <Trophy className="w-3 h-3" />
+                      BID NOW
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
+
+              </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        <style>{`
-          .marquee-container {
-            width: 100%;
+      <style>{`
+        .marquee-container {
+          width: 100%;
+        }
+        .marquee-content {
+          display: flex;
+          animation: scroll-winners 30s linear infinite;
+          width: fit-content;
+        }
+        .marquee-content:hover {
+          animation-play-state: paused;
+        }
+        @keyframes scroll-winners {
+          0% {
+            transform: translateX(0);
           }
-          .marquee-content {
-            display: flex;
-            animation: scroll-winners 30s linear infinite;
-            width: fit-content;
+          100% {
+            transform: translateX(-25%);
           }
-          .marquee-content:hover {
-            animation-play-state: paused;
-          }
-          @keyframes scroll-winners {
-            0% {
-              transform: translateX(0);
-            }
-            100% {
-              transform: translateX(-25%);
-            }
-          }
-        `}</style>
-      </motion.div>
-    );
-  }
-
-  if (currentUserId && !hasUserBidInCurrentRound && !winnersAnnounced) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full bg-gradient-to-r from-[#1a0b2e] via-[#2d1b4d] to-[#1a0b2e] border-y border-purple-500/30 overflow-hidden relative"
-      >
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 left-1/4 w-32 h-full bg-green-500 blur-[80px] animate-pulse" />
-          <div className="absolute top-0 right-1/4 w-32 h-full bg-emerald-500 blur-[80px] animate-pulse delay-700" />
-        </div>
-
-        <div className="relative py-3 sm:py-4">
-            <div className="flex items-center justify-center gap-4 px-4">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute" />
-                  <div className="w-3 h-3 bg-green-400 rounded-full relative" />
-                </div>
-                <span className="text-sm sm:text-base font-bold text-white">
-                  Round {currentRound} is LIVE!
-                </span>
-              </div>
-
-              <div className="hidden sm:block w-px h-6 bg-white/20" />
-
-              <span className="text-xs sm:text-sm text-purple-200">
-                {userHasPaidEntry 
-                  ? 'Place your bid before the round ends' 
-                  : 'Pay Entry Fee now to participate and win!'}
-              </span>
-
-              {onBidNow && (
-                <button
-                  onClick={onBidNow}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-black text-white transition-all shadow-lg active:scale-95 animate-pulse ${
-                    userHasPaidEntry 
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400' 
-                      : 'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500'
-                  }`}
-                >
-                  <Trophy className="w-4 h-4" />
-                  {userHasPaidEntry ? 'BID NOW' : 'PARTICIPATE NOW'}
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-        </div>
-      </motion.div>
-    );
-  }
-
-  return null;
+        }
+      `}</style>
+    </motion.div>
+  );
 }
