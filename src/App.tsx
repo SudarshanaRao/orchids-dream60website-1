@@ -488,7 +488,8 @@ const App = () => {
   } | null>(null);
 
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<{
-    roundNumber: number;
+    roundNumber?: number;
+    hourlyAuctionId?: string;
   } | null>(null);
 
   // Generate random entry fees between ₹1000-₹3500
@@ -1353,11 +1354,19 @@ const App = () => {
     return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
-  const handleNavigate = (page: string) => {
+  const handleNavigate = (page: string, data?: any) => {
     setCurrentPage(page);
     
+    if (page === 'auction-leaderboard' && data?.hourlyAuctionId) {
+      setSelectedLeaderboard({ hourlyAuctionId: data.hourlyAuctionId });
+      setCurrentPage('leaderboard');
+      window.history.pushState({}, '', '/leaderboard');
+      return;
+    }
+
     // ✅ Update browser URL to match the page
-const urlMap: { [key: string]: string } = {
+    const urlMap: { [key: string]: string } = {
+
         'game': '/',
         'login': '/login',
         'signup': '/signup',
@@ -1864,6 +1873,7 @@ const urlMap: { [key: string]: string } = {
                 localStorage.removeItem('selectedAuctionDetails');
                 window.history.pushState({}, '', '/history');
               }}
+              serverTime={serverTime}
             />
           </TooltipProvider>
         </QueryClientProvider>
@@ -1874,15 +1884,17 @@ const urlMap: { [key: string]: string } = {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          <AuctionHistory
-            user={currentUser}
-            onBack={handleBackToGame}
-            onViewDetails={(auction) => {
-              setSelectedAuctionDetails(auction);
-              localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
-              window.history.pushState({}, '', '/history/details');
-            }}
-          />
+            <AuctionHistory
+              user={currentUser}
+              onBack={handleBackToGame}
+              onViewDetails={(auction) => {
+                setSelectedAuctionDetails(auction);
+                localStorage.setItem('selectedAuctionDetails', JSON.stringify(auction));
+                window.history.pushState({}, '', '/history/details');
+              }}
+              serverTime={serverTime}
+            />
+
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -2056,12 +2068,14 @@ if (currentPage === 'support') {
               onStartTutorial={handleStartTutorial}
             />
 
-            {currentUser && (
-              <WinnerClaimBanner
-                userId={currentUser.id}
-                onNavigate={handleNavigate}
-              />
-            )}
+              {currentUser && (
+                <WinnerClaimBanner
+                  userId={currentUser.id}
+                  onNavigate={handleNavigate}
+                  serverTime={serverTime}
+                />
+              )}
+
 
             <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Hero Section */}
@@ -2118,18 +2132,20 @@ if (currentPage === 'support') {
               </div>
             )}
 
-                {/* Winners Announced Banner - Shows when:
-                    1. Winners are announced (shows winner info)
-                    2. User has NOT placed bid in current round (shows "BID NOW" prompt) */}
-                {currentUser && currentAuction.userHasPaidEntry && (
-                  <WinnersAnnouncedBanner 
-                    onBidNow={handleBidNowScroll}
-                    currentUserId={currentUser.id}
-                    userBidsPerRound={currentAuction.userBidsPerRound}
-                    currentRound={currentAuction.currentRound}
-                    winnersAnnounced={currentAuction.winnersAnnounced}
-                  />
-                )}
+                  {/* Winners Announced Banner - Shows when:
+                      1. Winners are announced (shows winner info)
+                      2. User has NOT placed bid in current round (shows "BID NOW" prompt) */}
+                  {currentUser && (
+                    <WinnersAnnouncedBanner 
+                      onBidNow={handleBidNowScroll}
+                      currentUserId={currentUser.id}
+                      userBidsPerRound={currentAuction.userBidsPerRound}
+                      currentRound={currentAuction.currentRound}
+                      winnersAnnounced={currentAuction.winnersAnnounced}
+                      userHasPaidEntry={currentAuction.userHasPaidEntry}
+                    />
+                  )}
+
 
               <PrizeShowcase
                 currentPrize={currentAuction as any}

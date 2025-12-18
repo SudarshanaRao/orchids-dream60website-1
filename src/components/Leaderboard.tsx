@@ -23,160 +23,133 @@ interface LeaderboardEntry {
   lastRoundBidAmount?: number;
 }
 
-interface LeaderboardProps {
-  roundNumber: number;
-  leaderboard: LeaderboardEntry[];
-  opensAt?: Date;
-  closesAt?: Date;
-  onBack: () => void;
-}
+  interface LeaderboardProps {
+    roundNumber?: number;
+    hourlyAuctionId?: string;
+    onBack: () => void;
+  }
 
-export function Leaderboard({ roundNumber, onBack }: LeaderboardProps) {
-  const [selectedRank, setSelectedRank] = useState<number | null>(null);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [opensAt, setOpensAt] = useState<Date | undefined>(undefined);
-  const [closesAt, setClosesAt] = useState<Date | undefined>(undefined);
-  const [currentUserId] = useState(localStorage.getItem('user_id') || '');
-  const [claimTimers, setClaimTimers] = useState<Record<string, string>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { initiatePrizeClaimPayment } = usePrizeClaimPayment();
+  export function Leaderboard({ roundNumber, hourlyAuctionId, onBack }: LeaderboardProps) {
+    const [selectedRank, setSelectedRank] = useState<number | null>(null);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [opensAt, setOpensAt] = useState<Date | undefined>(undefined);
+    const [closesAt, setClosesAt] = useState<Date | undefined>(undefined);
+    const [currentUserId] = useState(localStorage.getItem('user_id') || '');
+    const [claimTimers, setClaimTimers] = useState<Record<string, string>>({});
+    const [isProcessing, setIsProcessing] = useState(false);
+    const { initiatePrizeClaimPayment } = usePrizeClaimPayment();
 
-  // ✅ Helper function to format round times WITHOUT timezone conversion (display API times as-is)
-  const formatRoundTime = (date: Date) => {
-    return date.toLocaleTimeString('en-IN', { 
-      timeZone: 'UTC', // ✅ Use UTC to prevent conversion - 12:00 UTC displays as 12:00 pm
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  // ✅ Get formatted round time range (API times without conversion)
-  const getRoundTimeRange = () => {
-    if (!opensAt || !closesAt) return '';
-    
-    const startTime = formatRoundTime(opensAt);
-    const endTime = formatRoundTime(closesAt);
-    const timeRange = `${startTime} to ${endTime}`;
-    
-    // ✅ Log the complete conversion process from API to display
-    console.log(`📊 [LEADERBOARD - Round ${roundNumber}] Time Display (NO CONVERSION):`, {
-      'Round Number': roundNumber,
-      'Raw opensAt Date Object': opensAt,
-      'Raw closesAt Date Object': closesAt,
-      'opensAt ISO String': opensAt.toISOString(),
-      'closesAt ISO String': closesAt.toISOString(),
-      'opensAt UTC String': opensAt.toUTCString(),
-      'closesAt UTC String': closesAt.toUTCString(),
-      'Formatted Start Time (UTC)': startTime,
-      'Formatted End Time (UTC)': endTime,
-      'Final Display': timeRange
-    });
-    
-    return timeRange;
-  };
-
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Fetch live auction data
-  useEffect(() => {
-    const fetchLeaderboardData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch auction data');
-        }
-
-        const result = await response.json();
-
-        if (!result.success || !result.data) {
-          throw new Error('Invalid response format');
-        }
-
-        const liveAuction = result.data;
-
-        // Find the specific round data
-        const roundData = liveAuction.rounds?.find(
-          (round: any) => round.roundNumber === roundNumber
-        );
-
-        if (!roundData) {
-          throw new Error(`Round ${roundNumber} not found`);
-        }
-
-        // ✅ Set round timing from API (startedAt and completedAt)
-        if (roundData.startedAt) {
-          const startDate = new Date(roundData.startedAt);
-          setOpensAt(startDate);
-          console.log(`✅ [LEADERBOARD] Round ${roundNumber} startedAt set:`, {
-            'API Value': roundData.startedAt,
-            'Date Object': startDate,
-            'ISO String': startDate.toISOString(),
-            'UTC String': startDate.toUTCString()
-          });
-        }
-        if (roundData.completedAt) {
-          const endDate = new Date(roundData.completedAt);
-          setClosesAt(endDate);
-          console.log(`✅ [LEADERBOARD] Round ${roundNumber} completedAt set:`, {
-            'API Value': roundData.completedAt,
-            'Date Object': endDate,
-            'ISO String': endDate.toISOString(),
-            'UTC String': endDate.toUTCString()
-          });
-        }
-
-          // Transform playersData to leaderboard entries
-          const entries: LeaderboardEntry[] = roundData.playersData?.map((player: any) => ({
-            username: player.playerUsername || 'Unknown Player',
-            bid: player.auctionPlacedAmount || 0,
-            timestamp: new Date(player.auctionPlacedTime || Date.now()),
-            rank: player.rank || null,
-            userId: player.userId || player.playerId,
-            isWinner: player.isWinner || (player.rank && player.rank <= 3),
-            prizeClaimStatus: player.prizeClaimStatus,
-            finalRank: player.rank,
-            currentEligibleRank: liveAuction.currentEligibleRank,
-            claimWindowStartedAt: liveAuction.claimWindowStartedAt,
-            winnersAnnouncedAt: liveAuction.winnersAnnouncedAt,
-            claimDeadline: player.claimDeadline,
-            hourlyAuctionId: liveAuction.hourlyAuctionId,
-            lastRoundBidAmount: player.auctionPlacedAmount,
-          })) || [];
-
-        // Sort by rank (ascending), then by bid (descending) for null ranks
-        const sortedEntries = entries.sort((a, b) => {
-          if (a.rank !== null && b.rank !== null) {
-            return a.rank - b.rank;
-          }
-          if (a.rank !== null) return -1;
-          if (b.rank !== null) return 1;
-          if (b.bid !== a.bid) return b.bid - a.bid;
-          return a.timestamp.getTime() - b.timestamp.getTime();
-        });
-
-        setLeaderboard(sortedEntries);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching leaderboard:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
-        setIsLoading(false);
-      }
+    // ✅ Helper function to format round times WITHOUT timezone conversion (display API times as-is)
+    const formatRoundTime = (date: Date) => {
+      return date.toLocaleTimeString('en-IN', { 
+        timeZone: 'UTC', // ✅ Use UTC to prevent conversion - 12:00 UTC displays as 12:00 pm
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
     };
 
-    fetchLeaderboardData();
+    // ✅ Get formatted round time range (API times without conversion)
+    const getRoundTimeRange = () => {
+      if (!opensAt || !closesAt) return '';
+      
+      const startTime = formatRoundTime(opensAt);
+      const endTime = formatRoundTime(closesAt);
+      
+      return `${startTime} to ${endTime}`;
+    };
 
-      // Remove auto-refresh - only fetch once when page opens
-    }, [roundNumber]);
+    // Scroll to top when component mounts
+    useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    // Fetch leaderboard data
+    useEffect(() => {
+      const fetchLeaderboardData = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+          let url = API_ENDPOINTS.scheduler.liveAuction;
+          
+          if (hourlyAuctionId) {
+            url = `${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${hourlyAuctionId}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+              const entries: LeaderboardEntry[] = result.data.map((player: any) => ({
+                username: player.playerUsername || player.username || 'Unknown Player',
+                bid: player.auctionPlacedAmount || player.bid || 0,
+                timestamp: new Date(player.auctionPlacedTime || player.timestamp || Date.now()),
+                rank: player.rank || null,
+                userId: player.userId || player.playerId,
+                isWinner: player.isWinner || (player.rank && player.rank <= 3),
+                prizeClaimStatus: player.prizeClaimStatus,
+                finalRank: player.rank,
+                currentEligibleRank: result.currentEligibleRank,
+                claimWindowStartedAt: result.claimWindowStartedAt,
+                winnersAnnouncedAt: result.winnersAnnouncedAt,
+                claimDeadline: player.claimDeadline,
+                hourlyAuctionId: hourlyAuctionId,
+                lastRoundBidAmount: player.auctionPlacedAmount || player.bid,
+              }));
+
+              setLeaderboard(entries.sort((a, b) => (a.rank || 999) - (b.rank || 999)));
+              setIsLoading(false);
+              return;
+            }
+          }
+
+          // Fallback to live auction if no hourlyAuctionId or leaderboard fetch failed
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          const result = await response.json();
+          
+          if (result.success && result.data) {
+            const liveAuction = result.data;
+            const targetRound = roundNumber || liveAuction.currentRound;
+            const roundData = liveAuction.rounds?.find((round: any) => round.roundNumber === targetRound);
+
+            if (roundData) {
+              if (roundData.startedAt) setOpensAt(new Date(roundData.startedAt));
+              if (roundData.completedAt) setClosesAt(new Date(roundData.completedAt));
+
+              const entries: LeaderboardEntry[] = roundData.playersData?.map((player: any) => ({
+                username: player.playerUsername || 'Unknown Player',
+                bid: player.auctionPlacedAmount || 0,
+                timestamp: new Date(player.auctionPlacedTime || Date.now()),
+                rank: player.rank || null,
+                userId: player.userId || player.playerId,
+                isWinner: player.isWinner || (player.rank && player.rank <= 3),
+                prizeClaimStatus: player.prizeClaimStatus,
+                finalRank: player.rank,
+                currentEligibleRank: liveAuction.currentEligibleRank,
+                claimWindowStartedAt: liveAuction.claimWindowStartedAt,
+                winnersAnnouncedAt: liveAuction.winnersAnnouncedAt,
+                claimDeadline: player.claimDeadline,
+                hourlyAuctionId: liveAuction.hourlyAuctionId,
+                lastRoundBidAmount: player.auctionPlacedAmount,
+              })) || [];
+
+              setLeaderboard(entries.sort((a, b) => (a.rank || 999) - (b.rank || 999)));
+            } else {
+              throw new Error(`Round ${targetRound} data not available`);
+            }
+          }
+          setIsLoading(false);
+        } catch (err) {
+          console.error('Error fetching leaderboard:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
+          setIsLoading(false);
+        }
+      };
+
+      fetchLeaderboardData();
+    }, [roundNumber, hourlyAuctionId]);
+
 
   // Timer effect for claim windows
   useEffect(() => {

@@ -55,10 +55,12 @@ interface LiveAuctionData {
   completedAt?: string;
 }
 
-interface WinnerClaimBannerProps {
-  userId: string;
-  onNavigate: (page: string) => void;
-}
+  interface WinnerClaimBannerProps {
+    userId: string;
+    onNavigate: (page: string, data?: any) => void;
+    serverTime: any;
+  }
+
 
 type BannerType = 
   | 'WINNER_CLAIM' 
@@ -72,7 +74,7 @@ type BannerType =
 
 const getISTNow = () => Date.now();
 
-export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps) {
+export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClaimBannerProps) {
   const [liveAuction, setLiveAuction] = useState<LiveAuctionData | null>(null);
   const [bannerType, setBannerType] = useState<BannerType>(null);
   const [bannerData, setBannerData] = useState<{
@@ -106,16 +108,16 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
       }
 
       setLiveAuction(result.data);
-      determineUserStatus(result.data);
+      determineUserStatus(result.data, serverTime);
     } catch (error) {
       console.error('Error fetching live auction:', error);
       setLiveAuction(null);
       setBannerType(null);
     }
-  }, [userId]);
+  }, [userId, serverTime]); // ✅ Add serverTime to dependencies
 
-  const determineUserStatus = (auction: LiveAuctionData) => {
-    if (!auction || !userId) {
+  const determineUserStatus = (auction: LiveAuctionData, currentTime: any) => {
+    if (!auction || !userId || !currentTime) {
       setBannerType(null);
       return;
     }
@@ -149,38 +151,44 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
         return;
       }
 
-      if (userWinner) {
-        const rank = userWinner.rank;
-        const completedAt = auction.completedAt ? new Date(auction.completedAt).getTime() : Date.now();
-        const claimWindowStart = completedAt + ((rank - 1) * 15 * 60 * 1000);
-        const claimDeadline = claimWindowStart + (15 * 60 * 1000);
-        const now = getISTNow();
+        if (userWinner) {
+          const rank = userWinner.rank;
+          
+          // ✅ Use winnersAnnouncedAt from API if available, otherwise fallback to completedAt
+          const baseTime = auction.winnersAnnouncedAt 
+            ? new Date(auction.winnersAnnouncedAt).getTime() 
+            : (auction.completedAt ? new Date(auction.completedAt).getTime() : serverTime.timestamp);
+            
+          const claimWindowStart = baseTime + ((rank - 1) * 15 * 60 * 1000);
+          const claimDeadline = claimWindowStart + (15 * 60 * 1000);
+          const now = serverTime.timestamp;
 
-        if (rank === 1) {
-          const timeRemaining = claimDeadline - now;
-          setTimeLeftMs(timeRemaining > 0 ? timeRemaining : 0);
-          setBannerType('WINNER_CLAIM');
-          setBannerData({
-            message: `🏆 Congratulations! You won ${getRankSuffix(rank)} place!`,
-            subMessage: 'Claim your prize now - Clock is ticking!',
-            rank,
-            participants: totalParticipants,
-            qualified: qualifiedCount
-          });
-        } else {
-          const waitTime = claimWindowStart - now;
-          setTimeLeftMs(waitTime > 0 ? waitTime : 0);
-          setBannerType('WINNER_WAITING');
-          setBannerData({
-            message: `🎉 You won ${getRankSuffix(rank)} place!`,
-            subMessage: `Waiting for ${rank === 2 ? '1st' : '1st & 2nd'} place winner(s) to claim`,
-            rank,
-            participants: totalParticipants,
-            qualified: qualifiedCount
-          });
+          if (rank === 1) {
+            const timeRemaining = claimDeadline - now;
+            setTimeLeftMs(timeRemaining > 0 ? timeRemaining : 0);
+            setBannerType('WINNER_CLAIM');
+            setBannerData({
+              message: `🏆 Congratulations! You won ${getRankSuffix(rank)} place!`,
+              subMessage: 'Claim your prize now - Clock is ticking!',
+              rank,
+              participants: totalParticipants,
+              qualified: qualifiedCount
+            });
+          } else {
+            const waitTime = claimWindowStart - now;
+            setTimeLeftMs(waitTime > 0 ? waitTime : 0);
+            setBannerType('WINNER_WAITING');
+            setBannerData({
+              message: `🎉 You won ${getRankSuffix(rank)} place!`,
+              subMessage: `Waiting for ${rank === 2 ? '1st' : '1st & 2nd'} place winner(s) to claim`,
+              rank,
+              participants: totalParticipants,
+              qualified: qualifiedCount
+            });
+          }
+          return;
         }
-        return;
-      }
+
 
       if (isParticipant) {
         setBannerType('ELIMINATED');

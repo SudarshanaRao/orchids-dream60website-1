@@ -3,21 +3,24 @@ import { Trophy, Sparkles, ChevronRight, Crown, Star, ArrowRight } from 'lucide-
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { motion } from 'motion/react';
 
-interface WinnersAnnouncedBannerProps {
-  onBidNow?: () => void;
-  currentUserId?: string;
-  userBidsPerRound?: Record<number, number>;
-  currentRound?: number;
-  winnersAnnounced?: boolean;
-}
+  interface WinnersAnnouncedBannerProps {
+    onBidNow?: () => void;
+    currentUserId?: string;
+    userBidsPerRound?: Record<number, number>;
+    currentRound?: number;
+    winnersAnnounced?: boolean;
+    userHasPaidEntry?: boolean;
+  }
 
-export function WinnersAnnouncedBanner({ 
-  onBidNow, 
-  currentUserId, 
-  userBidsPerRound = {}, 
-  currentRound = 1,
-  winnersAnnounced = false 
-}: WinnersAnnouncedBannerProps) {
+  export function WinnersAnnouncedBanner({ 
+    onBidNow, 
+    currentUserId, 
+    userBidsPerRound = {}, 
+    currentRound = 1,
+    winnersAnnounced = false,
+    userHasPaidEntry = false
+  }: WinnersAnnouncedBannerProps) {
+
   const [winners, setWinners] = useState<any[]>([]);
   const [auctionName, setAuctionName] = useState('');
   const [isVisible, setIsVisible] = useState(false);
@@ -214,34 +217,41 @@ export function WinnersAnnouncedBanner({
         </div>
 
         <div className="relative py-3 sm:py-4">
-          <div className="flex items-center justify-center gap-4 px-4">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute" />
-                <div className="w-3 h-3 bg-green-400 rounded-full relative" />
+            <div className="flex items-center justify-center gap-4 px-4">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-ping absolute" />
+                  <div className="w-3 h-3 bg-green-400 rounded-full relative" />
+                </div>
+                <span className="text-sm sm:text-base font-bold text-white">
+                  Round {currentRound} is LIVE!
+                </span>
               </div>
-              <span className="text-sm sm:text-base font-bold text-white">
-                Round {currentRound} is LIVE!
+
+              <div className="hidden sm:block w-px h-6 bg-white/20" />
+
+              <span className="text-xs sm:text-sm text-purple-200">
+                {userHasPaidEntry 
+                  ? 'Place your bid before the round ends' 
+                  : 'Pay Entry Fee now to participate and win!'}
               </span>
+
+              {onBidNow && (
+                <button
+                  onClick={onBidNow}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-black text-white transition-all shadow-lg active:scale-95 animate-pulse ${
+                    userHasPaidEntry 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400' 
+                      : 'bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500'
+                  }`}
+                >
+                  <Trophy className="w-4 h-4" />
+                  {userHasPaidEntry ? 'BID NOW' : 'PARTICIPATE NOW'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
-            <div className="hidden sm:block w-px h-6 bg-white/20" />
-
-            <span className="text-xs sm:text-sm text-purple-200">
-              Place your bid before the round ends
-            </span>
-
-            {onBidNow && (
-              <button
-                onClick={onBidNow}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-xs sm:text-sm font-black text-white hover:from-green-400 hover:to-emerald-400 transition-all shadow-lg active:scale-95 animate-pulse"
-              >
-                <Trophy className="w-4 h-4" />
-                BID NOW
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
         </div>
       </motion.div>
     );

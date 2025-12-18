@@ -11,14 +11,16 @@ import { Label } from './ui/label';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
-interface AuctionHistoryProps {
-  user: {
-    id: string;
-    username: string;
-  };
-  onBack: () => void;
-  onViewDetails: (auction: AuctionHistoryItem) => void;
-}
+  interface AuctionHistoryProps {
+    user: {
+      id: string;
+      username: string;
+    };
+    onBack: () => void;
+    onViewDetails: (auction: AuctionHistoryItem) => void;
+    serverTime: any;
+  }
+
 
 // Box slot interface with detailed information
 interface BoxSlot {
@@ -129,28 +131,31 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
 };
 
 // Separate AuctionCard Component (fixes hooks error)
-const AuctionCard = ({ 
-  auction, 
-  index, 
-  tabPrefix, 
-  user, 
-  onViewDetails,
-  onClaimSuccess,
-  userProfile // ✅ NEW: Receive user profile as prop
-}: { 
-  auction: AuctionHistoryItem; 
-  index: number; 
-  tabPrefix: string;
-  user: { id: string; username: string };
-  onViewDetails: (auction: AuctionHistoryItem) => void;
-  onClaimSuccess: () => void;
-  userProfile: { mobile: string; email: string; username: string } | null; // ✅ NEW: Prop type
-}) => {
-  const { initiatePrizeClaimPayment, loading: globalPaymentLoading } = usePrizeClaimPayment();
-  const [timeLeft, setTimeLeft] = useState('');
-  const [showClaimForm, setShowClaimForm] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [localAuction, setLocalAuction] = useState(auction);
+  const AuctionCard = ({ 
+    auction, 
+    index, 
+    tabPrefix, 
+    user, 
+    onViewDetails,
+    onClaimSuccess,
+    userProfile,
+    serverTime
+  }: { 
+    auction: AuctionHistoryItem; 
+    index: number; 
+    tabPrefix: string;
+    user: { id: string; username: string };
+    onViewDetails: (auction: AuctionHistoryItem) => void;
+    onClaimSuccess: () => void;
+    userProfile: { mobile: string; email: string; username: string } | null;
+    serverTime: any;
+  }) => {
+    const { initiatePrizeClaimPayment, loading: globalPaymentLoading } = usePrizeClaimPayment();
+    const [timeLeft, setTimeLeft] = useState('');
+    const [showClaimForm, setShowClaimForm] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [localAuction, setLocalAuction] = useState(auction);
+
   
   // ✅ REMOVED: Individual fetch logic - now using prop
   
@@ -279,95 +284,91 @@ const AuctionCard = ({
     useEffect(() => {
       if (!localAuction.isWinner || localAuction.prizeClaimStatus !== 'PENDING') return;
 
-        const updateTimer = () => {
-          // ✅ Current UTC time in milliseconds
-          const now = Date.now();
+      const updateTimer = () => {
+        // ✅ Use server time from prop if available, otherwise fallback to local time
+        const now = serverTime?.timestamp || Date.now();
 
-          // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
-          // Each winner gets exactly 15 minutes
-          // 1st winner: starts immediately after winners announced
-          // 2nd winner: starts 15 mins after winners announced  
-          // 3rd winner: starts 30 mins after winners announced
-          const getActiveWindow = () => {
-            const activeRank = localAuction.currentEligibleRank || 1;
-            const userRank = localAuction.finalRank || 1;
-            
-            // Use winnersAnnouncedAt as base time (must exist for claim system to work)
-            const winnersAnnouncedTime = localAuction.winnersAnnouncedAt;
-            if (!winnersAnnouncedTime) return null;
-            
-            // Calculate when current active rank's window started
-            // Rank 1: starts at winnersAnnouncedAt + 0 mins
-            // Rank 2: starts at winnersAnnouncedAt + 15 mins
-            // Rank 3: starts at winnersAnnouncedAt + 30 mins
-            const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
-            const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
-            
-            // Calculate user's own window
-            const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
-            const userWindowEnd = userWindowStart + (15 * 60 * 1000);
-
-            return {
-              start: activeWindowStart,
-              end: activeWindowEnd,
-              userStart: userWindowStart,
-              userEnd: userWindowEnd,
-            };
-          };
-
-          const activeWindow = getActiveWindow();
+        // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
+        // Each winner gets exactly 15 minutes
+        // 1st winner: starts immediately after winners announced
+        // 2nd winner: starts 15 mins after winners announced  
+        // 3rd winner: starts 30 mins after winners announced
+        const getActiveWindow = () => {
+          const activeRank = localAuction.currentEligibleRank || 1;
+          const userRank = localAuction.finalRank || 1;
           
-          // ✅ If in waiting queue, show time remaining until user's claim window starts
-          if (isInWaitingQueue() && activeWindow) {
-            // Show time until user's window starts (not current active window end)
-            let diff = activeWindow.userStart - now;
-            
-            if (diff > 0) {
-              const minutes = Math.floor(diff / (1000 * 60));
-              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-              setTimeLeft(`${minutes}m ${seconds}s`);
-              return;
-            } else {
-              // ✅ User's window should have started but backend may be updating
+          // Use winnersAnnouncedAt as base time (must exist for claim system to work)
+          const winnersAnnouncedTime = localAuction.winnersAnnouncedAt;
+          if (!winnersAnnouncedTime) return null;
+          
+          // Calculate when current active rank's window started
+          const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+          const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
+          
+          // Calculate user's own window
+          const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
+          const userWindowEnd = userWindowStart + (15 * 60 * 1000);
+
+          return {
+            start: activeWindowStart,
+            end: activeWindowEnd,
+            userStart: userWindowStart,
+            userEnd: userWindowEnd,
+          };
+        };
+
+        const activeWindow = getActiveWindow();
+        
+        // ✅ If in waiting queue, show time remaining until user's claim window starts
+        if (isInWaitingQueue() && activeWindow) {
+          // Show time until user's window starts
+          let diff = activeWindow.userStart - now;
+          
+          if (diff > 0) {
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}m ${seconds}s`);
+            return;
+          } else {
+            setTimeLeft('Claim Window Soon');
+            return;
+          }
+        }
+        
+        // ✅ Check if in "Claim Window Soon" period (backend delay)
+        if (localAuction.finalRank && localAuction.currentEligibleRank && activeWindow) {
+          // If it should be user's turn but within 1 min of window start
+          if (localAuction.finalRank === localAuction.currentEligibleRank) {
+            let diff = activeWindow.start - now;
+            if (diff <= 0 && diff > -(60 * 1000)) {
               setTimeLeft('Claim Window Soon');
               return;
             }
           }
-          
-          // ✅ Check if in "Claim Window Soon" period (backend delay)
-          if (localAuction.finalRank && localAuction.currentEligibleRank && activeWindow) {
-            // If it should be user's turn but within 1 min of window start
-            if (localAuction.finalRank === localAuction.currentEligibleRank) {
-              let diff = activeWindow.start - now;
-              if (diff <= 0 && diff > -(60 * 1000)) {
-                setTimeLeft('Claim Window Soon');
-                return;
-              }
-            }
+        }
+        
+        // ✅ Show time left in user's claim window (when it's their turn)
+        if (activeWindow && localAuction.finalRank === localAuction.currentEligibleRank) {
+          const deadline = activeWindow.userEnd;
+          let diff = deadline - now;
+
+          if (diff <= 0) {
+            setTimeLeft('EXPIRED');
+            return;
           }
-          
-          // ✅ Show time left in user's claim window (when it's their turn)
-          if (activeWindow && localAuction.finalRank === localAuction.currentEligibleRank) {
-            // Use user's window end as deadline (15 min window)
-            const deadline = activeWindow.userEnd;
-            let diff = deadline - now;
 
-            if (diff <= 0) {
-              setTimeLeft('EXPIRED');
-              return;
-            }
-
-            // Cap at 15 minutes max (to fix 343 mins bug)
-            const maxClaimTime = 15 * 60 * 1000; // 15 minutes
-            if (diff > maxClaimTime) {
-              diff = maxClaimTime;
-            }
-
-            const minutes = Math.floor(diff / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeLeft(`${minutes}m ${seconds}s`);
+          // Cap at 15 minutes max
+          const maxClaimTime = 15 * 60 * 1000;
+          if (diff > maxClaimTime) {
+            diff = maxClaimTime;
           }
-        };
+
+          const minutes = Math.floor(diff / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          setTimeLeft(`${minutes}m ${seconds}s`);
+        }
+      };
+
 
 
       updateTimer();
