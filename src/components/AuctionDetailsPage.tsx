@@ -81,7 +81,7 @@ interface AuctionDetailsData {
   }
 
 
-export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionDetailsPageProps) {
+export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime = null }: AuctionDetailsPageProps) {
   const [auction, setAuction] = useState(initialAuction);
   const [isLoading, setIsLoading] = useState(true);
   const [detailedData, setDetailedData] = useState<any>(null);
