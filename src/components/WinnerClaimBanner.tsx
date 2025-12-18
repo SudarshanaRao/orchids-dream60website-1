@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle, XCircle } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface UnclaimedPrize {
@@ -126,11 +126,14 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
 
         const minutes = Math.floor(diff / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        setTimeLeftText(`${minutes}m ${seconds}s to claim`);
+        setTimeLeftText(`${minutes}m ${seconds}s left`);
       } else {
         const waitingQueue = unclaimedPrizes.filter(p => p.finalRank > (p.currentEligibleRank || 0));
         if (waitingQueue.length > 0) {
-          setTimeLeftText('Waiting for your turn...');
+          // Calculate estimated waiting time (15 mins per preceding rank)
+          const firstWaiting = waitingQueue[0];
+          const pos = firstWaiting.finalRank - (firstWaiting.currentEligibleRank || 0);
+          setTimeLeftText(`Wait for your turn...`);
         } else {
           setTimeLeftText('');
         }
@@ -155,6 +158,15 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
   if (!shouldShow) return null;
 
   const getBannerConfig = () => {
+    if (timeLeftText === 'Expired') {
+      return {
+        gradient: 'from-amber-600 via-orange-600 to-red-600',
+        icon: <AlertTriangle className="w-5 h-5 text-white animate-pulse" />,
+        message: `Next time you should hurry up! Your claim window has expired.`,
+        buttonText: 'VIEW HISTORY',
+        buttonClass: 'bg-white text-orange-600 hover:bg-orange-50'
+      };
+    }
     if (hasUrgentClaim) {
       return {
         gradient: 'from-red-600 via-orange-500 to-amber-500',
@@ -177,9 +189,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
       return {
         gradient: 'from-blue-600 via-indigo-500 to-violet-500',
         icon: <Clock className="w-5 h-5 text-white animate-spin-slow" />,
-        message: waitingPosition 
-          ? `You're #${waitingPosition} in the waiting queue - Your turn is coming soon!`
-          : `You're in the waiting queue - Stay tuned for your turn!`,
+        message: `Wait wait you have a chance to claim the prize! Your turn is coming soon.`,
         buttonText: 'CHECK STATUS',
         buttonClass: 'bg-white text-blue-600 hover:bg-blue-50'
       };
@@ -187,8 +197,8 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
     if (hasLostRecently) {
       return {
         gradient: 'from-red-700 via-red-600 to-rose-600',
-        icon: <AlertTriangle className="w-5 h-5 text-white" />,
-        message: `You didn't win this time - Better luck in the next auction!`,
+        icon: <XCircle className="w-5 h-5 text-white" />,
+        message: `You didn't win this auction better luck next time!`,
         buttonText: 'TRY AGAIN',
         buttonClass: 'bg-white text-red-600 hover:bg-red-50'
       };
@@ -213,7 +223,7 @@ export function WinnerClaimBanner({ userId, onNavigate }: WinnerClaimBannerProps
   };
 
   return (
-    <div className="sticky top-[64px] z-40 w-full overflow-hidden shadow-lg">
+    <div className="sticky top-[64px] sm:top-[72px] z-[45] w-full overflow-hidden shadow-lg border-b border-white/10">
       <div className={`relative py-3 bg-gradient-to-r ${config.gradient}`}>
         <button
           onClick={() => setIsVisible(false)}

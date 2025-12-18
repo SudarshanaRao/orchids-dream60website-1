@@ -2099,9 +2099,6 @@ if (currentPage === 'support') {
               </div>
             )}
 
-            <AuctionSchedule />
-
-            {/* Prize Showcase */}
             <PrizeShowcase
               currentPrize={currentAuction as any}
               isLoggedIn={!!currentUser}
@@ -2128,6 +2125,8 @@ if (currentPage === 'support') {
               }}
               onUserParticipationChange={handleUserParticipationChange}
             />
+
+            <AuctionSchedule />
 
             {currentUser ? (
               <>

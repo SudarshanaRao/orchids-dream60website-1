@@ -365,47 +365,45 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack }: AuctionD
 
         const activeWindow = getActiveWindow();
 
-        if (isInWaitingQueue() && activeWindow) {
-          let diff = activeWindow.end - now;
-          diff = diff - (330 * 60 * 1000);
+          if (isInWaitingQueue() && activeWindow) {
+            let diff = activeWindow.end - now;
 
-          if (diff > 0) {
-            const minutes = Math.floor(diff / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeLeft(`${minutes}m ${seconds}s`);
-            return;
-          }
+            if (diff > 0) {
+              const minutes = Math.floor(diff / (1000 * 60));
+              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+              setTimeLeft(`${minutes}m ${seconds}s`);
+              return;
+            }
 
-          setTimeLeft('Claim Window Soon');
-          return;
-        }
-
-        if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
-          let diff = activeWindow.start - now;
-          diff = diff - (330 * 60 * 1000);
-
-          if (diff <= 0 && diff > -(60 * 1000)) {
             setTimeLeft('Claim Window Soon');
             return;
           }
-        }
 
-        if (auction.claimDeadline || activeWindow) {
-          const deadline = auction.claimDeadline || activeWindow?.end;
-          if (!deadline) return;
+          if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
+            let diff = activeWindow.start - now;
 
-          let diff = deadline - now;
-          diff = diff - (330 * 60 * 1000);
-
-          if (diff <= 0) {
-            setTimeLeft('EXPIRED');
-            return;
+            if (diff <= 0 && diff > -(60 * 1000)) {
+              setTimeLeft('Claim Window Soon');
+              return;
+            }
           }
 
-          const minutes = Math.floor(diff / (1000 * 60));
-          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          setTimeLeft(`${minutes}m ${seconds}s`);
-        }
+          if (auction.claimDeadline || activeWindow) {
+            const deadline = auction.claimDeadline || activeWindow?.end;
+            if (!deadline) return;
+
+            let diff = deadline - now;
+
+            if (diff <= 0) {
+              setTimeLeft('EXPIRED');
+              return;
+            }
+
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeLeft(`${minutes}m ${seconds}s`);
+          }
+
       };
 
       updateTimer();
