@@ -2102,7 +2102,10 @@ if (currentPage === 'support') {
               </div>
             )}
 
-            <WinnersAnnouncedBanner />
+              {/* Winners Announced Banner */}
+              {currentAuction.winnersAnnounced && (
+                <WinnersAnnouncedBanner />
+              )}
 
             <PrizeShowcase
               currentPrize={currentAuction as any}

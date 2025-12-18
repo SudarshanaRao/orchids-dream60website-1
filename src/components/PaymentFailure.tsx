@@ -113,31 +113,35 @@ export function PaymentFailure({
             </div>
           </motion.div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-center gap-3 text-gray-500 mb-2">
-              <Clock className="w-5 h-5 text-red-600" />
-              <p className="text-sm font-medium">
-                Returning to home in <span className="text-red-700 font-bold">{countdown} seconds</span>
-              </p>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center justify-center gap-2 p-4 bg-red-50/50 rounded-2xl border border-red-100/50">
+                <div className="flex items-center gap-2 text-red-600">
+                  <Clock className="w-5 h-5 animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Returning to home</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-4xl font-black text-red-700">{countdown}</span>
+                  <span className="text-lg font-bold text-red-600/70">seconds remaining</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={onRetry}
+                className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Try Again
+              </Button>
+
+              <Button
+                variant="ghost"
+                onClick={onBackToHome}
+                className="w-full h-12 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Home className="w-4 h-4" />
+                Back to Auction Home
+              </Button>
             </div>
-
-            <Button
-              onClick={onRetry}
-              className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <RefreshCw className="w-5 h-5" />
-              Try Again
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={onBackToHome}
-              className="w-full h-12 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
-            >
-              <Home className="w-4 h-4" />
-              Back to Auction Home
-            </Button>
-          </div>
         </div>
 
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex items-center justify-center gap-2">

@@ -117,22 +117,26 @@ export function PaymentSuccess({
             </div>
           </motion.div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-3 text-gray-500">
-              <Clock className="w-5 h-5 text-purple-600" />
-              <p className="text-sm font-medium">
-                Closing automatically in <span className="text-purple-700 font-bold">{countdown} seconds</span>
-              </p>
-            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center justify-center gap-2 p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                <div className="flex items-center gap-2 text-purple-600">
+                  <Clock className="w-5 h-5 animate-pulse" />
+                  <span className="text-sm font-bold uppercase tracking-wider">Auto-closing</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-4xl font-black text-purple-700">{countdown}</span>
+                  <span className="text-lg font-bold text-purple-600/70">seconds remaining</span>
+                </div>
+              </div>
 
-            <Button
-              onClick={onBackToHome}
-              className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Home className="w-5 h-5" />
-              Continue to Auction
-            </Button>
-          </div>
+              <Button
+                onClick={onBackToHome}
+                className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Home className="w-5 h-5" />
+                Continue to Auction
+              </Button>
+            </div>
         </div>
 
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex items-center justify-center gap-2">
