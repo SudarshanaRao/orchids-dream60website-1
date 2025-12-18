@@ -22,6 +22,11 @@ import { AuctionDetailsPage } from './components/AuctionDetailsPage';
 import { AdminLogin } from './components/AdminLogin';
 import { AdminDashboard } from './components/AdminDashboard';
 import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { ViewGuide } from './components/ViewGuide';
+import { WinningTips } from './components/WinningTips';
+import { SupportChatPage } from './components/SupportChatPage';
+import { TransactionHistoryPage } from './components/TransactionHistoryPage';
+import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -259,9 +264,13 @@ const App = () => {
     if (path === '/profile') return 'profile';
     if (path === '/history') return 'history';
     if (path.startsWith('/history/')) return 'history';
-    if (path === '/leaderboard') return 'leaderboard';
+      if (path === '/leaderboard') return 'leaderboard';
+      if (path === '/view-guide') return 'view-guide';
+      if (path === '/winning-tips') return 'winning-tips';
+      if (path === '/support-chat') return 'support-chat';
+      if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
 
-    return 'game';
+      return 'game';
   });
 
   // ✅ Sync URL with page state and handle browser back/forward
@@ -288,11 +297,15 @@ const App = () => {
         if (path === '/history') {
           setSelectedAuctionDetails(null);
         }
-      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-      else setCurrentPage('game');
-    };
+} else if (path === '/leaderboard') setCurrentPage('leaderboard');
+        else if (path === '/view-guide') setCurrentPage('view-guide');
+        else if (path === '/winning-tips') setCurrentPage('winning-tips');
+        else if (path === '/support-chat') setCurrentPage('support-chat');
+        else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+        else setCurrentPage('game');
+      };
 
-    window.addEventListener('popstate', handlePopState);
+      window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
@@ -651,6 +664,39 @@ const App = () => {
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
   // ✅ NEW: Track if we're currently fetching live auction data
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+  // ✅ NEW: Track tutorial/whatsnew token
+  const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
+
+  // Tutorial steps for What's New
+  const whatsNewSteps: TutorialStep[] = [
+    {
+      id: 'transactions',
+      title: 'Transaction History',
+      description: 'Track all your entry fees, prize claims, and vouchers in one place. Click "Transactions" in the header to view your payment history.',
+      targetElement: '[data-whatsnew-target="transactions"]',
+      position: 'bottom',
+      action: () => handleNavigate('transactions'),
+    },
+    {
+      id: 'pwa-install',
+      title: 'Install App',
+      description: 'Install Dream60 on your device for faster access and notifications. Look for the "Install App" button.',
+      targetElement: '[data-whatsnew-target="pwa-install"]',
+      position: 'bottom',
+    },
+    {
+      id: 'auction-schedule',
+      title: 'Auction Schedule',
+      description: 'View all daily auctions from 9 AM to 7 PM. Click any slot to see details and join.',
+      targetElement: '[data-whatsnew-target="auction-schedule"]',
+      position: 'top',
+      action: () => handleNavigate('game'),
+    },
+  ];
+
+  const handleStartTutorial = () => {
+    setTutorialStartToken(Date.now());
+  };
 
   // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
   useEffect(() => {
@@ -1280,23 +1326,27 @@ const App = () => {
     setCurrentPage(page);
     
     // ✅ Update browser URL to match the page
-    const urlMap: { [key: string]: string } = {
-      'game': '/',
-      'login': '/login',
-      'signup': '/signup',
-      'forgot': '/forgot-password',
-      'rules': '/rules',
-      'participation': '/participation',
-      'terms': '/terms',
-      'privacy': '/privacy',
-      'support': '/support',
-      'contact': '/contact',
-      'profile': '/profile',
-      'history': '/history',
-      'leaderboard': '/leaderboard',
-      'admin-login': '/admin',
-      'admin-dashboard': '/admin'
-    };
+const urlMap: { [key: string]: string } = {
+        'game': '/',
+        'login': '/login',
+        'signup': '/signup',
+        'forgot': '/forgot-password',
+        'rules': '/rules',
+        'participation': '/participation',
+        'terms': '/terms',
+        'privacy': '/privacy',
+        'support': '/support',
+        'contact': '/contact',
+        'profile': '/profile',
+        'history': '/history',
+        'leaderboard': '/leaderboard',
+        'admin-login': '/admin',
+        'admin-dashboard': '/admin',
+        'view-guide': '/view-guide',
+        'winning-tips': '/winning-tips',
+        'support-chat': '/support-chat',
+        'transactions': '/transactions'
+      };
     
     const url = urlMap[page] || '/';
     window.history.pushState({}, '', url);
@@ -1894,18 +1944,62 @@ const App = () => {
     );
   }
 
-  if (currentPage === 'support') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Support onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+if (currentPage === 'support') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Support onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
-  if (currentPage === 'contact') {
+    if (currentPage === 'view-guide') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <ViewGuide onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'winning-tips') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <WinningTips onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'support-chat') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <SupportChatPage onBack={handleBackToGame} onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'transactions' && currentUser) {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'contact') {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -1923,12 +2017,13 @@ const App = () => {
         <div className="min-h-screen bg-background">
           <Sonner />
           
-          <Header
-            user={currentUser}
-            onNavigate={handleNavigate}
-            onLogin={handleShowLogin}
-            onLogout={handleLogout}
-          />
+<Header
+              user={currentUser}
+              onNavigate={handleNavigate}
+              onLogin={handleShowLogin}
+              onLogout={handleLogout}
+              onStartTutorial={handleStartTutorial}
+            />
 
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {/* Hero Section */}
@@ -2098,23 +2193,33 @@ const App = () => {
             />
           )}
 
-          {/* Bid Success Modal */}
-          {showBidSuccess && (
-            <PaymentSuccess
-              amount={showBidSuccess.amount}
-              type="bid"
-              boxNumber={showBidSuccess.boxNumber}
-              onBackToHome={() => {
-                setShowBidSuccess(null);
-                setCurrentPage('game');
-              }}
-              onClose={() => setShowBidSuccess(null)}
+{/* Bid Success Modal */}
+            {showBidSuccess && (
+              <PaymentSuccess
+                amount={showBidSuccess.amount}
+                type="bid"
+                boxNumber={showBidSuccess.boxNumber}
+                onBackToHome={() => {
+                  setShowBidSuccess(null);
+                  setCurrentPage('game');
+                }}
+                onClose={() => setShowBidSuccess(null)}
+              />
+            )}
+
+            {/* What's New Tutorial Overlay */}
+            <TutorialOverlay
+              steps={whatsNewSteps}
+              tutorialId="dream60-whatsnew-v1"
+              startToken={tutorialStartToken}
+              forceShow={tutorialStartToken > 0}
+              onComplete={() => handleNavigate('game')}
+              returnTo=""
             />
-          )}
-        </div>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  };
 
 export default App;
