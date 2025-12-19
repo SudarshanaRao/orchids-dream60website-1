@@ -571,7 +571,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             variants={cardVariants}
           >
                 <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
-                  <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative">
+                    <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
                     <Snowfall 
                         color="#8B5CF6"
                       snowflakeCount={40}
@@ -764,7 +764,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
             >
                 <Snowfall 
                   color="#8B5CF6"
