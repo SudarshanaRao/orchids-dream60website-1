@@ -21,86 +21,94 @@ export function PaymentSuccess({
     const [countdown, setCountdown] = useState(5);
   
     useEffect(() => {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            onBackToHome();
-            return 0;
-          }
-          return prev - 1;
-        });
+      const timer = setTimeout(() => {
+        onBackToHome();
+      }, 5000);
+  
+      const interval = setInterval(() => {
+        setCountdown((prev) => Math.max(0, prev - 1));
       }, 1000);
   
-      return () => clearInterval(timer);
+      return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+      };
     }, [onBackToHome]);
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
-        {/* Backdrop */}
         <motion.div 
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm will-change-transform"
+          className="absolute inset-0 bg-black/60 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
           onClick={onClose || onBackToHome}
         />
   
-        {/* Success Modal */}
         <motion.div 
-          className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden will-change-transform"
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          className="relative z-10 w-full max-w-[320px] bg-white rounded-3xl shadow-2xl overflow-hidden"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 10 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
         >
-          {/* Progress Timer Bar */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gray-100">
+          {/* Top Progress Bar */}
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100">
             <motion.div 
-              className="h-full bg-green-500"
+              className="h-full bg-gradient-to-r from-green-400 to-emerald-600"
               initial={{ width: "100%" }}
               animate={{ width: "0%" }}
               transition={{ duration: 5, ease: "linear" }}
             />
           </div>
 
-          <div className="p-6 text-center">
-            {/* Minimal Success Icon */}
-            <div className="mb-4 flex justify-center">
-              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-10 h-10 text-green-500" />
-              </div>
+          <div className="p-8">
+            <div className="mb-6 flex justify-center">
+              <motion.div 
+                className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center relative"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: "spring" }}
+              >
+                <motion.div
+                  className="absolute inset-0 bg-green-100 rounded-full"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                <CheckCircle2 className="w-12 h-12 text-green-500 relative z-10" />
+              </motion.div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Payment Success!</h2>
-            <p className="text-sm text-gray-500 mb-6">
-              {type === 'entry' 
-                ? boxNumber === 0 ? 'Auction Entry Confirmed' : `Box ${boxNumber} Entry Confirmed`
-                : 'Bid Placed Successfully'
-              }
-            </p>
+            <div className="text-center space-y-1 mb-8">
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Success!</h2>
+              <p className="text-sm text-gray-500 font-medium">
+                {type === 'entry' 
+                  ? boxNumber === 0 ? 'Auction Entry Confirmed' : `Box ${boxNumber} Entry Confirmed`
+                  : 'Bid Placed Successfully'
+                }
+              </p>
+            </div>
   
-            <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
-              <div className="flex items-center justify-center gap-1">
-                <IndianRupee className="w-4 h-4 text-gray-900" strokeWidth={2.5} />
-                <span className="text-2xl font-black text-gray-900">
+            <div className="bg-gray-50 rounded-2xl p-5 mb-8 border border-gray-100/50 flex flex-col items-center">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Paid Amount</span>
+              <div className="flex items-center gap-1">
+                <IndianRupee className="w-5 h-5 text-gray-900" strokeWidth={3} />
+                <span className="text-3xl font-black text-gray-900">
                   {amount.toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
   
-            <div className="space-y-3">
+            <div className="space-y-4">
               <Button
                 onClick={onBackToHome}
-                className="w-full h-11 bg-green-600 text-white hover:bg-green-700 rounded-xl font-bold text-sm transition-all"
+                className="w-full h-14 bg-gray-900 text-white hover:bg-black rounded-2xl font-bold text-base transition-all shadow-lg shadow-gray-200"
               >
-                Continue
+                Done
               </Button>
 
-              <div className="flex items-center justify-center gap-1.5 text-gray-400">
-                <Clock className="w-3 h-3" />
-                <span className="text-[10px] font-medium uppercase tracking-wider">Auto-closing in {countdown}s</span>
+              <div className="flex items-center justify-center gap-1.5 opacity-40">
+                <span className="text-[8px] font-black uppercase tracking-[0.2em]">Auto-closing in {countdown}s</span>
               </div>
             </div>
           </div>
