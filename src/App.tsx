@@ -430,11 +430,11 @@ const App = () => {
           console.log('✅ User data fetched from API:', result.user);
           const mappedUser = mapUserData(result.user);
           
-          // ✅ Save updated stats to localStorage for faster restoration on refresh
-          localStorage.setItem("totalWins", mappedUser.totalWins.toString());
-          localStorage.setItem("totalLosses", mappedUser.totalLosses.toString());
-          localStorage.setItem("totalAmountSpent", mappedUser.totalAmountSpent.toString());
-          localStorage.setItem("totalAmountWon", mappedUser.totalAmountWon.toString());
+            // ✅ Save updated stats to localStorage for faster restoration on refresh
+            localStorage.setItem("totalWins", (mappedUser.totalWins ?? 0).toString());
+            localStorage.setItem("totalLosses", (mappedUser.totalLosses ?? 0).toString());
+            localStorage.setItem("totalAmountSpent", (mappedUser.totalAmountSpent ?? 0).toString());
+            localStorage.setItem("totalAmountWon", (mappedUser.totalAmountWon ?? 0).toString());
           
           setCurrentUser(mappedUser);
         console.log('✅ User state updated with stats:', {

@@ -25,9 +25,43 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
   
   // Use external state if provided, otherwise use internal state
   const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
-  const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
-  const [hasNewHistory, setHasNewHistory] = useState(false);
-    const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>(() => ({
+    const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
+    const [hasNewHistory, setHasNewHistory] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [showInstallButton, setShowInstallButton] = useState(false);
+
+    // PWA Install prompt handler
+    useEffect(() => {
+      const handler = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setShowInstallButton(true);
+      };
+
+      window.addEventListener('beforeinstallprompt', handler);
+
+      // Check if app is already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        setShowInstallButton(false);
+      }
+
+      return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = async () => {
+      if (!deferredPrompt) return;
+
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        setShowInstallButton(false);
+      }
+      
+      setDeferredPrompt(null);
+    };
+
+      const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>(() => ({
       totalWins: user?.totalWins ?? 0,
       totalLosses: user?.totalLosses ?? 0,
     }));
@@ -315,10 +349,16 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                   {/* User Stats - Clickable */}
                   <motion.button
                     onClick={handleNavigateToHistory}
-                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5 hover:bg-purple-50/80 transition-all cursor-pointer"
+                    className="hidden xl:flex items-center space-x-3 bg-white/70 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-purple-200/50 shadow-md shadow-purple-500/5 hover:bg-purple-50/80 transition-all cursor-pointer relative"
                     whileHover={{ scale: 1.02, y: -2 }}
                     transition={{ duration: 0.2 }}
                   >
+                    {showStatsDot && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3 z-20">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                      </span>
+                    )}
                     <motion.div
                       className="flex items-center space-x-2"
                       whileHover={{ x: 2 }}
@@ -634,19 +674,25 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                         <span className="text-white font-bold">{user.username.charAt(0).toUpperCase()}</span>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-white font-semibold">{user.username}</p>
-                        <div className="flex items-center space-x-3 text-xs text-purple-200">
-                          <span className="flex items-center">
-                            <Trophy className="w-3 h-3 mr-1" />
-                            {userStats.totalWins} Wins
-                          </span>
-                          <span className="flex items-center">
-                            <XCircle className="w-3 h-3 mr-1" />
-                            {userStats.totalLosses ?? 0} Losses
-                          </span>
+                        <div className="flex-1">
+                          <p className="text-white font-semibold">{user.username}</p>
+                          <div className="flex items-center space-x-3 text-xs text-purple-200 relative">
+                            {showStatsDot && (
+                              <span className="absolute -top-1 -right-2 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                              </span>
+                            )}
+                            <span className="flex items-center">
+                              <Trophy className="w-3 h-3 mr-1" />
+                              {userStats.totalWins} Wins
+                            </span>
+                            <span className="flex items-center">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              {userStats.totalLosses ?? 0} Losses
+                            </span>
+                          </div>
                         </div>
-                      </div>
                     </motion.div>
                   )}
                 </div>
