@@ -82,14 +82,14 @@ interface AuctionHistoryItem {
   }
 
 // Circular Progress Component
-const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percentage: number, size?: number, strokeWidth?: number }) => {
+const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-rate-gradient" }: { percentage: number, size?: number, strokeWidth?: number, id?: string }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90">
+      <svg width={size} height={size} className="transform -rotate-90 overflow-visible">
         {/* Background circle */}
         <circle
           cx={size / 2}
@@ -105,7 +105,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#gradient)"
+          stroke={`url(#${id})`}
           strokeWidth={strokeWidth}
           fill="none"
           strokeLinecap="round"
@@ -115,7 +115,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8 }: { percent
           transition={{ duration: 1.5, ease: "easeInOut" }}
         />
         <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#8B5CF6" />
             <stop offset="50%" stopColor="#A78BFA" />
             <stop offset="100%" stopColor="#C4B5FD" />
@@ -1534,9 +1534,9 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     stiffness: 200,
                     damping: 15
                   }}
-                >
-                  <CircularProgress percentage={winRate} size={100} strokeWidth={8} />
-                </motion.div>
+                  >
+                    <CircularProgress percentage={winRate} size={100} strokeWidth={8} id="win-rate-mobile" />
+                  </motion.div>
               </div>
 
               {/* Financial Stats - Side by Side */}
@@ -1626,10 +1626,10 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                       stiffness: 200,
                       damping: 15
                     }}
-                    className="mb-6"
-                  >
-                    <CircularProgress percentage={winRate} size={140} strokeWidth={10} />
-                  </motion.div>
+                      className="mb-6"
+                    >
+                      <CircularProgress percentage={winRate} size={140} strokeWidth={10} id="win-rate-desktop" />
+                    </motion.div>
                   
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center gap-2">
