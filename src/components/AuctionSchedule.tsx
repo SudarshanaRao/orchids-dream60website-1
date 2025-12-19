@@ -103,72 +103,90 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
         setIsLoading(true);
       }
 
-      try {
-        const response = await fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?`);
-        const data = await response.json();
-        
-        if (response.ok && data.success && data.data?.dailyAuctionConfig) {
-          const auctions = data.data.dailyAuctionConfig.map((auction: AuctionConfig, index: number) => {
-            const [auctionHour, auctionMinute] = auction.TimeSlot.split(':').map(Number);
-            const hour12 = auctionHour > 12 ? auctionHour - 12 : (auctionHour === 0 ? 12 : auctionHour);
-            const period = auctionHour >= 12 ? 'PM' : 'AM';
-            const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
-            
-            let status = 'upcoming';
-            let winner = null;
-            
-            if (auction.Status === 'LIVE') {
-              status = 'active';
-            } else if (auction.Status === 'COMPLETED') {
-              status = 'completed';
-              if (auction.topWinners && auction.topWinners.length > 0) {
-                const topWinner = auction.topWinners.find((w: any) => w.rank === 1);
-                if (topWinner && topWinner.playerUsername) {
-                  winner = topWinner.playerUsername;
-                }
-              }
-            } else if (auction.Status === 'UPCOMING') {
-              status = 'upcoming';
-            }
-            
-              // Check if user has joined this auction
-              const hasUserJoined = user?.id && auction.participants?.some(
-                (p: ParticipantInfo) => p.playerId === user.id
+        try {
+          const [dailyResponse, liveResponse] = await Promise.all([
+            fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?`),
+            fetch(`${API_ENDPOINTS.scheduler.liveAuction}?`)
+          ]);
+          
+          const dailyData = await dailyResponse.json();
+          const liveData = await liveResponse.json();
+          
+          let liveAuctionData = null;
+          if (liveResponse.ok && liveData.success && liveData.data) {
+            liveAuctionData = liveData.data;
+          }
+          
+          if (dailyResponse.ok && dailyData.success && dailyData.data?.dailyAuctionConfig) {
+            const auctions = dailyData.data.dailyAuctionConfig.map((auction: AuctionConfig, index: number) => {
+              // Use live auction data if it matches this hourlyAuctionId
+              const isLiveMatch = liveAuctionData && (
+                (auction.hourlyAuctionId && auction.hourlyAuctionId === liveAuctionData.hourlyAuctionId) ||
+                (auction.TimeSlot === liveAuctionData.TimeSlot && auction.auctionNumber === liveAuctionData.auctionNumber)
               );
               
-              // Check user's bids per round
-              const userRoundBids: Record<number, boolean> = {};
-              if (user?.id && auction.rounds) {
-                auction.rounds.forEach((round: RoundInfo) => {
-                  const userBid = round.playersData?.find(p => p.playerId === user.id);
-                  if (userBid) {
-                    userRoundBids[round.roundNumber] = true;
+              const currentAuctionData = isLiveMatch ? { ...auction, ...liveAuctionData } : auction;
+              
+              const [auctionHour, auctionMinute] = currentAuctionData.TimeSlot.split(':').map(Number);
+              const hour12 = auctionHour > 12 ? auctionHour - 12 : (auctionHour === 0 ? 12 : auctionHour);
+              const period = auctionHour >= 12 ? 'PM' : 'AM';
+              const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
+              
+              let status = 'upcoming';
+              let winner = null;
+              
+              if (currentAuctionData.Status === 'LIVE') {
+                status = 'active';
+              } else if (currentAuctionData.Status === 'COMPLETED') {
+                status = 'completed';
+                if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
+                  const topWinner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
+                  if (topWinner && topWinner.playerUsername) {
+                    winner = topWinner.playerUsername;
                   }
-                });
+                }
+              } else if (currentAuctionData.Status === 'UPCOMING') {
+                status = 'upcoming';
               }
-
-                return {
-                  time: timeStr,
-                  hour: auctionHour,
-                  minute: auctionMinute,
-                  status,
-                  sequenceNumber: auction.auctionNumber || index + 1,
-                  hourlyAuctionId: auction.hourlyAuctionId,
-                  auctionId: auction.auctionId,
-                  prize: {
-                    name: auction.auctionName || `Auction ${index + 1}`,
-                    value: auction.prizeValue || 0,
-                    image: auction.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
-                  },
-                  winner,
-                  winnersAnnounced: auction.topWinners && auction.topWinners.length > 0,
-                  roundCount: auction.roundCount || 4,
-                  totalParticipants: auction.totalParticipants ?? (auction.participants?.length ?? auction.rounds?.[0]?.totalParticipants ?? 0),
-                  hasUserJoined: hasUserJoined || false,
-                  userRoundBids,
-                  currentRound: auction.currentRound || 1,
-                };
-            });
+              
+                // Check if user has joined this auction
+                const hasUserJoined = user?.id && currentAuctionData.participants?.some(
+                  (p: ParticipantInfo) => p.playerId === user.id
+                );
+                
+                // Check user's bids per round
+                const userRoundBids: Record<number, boolean> = {};
+                if (user?.id && currentAuctionData.rounds) {
+                  currentAuctionData.rounds.forEach((round: RoundInfo) => {
+                    const userBid = round.playersData?.find(p => p.playerId === user.id);
+                    if (userBid) {
+                      userRoundBids[round.roundNumber] = true;
+                    }
+                  });
+                }
+  
+                  return {
+                    time: timeStr,
+                    hour: auctionHour,
+                    minute: auctionMinute,
+                    status,
+                    sequenceNumber: currentAuctionData.auctionNumber || index + 1,
+                    hourlyAuctionId: currentAuctionData.hourlyAuctionId,
+                    auctionId: currentAuctionData.auctionId,
+                    prize: {
+                      name: currentAuctionData.auctionName || `Auction ${index + 1}`,
+                      value: currentAuctionData.prizeValue || 0,
+                      image: currentAuctionData.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
+                    },
+                    winner,
+                    winnersAnnounced: currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0),
+                    roundCount: currentAuctionData.roundCount || 4,
+                    totalParticipants: currentAuctionData.totalParticipants ?? (currentAuctionData.participants?.length ?? currentAuctionData.rounds?.[0]?.totalParticipants ?? 0),
+                    hasUserJoined: hasUserJoined || false,
+                    userRoundBids,
+                    currentRound: currentAuctionData.currentRound || 1,
+                  };
+              });
 
           setScheduleData(auctions);
           
