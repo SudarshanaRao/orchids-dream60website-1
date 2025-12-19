@@ -1462,14 +1462,14 @@ const App = () => {
 
   const handleLogin = async (user: any) => {
     try {
+      // ✅ Amazon voucher modal pops up IMMEDIATELY on login as requested
+      setShowAmazonVoucherModal(true);
+
       // ✅ User data is already passed from LoginForm, no need for additional API call
       const mappedUser = mapUserData(user);
       setCurrentUser(mappedUser);
       
       console.log('✅ User logged in successfully:', mappedUser.username);
-      
-      // ✅ Amazon voucher modal pops up IMMEDIATELY on login as requested
-      setShowAmazonVoucherModal(true);
 
       // ✅ Check if this is user's first login (tutorial not completed)
       const tutorialCompleted = localStorage.getItem('tutorial_completed_dream60-whatsnew-v2') === 'true';
@@ -1552,14 +1552,14 @@ const App = () => {
 
   const handleSignup = async (user: any) => {
     try {
+      // ✅ Amazon voucher modal pops up IMMEDIATELY on signup as requested
+      setShowAmazonVoucherModal(true);
+
       // ✅ User data is already passed from SignupForm, map and set it directly
       const mappedUser = mapUserData(user);
       setCurrentUser(mappedUser);
       
       console.log('✅ User signed up successfully:', mappedUser.username);
-      
-      // ✅ Amazon voucher modal pops up IMMEDIATELY on signup as requested
-      setShowAmazonVoucherModal(true);
 
       // ✅ First signup - always show tutorial
       setIsFirstLogin(true);
@@ -2188,27 +2188,42 @@ if (currentPage === 'support') {
             </div>
 
               <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                {/* Current Auction Time Slot Banner */}
-                {serverTime && (
-                  <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                    <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
-                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                      <div>
-                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                        <div className="text-xl sm:text-2xl font-bold">
-                          {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                  {/* Current Auction Time Slot Banner */}
+                  {serverTime && (
+                    <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                      <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
+                      <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                        <div>
+                          <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
+                          <div className="text-xl sm:text-2xl font-bold">
+                            {liveAuctionData ? (
+                              <>
+                                {new Date(liveAuctionData.startTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {new Date(liveAuctionData.endTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </>
+                            ) : (
+                              <>
+                                {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                        <div className="text-xs sm:text-sm opacity-90">{liveAuctionData ? (liveAuctionData.winnersAnnounced ? 'Status' : 'Active Round') : (currentAuction.winnersAnnounced ? 'Status' : 'Active Round')}</div>
+                        <div className="text-lg sm:text-xl font-bold">
+                          {liveAuctionData ? (
+                            liveAuctionData.winnersAnnounced ? 'Winners Announced' : `Round ${liveAuctionData.currentRound || 1}`
+                          ) : (
+                            currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                      <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
-                      <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}</div>
-                    </div>
                   </div>
-                </div>
-              )}
+                )}
+
 
                 <div data-whatsnew-target="prize-showcase-section">
                   <PrizeShowcase

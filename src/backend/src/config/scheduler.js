@@ -637,8 +637,9 @@ const autoActivateAuctions = async () => {
     const currentMinute = Number(serverTime.minute);
     console.log(`⏰ [AUTO-ACTIVATE] Server Time: ${serverTime.time} (${serverTime.date}) - Hour: ${currentHour}, Minute: ${currentMinute}`);
 
-    // Only operate between 9..22 (inclusive). 22 (10 PM slot) ends at 23:00.
-    if (currentHour < 9 || currentHour >= 23) {
+    // Only operate between 9..23 (inclusive). 
+    // 22 (10 PM slot) ends at 23:00. We allow 23:00 to run to mark the last auction as COMPLETED.
+    if (currentHour < 9 || currentHour > 23) {
       console.log(`⏸️ [AUTO-ACTIVATE] Outside operating hours (9 AM - 11 PM). Current hour: ${currentHour}`);
       return;
     }
