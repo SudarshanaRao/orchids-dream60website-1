@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
+import Snowfall from 'react-snowfall';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1264,7 +1265,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
-        
+        <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
         {/* Header with Logo - matching Support page style */}
         <motion.header 
           className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
@@ -1412,7 +1413,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      
+      <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
       {/* Header with Logo - matching Support page style */}
       <motion.header 
         className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"

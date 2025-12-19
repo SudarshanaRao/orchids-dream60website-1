@@ -2182,7 +2182,7 @@ if (currentPage === 'support') {
 
               <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
                 {/* Current Auction Time Slot Banner */}
-                {serverTime && getCurrentAuctionSlot(serverTime) && (
+                {serverTime && (
                   <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
                     <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
                     <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">

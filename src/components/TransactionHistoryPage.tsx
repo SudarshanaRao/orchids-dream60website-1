@@ -17,6 +17,7 @@ import {
   Gift,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
+import Snowfall from 'react-snowfall';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -485,7 +486,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   }
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50" data-whatsnew-target="transactions">
+      <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50 relative" data-whatsnew-target="transactions">
+        <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
         <SupportCenterHeader
           title="Transaction History"
           icon={<IndianRupee className="w-6 h-6" />}
