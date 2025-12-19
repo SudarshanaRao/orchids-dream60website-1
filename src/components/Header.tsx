@@ -27,158 +27,110 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
   const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
   const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
   const [hasNewHistory, setHasNewHistory] = useState(false);
-  const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>({ totalWins: 0, totalLosses: 0 });
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
+    const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>(() => ({
+      totalWins: user?.totalWins ?? 0,
+      totalLosses: user?.totalLosses ?? 0,
+    }));
+    const [showStatsDot, setShowStatsDot] = useState(false);
 
-  // PWA Install prompt handler
-  useEffect(() => {
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallButton(true);
-    };
+    // Fetch user stats from backend API
+    useEffect(() => {
+      const fetchUserStats = async () => {
+        const userId = user?.id || localStorage.getItem('user_id');
+        if (!userId) return;
 
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
-    if (isStandalone) {
-      setShowInstallButton(false);
-    } else {
-      // For iOS, show install button with instructions
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isIOS && !isStandalone) {
-        setShowInstallButton(true);
-      }
-    }
-
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-    const handleInstallClick = async () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
-
-      // Hide button if already installed
-      if (isStandalone) {
-        setShowInstallButton(false);
-        return;
-      }
-
-      // Detect iOS
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      
-      if (isIOS) {
-        // Show instructions for iOS
-        alert('To install this app on your iPhone:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
-        return;
-      }
-
-      // Android/Desktop: trigger native prompt
-      if (deferredPrompt) {
         try {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          setDeferredPrompt(null);
+          const queryString = buildQueryString({ userId });
+          const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
+          if (!response.ok) return;
 
-          if (outcome === 'accepted') {
-            setShowInstallButton(false);
+          const result = await response.json();
+          const stats = result.stats || result.data?.stats || {};
+
+          const newWins = stats.totalWins ?? user?.totalWins ?? 0;
+          const newLosses = stats.totalLosses ?? user?.totalLosses ?? 0;
+
+          // Check if stats changed from what we last SAW
+          const lastSeenStatsStr = localStorage.getItem(`last_seen_stats_${userId}`);
+          const lastSeenStats = lastSeenStatsStr ? JSON.parse(lastSeenStatsStr) : { totalWins: newWins, totalLosses: newLosses };
+          
+          if (newWins !== lastSeenStats.totalWins || newLosses !== lastSeenStats.totalLosses) {
+            setShowStatsDot(true);
+          }
+
+          setUserStats({
+            totalWins: newWins,
+            totalLosses: newLosses,
+          });
+        } catch (error) {
+          console.error('Error fetching user stats:', error);
+        }
+      };
+
+      fetchUserStats();
+      const interval = setInterval(fetchUserStats, 60000);
+      return () => clearInterval(interval);
+    }, [user?.id, user?.totalWins, user?.totalLosses]);
+
+    useEffect(() => {
+      if (user?.totalWins !== undefined || user?.totalLosses !== undefined) {
+        setUserStats({
+          totalWins: user?.totalWins ?? 0,
+          totalLosses: user?.totalLosses ?? 0,
+        });
+      }
+    }, [user?.totalWins, user?.totalLosses]);
+
+    // Check for new auction history entries
+    useEffect(() => {
+      if (!user?.id) {
+        setHasNewHistory(false);
+        return;
+      }
+
+      const checkNewHistory = async () => {
+        try {
+          const lastViewedTime = localStorage.getItem(`auction_history_last_viewed_${user.id}`);
+          const lastViewedTimestamp = lastViewedTime ? parseInt(lastViewedTime, 10) : 0;
+
+          const queryString = buildQueryString({ userId: user.id });
+          const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
+          
+          if (!response.ok) return;
+          
+          const result = await response.json();
+          
+          if (result.success && result.data && result.data.length > 0) {
+            // Check if any entry was created or updated after last viewed time
+            const hasNew = result.data.some((entry: any) => {
+              const entryTime = new Date(entry.updatedAt || entry.createdAt || entry.joinedAt).getTime();
+              return entryTime > lastViewedTimestamp;
+            });
+            setHasNewHistory(hasNew);
+          } else {
+            setHasNewHistory(false);
           }
         } catch (error) {
-          console.error('Error triggering install prompt:', error);
+          console.error('Error checking auction history:', error);
         }
-        return;
+      };
+
+      checkNewHistory();
+      // Poll every 30 seconds
+      const interval = setInterval(checkNewHistory, 30000);
+      return () => clearInterval(interval);
+    }, [user?.id]);
+
+    // Mark history as viewed when navigating to history page
+    const handleNavigateToHistory = () => {
+      if (user?.id) {
+        localStorage.setItem(`auction_history_last_viewed_${user.id}`, Date.now().toString());
+        localStorage.setItem(`last_seen_stats_${user.id}`, JSON.stringify(userStats));
+        setHasNewHistory(false);
+        setShowStatsDot(false);
       }
-
-      // No captured prompt available (shouldn't reach here on Android/Desktop)
-      alert('Install prompt is not available right now. Please try again later.');
+      onNavigate?.('history');
     };
-
-  // Fetch user stats from backend API
-  useEffect(() => {
-    const fetchUserStats = async () => {
-      const userId = user?.id || localStorage.getItem('user_id');
-      if (!userId) return;
-
-      try {
-        const queryString = buildQueryString({ userId });
-        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
-        if (!response.ok) return;
-
-        const result = await response.json();
-        const stats = result.stats || result.data?.stats || {};
-
-        setUserStats({
-          totalWins: stats.totalWins ?? user?.totalWins ?? 0,
-          totalLosses: stats.totalLosses ?? user?.totalLosses ?? 0,
-        });
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      }
-    };
-
-    fetchUserStats();
-    const interval = setInterval(fetchUserStats, 60000);
-    return () => clearInterval(interval);
-  }, [user?.id, user?.totalWins, user?.totalLosses]);
-
-  useEffect(() => {
-    if (user?.totalWins !== undefined || user?.totalLosses !== undefined) {
-      setUserStats({
-        totalWins: user?.totalWins ?? 0,
-        totalLosses: user?.totalLosses ?? 0,
-      });
-    }
-  }, [user?.totalWins, user?.totalLosses]);
-
-  // Check for new auction history entries
-  useEffect(() => {
-    if (!user?.id) {
-      setHasNewHistory(false);
-      return;
-    }
-
-    const checkNewHistory = async () => {
-      try {
-        const lastViewedTime = localStorage.getItem(`auction_history_last_viewed_${user.id}`);
-        const lastViewedTimestamp = lastViewedTime ? parseInt(lastViewedTime, 10) : 0;
-
-        const queryString = buildQueryString({ userId: user.id });
-        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
-        
-        if (!response.ok) return;
-        
-        const result = await response.json();
-        
-        if (result.success && result.data && result.data.length > 0) {
-          // Check if any entry was created or updated after last viewed time
-          const hasNew = result.data.some((entry: any) => {
-            const entryTime = new Date(entry.updatedAt || entry.createdAt || entry.joinedAt).getTime();
-            return entryTime > lastViewedTimestamp;
-          });
-          setHasNewHistory(hasNew);
-        } else {
-          setHasNewHistory(false);
-        }
-      } catch (error) {
-        console.error('Error checking auction history:', error);
-      }
-    };
-
-    checkNewHistory();
-    // Poll every 30 seconds
-    const interval = setInterval(checkNewHistory, 30000);
-    return () => clearInterval(interval);
-  }, [user?.id]);
-
-  // Mark history as viewed when navigating to history page
-  const handleNavigateToHistory = () => {
-    if (user?.id) {
-      localStorage.setItem(`auction_history_last_viewed_${user.id}`, Date.now().toString());
-      setHasNewHistory(false);
-    }
-    onNavigate?.('history');
-  };
 
   const overlayVariants = {
     hidden: {

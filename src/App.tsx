@@ -396,6 +396,7 @@ const App = () => {
       // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
       totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
       totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
+      totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
       totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
       totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
       userType: userData.userType || 'PLAYER',
@@ -425,10 +426,17 @@ const App = () => {
       
       const result = await response.json();
       
-      if (result.success && result.user) {
-        console.log('✅ User data fetched from API:', result.user);
-        const mappedUser = mapUserData(result.user);
-        setCurrentUser(mappedUser);
+        if (result.success && result.user) {
+          console.log('✅ User data fetched from API:', result.user);
+          const mappedUser = mapUserData(result.user);
+          
+          // ✅ Save updated stats to localStorage for faster restoration on refresh
+          localStorage.setItem("totalWins", mappedUser.totalWins.toString());
+          localStorage.setItem("totalLosses", mappedUser.totalLosses.toString());
+          localStorage.setItem("totalAmountSpent", mappedUser.totalAmountSpent.toString());
+          localStorage.setItem("totalAmountWon", mappedUser.totalAmountWon.toString());
+          
+          setCurrentUser(mappedUser);
         console.log('✅ User state updated with stats:', {
           totalAuctions: mappedUser.totalAuctions,
           totalWins: mappedUser.totalWins,
@@ -818,14 +826,23 @@ const App = () => {
 
         if (!userId || !username) return; // No valid session
 
-        // ✅ Restore user from localStorage without API call
-        const user = mapUserData({
-          user_id: userId,
-          username: username,
-          email: email || '',
-        });
+      // ✅ Restore user from localStorage without API call
+      const storedWins = parseInt(localStorage.getItem("totalWins") || "0", 10);
+      const storedLosses = parseInt(localStorage.getItem("totalLosses") || "0", 10);
+      const storedSpent = parseFloat(localStorage.getItem("totalAmountSpent") || "0");
+      const storedWon = parseFloat(localStorage.getItem("totalAmountWon") || "0");
 
-        setCurrentUser(user);
+      const user = mapUserData({
+        user_id: userId,
+        username: username,
+        email: email || '',
+        totalWins: storedWins,
+        totalLosses: storedLosses,
+        totalAmountSpent: storedSpent,
+        totalAmountWon: storedWon,
+      });
+
+      setCurrentUser(user);
         console.log('✅ Session restored from localStorage');
       } catch (error) {
         console.error("Session restore error:", error);
