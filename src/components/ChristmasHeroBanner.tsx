@@ -4,14 +4,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles } from 'lucide-react';
 
-interface ChristmasHeroBannerProps {
-  user?: any;
-  onJoinNow?: () => void;
-}
-
-export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
+export const ChristmasHeroBanner: React.FC = () => {
   return (
-    <section className="relative w-full h-[40vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+    <section className="relative w-full h-[60vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 
@@ -154,21 +149,20 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
                   </div>
   
                   {/* CTA Button */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 1, delay: 0.8 }}
-                      className="pt-2 sm:pt-4 flex justify-center max-w-lg mx-auto w-full"
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.8 }}
+                    className="pt-2 sm:pt-4 flex justify-center max-w-lg mx-auto w-full"
+                  >
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/90 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
                     >
-                      <motion.button
-                        onClick={onJoinNow}
-                        whileTap={{ scale: 0.95 }}
-                        className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/90 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
-                      >
-                      <span className="relative z-10">Join Now</span>
-                      <ChevronRight className="w-5 h-5 relative z-10" />
-                    </motion.button>
-                  </motion.div>
+                    <span className="relative z-10">Join Now</span>
+                    <ChevronRight className="w-5 h-5 relative z-10" />
+                  </motion.button>
+                </motion.div>
             </div>
           </div>
 
