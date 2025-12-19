@@ -791,6 +791,8 @@ const App = () => {
             prizeValue: result.data.prizeValue || prev.prizeValue,
             totalParticipants: result.data.participants?.length || prev.totalParticipants,
           }));
+        } else {
+          setLiveAuctionData(null);
         }
       } catch (error) {
         console.error('Error fetching initial live auction:', error);
@@ -1385,6 +1387,7 @@ const App = () => {
           });
         } else {
           console.log('⚠️ No live auction found in response');
+          setLiveAuctionData(null);
         }
       } catch (error) {
         console.error('Error fetching live auction:', error);
@@ -2189,7 +2192,7 @@ if (currentPage === 'support') {
 
               <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
                     {/* Current Auction Time Slot Banner */}
-                    {serverTime && (() => {
+                    {serverTime && liveAuctionData && (() => {
                       const activeRoundNum = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE')?.roundNumber || liveAuctionData?.currentRound || 1;
                       const startTime = liveAuctionData?.startedAt ? new Date(liveAuctionData.startedAt) : currentAuction.startTime;
                       const endTime = liveAuctionData?.startedAt ? new Date(new Date(liveAuctionData.startedAt).getTime() + 60 * 60 * 1000) : currentAuction.endTime;
