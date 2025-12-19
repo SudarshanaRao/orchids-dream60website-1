@@ -68,7 +68,19 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   const highlightTarget = (selector: string, attempt = 0) => {
     const element = getVisibleTarget(selector);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      // Only scroll if not already in viewport to avoid jumping sticky headers
+      const rect = element.getBoundingClientRect();
+      const isVisible = (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+      );
+
+      if (!isVisible) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      
       element.classList.add('whatsnew-highlight');
       setTimeout(() => element.classList.remove('whatsnew-highlight'), 2200);
       return;
@@ -166,10 +178,9 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
             outline: 4px solid rgba(139, 92, 246, 0.85) !important;
             outline-offset: 4px !important;
             box-shadow: 0 0 0 8px rgba(167, 139, 250, 0.4), 0 20px 40px -12px rgba(76, 29, 149, 0.5) !important;
-            border-radius: 1rem !important;
             z-index: 60 !important;
-            position: relative !important;
             transition: outline 0.3s ease, box-shadow 0.3s ease !important;
+            pointer-events: auto !important;
           }
           @keyframes slide-up {
             from { transform: translateY(20px); opacity: 0; }

@@ -94,10 +94,29 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     participants?: number;
     qualified?: number;
   }>({ message: '' });
+  
   const [isVisible, setIsVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasFetched, setHasFetched] = useState(false);
+
+  useEffect(() => {
+    if (liveAuction?.hourlyAuctionId) {
+      const closed = localStorage.getItem(`closed_banner_${liveAuction.hourlyAuctionId}`) === 'true';
+      if (closed) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+    }
+  }, [liveAuction?.hourlyAuctionId]);
+
+  const handleClose = () => {
+    setIsVisible(false);
+    if (liveAuction?.hourlyAuctionId) {
+      localStorage.setItem(`closed_banner_${liveAuction.hourlyAuctionId}`, 'true');
+    }
+  };
 
   const fetchLiveAuction = useCallback(async () => {
     if (!userId) {
@@ -140,12 +159,10 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         }
       } else if (userHistoryData.length > 0) {
         // Even if no live auction, we might want to show status for the most recent completed one
-        // Sort by hourlyAuctionId or createdAt to get latest
         const latestRecord = [...userHistoryData].sort((a, b) => 
           new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
         )[0];
 
-        // Check if the latest record is recent enough (e.g., within last 2 hours)
         const isRecent = latestRecord && (Date.now() - new Date(latestRecord.createdAt).getTime()) < 2 * 60 * 60 * 1000;
         
         if (isRecent) {
@@ -180,8 +197,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       determineUserStatus(liveAuctionData, serverTime);
     } catch (error) {
       console.error('Error fetching banner data:', error);
-      // Don't reset to null on error to prevent flickering
-      // If we already have data, keep it until next successful fetch
     } finally {
       setIsLoading(false);
       setHasFetched(true);
@@ -204,11 +219,26 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     const lastRound = completedRounds.find(r => r.roundNumber === latestCompletedRound);
     const qualifiedCount = lastRound?.qualifiedPlayers?.length || 0;
 
+    const now = currentTime?.timestamp || Date.now();
+    const FIFTEEN_MINS = 15 * 60 * 1000;
+
+    // Check for 15-minute visibility limit since results announcement
+    const resultsTime = auction.winnersAnnouncedAt 
+      ? (typeof auction.winnersAnnouncedAt === 'string' ? new Date(auction.winnersAnnouncedAt).getTime() : auction.winnersAnnouncedAt)
+      : (auction.completedAt ? new Date(auction.completedAt).getTime() : null);
+
+    if (resultsTime && (now - resultsTime) > FIFTEEN_MINS) {
+      // If it's a winner claim, we might want to keep it longer or follow the rank-based window
+      // But for ELIMINATED or round results, we hide after 15 mins.
+      // The user specifically said "winnerClaimBanner should only lasts for 15 mins from when the results announced"
+      // and gave the example of 12:15 to 12:30.
+      setBannerType(null);
+      return;
+    }
+
     if (auction.winnersAnnounced && auction.winners) {
       const userWinner = auction.winners.find(w => w.playerId === userId);
       const historyRecord = auction.userHistoryRecord;
-      const now = currentTime?.timestamp || Date.now();
-      const FIFTEEN_MINS = 15 * 60 * 1000;
       
       // Use history record if available for more detailed claim status
       if (historyRecord && historyRecord.isWinner) {
@@ -230,14 +260,9 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         }
 
         if (historyRecord.prizeClaimStatus === 'EXPIRED') {
-          // Calculate when it expired for this user
-          const winnersAnnouncedTime = auction.winnersAnnouncedAt 
-            ? (typeof auction.winnersAnnouncedAt === 'string' ? new Date(auction.winnersAnnouncedAt).getTime() : auction.winnersAnnouncedAt)
-            : (auction.completedAt ? new Date(auction.completedAt).getTime() : null);
-          
-          if (winnersAnnouncedTime) {
+          if (resultsTime) {
             const userRank = historyRecord.rank || userWinner?.rank || 1;
-            const userWindowEnd = winnersAnnouncedTime + (userRank * 15 * 60 * 1000);
+            const userWindowEnd = resultsTime + (userRank * 15 * 60 * 1000);
             
             if ((now - userWindowEnd) > FIFTEEN_MINS) {
               setBannerType(null);
@@ -603,7 +628,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       <div className={`relative py-3 bg-gradient-to-r ${config.gradient}`}>
         <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
         <button
-          onClick={() => setIsVisible(false)}
+          onClick={handleClose}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-10"
           aria-label="Close banner"
         >
