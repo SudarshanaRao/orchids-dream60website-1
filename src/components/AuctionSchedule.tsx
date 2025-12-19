@@ -485,12 +485,12 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                           return (
                             <Button
                               onClick={() => {
-                                if (previousRound > 0 && auction.hourlyAuctionId) {
-                                  onNavigate?.('leaderboard', { 
-                                    hourlyAuctionId: auction.hourlyAuctionId,
-                                    roundNumber: previousRound 
-                                  });
-                                }
+                                  if (previousRound > 0 && auction.hourlyAuctionId) {
+                                    onNavigate?.('auction-leaderboard', { 
+                                      hourlyAuctionId: auction.hourlyAuctionId,
+                                      roundNumber: previousRound 
+                                    });
+                                  }
                               }}
                               size="sm"
                               variant="outline"
