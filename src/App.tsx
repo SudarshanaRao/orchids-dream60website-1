@@ -726,15 +726,17 @@ const App = () => {
       action: () => handleNavigate('game'),
       mobileAction: () => setMobileMenuOpen(true),
     },
-    {
-      id: 'auction-schedule',
-      title: 'Daily Auction Schedule',
-      description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
-      targetElement: '[data-whatsnew-target="auction-schedule"]',
-      position: 'top',
-      action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
-      mobileAction: () => setMobileMenuOpen(false),
-    },
+      {
+        id: 'auction-schedule',
+        title: 'Daily Auction Schedule',
+        description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
+        targetElement: '[data-whatsnew-target="auction-schedule"]',
+        position: 'top',
+        scrollBlock: 'start', // Start in the middle of the screen (custom logic in TutorialOverlay)
+        action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
+        mobileAction: () => setMobileMenuOpen(false),
+      },
+
     {
       id: 'support',
       title: 'Need Help?',
@@ -1448,10 +1450,12 @@ const App = () => {
       setCurrentUser(mappedUser);
       
       console.log('✅ User logged in successfully:', mappedUser.username);
+      
+      // ✅ NEW: Always show Amazon voucher modal on login/signup as requested
+      setShowAmazonVoucherModal(true);
 
       // ✅ Check if this is user's first login (tutorial not completed)
       const tutorialCompleted = localStorage.getItem('tutorial_completed_dream60-whatsnew-v2') === 'true';
-      const hasSeenVoucher = localStorage.getItem(`amazon_voucher_shown_${mappedUser.id}`) === 'true';
       
       if (!tutorialCompleted) {
         // First time login - show tutorial after a delay
@@ -1459,12 +1463,6 @@ const App = () => {
         setTimeout(() => {
           setTutorialStartToken(Date.now());
         }, 1500);
-      }
-      
-      if (!hasSeenVoucher) {
-        // First time login - show Amazon voucher modal
-        setShowAmazonVoucherModal(true);
-        localStorage.setItem(`amazon_voucher_shown_${mappedUser.id}`, 'true');
       }
 
       // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee

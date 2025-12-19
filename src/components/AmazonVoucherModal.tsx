@@ -10,14 +10,14 @@ interface AmazonVoucherModalProps {
 export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalProps) {
   const [show, setShow] = useState(false);
 
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
+    useEffect(() => {
+      if (isVisible) {
         setShow(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible]);
+      } else {
+        setShow(false);
+      }
+    }, [isVisible]);
+
 
   const handleClose = () => {
     setShow(false);

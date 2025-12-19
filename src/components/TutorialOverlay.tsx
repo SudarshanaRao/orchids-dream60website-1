@@ -8,6 +8,7 @@ export interface TutorialStep {
   targetElement: string; // CSS selector for the element to highlight
   mobileTargetElement?: string; // CSS selector for mobile-specific element
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  scrollBlock?: ScrollIntoViewOptions['block']; // Optional scroll block position
   action?: () => void; // Optional action to open the right page/section
   mobileAction?: () => void; // Optional action for mobile (e.g., open menu first)
   shouldSkip?: () => boolean; // Skip this step automatically if already done
@@ -27,18 +28,22 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`) === 'true';
-    const shouldStart = Boolean(forceShow || startToken || !completed);
+    useEffect(() => {
+      const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`) === 'true';
+      
+      // Auto-start ONLY if forceShow or startToken is provided
+      // Parents should handle the logic of when to trigger it for new users
+      const shouldStart = Boolean(forceShow || startToken);
 
-    if (shouldStart && steps.length > 0) {
-      setCurrentStep(0);
-      setIsVisible(true);
-    } else {
-      setIsVisible(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tutorialId, startToken, forceShow, steps.length]);
+      if (shouldStart && steps.length > 0) {
+        setCurrentStep(0);
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tutorialId, startToken, forceShow, steps.length]);
+
 
   useEffect(() => {
     if (!isVisible) return;
@@ -67,19 +72,34 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
 
   const highlightTarget = (selector: string, attempt = 0) => {
     const element = getVisibleTarget(selector);
-    if (element) {
-      // Only scroll if not already in viewport to avoid jumping sticky headers
-      const rect = element.getBoundingClientRect();
-      const isVisible = (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-      );
+      if (element) {
+        // Only scroll if not already in viewport to avoid jumping sticky headers
+        const rect = element.getBoundingClientRect();
+        const isVisible = (
+          rect.top >= 0 &&
+          rect.left >= 0 &&
+          rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+          rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
 
-      if (!isVisible) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+        const step = steps[currentStep];
+        if (!isVisible || step?.scrollBlock) {
+          if (step?.scrollBlock === 'start' && !isMobile()) {
+            // Special handling for "start in the middle of the screen"
+            const elementTop = element.getBoundingClientRect().top + window.pageYOffset;
+            const middleOffset = window.innerHeight / 3; // Position at top third for better visibility
+            window.scrollTo({
+              top: elementTop - middleOffset,
+              behavior: 'smooth'
+            });
+          } else {
+            element.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: step?.scrollBlock || 'center' 
+            });
+          }
+        }
+
       
       element.classList.add('whatsnew-highlight');
       setTimeout(() => element.classList.remove('whatsnew-highlight'), 2200);
