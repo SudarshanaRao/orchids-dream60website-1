@@ -6,7 +6,7 @@ import { ChevronRight, Sparkles } from 'lucide-react';
 
 export const ChristmasHeroBanner: React.FC = () => {
   return (
-    <section className="relative w-full h-[60vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+    <section className="relative w-full h-[30vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 

@@ -1619,21 +1619,18 @@ const App = () => {
     window.history.pushState({}, '', '/login');
   };
 
-  const handleEntrySuccess = () => {
-    if (!showEntrySuccess || !currentUser) return;
-
-    toast.success('Entry Fee Paid!', {
-      description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-    });
-
-    // ✅ FIX: Close modal first, then update state after a brief delay to prevent shaking
-    setShowEntrySuccess(null);
-    
-    // ✅ Use requestAnimationFrame to batch state updates after modal closes
-    requestAnimationFrame(() => {
+    const handleEntrySuccess = () => {
+      if (!showEntrySuccess || !currentUser) return;
+  
+      toast.success('Entry Fee Paid!', {
+        description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+      });
+  
+      // ✅ FIX: Close modal and update state in one go to prevent shaking
+      setShowEntrySuccess(null);
+      
       setCurrentAuction(prev => {
         const now = new Date();
-
         const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
           if (b.type === 'entry') {
             const entry = b as EntryBox;
@@ -1659,11 +1656,12 @@ const App = () => {
         };
       });
 
-      // ✅ Trigger refetch after state update
-      console.log('💳 Payment successful - triggering auction data refresh');
-      setForceRefetchTrigger(prev => prev + 1);
-    });
-  };
+      // ✅ Trigger refetch after a slight delay to allow the local state to settle
+      setTimeout(() => {
+        console.log('💳 Payment successful - triggering auction data refresh');
+        setForceRefetchTrigger(prev => prev + 1);
+      }, 300);
+    };
 
   const handleEntryFailure = () => {
     setShowEntryFailure(null);

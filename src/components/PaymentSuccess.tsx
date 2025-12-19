@@ -20,20 +20,22 @@ export function PaymentSuccess({
 }: PaymentSuccessProps) {
   const [countdown, setCountdown] = useState(5);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onBackToHome();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [onBackToHome]);
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setTimeout(() => {
+              onBackToHome();
+            }, 1000);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+  
+      return () => clearInterval(timer);
+    }, [onBackToHome]);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
@@ -85,60 +87,60 @@ export function PaymentSuccess({
           </motion.div>
         </div>
 
-        <div className="px-8 pt-8 pb-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 className="text-3xl font-black text-gray-900 mb-2">Payment Success!</h2>
-            <p className="text-purple-600 font-bold uppercase tracking-wider text-sm mb-6">
-              {type === 'entry' 
-                ? boxNumber === 0 ? 'Auction Entry Confirmed' : `Box ${boxNumber} Entry Confirmed`
-                : 'Bid Placed Successfully'
-              }
-            </p>
-          </motion.div>
-
-          <motion.div 
-            className="bg-purple-50 rounded-2xl p-6 mb-6 border border-purple-100"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <IndianRupee className="w-6 h-6 text-purple-700" strokeWidth={3} />
-              <span className="text-4xl font-black text-gray-900">
-                {amount.toLocaleString('en-IN')}
-              </span>
-            </div>
-            <div className="inline-flex items-center gap-1.5 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-md">
-              <Check className="w-3 h-3" strokeWidth={3} />
-              TRANSACTION COMPLETED
-            </div>
-          </motion.div>
-
-            <div className="space-y-4">
-              <div className="flex flex-col items-center justify-center gap-2 p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
-                <div className="flex items-center gap-2 text-purple-600">
-                  <Clock className="w-5 h-5 animate-pulse" />
-                  <span className="text-sm font-bold uppercase tracking-wider">Auto-closing</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-4xl font-black text-purple-700">{countdown}</span>
-                  <span className="text-lg font-bold text-purple-600/70">seconds remaining</span>
-                </div>
+          <div className="px-6 sm:px-8 pt-8 pb-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Payment Success!</h2>
+              <p className="text-purple-600 font-bold uppercase tracking-wider text-[10px] sm:text-sm mb-6">
+                {type === 'entry' 
+                  ? boxNumber === 0 ? 'Auction Entry Confirmed' : `Box ${boxNumber} Entry Confirmed`
+                  : 'Bid Placed Successfully'
+                }
+              </p>
+            </motion.div>
+  
+            <motion.div 
+              className="bg-purple-50 rounded-2xl p-4 sm:p-6 mb-6 border border-purple-100"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-purple-700" strokeWidth={3} />
+                <span className="text-3xl sm:text-4xl font-black text-gray-900">
+                  {amount.toLocaleString('en-IN')}
+                </span>
               </div>
-
-              <Button
-                onClick={onBackToHome}
-                className="w-full h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Home className="w-5 h-5" />
-                Continue to Auction
-              </Button>
-            </div>
-        </div>
+              <div className="inline-flex items-center gap-1.5 bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-md">
+                <Check className="w-3 h-3" strokeWidth={3} />
+                TRANSACTION COMPLETED
+              </div>
+            </motion.div>
+  
+              <div className="space-y-4">
+                <div className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                  <div className="flex items-center gap-2 text-purple-600">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+                    <span className="text-[10px] sm:text-sm font-bold uppercase tracking-wider">Auto-closing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-3xl sm:text-4xl font-black text-purple-700">{countdown}</span>
+                    <span className="text-base sm:text-lg font-bold text-purple-600/70">seconds remaining</span>
+                  </div>
+                </div>
+  
+                <Button
+                  onClick={onBackToHome}
+                  className="w-full h-12 sm:h-14 bg-gradient-to-r from-purple-600 to-purple-800 text-white hover:from-purple-700 hover:to-purple-900 shadow-lg shadow-purple-200 rounded-2xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Continue to Auction
+                </Button>
+              </div>
+          </div>
 
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100 flex items-center justify-center gap-2">
           <Trophy className="w-4 h-4 text-yellow-500" />

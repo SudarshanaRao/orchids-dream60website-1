@@ -167,9 +167,8 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
             outline-offset: 4px !important;
             box-shadow: 0 0 0 8px rgba(167, 139, 250, 0.4), 0 20px 40px -12px rgba(76, 29, 149, 0.5) !important;
             border-radius: 1rem !important;
-            z-index: 40 !important;
+            z-index: 60 !important;
             position: relative !important;
-            transform: none !important;
             transition: outline 0.3s ease, box-shadow 0.3s ease !important;
           }
           @keyframes slide-up {
