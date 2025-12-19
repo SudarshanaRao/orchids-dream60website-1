@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import Snowfall from 'react-snowfall';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
@@ -2184,9 +2185,10 @@ if (currentPage === 'support') {
 
               {/* ✅ Only show banner after server time is loaded */}
 
-            {serverTime && getCurrentAuctionSlot(serverTime) && (
-              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              {serverTime && getCurrentAuctionSlot(serverTime) && (
+                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                  <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
+                  <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                     <div>

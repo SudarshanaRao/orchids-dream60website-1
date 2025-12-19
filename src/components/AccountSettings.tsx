@@ -928,13 +928,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           </motion.div>
 
           {/* Security Section */}
-            <motion.div
-              custom={2}
-              initial="hidden"
-              animate="visible"
-              variants={cardVariants}
-              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
-            >
+              <motion.div
+                custom={2}
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+              >
                 <Snowfall 
                   color="#8B5CF6"
                 snowflakeCount={30}
@@ -997,14 +997,14 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
           </motion.div>
 
-          {/* Auction History Section */}
-            <motion.div
-              custom={3}
-              initial="hidden"
-              animate="visible"
-              variants={cardVariants}
-              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
-            >
+            {/* Auction History Section */}
+              <motion.div
+                custom={3}
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+              >
                 <Snowfall 
                   color="#8B5CF6"
                 snowflakeCount={30}
@@ -1067,14 +1067,14 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
           </motion.div>
 
-          {/* Danger Zone */}
-            <motion.div
-              custom={4}
-              initial="hidden"
-              animate="visible"
-              variants={cardVariants}
-              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-red-500/10 border-2 border-red-200/50 overflow-hidden relative"
-            >
+            {/* Danger Zone */}
+              <motion.div
+                custom={4}
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
+              >
                 <Snowfall 
                   color="#8B5CF6"
                 snowflakeCount={20}
