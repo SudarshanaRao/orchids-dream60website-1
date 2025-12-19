@@ -2183,7 +2183,7 @@ if (currentPage === 'support') {
             <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
               <div data-whatsnew-target="prize-showcase-section">
                 <PrizeShowcase
-                  auction={currentAuction}
+                  currentPrize={currentAuction}
                   isLoggedIn={!!currentUser}
                   serverTime={serverTime}
                   liveAuctionData={liveAuctionData}

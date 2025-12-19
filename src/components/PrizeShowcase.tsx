@@ -98,8 +98,20 @@ interface PrizeShowcaseProps {
     // ✅ NEW: Track current auction ID to detect auction changes
     const [currentAuctionId, setCurrentAuctionId] = useState<string | null>(null);
     // ✅ NEW: Internal live auction fetch state
-    const [apiLiveAuction, setApiLiveAuction] = useState<any | null>(null);
-    const [apiLiveLoading, setApiLiveLoading] = useState<boolean>(true);
+      const [apiLiveAuction, setApiLiveAuction] = useState<any | null>(null);
+      const [apiLiveLoading, setApiLiveLoading] = useState<boolean>(true);
+  
+    // ✅ Add safety check for currentPrize
+    if (!currentPrize || !currentPrize.boxes) {
+      return (
+        <div className="flex items-center justify-center p-8 bg-white/50 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-600 rounded-full animate-spin"></div>
+            <p className="text-purple-900 font-medium">Loading auction data...</p>
+          </div>
+        </div>
+      );
+    }
 
 
 
