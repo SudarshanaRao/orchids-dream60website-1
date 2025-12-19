@@ -2180,61 +2180,58 @@ if (currentPage === 'support') {
               />
             </div>
 
-            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-              <div data-whatsnew-target="prize-showcase-section">
-                <PrizeShowcase
-                  currentPrize={currentAuction}
-                  isLoggedIn={!!currentUser}
-                  serverTime={serverTime}
-                  liveAuctionData={liveAuctionData}
-                  isLoadingLiveAuction={isLoadingLiveAuction}
-                  onPayEntry={(_boxId, totalEntryFee) => {
-                    if (!currentUser) return;
-                    
-                    console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                    setForceRefetchTrigger(prev => prev + 1);
-                    
-                    setShowEntrySuccess({
-                      entryFee: totalEntryFee,
-                      boxNumber: 0
-                    });
-                  }}
-                  onPaymentFailure={(totalEntryFee, errorMessage) => {
-                    setShowEntryFailure({
-                      entryFee: totalEntryFee,
-                      errorMessage
-                    });
-                  }}
-                  onUserParticipationChange={handleUserParticipationChange}
-                />
-              </div>
-
-              {/* Current Auction Time Slot Banner */}
-
-              {/* ✅ Only show banner after server time is loaded */}
-
-              {serverTime && getCurrentAuctionSlot(serverTime) && (
-                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                  <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
-                  <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                    <div>
-                      <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                      <div className="text-xl sm:text-2xl font-bold">
-                        {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+              <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+                {/* Current Auction Time Slot Banner */}
+                {serverTime && getCurrentAuctionSlot(serverTime) && (
+                  <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                    <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
+                    <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                      <div>
+                        <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
+                        <div className="text-xl sm:text-2xl font-bold">
+                          {currentAuction.startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {currentAuction.endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                    <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
-                    <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                      <div className="text-xs sm:text-sm opacity-90">{currentAuction.winnersAnnounced ? 'Status' : 'Active Round'}</div>
+                      <div className="text-lg sm:text-xl font-bold">{currentAuction.winnersAnnounced ? 'Winners Announced' : `Round ${currentAuction.currentRound}`}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {currentUser && (
+                <div data-whatsnew-target="prize-showcase-section">
+                  <PrizeShowcase
+                    currentPrize={currentAuction}
+                    isLoggedIn={!!currentUser}
+                    serverTime={serverTime}
+                    liveAuctionData={liveAuctionData}
+                    isLoadingLiveAuction={isLoadingLiveAuction}
+                    onPayEntry={(_boxId, totalEntryFee) => {
+                      if (!currentUser) return;
+                      
+                      console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                      setForceRefetchTrigger(prev => prev + 1);
+                      
+                      setShowEntrySuccess({
+                        entryFee: totalEntryFee,
+                        boxNumber: 0
+                      });
+                    }}
+                    onPaymentFailure={(totalEntryFee, errorMessage) => {
+                      setShowEntryFailure({
+                        entryFee: totalEntryFee,
+                        errorMessage
+                      });
+                    }}
+                    onUserParticipationChange={handleUserParticipationChange}
+                  />
+                </div>
+
+              {currentUser && (
               <WinnersAnnouncedBanner 
                 onBidNow={handleBidNowScroll}
               />
