@@ -405,19 +405,21 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                         )}
 
 
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            onClick={() => onStartTutorial?.()}
-                            variant="ghost"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                            size="sm"
-                            data-tutorial-target="tutorial-trigger"
-                          >
-                              <Sparkles className="w-4 h-4 mr-1.5" />
-                              What's new
+                        {user && (
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              onClick={() => onStartTutorial?.()}
+                              variant="ghost"
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
+                              size="sm"
+                              data-tutorial-target="tutorial-trigger"
+                            >
+                                <Sparkles className="w-4 h-4 mr-1.5" />
+                                What's new
 
-                          </Button>
-                        </motion.div>
+                            </Button>
+                          </motion.div>
+                        )}
 
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Button

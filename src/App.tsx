@@ -1451,8 +1451,11 @@ const App = () => {
       
       console.log('✅ User logged in successfully:', mappedUser.username);
       
-      // ✅ NEW: Always show Amazon voucher modal on login/signup as requested
-      setShowAmazonVoucherModal(true);
+      // ✅ NEW: Show Amazon voucher modal on login/signup IF not already watched
+      const voucherWatched = localStorage.getItem(`amazon_voucher_watched_${mappedUser.id}`) === 'true';
+      if (!voucherWatched) {
+        setShowAmazonVoucherModal(true);
+      }
 
       // ✅ Check if this is user's first login (tutorial not completed)
       const tutorialCompleted = localStorage.getItem('tutorial_completed_dream60-whatsnew-v2') === 'true';
@@ -1462,7 +1465,7 @@ const App = () => {
         setIsFirstLogin(true);
         setTimeout(() => {
           setTutorialStartToken(Date.now());
-        }, 1500);
+        }, 60000); // 1 minute delay
       }
 
       // ✅ CRITICAL FIX: Immediately fetch live auction to check if user has paid entry fee
@@ -1545,10 +1548,13 @@ const App = () => {
       setIsFirstLogin(true);
       setTimeout(() => {
         setTutorialStartToken(Date.now());
-      }, 1500);
+      }, 60000); // 1 minute delay
       
-      // Show Amazon voucher modal for new users
-      setShowAmazonVoucherModal(true);
+      // Show Amazon voucher modal for new users IF not already watched
+      const voucherWatched = localStorage.getItem(`amazon_voucher_watched_${mappedUser.id}`) === 'true';
+      if (!voucherWatched) {
+        setShowAmazonVoucherModal(true);
+      }
       localStorage.setItem(`amazon_voucher_shown_${mappedUser.id}`, 'true');
 
       setCurrentPage("game");
@@ -2157,42 +2163,51 @@ if (currentPage === 'support') {
               />
             )}
 
-              <ChristmasHeroBanner />
+            <div data-whatsnew-target="prize-showcase">
+              <ChristmasHeroBanner 
+                user={currentUser} 
+                onJoinNow={() => {
+                  if (!currentUser) {
+                    handleShowLogin();
+                  } else {
+                    // Smooth scroll to PrizeShowcase
+                    const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }
+                }} 
+              />
+            </div>
 
-              <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                {/* Redundant Hero Section hidden in favor of ChristmasHeroBanner */}
-                {/* 
-                <div className="text-center space-y-4 px-2 sm:px-4">
-                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold 
-      bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] 
-      bg-clip-text text-transparent">
-      DREAM60
-    </h1>
-
-                  <p className="text-base sm:text-lg md:text-xl max-w-2xl mx-auto px-4
-      bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC]
-      bg-clip-text text-transparent">
-      The ultimate 60-minute auction game. Enter, bid, and win amazing prizes in our hourly auctions!
-    </p>
-
-                  {!currentUser && (
-                    <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 px-4">
-                      <button
-                        onClick={handleShowLogin}
-                        className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white font-semibold px-6 sm:px-8 py-3 rounded-xl hover:from-purple-500 hover:to-purple-600 transition-all shadow-lg w-full sm:w-auto"
-                      >
-                        Join Now & Start Playing
-                      </button>
-                      <button
-                        onClick={handleSwitchToSignup}
-                        className="border border-purple-600 text-purple-700 font-semibold px-6 sm:px-8 py-3 rounded-xl hover:bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] hover:text-white transition-all w-full sm:w-auto"
-                      >
-                        Create Account
-                      </button>
-                    </div>
-                  )}
-                </div>
-                */}
+            <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+              <div data-whatsnew-target="prize-showcase-section">
+                <PrizeShowcase
+                  auction={currentAuction}
+                  isLoggedIn={!!currentUser}
+                  serverTime={serverTime}
+                  liveAuctionData={liveAuctionData}
+                  isLoadingLiveAuction={isLoadingLiveAuction}
+                  onPayEntry={(_boxId, totalEntryFee) => {
+                    if (!currentUser) return;
+                    
+                    console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                    setForceRefetchTrigger(prev => prev + 1);
+                    
+                    setShowEntrySuccess({
+                      entryFee: totalEntryFee,
+                      boxNumber: 0
+                    });
+                  }}
+                  onPaymentFailure={(totalEntryFee, errorMessage) => {
+                    setShowEntryFailure({
+                      entryFee: totalEntryFee,
+                      errorMessage
+                    });
+                  }}
+                  onUserParticipationChange={handleUserParticipationChange}
+                />
+              </div>
 
               {/* Current Auction Time Slot Banner */}
 
@@ -2219,43 +2234,11 @@ if (currentPage === 'support') {
               </div>
             )}
 
-              {/* Winners Announced Banner - Shows when:
-                  1. Winners are announced (shows winner info)
-                  2. User has NOT placed bid in current round and within first 15 mins (shows "PARTICIPATE NOW" prompt) */}
-                {currentUser && (
-                  <WinnersAnnouncedBanner 
-                    onBidNow={handleBidNowScroll}
-                  />
-                )}
-
-
-
-              <PrizeShowcase
-                currentPrize={currentAuction as any}
-                isLoggedIn={!!currentUser}
-                serverTime={serverTime} // ✅ Pass server time from parent
-                liveAuctionData={liveAuctionData} // ✅ Pass live auction data from parent
-                isLoadingLiveAuction={isLoadingLiveAuction} // ✅ NEW: Pass loading state from parent
-                onPayEntry={(_boxId, totalEntryFee) => {
-                  if (!currentUser) return;
-                  
-                  // ✅ CRITICAL FIX: Trigger IMMEDIATE refresh when payment succeeds
-                  console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                  setForceRefetchTrigger(prev => prev + 1);
-                  
-                  setShowEntrySuccess({
-                    entryFee: totalEntryFee,
-                    boxNumber: 0
-                  });
-                }}
-                onPaymentFailure={(totalEntryFee, errorMessage) => {
-                  setShowEntryFailure({
-                    entryFee: totalEntryFee,
-                    errorMessage
-                  });
-                }}
-                onUserParticipationChange={handleUserParticipationChange}
+            {currentUser && (
+              <WinnersAnnouncedBanner 
+                onBidNow={handleBidNowScroll}
               />
+            )}
 
             {currentUser ? (
                   <div ref={auctionGridRef} data-auction-grid id="auction-grid">
