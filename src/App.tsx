@@ -511,19 +511,21 @@ const App = () => {
   const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
     const entryFee1 = generateRandomEntryFee();
     const entryFee2 = generateRandomEntryFee();
-    const auctionHour = 11; // Default hour, will be updated once server time loads
-    const today = new Date();
+    const auctionHour = serverTime?.hour || 9; // Default to 9 UTC (14:30 IST)
+    const today = serverTime ? new Date(serverTime.timestamp) : new Date();
 
-    const activeHour = auctionHour;
-    
-    const startTime = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      activeHour,
-      0,
+    // ✅ Calculate IST slot start time correctly
+    // 9 UTC -> 14:30 IST
+    // 11 UTC -> 16:30 IST
+    // etc.
+    const startTime = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+      auctionHour,
+      0, // Auctions start at :00 past the UTC hour (which is :30 past IST hour, e.g. 14:30)
       0
-    );
+    ));
     
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
@@ -531,23 +533,23 @@ const App = () => {
       const startMinutes = (roundNum - 1) * 15;
       const endMinutes = roundNum * 15;
       
-      const opensAt = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        activeHour,
+      const opensAt = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate(),
+        auctionHour,
         startMinutes,
         0
-      );
+      ));
       
-      const closesAt = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-        activeHour,
+      const closesAt = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate(),
+        auctionHour,
         endMinutes,
         0
-      );
+      ));
 
       return {
         id: roundNum + 2,
@@ -587,7 +589,7 @@ const App = () => {
     };
 
     return {
-      id: `auction-${activeHour}`,
+      id: `auction-${auctionHour}`,
       title: "Loading...", // ✅ Will be updated from API
       prize: "Loading...", // ✅ Will be updated from API
       prizeValue: 0, // ✅ Will be updated from API
@@ -596,7 +598,7 @@ const App = () => {
       currentRound: 1,
       totalParticipants: 0, // ✅ Will be updated from API
       userHasPaidEntry: false,
-      auctionHour: activeHour,
+      auctionHour: auctionHour,
       userBidsPerRound: {},
       userQualificationPerRound: {},
       boxes: [entryBox1, entryBox2, ...roundBoxes],
@@ -952,25 +954,40 @@ const App = () => {
           const entryFee1 = generateRandomEntryFee();
           const entryFee2 = generateRandomEntryFee();
           const today = new Date(serverTime.timestamp);
-          const startTime = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
+          
+          const startTime = new Date(Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate(),
             currentHour,
             0,
             0
-          );
-          const endTime = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-            currentHour + 1,
-            0,
-            0
-          );
+          ));
+          
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
           const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
-            const { opensAt, closesAt } = getRoundBoxTimes(currentHour, roundNum, serverTime);
+            const startMinutes = (roundNum - 1) * 15;
+            const endMinutes = roundNum * 15;
+            
+            const opensAt = new Date(Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate(),
+              currentHour,
+              startMinutes,
+              0
+            ));
+            
+            const closesAt = new Date(Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate(),
+              currentHour,
+              endMinutes,
+              0
+            ));
+
             return {
               id: roundNum + 2,
               type: "round",
@@ -1451,11 +1468,8 @@ const App = () => {
       
       console.log('✅ User logged in successfully:', mappedUser.username);
       
-      // ✅ NEW: Show Amazon voucher modal on login/signup IF not already watched
-      const voucherWatched = localStorage.getItem(`amazon_voucher_watched_${mappedUser.id}`) === 'true';
-      if (!voucherWatched) {
-        setShowAmazonVoucherModal(true);
-      }
+      // ✅ Amazon voucher modal pops up IMMEDIATELY on login as requested
+      setShowAmazonVoucherModal(true);
 
       // ✅ Check if this is user's first login (tutorial not completed)
       const tutorialCompleted = localStorage.getItem('tutorial_completed_dream60-whatsnew-v2') === 'true';
@@ -1543,19 +1557,12 @@ const App = () => {
       setCurrentUser(mappedUser);
       
       console.log('✅ User signed up successfully:', mappedUser.username);
-
-      // ✅ First signup - always show tutorial and Amazon voucher
-      setIsFirstLogin(true);
-      setTimeout(() => {
-        setTutorialStartToken(Date.now());
-      }, 60000); // 1 minute delay
       
-      // Show Amazon voucher modal for new users IF not already watched
-      const voucherWatched = localStorage.getItem(`amazon_voucher_watched_${mappedUser.id}`) === 'true';
-      if (!voucherWatched) {
-        setShowAmazonVoucherModal(true);
-      }
-      localStorage.setItem(`amazon_voucher_shown_${mappedUser.id}`, 'true');
+      // ✅ Amazon voucher modal pops up IMMEDIATELY on signup as requested
+      setShowAmazonVoucherModal(true);
+
+      // ✅ First signup - always show tutorial
+      setIsFirstLogin(true);
 
       setCurrentPage("game");
       window.history.pushState({}, '', '/');

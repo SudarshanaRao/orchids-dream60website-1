@@ -513,58 +513,44 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
               ) : (
                 /* Guest Navigation */
                 <div className="flex items-center space-x-1.5">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={() => onNavigate?.('rules')}
-                      variant="ghost"
-                      className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
-                      size="sm"
-                    >
-                      <FileText className="w-4 h-4 mr-1.5" />
-                      Rules
-                    </Button>
-                  </motion.div>
-
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      onClick={() => onNavigate?.('participation')}
-                      variant="ghost"
-                      className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 hidden xl:flex transition-all"
-                      size="sm"
-                    >
-                      How to Play
-                    </Button>
-                  </motion.div>
-
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
-                        onClick={() => onNavigate?.('support')}
+                        onClick={() => onNavigate?.('rules')}
                         variant="ghost"
                         className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
                         size="sm"
                       >
-                        Support
+                        <FileText className="w-4 h-4 mr-1.5" />
+                        Rules
                       </Button>
                     </motion.div>
 
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button
-                        onClick={() => onStartTutorial?.()}
+                        onClick={() => onNavigate?.('participation')}
                         variant="ghost"
-                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
+                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 hidden xl:flex transition-all"
                         size="sm"
-                        data-tutorial-target="tutorial-trigger"
                       >
-                          <Sparkles className="w-4 h-4 mr-1.5" />
-                          What's new
-
+                        How to Play
                       </Button>
                     </motion.div>
 
-                    <motion.div
-                      whileHover={{ scale: 1.05, y: -1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button
+                          onClick={() => onNavigate?.('support')}
+                          variant="ghost"
+                          className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
+                          size="sm"
+                        >
+                          Support
+                        </Button>
+                      </motion.div>
+
+                      <motion.div
+                        whileHover={{ scale: 1.05, y: -1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                       <Button
                         onClick={onLogin}
                         size="lg"
@@ -870,20 +856,6 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                               <span className="font-medium text-purple-900">Install App</span>
                             </button>
                           </motion.div>
-
-
-                        <motion.div variants={menuItemVariants}>
-                          <button
-                            onClick={() => { onStartTutorial?.(); setMobileMenuOpen(false); }}
-                            className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                            data-tutorial-target="tutorial-trigger"
-                          >
-                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                              <Sparkles className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <span className="font-medium text-purple-900">What's new</span>
-                          </button>
-                        </motion.div>
 
                         <motion.div variants={menuItemVariants} className="pt-2">
                           <Button
