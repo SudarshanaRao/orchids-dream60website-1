@@ -570,13 +570,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             animate="visible"
             variants={cardVariants}
           >
-              <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
-                <div className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative">
-                  <Snowfall 
-                    color="#e9d5ff"
-                    snowflakeCount={40}
-                    radius={[0.5, 2.0]}
-                  />
+                <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
+                  <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative">
+                    <Snowfall 
+                      color="#ffffff"
+                      snowflakeCount={40}
+                      radius={[0.5, 2.0]}
+                    />
                   {/* Card shine effect */}
 
                 <motion.div
@@ -764,10 +764,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
             >
               <Snowfall 
-                color="#e9d5ff"
+                color="#ffffff"
                 snowflakeCount={40}
                 radius={[0.5, 2.0]}
               />
@@ -933,10 +933,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
             >
               <Snowfall 
-                color="#e9d5ff"
+                color="#ffffff"
                 snowflakeCount={30}
                 radius={[0.5, 1.8]}
               />
@@ -1003,10 +1003,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/10 border border-purple-200/50 overflow-hidden relative"
             >
               <Snowfall 
-                color="#e9d5ff"
+                color="#ffffff"
                 snowflakeCount={30}
                 radius={[0.5, 1.8]}
               />
@@ -1073,10 +1073,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               initial="hidden"
               animate="visible"
               variants={cardVariants}
-              className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-2xl shadow-red-500/10 border-2 border-red-200/50 overflow-hidden relative"
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-red-500/10 border-2 border-red-200/50 overflow-hidden relative"
             >
               <Snowfall 
-                color="#fee2e2"
+                color="#ffffff"
                 snowflakeCount={20}
                 radius={[0.5, 1.5]}
               />

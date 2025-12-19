@@ -122,9 +122,9 @@ export function Footer({ onNavigate }: FooterProps) {
                 whileHover={{ y: -8, scale: 1.02 }}
                 className="group relative"
               >
-                <div className="text-center space-y-2 sm:space-y-3 bg-white/70 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-md shadow-purple-500/5 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
+                <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
                   <Snowfall 
-                    color="#e9d5ff"
+                    color="#ffffff"
                     snowflakeCount={40}
                     radius={[0.5, 2.0]}
                     speed={[0.5, 1.5]}
@@ -152,14 +152,14 @@ export function Footer({ onNavigate }: FooterProps) {
 
         {/* How it Works */}
         <motion.div 
-          className="bg-white/70 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-purple-200/50 shadow-xl shadow-purple-500/10 relative overflow-hidden"
+          className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-purple-200/50 shadow-inner shadow-purple-500/10 relative overflow-hidden"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <Snowfall 
-            color="#e9d5ff"
+            color="#ffffff"
             snowflakeCount={60}
             radius={[0.5, 2.5]}
             speed={[0.5, 2.0]}
