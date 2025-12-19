@@ -404,9 +404,9 @@ interface PrizeShowcaseProps {
           <div className="absolute inset-0 backdrop-blur-2xl bg-white/50 rounded-[24px]"></div>
 
           {/* Content container */}
-          <div className="relative backdrop-blur-md bg-black/10 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
+          <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
             <Snowfall 
-              color="#ffffff"
+              color="#8B5CF6"
               snowflakeCount={100}
               radius={[0.5, 3.0]}
               speed={[0.5, 2.5]}
@@ -449,9 +449,9 @@ interface PrizeShowcaseProps {
         <div className="absolute inset-0 backdrop-blur-2xl bg-white/50 rounded-[24px]"></div>
 
         {/* Content container */}
-        <div className="relative backdrop-blur-md bg-black/10 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
+        <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
           <Snowfall 
-            color="#ffffff"
+            color="#8B5CF6"
             snowflakeCount={80}
             radius={[0.5, 2.5]}
             speed={[0.5, 2.0]}

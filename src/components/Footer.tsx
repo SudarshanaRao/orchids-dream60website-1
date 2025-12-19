@@ -124,7 +124,7 @@ export function Footer({ onNavigate }: FooterProps) {
               >
                 <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
                   <Snowfall 
-                    color="#ffffff"
+                    color="#8B5CF6"
                     snowflakeCount={40}
                     radius={[0.5, 2.0]}
                     speed={[0.5, 1.5]}
@@ -159,7 +159,7 @@ export function Footer({ onNavigate }: FooterProps) {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <Snowfall 
-            color="#ffffff"
+            color="#8B5CF6"
             snowflakeCount={60}
             radius={[0.5, 2.5]}
             speed={[0.5, 2.0]}
