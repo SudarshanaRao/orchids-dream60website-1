@@ -86,15 +86,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     return `+91 ${first} ${last}`;
   };
 
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Fetch real-time user data from API
   useEffect(() => {
     const fetchUserData = async () => {
