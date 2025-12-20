@@ -2298,14 +2298,39 @@ if (currentPage === 'support') {
                       if (!currentUser) return;
                       
                       console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                      setForceRefetchTrigger(prev => prev + 1);
                       
+                      // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
+                      // This happens in the background while modal is showing
+                      setForceRefetchTrigger(prev => prev + 1);
+                      if (currentUser.id) {
+                        fetchAndSetUser(currentUser.id);
+                      }
+                      
+                      // Smooth scroll to auction boxes in background
+                      setTimeout(() => {
+                        const element = document.getElementById('auction-grid');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }, 100);
+
                       setShowEntrySuccess({
                         entryFee: totalEntryFee,
                         boxNumber: 0
                       });
                     }}
                     onPaymentFailure={(totalEntryFee, errorMessage) => {
+                      // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
+                      setForceRefetchTrigger(prev => prev + 1);
+                      
+                      // Smooth scroll to auction boxes in background
+                      setTimeout(() => {
+                        const element = document.getElementById('auction-grid');
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }, 100);
+
                       setShowEntryFailure({
                         entryFee: totalEntryFee,
                         errorMessage
@@ -2351,8 +2376,9 @@ if (currentPage === 'support') {
                     
                     {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                     {!currentUser && (
-                      <div className="text-center py-8 sm:py-12 md:py-16 px-4">
-                        <div className="max-w-2xl mx-auto space-y-6">
+                      <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
+                        <Snowfall color="#D8B4FE" snowflakeCount={40} radius={[0.5, 2.0]} />
+                        <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
                           <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
                             Create your free account and start bidding on amazing prizes with direct payment!
