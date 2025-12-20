@@ -209,7 +209,7 @@ interface PrizeShowcaseProps {
       };
 
       fetchLiveAuction();
-      const interval = setInterval(fetchLiveAuction, 15000);
+      const interval = setInterval(fetchLiveAuction, 10 * 60 * 1000); // Refresh every 10 minutes as requested
       return () => {
         isMounted = false;
         clearInterval(interval);

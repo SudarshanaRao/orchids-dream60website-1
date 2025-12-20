@@ -764,18 +764,22 @@ const App = () => {
     setTutorialStartToken(Date.now());
   };
 
-  // ✅ NEW: Fetch live auction data and refresh every 15 minutes (at 00, 15, 30, 45 marks)
+  // ✅ NEW: Fetch live auction data and refresh every 10 minutes
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout>;
+    let isInitialLoad = true;
 
     const fetchLiveAuction = async () => {
-      setIsLoadingLiveAuction(true);
+      if (isInitialLoad) {
+        setIsLoadingLiveAuction(true);
+      }
       try {
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
         
         if (!response.ok) {
           console.log('⚠️ No live auction available');
           setIsLoadingLiveAuction(false);
+          isInitialLoad = false;
           return;
         }
         
@@ -799,25 +803,16 @@ const App = () => {
         console.error('Error fetching live auction:', error);
       } finally {
         setIsLoadingLiveAuction(false);
+        isInitialLoad = false;
       }
     };
 
     const scheduleNextFetch = () => {
-      const now = new Date();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-      
-      // Calculate minutes until next 15-minute mark (00, 15, 30, 45)
-      const next15 = Math.ceil((minutes + 0.1) / 15) * 15;
-      const delayMinutes = next15 - minutes;
-      const delayMs = (delayMinutes * 60 * 1000) - (seconds * 1000);
-
-      console.log(`🕒 Next live auction fetch scheduled in ${delayMinutes}m ${60-seconds}s`);
-
+      // Schedule every 10 minutes (600,000 ms)
       timerId = setTimeout(() => {
         fetchLiveAuction();
         scheduleNextFetch();
-      }, delayMs);
+      }, 10 * 60 * 1000);
     };
 
     // Initial fetch
@@ -2236,9 +2231,9 @@ if (currentPage === 'support') {
                             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                                <div>
-                                  <div className="text-sm sm:text-base opacity-90">Current Auction (IST-5:30)</div>
-                                  <div className="text-xl sm:text-2xl font-bold">
+                                  <div>
+                                    <div className="text-sm sm:text-base opacity-90">Current Auction</div>
+                                    <div className="text-xl sm:text-2xl font-bold">
                                     {displayTime}
                                   </div>
                                 </div>
