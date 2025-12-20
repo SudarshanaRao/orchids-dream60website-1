@@ -1034,8 +1034,17 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
   );
 };
 
-export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
-  const [activeTab, setActiveTab] = useState('all');
+  export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const [activeTab, setActiveTab] = useState('all');
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
