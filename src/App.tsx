@@ -764,11 +764,12 @@ const App = () => {
     setTutorialStartToken(Date.now());
   };
 
-  // ✅ NEW: Fetch live auction data on mount (for all users, even non-logged-in)
+  // ✅ NEW: Fetch live auction data and refresh every 15 minutes (at 00, 15, 30, 45 marks)
   useEffect(() => {
-    const fetchInitialLiveAuction = async () => {
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const fetchLiveAuction = async () => {
       setIsLoadingLiveAuction(true);
-      
       try {
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
         
@@ -781,7 +782,7 @@ const App = () => {
         const result = await response.json();
         
         if (result.success && result.data) {
-          console.log('✅ Initial live auction data loaded');
+          console.log('✅ Live auction data loaded/refreshed');
           setLiveAuctionData(result.data);
           
           // Update basic auction info
@@ -795,14 +796,40 @@ const App = () => {
           setLiveAuctionData(null);
         }
       } catch (error) {
-        console.error('Error fetching initial live auction:', error);
+        console.error('Error fetching live auction:', error);
       } finally {
         setIsLoadingLiveAuction(false);
       }
     };
+
+    const scheduleNextFetch = () => {
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      
+      // Calculate minutes until next 15-minute mark (00, 15, 30, 45)
+      const next15 = Math.ceil((minutes + 0.1) / 15) * 15;
+      const delayMinutes = next15 - minutes;
+      const delayMs = (delayMinutes * 60 * 1000) - (seconds * 1000);
+
+      console.log(`🕒 Next live auction fetch scheduled in ${delayMinutes}m ${60-seconds}s`);
+
+      timerId = setTimeout(() => {
+        fetchLiveAuction();
+        scheduleNextFetch();
+      }, delayMs);
+    };
+
+    // Initial fetch
+    fetchLiveAuction();
     
-    fetchInitialLiveAuction();
-  }, []); // Run once on mount
+    // Start the scheduling loop
+    scheduleNextFetch();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, []); // Run once on mount to start the loop
 
   // Check for existing session on app initialization
   useEffect(() => {
@@ -2191,37 +2218,43 @@ if (currentPage === 'support') {
             </div>
 
               <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                    {/* Current Auction Time Slot Banner */}
-                    {serverTime && liveAuctionData && (() => {
-                      const activeRoundNum = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE')?.roundNumber || liveAuctionData?.currentRound || 1;
-                      const startTime = liveAuctionData?.startedAt ? new Date(liveAuctionData.startedAt) : currentAuction.startTime;
-                      const endTime = liveAuctionData?.startedAt ? new Date(new Date(liveAuctionData.startedAt).getTime() + 60 * 60 * 1000) : currentAuction.endTime;
-                      
-                      return (
-                        <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                          <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
-                          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                              <div>
-                                <div className="text-sm sm:text-base opacity-90">Current Auction (IST)</div>
-                                <div className="text-xl sm:text-2xl font-bold">
-                                  {startTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })} - {endTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {/* Current Auction Time Slot Banner */}
+                      {serverTime && liveAuctionData && (() => {
+                        const activeRound = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE');
+                        const activeRoundNum = activeRound ? activeRound.roundNumber : (liveAuctionData?.currentRound || 1);
+                        
+                        // Use TimeSlot from API as requested
+                        const timeSlot = liveAuctionData?.TimeSlot || "00:00";
+                        const [hours, minutes] = timeSlot.split(':').map(Number);
+                        const endHours = (hours + 1) % 24;
+                        const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                        const displayTime = `${timeSlot} to ${formattedEndTime}`;
+                        
+                        return (
+                          <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                            <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
+                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                                <div>
+                                  <div className="text-sm sm:text-base opacity-90">Current Auction (IST-5:30)</div>
+                                  <div className="text-xl sm:text-2xl font-bold">
+                                    {displayTime}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                                <div className="text-xs sm:text-sm opacity-90">
+                                  {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
+                                </div>
+                                <div className="text-lg sm:text-xl font-bold">
+                                  {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
                                 </div>
                               </div>
                             </div>
-                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                              <div className="text-xs sm:text-sm opacity-90">
-                                {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
-                              </div>
-                              <div className="text-lg sm:text-xl font-bold">
-                                {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
-                              </div>
-                            </div>
                           </div>
-                        </div>
-                      );
-                    })()}
+                        );
+                      })()}
 
 
                 <div data-whatsnew-target="prize-showcase-section">
