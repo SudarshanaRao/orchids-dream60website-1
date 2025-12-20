@@ -273,8 +273,17 @@ const App = () => {
     }
   };
 
-  // ✅ Add server time state
-  const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+
 
   // Initialize currentPage based on URL path
   const [currentPage, setCurrentPage] = useState(() => {
@@ -2307,11 +2316,12 @@ if (currentPage === 'support') {
                         const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
                         const displayTime = `${timeSlot} to ${formattedEndTime}`;
                         
-                        return (
-                            <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                              <Snowfall color="white" snowflakeCount={isMobile ? 15 : 40} radius={[0.5, 2.0]} />
+                          return (
+                              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                                <Snowfall color="white" snowflakeCount={isMobile ? 8 : 40} radius={[0.5, 2.0]} />
 
-                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+
                               <div className="flex items-center gap-3">
                                 <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                                   <div>
