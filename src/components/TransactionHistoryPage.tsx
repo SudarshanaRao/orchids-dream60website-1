@@ -273,10 +273,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           {items.map((item, idx) => (
             <Card
               key={`${item.orderId || item.paymentId || idx}`}
-              className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md transition"
+              className="relative overflow-hidden border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md transition"
               onClick={() => openDetails(item)}
               role="button"
             >
+              <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -487,7 +488,6 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-50 relative" data-whatsnew-target="transactions">
-        <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
         <SupportCenterHeader
           title="Transaction History"
           icon={<IndianRupee className="w-6 h-6" />}

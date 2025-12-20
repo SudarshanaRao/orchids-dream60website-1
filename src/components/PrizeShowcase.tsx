@@ -669,10 +669,10 @@ interface PrizeShowcaseProps {
                                 onClick={onLogin}
                                 className="w-full relative overflow-hidden bg-gradient-to-r from-[#6B3FA0] via-[#8456BC] to-[#9F7ACB] text-white hover:from-[#8456BC] hover:via-[#9F7ACB] hover:to-[#B99FD9] shadow-xl text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] group/button"
                               >
-                                <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-                                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                  <span>Login to Participate</span>
-                                </span>
+                                  <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                                    <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <span>Login</span>
+                                  </span>
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-1000"></div>
                               </Button>
                             )}

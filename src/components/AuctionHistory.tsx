@@ -508,7 +508,8 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="cursor-pointer"
     >
-      <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
+        <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
+          <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
         {/* Subtle Background Gradient */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div
@@ -1262,11 +1263,10 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
 
 
   // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
-        {/* Header with Logo - matching Support page style */}
+    if (isLoading) {
+      return (
+        <div className="min-h-screen bg-white relative overflow-hidden">
+          {/* Header with Logo - matching Support page style */}
         <motion.header 
           className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
           initial={{ opacity: 0, y: -20 }}
@@ -1411,10 +1411,9 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
     );
   }
 
-  return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
-      {/* Header with Logo - matching Support page style */}
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        {/* Header with Logo - matching Support page style */}
       <motion.header 
         className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
