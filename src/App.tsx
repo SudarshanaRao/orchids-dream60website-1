@@ -2347,37 +2347,39 @@ if (currentPage === 'support') {
                   </>
                 )}
 
-                  <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
-                  <AuctionScheduleInfo />
-
-                  {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
-                  {!currentUser && (
-                    <div className="text-center py-8 sm:py-12 md:py-16 px-4">
-                      <div className="max-w-2xl mx-auto space-y-6">
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
-                        <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
-                          Create your free account and start bidding on amazing prizes with direct payment!
-                        </p>
-                        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
-                          <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
-                          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                            <div>
-                              <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
-                              <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
-                            </div>
-                            <div>
-                              <div className="text-xl sm:text-2xl font-bold text-purple-700">{dailyStats.totalAuctions}x</div>
-                              <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
-                            </div>
-                            <div>
-                              <div className="text-xl sm:text-2xl font-bold text-purple-700">₹{dailyStats.totalPrizeValue.toLocaleString()}+</div>
-                              <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                    <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
+                    
+                    {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
+                    {!currentUser && (
+                      <div className="text-center py-8 sm:py-12 md:py-16 px-4">
+                        <div className="max-w-2xl mx-auto space-y-6">
+                          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
+                          <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
+                            Create your free account and start bidding on amazing prizes with direct payment!
+                          </p>
+                          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
+                            <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
+                            <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                              <div>
+                                <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
+                                <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
+                              </div>
+                              <div>
+                                <div className="text-xl sm:text-2xl font-bold text-purple-700">{dailyStats.totalAuctions}x</div>
+                                <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
+                              </div>
+                              <div>
+                                <div className="text-xl sm:text-2xl font-bold text-purple-700">₹{dailyStats.totalPrizeValue.toLocaleString()}+</div>
+                                <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    <AuctionScheduleInfo />
+
                 </main>
 
 
