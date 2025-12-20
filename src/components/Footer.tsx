@@ -1,5 +1,4 @@
-
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Clock, Shield, Zap, Users } from 'lucide-react';
 import Snowfall from 'react-snowfall';
 
@@ -31,32 +30,32 @@ export function Footer({ onNavigate }: FooterProps) {
     }
   };
 
-    const features = [
-          {
-            icon: Clock,
-            title: '60-Minute Auctions',
-            description: 'Fast-paced hourly auctions with real prizes and real winners',
-            color: 'from-purple-600 via-purple-700 to-purple-800'
-          },
-          {
-            icon: Shield,
-            title: 'Fair & Secure',
-            description: 'Transparent bidding process with secure payment handling',
-            color: 'from-purple-500 via-purple-600 to-purple-700'
-          },
-          {
-            icon: Zap,
-            title: 'Instant Results',
-            description: 'Winners announced immediately, prizes shipped within 24 hours',
-            color: 'from-purple-600 via-purple-700 to-purple-800'
-          },
-          {
-            icon: Users,
-            title: 'Global Community',
-            description: 'Join thousands of players competing for amazing prizes daily',
-            color: 'from-purple-500 via-purple-600 to-purple-700'
-          }
-        ];
+  const features = [
+    {
+      icon: Clock,
+      title: '60-Minute Auctions',
+      description: 'Fast-paced hourly auctions with real prizes and real winners',
+      color: 'from-purple-600 via-purple-700 to-purple-800'
+    },
+    {
+      icon: Shield,
+      title: 'Fair & Secure',
+      description: 'Transparent bidding process with secure payment handling',
+      color: 'from-purple-500 via-purple-600 to-purple-700'
+    },
+    {
+      icon: Zap,
+      title: 'Instant Results',
+      description: 'Winners announced immediately, prizes shipped within 24 hours',
+      color: 'from-purple-600 via-purple-700 to-purple-800'
+    },
+    {
+      icon: Users,
+      title: 'Global Community',
+      description: 'Join thousands of players competing for amazing prizes daily',
+      color: 'from-purple-500 via-purple-600 to-purple-700'
+    }
+  ];
 
   const steps = [
     {
@@ -125,7 +124,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
                   <Snowfall 
                     color="#8B5CF6"
-                    snowflakeCount={40}
+                    snowflakeCount={window.innerWidth < 768 ? 5 : 40}
                     radius={[0.5, 2.0]}
                     speed={[0.5, 1.5]}
                     wind={[-0.5, 2.0]}
@@ -160,7 +159,7 @@ export function Footer({ onNavigate }: FooterProps) {
         >
           <Snowfall 
             color="#8B5CF6"
-            snowflakeCount={60}
+            snowflakeCount={window.innerWidth < 768 ? 8 : 60}
             radius={[0.5, 2.5]}
             speed={[0.5, 2.0]}
             wind={[-0.5, 2.5]}

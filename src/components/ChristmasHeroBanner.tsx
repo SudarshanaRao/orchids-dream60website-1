@@ -87,31 +87,31 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
       </div>
 
       {/* Gentle Snowfall - Optimized */}
-      <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(isMobile ? 15 : 40)].map((_, i) => (
-          <motion.div
-            key={`snow-${i}`}
-            initial={{ 
-              top: -20, 
-              left: `${Math.random() * 100}%`, 
-              opacity: 0,
-              scale: Math.random() * 0.4 + 0.2
-            }}
-            animate={{
-              top: '110%',
-              opacity: [0, 0.4, 0.4, 0],
-              x: [0, Math.sin(i) * 50, 0],
-            }}
-            transition={{
-              duration: 12 + Math.random() * 15,
-              repeat: Infinity,
-              ease: "linear",
-              delay: Math.random() * 10,
-            }}
-            className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px]"
-          />
-        ))}
-      </div>
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {[...Array(isMobile ? 8 : 40)].map((_, i) => (
+            <motion.div
+              key={`snow-${i}`}
+              initial={{ 
+                top: -20, 
+                left: `${Math.random() * 100}%`, 
+                opacity: 0,
+                scale: Math.random() * 0.4 + 0.2
+              }}
+              animate={{
+                top: '110%',
+                opacity: [0, 0.4, 0.4, 0],
+                x: [0, Math.sin(i) * 50, 0],
+              }}
+              transition={{
+                duration: 12 + Math.random() * 15,
+                repeat: Infinity,
+                ease: "linear",
+                delay: Math.random() * 10,
+              }}
+              className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px]"
+            />
+          ))}
+        </div>
 
       {/* Main Content Area */}
             <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">

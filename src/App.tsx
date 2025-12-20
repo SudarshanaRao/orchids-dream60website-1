@@ -248,31 +248,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-const App = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const auctionGridRef = useRef<HTMLDivElement>(null);
-
-  const handleBidNowScroll = () => {
-    if (auctionGridRef.current) {
-      auctionGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Add a brief highlight effect
-      auctionGridRef.current.classList.add('highlight-auction-grid');
-      setTimeout(() => {
-        auctionGridRef.current?.classList.remove('highlight-auction-grid');
-      }, 2000);
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
+  const App = () => {
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -281,6 +257,21 @@ const App = () => {
       window.addEventListener('resize', checkMobile);
       return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    const auctionGridRef = useRef<HTMLDivElement>(null);
+
+    const handleBidNowScroll = () => {
+      if (auctionGridRef.current) {
+        auctionGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Add a brief highlight effect
+        auctionGridRef.current.classList.add('highlight-auction-grid');
+        setTimeout(() => {
+          auctionGridRef.current?.classList.remove('highlight-auction-grid');
+        }, 2000);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
 
     const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
