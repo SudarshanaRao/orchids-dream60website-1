@@ -2374,11 +2374,16 @@ if (currentPage === 'support') {
 
                     <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
                     
-                    {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
-                    {!currentUser && (
-                      <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                        <Snowfall color="#D8B4FE" snowflakeCount={40} radius={[0.5, 2.0]} />
-                        <div className="max-w-2xl mx-auto space-y-6 relative z-10">
+                      {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
+                      {!currentUser && (
+                        <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
+                          <Snowfall 
+                            color="#8B5CF6"
+                            snowflakeCount={80}
+                            radius={[0.5, 2.5]}
+                            speed={[0.5, 2.0]}
+                          />
+                          <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
                           <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
                             Create your free account and start bidding on amazing prizes with direct payment!
