@@ -40,18 +40,18 @@ export function AuctionScheduleInfo() {
                   { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
                   { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
                 ].map((round, idx) => (
-                  <div
-                    key={idx}
-                    className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-300/60 shadow-md"
-                  >
-                    <div className="absolute inset-0 opacity-15 pointer-events-none">
-                      <DotLottieReact 
-                        src="/santa_flying.lottie" 
-                        loop 
-                        autoplay 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </div>
+                    <div
+                      key={idx}
+                      className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-300/60 shadow-md group"
+                    >
+                      <div className="absolute inset-0 opacity-35 pointer-events-none scale-125 origin-center">
+                        <DotLottieReact 
+                          src="/santa_flying.lottie" 
+                          loop 
+                          autoplay 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(1.5)' }}
+                        />
+                      </div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl flex items-center justify-center">
@@ -81,18 +81,18 @@ export function AuctionScheduleInfo() {
                   { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
                   { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
                 ].map((round, idx) => (
-                  <div
-                    key={idx}
-                    className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-violet-300/60 shadow-md"
-                  >
-                    <div className="absolute inset-0 opacity-15 pointer-events-none">
-                      <DotLottieReact 
-                        src="/santa_flying.lottie" 
-                        loop 
-                        autoplay 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </div>
+                    <div
+                      key={idx}
+                      className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-violet-300/60 shadow-md group"
+                    >
+                      <div className="absolute inset-0 opacity-35 pointer-events-none scale-125 origin-center">
+                        <DotLottieReact 
+                          src="/santa_flying.lottie" 
+                          loop 
+                          autoplay 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(1.5)' }}
+                        />
+                      </div>
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-xl flex items-center justify-center">
