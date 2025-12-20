@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Snowfall from 'react-snowfall';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -766,67 +766,83 @@ const App = () => {
     setTutorialStartToken(Date.now());
   };
 
-  // ✅ NEW: Fetch live auction data and refresh every 10 minutes
+  // ✅ NEW: Fetch live auction data and refresh every 15 minutes (aligned with UTC/IST 15-min marks)
+  const fetchLiveAuction = useCallback(async (showLoading = false) => {
+    if (showLoading) {
+      setIsLoadingLiveAuction(true);
+    }
+    try {
+      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+      
+      if (!response.ok) {
+        console.log('⚠️ No live auction available');
+        setLiveAuctionData(null);
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        console.log('✅ Live auction data loaded/refreshed');
+        setLiveAuctionData(result.data);
+        
+        // Update basic auction info
+        setCurrentAuction(prev => ({
+          ...prev,
+          prize: result.data.auctionName || prev.prize,
+          prizeValue: result.data.prizeValue || prev.prizeValue,
+          totalParticipants: result.data.participants?.length || prev.totalParticipants,
+        }));
+      } else {
+        setLiveAuctionData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching live auction:', error);
+    } finally {
+      setIsLoadingLiveAuction(false);
+    }
+  }, []);
+
+  // Effect to trigger fetch on mount and when forced
+  useEffect(() => {
+    fetchLiveAuction(true);
+  }, [fetchLiveAuction, forceRefetchTrigger]);
+
+  // Effect to handle 15-minute alignment auto-refresh
   useEffect(() => {
     let timerId: ReturnType<typeof setTimeout>;
-    let isInitialLoad = true;
-
-    const fetchLiveAuction = async () => {
-      if (isInitialLoad) {
-        setIsLoadingLiveAuction(true);
-      }
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        
-        if (!response.ok) {
-          console.log('⚠️ No live auction available');
-          setIsLoadingLiveAuction(false);
-          isInitialLoad = false;
-          return;
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          console.log('✅ Live auction data loaded/refreshed');
-          setLiveAuctionData(result.data);
-          
-          // Update basic auction info
-          setCurrentAuction(prev => ({
-            ...prev,
-            prize: result.data.auctionName || prev.prize,
-            prizeValue: result.data.prizeValue || prev.prizeValue,
-            totalParticipants: result.data.participants?.length || prev.totalParticipants,
-          }));
-        } else {
-          setLiveAuctionData(null);
-        }
-      } catch (error) {
-        console.error('Error fetching live auction:', error);
-      } finally {
-        setIsLoadingLiveAuction(false);
-        isInitialLoad = false;
-      }
-    };
 
     const scheduleNextFetch = () => {
-      // Schedule every 10 minutes (600,000 ms)
+      // Use serverTime for alignment if available, otherwise use local time
+      const now = Date.now() + serverTimeOffset;
+      const date = new Date(now);
+      const minutes = date.getUTCMinutes();
+      const seconds = date.getUTCSeconds();
+      const milliseconds = date.getUTCMilliseconds();
+      
+      // Calculate minutes until next 15-min mark (00, 15, 30, 45)
+      // This aligns with IST boundaries as well (IST = UTC + 5:30)
+      const nextMarkMinutes = (Math.floor(minutes / 15) + 1) * 15;
+      const minutesToWait = nextMarkMinutes - minutes;
+      
+      // Calculate total ms to wait, plus a 2s buffer to ensure server has processed transition
+      const msToWait = (minutesToWait * 60 * 1000) - (seconds * 1000) - milliseconds + 2000;
+      
+      console.log(`⏱️ Next 15-min auto-refresh scheduled in ${Math.round(msToWait / 1000)}s (at :${nextMarkMinutes % 60} UTC/IST boundary)`);
+      
       timerId = setTimeout(() => {
-        fetchLiveAuction();
+        console.log('⏰ 15-minute boundary reached - triggering auto-refresh');
+        fetchLiveAuction(false); // Background refresh
         scheduleNextFetch();
-      }, 10 * 60 * 1000);
+      }, msToWait);
     };
 
-    // Initial fetch
-    fetchLiveAuction();
-    
-    // Start the scheduling loop
     scheduleNextFetch();
 
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-  }, []); // Run once on mount to start the loop
+  }, [fetchLiveAuction]);
 
   // ✅ NEW: Fetch daily auction stats for the "Why Join Dream60?" section
   useEffect(() => {
