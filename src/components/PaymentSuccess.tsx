@@ -30,20 +30,26 @@ interface PaymentSuccessProps {
       }, []);
     
       useEffect(() => {
+        if (countdown === 0) {
+          onBackToHome();
+          // Attempt to close the window if it's a popup
+          try {
+            if (window.opener || window.history.length === 1) {
+              window.close();
+            }
+          } catch (e) {
+            console.log('Window close blocked by browser');
+          }
+          return;
+        }
+    
+        const interval = setInterval(() => {
+          setCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+    
+        return () => clearInterval(interval);
+      }, [countdown, onBackToHome]);
 
-      const timer = setTimeout(() => {
-        onBackToHome();
-      }, 5000);
-  
-      const interval = setInterval(() => {
-        setCountdown((prev) => Math.max(0, prev - 1));
-      }, 1000);
-  
-      return () => {
-        clearTimeout(timer);
-        clearInterval(interval);
-      };
-    }, [onBackToHome]);
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>

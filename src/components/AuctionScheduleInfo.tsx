@@ -36,16 +36,32 @@ export function AuctionScheduleInfo() {
                 </p>
               </div>
               
-              <div className="relative overflow-hidden rounded-2xl">
-                {/* Background Santa spanning both boxes */}
-                <div className="absolute inset-0 opacity-50 pointer-events-none scale-[2.0] origin-center z-0">
-                  <DotLottieReact 
-                    src="/santa_flying.lottie" 
-                    loop 
-                    autoplay 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(2.5)' }}
-                  />
-                </div>
+                <div className="relative overflow-hidden rounded-2xl p-2 bg-white/10">
+                  {/* Background Santa jumping from Box 1 to Box 2 */}
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none z-[5]"
+                    animate={{
+                      x: ['5%', '45%', '85%'],
+                      y: [40, -60, 40],
+                      rotate: [0, -10, 0, 10, 0],
+                      scale: [2.5, 3.5, 2.5]
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <div className="w-48 h-48 brightness-[3] contrast-[1.2] opacity-80">
+                      <DotLottieReact 
+                        src="/santa_flying.lottie" 
+                        loop 
+                        autoplay 
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    </div>
+                  </motion.div>
+
 
                 <div className="grid grid-cols-2 gap-4 relative z-10">
                   {[
@@ -77,16 +93,32 @@ export function AuctionScheduleInfo() {
                 <span className="text-sm font-bold text-violet-800">Bidding Boxes (After Entry Payment)</span>
               </div>
               
-              <div className="relative overflow-hidden rounded-2xl">
-                {/* Background Santa spanning all 4 boxes */}
-                <div className="absolute inset-0 opacity-50 pointer-events-none scale-[2.0] origin-center z-0">
-                  <DotLottieReact 
-                    src="/santa_flying.lottie" 
-                    loop 
-                    autoplay 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(2.5)' }}
-                  />
-                </div>
+                <div className="relative overflow-hidden rounded-2xl p-2 bg-white/10">
+                  {/* Background Santa jumping across Box 3 to Box 6 */}
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none z-[5]"
+                    animate={{
+                      x: ['5%', '25%', '50%', '75%', '95%'],
+                      y: [30, -50, 30, -50, 30],
+                      rotate: [0, -10, 0, 10, 0],
+                      scale: [2.5, 3.5, 2.5]
+                    }}
+                    transition={{
+                      duration: 8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <div className="w-48 h-48 brightness-[3] contrast-[1.2] opacity-80">
+                      <DotLottieReact 
+                        src="/santa_flying.lottie" 
+                        loop 
+                        autoplay 
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    </div>
+                  </motion.div>
+
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
                   {[
