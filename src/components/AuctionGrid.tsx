@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';
 import { Lock } from 'lucide-react';
@@ -31,16 +31,16 @@ interface AuctionGridProps {
     userBidsPerRound?: { [roundNumber: number]: number };
     userHasPaidEntry?: boolean;
     userQualificationPerRound?: { [roundNumber: number]: boolean };
-    winnersAnnounced?: boolean; // NEW: Early completion flag
-    userEntryFee?: number; // NEW: User's entry fee amount
-    hourlyAuctionId?: string | null; // ✅ Add auction ID to detect changes
+    winnersAnnounced?: boolean;
+    userEntryFee?: number;
+    hourlyAuctionId?: string | null;
   };
   user: {
     username: string;
   };
   onBid: (boxId: number, amount: number) => void;
   onShowLeaderboard?: (roundNumber: number, leaderboard: any[], opensAt?: Date, closesAt?: Date) => void;
-  serverTime?: { timestamp: number } | null; // ✅ Add server time prop
+  serverTime?: { timestamp: number } | null;
   isJoinWindowOpen: boolean;
 }
 
@@ -48,7 +48,6 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const [selectedBox, setSelectedBox] = useState<Box | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
 
-  // ✅ Add null safety check for auction and boxes
   if (!auction || !auction.boxes) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -76,26 +75,18 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   };
 
   const roundBoxes = auction.boxes.filter(box => box.type === 'round');
-  const canShowBoxes = auction.userHasPaidEntry; // Only show boxes for participants
-  const showGuestPreview = false; // Remove guest preview since we don't show boxes to non-participants
-
-  console.log('🎯 [AUCTION GRID] Visibility check:', {
-    userHasPaidEntry: auction.userHasPaidEntry,
-    canShowBoxes,
-    roundBoxesCount: roundBoxes.length
-  });
+  const canShowBoxes = auction.userHasPaidEntry;
+  const showGuestPreview = false;
 
   return (
     <>
-      <div className="space-y-6 sm:space-y-8">
-        {/* Prize Showcase Card */}
+      <div className="space-y-6 sm:space-y-8 min-h-[400px]">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="relative overflow-hidden"
         >
-          {/* Animated Background */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <motion.div
               className="absolute w-96 h-96 rounded-full blur-3xl opacity-20"
@@ -136,63 +127,65 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             />
           </div>
         </motion.div>
-
-        {/* Bidding Rounds Section - Only show if user has paid entry */}
-          {canShowBoxes && (
+  
+        <AnimatePresence mode="wait">
+          {canShowBoxes ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              key={auction.hourlyAuctionId || 'auction-grid'}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ 
+                duration: 0.5, 
+                ease: [0.22, 1, 0.36, 1] 
+              }}
               className="space-y-4 sm:space-y-5"
-              layout={false}
             >
-            {showGuestPreview && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="rounded-2xl border border-purple-200/60 bg-white/80 backdrop-blur-md p-4 shadow-lg"
-              >
-                <div className="flex items-center gap-2 text-purple-800 font-semibold text-sm sm:text-base">
-                  <Lock className="w-4 h-4" />
-                  <span>Join within the first 15 minutes to participate. Boxes are preview-only until you pay the entry fee.</span>
-                </div>
-              </motion.div>
-            )}
-
-            <div 
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
-                style={{ minHeight: roundBoxes.length > 0 ? 'auto' : '300px' }}
-              >
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
                 {roundBoxes.map((box, index) => (
                   <motion.div
-                    key={box.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    key={`${auction.hourlyAuctionId}-${box.id}`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{ 
-                      duration: 0.3, 
-                      delay: index * 0.05,
-                      ease: "easeOut"
+                      duration: 0.4, 
+                      delay: index * 0.08,
+                      ease: [0.22, 1, 0.36, 1]
                     }}
                   >
-                  <AuctionBox
-                    box={box}
-                    onClick={() => handleBoxClick(box)}
-                    isUserHighestBidder={box.bidder === user.username}
-                    onShowLeaderboard={onShowLeaderboard}
-                    userHasPaidEntry={auction.userHasPaidEntry}
-                    userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
-                    isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
-                    winnersAnnounced={auction.winnersAnnounced}
-                    serverTime={serverTime}
-                    hourlyAuctionId={auction.hourlyAuctionId} 
-                  />
+                    <AuctionBox
+                      box={box}
+                      onClick={() => handleBoxClick(box)}
+                      isUserHighestBidder={box.bidder === user.username}
+                      onShowLeaderboard={onShowLeaderboard}
+                      userHasPaidEntry={auction.userHasPaidEntry}
+                      userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
+                      isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
+                      winnersAnnounced={auction.winnersAnnounced}
+                      serverTime={serverTime}
+                      hourlyAuctionId={auction.hourlyAuctionId} 
+                    />
                   </motion.div>
                 ))}
               </div>
-          </motion.div>
-        )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center py-20 border-2 border-dashed border-purple-100 rounded-[2.5rem] bg-purple-50/30"
+            >
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-purple-100">
+                  <Lock className="w-8 h-8 text-purple-200" />
+                </div>
+                <p className="text-purple-300 font-medium tracking-tight">Participate in auction to see bidding rounds</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {showBidModal && selectedBox && (

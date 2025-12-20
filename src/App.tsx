@@ -249,6 +249,15 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 };
 
 const App = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const auctionGridRef = useRef<HTMLDivElement>(null);
 
   const handleBidNowScroll = () => {
@@ -292,6 +301,7 @@ const App = () => {
       if (path === '/winning-tips') return 'winning-tips';
       if (path === '/support-chat') return 'support-chat';
       if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+      if (path === '/success-page') return 'success-page';
 
       return 'game';
   });
@@ -323,9 +333,11 @@ const App = () => {
 } else if (path === '/leaderboard') setCurrentPage('leaderboard');
         else if (path === '/view-guide') setCurrentPage('view-guide');
         else if (path === '/winning-tips') setCurrentPage('winning-tips');
-        else if (path === '/support-chat') setCurrentPage('support-chat');
-        else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
-        else setCurrentPage('game');
+          else if (path === '/support-chat') setCurrentPage('support-chat');
+          else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+          else if (path === '/success-page') setCurrentPage('success-page');
+          else setCurrentPage('game');
+
       };
 
       window.addEventListener('popstate', handlePopState);
@@ -2210,7 +2222,26 @@ if (currentPage === 'support') {
       );
     }
 
-    if (currentPage === 'contact') {
+      if (currentPage === 'success-page') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <PaymentSuccess
+                  amount={2500}
+                  type="entry"
+                  boxNumber={0}
+                  onBackToHome={handleBackToGame}
+                  onClose={handleBackToGame}
+                />
+              </div>
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      if (currentPage === 'contact') {
+
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
@@ -2277,8 +2308,9 @@ if (currentPage === 'support') {
                         const displayTime = `${timeSlot} to ${formattedEndTime}`;
                         
                         return (
-                          <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                            <Snowfall color="white" snowflakeCount={40} radius={[0.5, 2.0]} />
+                            <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                              <Snowfall color="white" snowflakeCount={isMobile ? 15 : 40} radius={[0.5, 2.0]} />
+
                             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -2393,13 +2425,14 @@ if (currentPage === 'support') {
                     
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (
-                        <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                          <Snowfall 
-                            color="#8B5CF6"
-                            snowflakeCount={80}
-                            radius={[0.5, 2.5]}
-                            speed={[0.5, 2.0]}
-                          />
+                          <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
+                            <Snowfall 
+                              color="#8B5CF6"
+                              snowflakeCount={isMobile ? 30 : 80}
+                              radius={[0.5, 2.5]}
+                              speed={[0.5, 2.0]}
+                            />
+
                           <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
                           <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">

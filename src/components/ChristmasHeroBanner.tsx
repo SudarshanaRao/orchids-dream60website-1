@@ -10,6 +10,15 @@ interface ChristmasHeroBannerProps {
 }
 
 export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <section className="relative w-full h-[60vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
@@ -52,7 +61,7 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
 
       {/* Golden Particle System */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(30)].map((_, i) => (
+        {[...Array(isMobile ? 12 : 30)].map((_, i) => (
           <motion.div
             key={`gold-particle-${i}`}
             initial={{ 
@@ -79,7 +88,7 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
 
       {/* Gentle Snowfall - Optimized */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(40)].map((_, i) => (
+        {[...Array(isMobile ? 15 : 40)].map((_, i) => (
           <motion.div
             key={`snow-${i}`}
             initial={{ 
