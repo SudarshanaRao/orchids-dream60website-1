@@ -501,7 +501,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             transition={{ duration: 0.4 }}
             className="mb-4 sm:mb-6"
           >
-            <Card className="overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white" data-whatsnew-target="transactions-hero">
+            <Card className="relative overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white" data-whatsnew-target="transactions-hero">
+              <Snowfall color="#FFFFFF" snowflakeCount={40} radius={[0.5, 2.0]} />
               <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">
@@ -527,7 +528,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           transition={{ duration: 0.35 }}
           className="mb-3 sm:mb-4"
         >
-          <Card className={`border-2 shadow-xl overflow-hidden ${user.username?.toLowerCase() === 'dharsh650' ? 'bg-gradient-to-r from-purple-100 via-violet-50 to-white border-purple-200' : 'bg-white border-purple-100'}`}>
+          <Card className={`relative overflow-hidden border-2 shadow-xl ${user.username?.toLowerCase() === 'dharsh650' ? 'bg-gradient-to-r from-purple-100 via-violet-50 to-white border-purple-200' : 'bg-white border-purple-100'}`}>
+            <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
             <CardContent className="p-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
@@ -553,7 +555,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-3 sm:mb-4"
           >
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                  <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
                       <BarChart3 className="w-4 h-4" />
@@ -563,7 +566,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     <div className="text-[11px] text-purple-600">Entry {stats.entryCount} • Prize {stats.prizeCount}</div>
                   </CardContent>
                 </Card>
-                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                  <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
                       <IndianRupee className="w-4 h-4" />
@@ -573,7 +577,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
                   </CardContent>
                 </Card>
-                <Card className="border-2 border-purple-200/70 bg-white shadow-sm">
+                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                  <Snowfall color="#8B5CF6" snowflakeCount={40} radius={[0.5, 2.0]} />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
                       <Target className="w-4 h-4" />
@@ -616,6 +621,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-3 sm:mb-6"
           >
             <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/90 shadow-2xl">
+              <Snowfall color="#8B5CF6" snowflakeCount={60} radius={[0.5, 2.0]} />
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"
