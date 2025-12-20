@@ -419,11 +419,11 @@ interface PrizeShowcaseProps {
           {/* Content container */}
           <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
             <Snowfall 
-              color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40}
-              radius={[0.5, 2.0]}
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)"
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+              radius={[0.5, 1.5]}
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
             <div className="text-center py-12 sm:py-16 relative z-10">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
@@ -465,11 +465,11 @@ interface PrizeShowcaseProps {
         {/* Content container */}
         <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
             <Snowfall 
-              color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40}
-              radius={[0.5, 2.0]}
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)"
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+              radius={[0.5, 1.5]}
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
           <div className="grid md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 items-stretch relative z-10">
             {/* Left Content Section */}

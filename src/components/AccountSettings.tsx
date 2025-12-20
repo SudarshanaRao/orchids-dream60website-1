@@ -573,9 +573,11 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
                     <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
                     <Snowfall 
-                        color="#8B5CF6"
-                      snowflakeCount={40}
-                      radius={[0.5, 2.0]}
+                        color="rgba(255, 255, 255, 0.4)"
+                        snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                        radius={[0.5, 1.5]}
+                        speed={[0.2, 1.0]}
+                        wind={[-0.2, 0.2]}
                     />
                   {/* Card shine effect */}
 
@@ -767,10 +769,12 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
             >
                 <Snowfall 
-                  color="#8B5CF6"
-                snowflakeCount={40}
-                radius={[0.5, 2.0]}
-              />
+                    color="rgba(255, 255, 255, 0.4)"
+                    snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                    radius={[0.5, 1.5]}
+                    speed={[0.2, 1.0]}
+                    wind={[-0.2, 0.2]}
+                />
               {/* Card shine effect */}
 
             <motion.div
@@ -936,10 +940,12 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
               >
                 <Snowfall 
-                  color="#8B5CF6"
-                snowflakeCount={30}
-                radius={[0.5, 1.8]}
-              />
+                    color="rgba(255, 255, 255, 0.4)"
+                    snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                    radius={[0.5, 1.5]}
+                    speed={[0.2, 1.0]}
+                    wind={[-0.2, 0.2]}
+                />
               {/* Card shine effect */}
 
             <motion.div
@@ -1006,10 +1012,12 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
               >
                 <Snowfall 
-                  color="#8B5CF6"
-                snowflakeCount={30}
-                radius={[0.5, 1.8]}
-              />
+                    color="rgba(255, 255, 255, 0.4)"
+                    snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                    radius={[0.5, 1.5]}
+                    speed={[0.2, 1.0]}
+                    wind={[-0.2, 0.2]}
+                />
               {/* Card shine effect */}
 
             <motion.div
@@ -1076,10 +1084,12 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
               >
                 <Snowfall 
-                  color="#8B5CF6"
-                snowflakeCount={20}
-                radius={[0.5, 1.5]}
-              />
+                    color="rgba(255, 255, 255, 0.4)"
+                    snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                    radius={[0.5, 1.5]}
+                    speed={[0.2, 1.0]}
+                    wind={[-0.2, 0.2]}
+                />
               {/* Card shine effect */}
 
             <motion.div

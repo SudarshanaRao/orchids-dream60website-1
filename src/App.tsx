@@ -2289,7 +2289,7 @@ if (currentPage === 'support') {
                         
                         return (
                             <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                              <Snowfall color="white" snowflakeCount={isMobile ? 8 : 40} radius={[0.5, 2.0]} />
+                              <Snowfall color="rgba(255, 255, 255, 0.4)" snowflakeCount={isMobile ? 15 : 40} radius={[0.5, 1.5]} speed={[0.2, 1.0]} wind={[-0.2, 0.2]} />
 
                             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
@@ -2407,11 +2407,12 @@ if (currentPage === 'support') {
                       {!currentUser && (
                           <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
                             <Snowfall 
-                              color="#8B5CF6"
-                              snowflakeCount={isMobile ? 30 : 80}
-                              radius={[0.5, 2.5]}
-                              speed={[0.5, 2.0]}
-                            />
+                                color="rgba(255, 255, 255, 0.4)"
+                                snowflakeCount={isMobile ? 15 : 40}
+                                radius={[0.5, 1.5]}
+                                speed={[0.2, 1.0]}
+                                wind={[-0.2, 0.2]}
+                              />
 
                           <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>

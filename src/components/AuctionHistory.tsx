@@ -510,11 +510,11 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
     >
         <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
             <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
         {/* Subtle Background Gradient */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
@@ -1483,11 +1483,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
         >
           <Card className="relative overflow-hidden border-2 border-purple-300/60 bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-fuchsia-50/70 backdrop-blur-xl shadow-lg">
               <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
             <CardContent className="p-2.5 sm:p-3 md:p-4">
               <div className="flex items-start gap-2 sm:gap-3">
@@ -1515,11 +1515,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
           {/* Mobile: Beautiful Premium Stats Card */}
             <Card className="sm:hidden relative overflow-hidden border-2 border-purple-300/60 backdrop-blur-2xl bg-gradient-to-br from-white/90 via-purple-50/60 to-violet-50/70 shadow-2xl">
                 <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
               {/* Animated Background Orb */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1570,11 +1570,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 >
                   <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-3 border-2 border-purple-200/60 shadow-lg relative overflow-hidden">
                       <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                     <div className="flex items-center gap-1.5 mb-2 relative z-10">
                       <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center shadow-md">
@@ -1624,11 +1624,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             >
                 <Card className="relative overflow-hidden border-2 border-purple-300/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 via-purple-50/50 to-violet-50/60 shadow-2xl h-full">
                     <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <motion.div
@@ -1697,11 +1697,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 to-purple-50/60 shadow-xl">
                     <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/10" />
                   <CardContent className="p-6 relative z-10">
@@ -1733,11 +1733,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 to-purple-50/60 shadow-xl">
                     <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/10" />
                   <CardContent className="p-6 relative z-10">
@@ -1772,11 +1772,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 via-violet-50/50 to-fuchsia-50/60 shadow-xl">
                     <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/10" />
                   <CardContent className="p-6 relative z-10">
@@ -1815,11 +1815,11 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     : 'border-purple-200/60 bg-gradient-to-br from-white/80 to-purple-50/60'
                 }`}>
                     <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
+              color="rgba(255, 255, 255, 0.4)" 
+              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
+              radius={[0.5, 1.5]} 
+              speed={[0.2, 1.0]}
+              wind={[-0.2, 0.2]}
             />
                   <div className={`absolute inset-0 ${
                     netGain >= 0

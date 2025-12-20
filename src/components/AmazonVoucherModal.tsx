@@ -30,13 +30,14 @@ export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalPro
       {show && (
           <>
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <Snowfall 
-                color="#8B5CF6"
-                snowflakeCount={80}
-                radius={[0.5, 2.5]}
-                speed={[0.5, 2.0]}
-                style={{ zIndex: 101, position: 'fixed' }}
-              />
+                <Snowfall 
+                  color="rgba(255, 255, 255, 0.4)"
+                  snowflakeCount={window.innerWidth < 768 ? 15 : 40}
+                  radius={[0.5, 1.5]}
+                  speed={[0.2, 1.0]}
+                  wind={[-0.2, 0.2]}
+                  style={{ zIndex: 101, position: 'fixed' }}
+                />
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
