@@ -1,5 +1,6 @@
 import { Clock, Lock, Unlock, Zap, Star, IndianRupee } from 'lucide-react';
 import { motion } from 'motion/react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 export function AuctionScheduleInfo() {
   return (
@@ -34,26 +35,37 @@ export function AuctionScheduleInfo() {
                 <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
-                { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
-              ].map((round, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-300/60 shadow-md"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl flex items-center justify-center">
-                      <Lock className="w-4 h-4 text-white" />
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
+                  { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
+                ].map((round, idx) => (
+                  <div
+                    key={idx}
+                    className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-300/60 shadow-md"
+                  >
+                    <div className="absolute inset-0 opacity-15 pointer-events-none">
+                      <DotLottieReact 
+                        src="/santa_flying.lottie" 
+                        loop 
+                        autoplay 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                     </div>
-                    <div className="font-bold text-purple-900 text-sm">{round.box}</div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="font-bold text-purple-900 text-sm">{round.box}</div>
+                      </div>
+                      <div className="text-sm text-purple-700 font-bold mb-1">{round.time}</div>
+                      <div className="text-xs text-purple-600">{round.desc}</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-purple-700 font-bold mb-1">{round.time}</div>
-                  <div className="text-xs text-purple-600">{round.desc}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
           </div>
 
           {/* Bidding Boxes */}
@@ -62,28 +74,39 @@ export function AuctionScheduleInfo() {
               <Unlock className="w-4 h-4 text-violet-700" />
               <span className="text-sm font-bold text-violet-800">Bidding Boxes (After Entry Payment)</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { box: 'Box 3', time: ':00-:15', unlock: 'Opens at :00' },
-                { box: 'Box 4', time: ':15-:30', unlock: 'Opens at :15' },
-                { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
-                { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
-              ].map((round, idx) => (
-                <div
-                  key={idx}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-violet-300/60 shadow-md"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-xl flex items-center justify-center">
-                      <Zap className="w-4 h-4 text-white" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  { box: 'Box 3', time: ':00-:15', unlock: 'Opens at :00' },
+                  { box: 'Box 4', time: ':15-:30', unlock: 'Opens at :15' },
+                  { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
+                  { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
+                ].map((round, idx) => (
+                  <div
+                    key={idx}
+                    className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-violet-300/60 shadow-md"
+                  >
+                    <div className="absolute inset-0 opacity-15 pointer-events-none">
+                      <DotLottieReact 
+                        src="/santa_flying.lottie" 
+                        loop 
+                        autoplay 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
                     </div>
-                    <div className="font-bold text-violet-900 text-sm">{round.box}</div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-xl flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="font-bold text-violet-900 text-sm">{round.box}</div>
+                      </div>
+                      <div className="text-sm text-violet-700 font-bold mb-1">{round.time}</div>
+                      <div className="text-xs text-violet-600">{round.unlock}</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-violet-700 font-bold mb-1">{round.time}</div>
-                  <div className="text-xs text-violet-600">{round.unlock}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
           </div>
           
           <div className="space-y-3">
