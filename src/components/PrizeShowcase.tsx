@@ -73,12 +73,13 @@ interface PrizeShowcaseProps {
   onPaymentFailure?: (entryFee: number, errorMessage: string) => void;
   onUserParticipationChange?: (isParticipating: boolean) => void;
   isLoggedIn?: boolean;
+  onLogin?: () => void;
   serverTime?: ServerTime | null; // ✅ Server time from parent
   liveAuctionData?: any; // ✅ NEW: Live auction data from parent
   isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
 }
 
-  export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
+  export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
     const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     // ✅ NEW: Track if this is the initial load
@@ -663,13 +664,20 @@ interface PrizeShowcaseProps {
                                 )}
                               </div>
                             </>
-                          ) : (
-                            <p className="text-[10px] sm:text-xs text-[#6B3FA0] mt-1.5 sm:mt-2 text-center font-medium">
-                              🔒 Login to pay entry fee and start Auction!
-                            </p>
-                          )}
-                        </>
-                      )}
+                            ) : (
+                              <Button
+                                onClick={onLogin}
+                                className="w-full relative overflow-hidden bg-gradient-to-r from-[#6B3FA0] via-[#8456BC] to-[#9F7ACB] text-white hover:from-[#8456BC] hover:via-[#9F7ACB] hover:to-[#B99FD9] shadow-xl text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] group/button"
+                              >
+                                <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                                  <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  <span>Login to Participate</span>
+                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-1000"></div>
+                              </Button>
+                            )}
+                          </>
+                        )}
                     </div>
                   </div>
                 )}

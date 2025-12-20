@@ -2287,12 +2287,13 @@ if (currentPage === 'support') {
                       })()}
 
 
-                <div data-whatsnew-target="prize-showcase-section">
-                  <PrizeShowcase
-                    currentPrize={currentAuction}
-                    isLoggedIn={!!currentUser}
-                    serverTime={serverTime}
-                    liveAuctionData={liveAuctionData}
+                  <div data-whatsnew-target="prize-showcase-section">
+                    <PrizeShowcase
+                      currentPrize={currentAuction}
+                      isLoggedIn={!!currentUser}
+                      onLogin={handleShowLogin}
+                      serverTime={serverTime}
+                      liveAuctionData={liveAuctionData}
                     isLoadingLiveAuction={isLoadingLiveAuction}
                     onPayEntry={(_boxId, totalEntryFee) => {
                       if (!currentUser) return;
