@@ -2289,7 +2289,13 @@ if (currentPage === 'support') {
                         
                         return (
                             <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                              <Snowfall color="rgba(255, 255, 255, 0.4)" snowflakeCount={isMobile ? 15 : 40} radius={[0.5, 1.5]} speed={[0.2, 1.0]} wind={[-0.2, 0.2]} />
+                                <Snowfall 
+                                  color="rgba(255, 255, 255, 0.4)" 
+                                  snowflakeCount={isMobile ? 8 : 40} 
+                                  radius={[0.5, 2.5]} 
+                                  speed={[0.5, 2.0]} 
+                                  wind={[-0.5, 2.5]} 
+                                />
 
                             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
@@ -2406,12 +2412,12 @@ if (currentPage === 'support') {
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (
                           <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                            <Snowfall 
-                                color="rgba(255, 255, 255, 0.4)"
-                                snowflakeCount={isMobile ? 15 : 40}
-                                radius={[0.5, 1.5]}
-                                speed={[0.2, 1.0]}
-                                wind={[-0.2, 0.2]}
+                              <Snowfall 
+                                color="#8B5CF6"
+                                snowflakeCount={isMobile ? 8 : 60}
+                                radius={[0.5, 2.5]}
+                                speed={[0.5, 2.0]}
+                                wind={[-0.5, 2.5]}
                               />
 
                           <div className="max-w-2xl mx-auto space-y-6 relative z-10">

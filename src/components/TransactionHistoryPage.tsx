@@ -278,11 +278,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               role="button"
             >
             <Snowfall 
-              color="rgba(255, 255, 255, 0.4)" 
-              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
-              radius={[0.5, 1.5]} 
-              speed={[0.2, 1.0]}
-              wind={[-0.2, 0.2]}
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
             />
             <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -563,11 +563,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
                 <Snowfall 
-              color="rgba(255, 255, 255, 0.4)" 
-              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
-              radius={[0.5, 1.5]} 
-              speed={[0.2, 1.0]}
-              wind={[-0.2, 0.2]}
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
             />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
@@ -580,11 +580,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                 </Card>
                 <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
                 <Snowfall 
-              color="rgba(255, 255, 255, 0.4)" 
-              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
-              radius={[0.5, 1.5]} 
-              speed={[0.2, 1.0]}
-              wind={[-0.2, 0.2]}
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
             />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
@@ -597,11 +597,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                 </Card>
                 <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
                 <Snowfall 
-              color="rgba(255, 255, 255, 0.4)" 
-              snowflakeCount={window.innerWidth < 768 ? 15 : 40} 
-              radius={[0.5, 1.5]} 
-              speed={[0.2, 1.0]}
-              wind={[-0.2, 0.2]}
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 5 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
             />
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
