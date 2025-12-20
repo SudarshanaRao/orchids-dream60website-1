@@ -301,7 +301,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       if (path === '/winning-tips') return 'winning-tips';
       if (path === '/support-chat') return 'support-chat';
       if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
-      if (path === '/success-page') return 'success-page';
 
       return 'game';
   });
@@ -335,7 +334,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/winning-tips') setCurrentPage('winning-tips');
           else if (path === '/support-chat') setCurrentPage('support-chat');
           else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
-          else if (path === '/success-page') setCurrentPage('success-page');
           else setCurrentPage('game');
 
       };
@@ -2211,30 +2209,12 @@ if (currentPage === 'support') {
       );
     }
 
-    if (currentPage === 'transactions' && currentUser) {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-      if (currentPage === 'success-page') {
+      if (currentPage === 'transactions' && currentUser) {
         return (
           <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-              <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <PaymentSuccess
-                  amount={2500}
-                  type="entry"
-                  boxNumber={0}
-                  onBackToHome={handleBackToGame}
-                  onClose={handleBackToGame}
-                />
-              </div>
+              <Sonner />
+              <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
             </TooltipProvider>
           </QueryClientProvider>
         );

@@ -23,36 +23,39 @@ export function AuctionScheduleInfo() {
         </div>
         
         <div className="grid gap-6">
-          {/* Entry Fee Boxes */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Lock className="w-4 h-4 text-purple-700" />
-              <span className="text-sm font-bold text-purple-800">Entry Fee Boxes (Open at auction start)</span>
-            </div>
-            <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4">
-              <p className="text-sm text-purple-700 flex items-start gap-2">
-                <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-                <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
-              </p>
-            </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
-                  { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
-                ].map((round, idx) => (
+            {/* Entry Fee Boxes */}
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <Lock className="w-4 h-4 text-purple-700" />
+                <span className="text-sm font-bold text-purple-800">Entry Fee Boxes (Open at auction start)</span>
+              </div>
+              <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4 relative z-10">
+                <p className="text-sm text-purple-700 flex items-start gap-2">
+                  <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                  <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
+                </p>
+              </div>
+              
+              <div className="relative overflow-hidden rounded-2xl">
+                {/* Background Santa spanning both boxes */}
+                <div className="absolute inset-0 opacity-50 pointer-events-none scale-[2.0] origin-center z-0">
+                  <DotLottieReact 
+                    src="/santa_flying.lottie" 
+                    loop 
+                    autoplay 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(2.5)' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 relative z-10">
+                  {[
+                    { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
+                    { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
+                  ].map((round, idx) => (
                     <div
                       key={idx}
-                      className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-300/60 shadow-md group"
+                      className="bg-white/40 backdrop-blur-md rounded-2xl p-4 border-2 border-purple-300/60 shadow-md group"
                     >
-                      <div className="absolute inset-0 opacity-35 pointer-events-none scale-125 origin-center">
-                        <DotLottieReact 
-                          src="/santa_flying.lottie" 
-                          loop 
-                          autoplay 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(1.5)' }}
-                        />
-                      </div>
-                    <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl flex items-center justify-center">
                           <Lock className="w-4 h-4 text-white" />
@@ -62,38 +65,40 @@ export function AuctionScheduleInfo() {
                       <div className="text-sm text-purple-700 font-bold mb-1">{round.time}</div>
                       <div className="text-xs text-purple-600">{round.desc}</div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-
-          </div>
-
-          {/* Bidding Boxes */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Unlock className="w-4 h-4 text-violet-700" />
-              <span className="text-sm font-bold text-violet-800">Bidding Boxes (After Entry Payment)</span>
             </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { box: 'Box 3', time: ':00-:15', unlock: 'Opens at :00' },
-                  { box: 'Box 4', time: ':15-:30', unlock: 'Opens at :15' },
-                  { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
-                  { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
-                ].map((round, idx) => (
+
+            {/* Bidding Boxes */}
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <Unlock className="w-4 h-4 text-violet-700" />
+                <span className="text-sm font-bold text-violet-800">Bidding Boxes (After Entry Payment)</span>
+              </div>
+              
+              <div className="relative overflow-hidden rounded-2xl">
+                {/* Background Santa spanning all 4 boxes */}
+                <div className="absolute inset-0 opacity-50 pointer-events-none scale-[2.0] origin-center z-0">
+                  <DotLottieReact 
+                    src="/santa_flying.lottie" 
+                    loop 
+                    autoplay 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(2.5)' }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
+                  {[
+                    { box: 'Box 3', time: ':00-:15', unlock: 'Opens at :00' },
+                    { box: 'Box 4', time: ':15-:30', unlock: 'Opens at :15' },
+                    { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
+                    { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
+                  ].map((round, idx) => (
                     <div
                       key={idx}
-                      className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-4 border-2 border-violet-300/60 shadow-md group"
+                      className="bg-white/40 backdrop-blur-md rounded-2xl p-4 border-2 border-violet-300/60 shadow-md group"
                     >
-                      <div className="absolute inset-0 opacity-35 pointer-events-none scale-125 origin-center">
-                        <DotLottieReact 
-                          src="/santa_flying.lottie" 
-                          loop 
-                          autoplay 
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(1.5)' }}
-                        />
-                      </div>
-                    <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-violet-600 to-fuchsia-700 rounded-xl flex items-center justify-center">
                           <Zap className="w-4 h-4 text-white" />
@@ -103,11 +108,10 @@ export function AuctionScheduleInfo() {
                       <div className="text-sm text-violet-700 font-bold mb-1">{round.time}</div>
                       <div className="text-xs text-violet-600">{round.unlock}</div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-
-          </div>
+            </div>
           
           <div className="space-y-3">
             <div className="flex items-start gap-3 bg-violet-100/50 backdrop-blur-sm rounded-2xl p-4 border border-violet-200/60">
