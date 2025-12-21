@@ -79,32 +79,33 @@ export function Participation({ onBack }: ParticipationProps) {
             </CardHeader>
             <CardContent className="text-purple-700 space-y-3 sm:space-y-4 text-sm sm:text-base">
               <p>
-                Welcome to Dream60, the ultimate online auction experience! Our unique pay-as-you-go system 
-                means you only pay when you decide to participate. No subscriptions, no pre-funding required.
+                Welcome to Dream60, India's ultimate online auction experience! Our unique participation system 
+                is designed to be transparent, fair, and based on the specific product value. 
+                Pay only when you decide to join an auction.
               </p>
               <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-white/70 border border-purple-300 rounded-lg p-3">
                   <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                     <Star className="w-4 h-4 mr-1" />
-                    What Makes Us Special
+                    Indian Focused Platform
                   </div>
                   <div className="text-purple-600 text-xs space-y-1">
-                    <div>• No subscription fees or monthly charges</div>
-                    <div>• Pay only when you want to participate</div>
-                    <div>• 6 auctions daily with varying prizes</div>
+                    <div>• Only Indian currency (₹ INR) accepted</div>
+                    <div>• Localized support and fulfillment</div>
+                    <div>• 6 exciting auctions daily</div>
                     <div>• Real-time competitive bidding</div>
                   </div>
                 </div>
                 <div className="bg-white/70 border border-green-300 rounded-lg p-3">
                   <div className="text-green-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                     <CreditCard className="w-4 h-4 mr-1" />
-                    Budget Planning
+                    Product-Based Entry Fees
                   </div>
                   <div className="text-green-600 text-xs space-y-1">
-                    <div>• Entry fees: ₹1000-₹3500 per box</div>
-                    <div>• Minimum bids: ₹700 per round</div>
-                    <div>• Suggested budget: ₹3500-₹10,500</div>
-                    <div>• Set spending limits before you start</div>
+                    <div>• Entry fee varies based on product value</div>
+                    <div>• Fair and random generation system</div>
+                    <div>• Example: ₹10k product may have ₹29-₹99 entry</div>
+                    <div>• Full disclosure of fees upon auction opening</div>
                   </div>
                 </div>
               </div>
@@ -116,14 +117,14 @@ export function Participation({ onBack }: ParticipationProps) {
             <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Play className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                <span>Watch: How to Play Dream60</span>
+                <span>Watch: How to Participate in Dream60</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-purple-50 shadow-inner">
                 <iframe 
                   className="absolute inset-0 w-full h-full"
-                  src="https://www.youtube.com/embed/i4SMEaGDNq0?si=QKecVGKIUAjHk9Ob" 
+                  src="https://www.youtube.com/embed/qc73f7dw6Ds?si=znvGtlL8xzjtGqaD" 
                   title="YouTube video player" 
                   frameBorder="0" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
@@ -132,7 +133,7 @@ export function Participation({ onBack }: ParticipationProps) {
                 ></iframe>
               </div>
               <p className="text-purple-600 text-xs sm:text-sm mt-3 text-center">
-                Watch this quick tutorial to learn how to participate and win amazing prizes!
+                Watch this tutorial to learn how to join and win amazing prizes!
               </p>
             </CardContent>
           </Card>
@@ -154,19 +155,19 @@ export function Participation({ onBack }: ParticipationProps) {
                     <div>
                       <h4 className="text-purple-800 font-semibold text-xs sm:text-sm mb-2">Create Your Account</h4>
                       <div className="text-purple-700 text-xs space-y-1">
-                        <div>• Provide valid email address</div>
+                        <div>• Provide valid Indian mobile number</div>
                         <div>• Choose secure password</div>
-                        <div>• Verify email confirmation</div>
-                        <div>• Complete profile setup</div>
+                        <div>• Verify via mobile OTP</div>
+                        <div>• Complete basic profile info</div>
                       </div>
                     </div>
                     <div>
-                      <h4 className="text-purple-800 font-semibold text-xs sm:text-sm mb-2">Identity Verification</h4>
+                      <h4 className="text-purple-800 font-semibold text-xs sm:text-sm mb-2">Eligibility</h4>
                       <div className="text-purple-700 text-xs space-y-1">
                         <div>• Must be 18+ years old</div>
-                        <div>• Valid government ID required</div>
-                        <div>• Address verification</div>
-                        <div>• One account per person limit</div>
+                        <div>• Resident of India</div>
+                        <div>• Valid ID proof for verification</div>
+                        <div>• Only one account per natural person</div>
                       </div>
                     </div>
                   </div>
@@ -177,7 +178,7 @@ export function Participation({ onBack }: ParticipationProps) {
               <div>
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
                   <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">2</span>
-                  Understanding Our Auction System
+                  How Auctions Work
                 </h3>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4">
                   <div className="grid md:grid-cols-3 gap-3 sm:gap-4">
@@ -187,34 +188,34 @@ export function Participation({ onBack }: ParticipationProps) {
                         Timing
                       </h4>
                       <div className="text-blue-700 text-xs space-y-1">
-                        <div>• 6 auctions per day</div>
-                        <div>• Each lasts exactly 60 minutes</div>
-                        <div>• Fixed start times</div>
-                        <div>• No extensions</div>
+                        <div>• 6 auctions daily</div>
+                        <div>• Duration: 60 minutes</div>
+                        <div>• Slots starting every hour</div>
+                        <div>• No extensions permitted</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="text-blue-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <Gift className="w-4 h-4 mr-1" />
-                        Box Types
+                        Participation Fees
                       </h4>
                       <div className="text-blue-700 text-xs space-y-1">
-                        <div>• 2 Entry boxes (pay fixed fee)</div>
-                        <div>• 4 Bidding rounds (competitive)</div>
-                        <div>• Different prize values</div>
-                        <div>• Independent winners</div>
+                        <div>• Entry fee is product-based</div>
+                        <div>• Randomly generated for fairness</div>
+                        <div>• Paid only when you join</div>
+                        <div>• Non-refundable in all cases</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="text-blue-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <Star className="w-4 h-4 mr-1" />
-                        Prizes
+                        Winners
                       </h4>
                       <div className="text-blue-700 text-xs space-y-1">
-                        <div>• Electronics & tech</div>
-                        <div>• Gift cards & vouchers</div>
-                        <div>• Cash prizes</div>
-                        <div>• Luxury items</div>
+                        <div>• Highest bidder in final round wins</div>
+                        <div>• Prize value delivered via voucher</div>
+                        <div>• Verified Indian winners only</div>
+                        <div>• Fast and secure prize claim</div>
                       </div>
                     </div>
                   </div>
@@ -232,27 +233,25 @@ export function Participation({ onBack }: ParticipationProps) {
                     <div>
                       <h4 className="text-green-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <CreditCard className="w-4 h-4 mr-1" />
-                        Accepted Payment Methods
+                        Accepted via Razorpay
                       </h4>
                       <div className="text-green-700 text-xs space-y-1">
-                        <div>• Major Credit Cards (Visa, MasterCard, Amex)</div>
-                        <div>• Debit Cards with Visa/MC logo</div>
-                        <div>• PayPal (verified accounts only)</div>
-                        <div>• Apple Pay & Google Pay</div>
-                        <div>• Bank transfers (24-48hr processing)</div>
+                        <div>• UPI (Google Pay, PhonePe, Paytm)</div>
+                        <div>• Net Banking (All Indian banks)</div>
+                        <div>• Credit/Debit Cards (Visa, MC, RuPay)</div>
+                        <div>• Mobile Wallets</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="text-green-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <Shield className="w-4 h-4 mr-1" />
-                        Payment Security
+                        Transactions in INR
                       </h4>
                       <div className="text-green-700 text-xs space-y-1">
-                        <div>• SSL 256-bit encryption</div>
-                        <div>• PCI DSS compliant processing</div>
-                        <div>• No card data stored on servers</div>
-                        <div>• Fraud protection systems</div>
+                        <div>• All fees and bids processed in ₹</div>
+                        <div>• Secure, encrypted processing</div>
                         <div>• Instant payment verification</div>
+                        <div>• Detailed transaction history</div>
                       </div>
                     </div>
                   </div>
@@ -263,7 +262,7 @@ export function Participation({ onBack }: ParticipationProps) {
               <div>
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
                   <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">4</span>
-                  Strategic Playing
+                  Strategic Participation
                 </h3>
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4">
                   <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
@@ -273,34 +272,32 @@ export function Participation({ onBack }: ParticipationProps) {
                         Entry Strategy
                       </h4>
                       <div className="text-yellow-700 text-xs space-y-1">
-                        <div>• Compare both entry box fees</div>
-                        <div>• Pay early to maximize bidding time</div>
-                        <div>• Consider prize-to-fee ratio</div>
-                        <div>• Monitor competition levels</div>
+                        <div>• Review the entry fee for each box</div>
+                        <div>• Pay within the first 15 mins to join</div>
+                        <div>• Choose based on prize preference</div>
+                        <div>• Monitor current participant levels</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="text-yellow-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <Star className="w-4 h-4 mr-1" />
-                        Bidding Strategy
+                        Bidding Rounds
                       </h4>
                       <div className="text-yellow-700 text-xs space-y-1">
-                        <div>• Track other players' patterns</div>
-                        <div>• Bid conservatively early</div>
-                        <div>• Save aggressive bids for finals</div>
-                        <div>• Use 15-minute intervals wisely</div>
+                        <div>• 4 bidding rounds open sequentially</div>
+                        <div>• Raise your bid strategically each round</div>
+                        <div>• Maintain your rank in the Top 3</div>
+                        <div>• Final round bid determines winner</div>
                       </div>
                     </div>
                   </div>
                   <div className="bg-yellow-100 border border-yellow-300 rounded p-3 mt-3">
                     <h4 className="text-yellow-800 font-semibold text-xs sm:text-sm mb-1 flex items-center">
                       <Star className="w-4 h-4 mr-1" />
-                      Pro Tips
+                      Pro Tip
                     </h4>
                     <div className="text-yellow-700 text-xs">
-                      Start with lower-value auctions to learn the dynamics. Set a budget before you begin 
-                      and stick to it. Remember: highest bid wins, but timing your bids strategically 
-                      within each 15-minute window can make the difference.
+                      The entry fee is randomly generated based on the product. A high-value product worth ₹10k might have an entry fee between ₹29-₹99. Always check the fee on the auction box before joining!
                     </div>
                   </div>
                 </div>
@@ -310,7 +307,7 @@ export function Participation({ onBack }: ParticipationProps) {
               <div>
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
                   <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs mr-2">5</span>
-                  Prize Collection & Delivery
+                  Prize Collection (Vouchers)
                 </h3>
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 sm:p-4">
                   <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
@@ -320,22 +317,22 @@ export function Participation({ onBack }: ParticipationProps) {
                         Winning Process
                       </h4>
                       <div className="text-purple-700 text-xs space-y-1">
-                        <div>• Winners notified immediately</div>
-                        <div>• Confirmation email sent</div>
-                        <div>• Prize claim window: 30 days</div>
-                        <div>• Address verification required</div>
+                        <div>• Notification sent upon winning</div>
+                        <div>• Pay final bid amount to claim</div>
+                        <div>• Verified identity required</div>
+                        <div>• 30-day claim window applies</div>
                       </div>
                     </div>
                     <div>
                       <h4 className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                         <Clock className="w-4 h-4 mr-1" />
-                        Delivery Details
+                        Voucher Delivery
                       </h4>
                       <div className="text-purple-700 text-xs space-y-1">
-                        <div>• Free shipping worldwide</div>
-                        <div>• Processing: 2-3 business days</div>
-                        <div>• Delivery: 7-14 business days</div>
-                        <div>• Tracking information provided</div>
+                        <div>• Amazon Vouchers sent electronically</div>
+                        <div>• Delivery within 24-48 hours</div>
+                        <div>• Full product value included</div>
+                        <div>• Securely sent to registered email</div>
                       </div>
                     </div>
                   </div>
@@ -344,67 +341,12 @@ export function Participation({ onBack }: ParticipationProps) {
             </CardContent>
           </Card>
 
-          {/* Schedule & Tips */}
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
-                <CardTitle className="text-base sm:text-lg text-purple-800 flex items-center space-x-2">
-                  <Clock className="w-5 h-5 text-purple-600" />
-                  <span>Daily Schedule</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs sm:text-sm bg-purple-50 p-2 rounded">
-                    <span className="text-purple-800 font-semibold">8:00 AM</span>
-                    <span className="text-purple-600">Morning ($500-$1,500)</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm bg-purple-50 p-2 rounded">
-                    <span className="text-purple-800 font-semibold">12:00 PM</span>
-                    <span className="text-purple-600">Lunch ($800-$2,000)</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm bg-purple-50 p-2 rounded">
-                    <span className="text-purple-800 font-semibold">6:00 PM</span>
-                    <span className="text-purple-600">Prime ($2,000-$5,000)</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm bg-purple-50 p-2 rounded">
-                    <span className="text-purple-800 font-semibold">11:00 PM</span>
-                    <span className="text-purple-600">Night ($600-$1,800)</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100">
-                <CardTitle className="text-base sm:text-lg text-green-800 flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-green-600" />
-                  <span>Security & Tips</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 p-4 sm:p-6">
-                <div className="bg-green-50 border-l-4 border-green-400 rounded p-3">
-                  <div className="text-green-800 font-semibold text-xs sm:text-sm mb-1">Security</div>
-                  <div className="text-green-700 text-xs">
-                    Bank-level encryption • 2FA available • Licensed platform
-                  </div>
-                </div>
-                <div className="bg-purple-50 border-l-4 border-purple-400 rounded p-3">
-                  <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-1">Pro Tips</div>
-                  <div className="text-purple-700 text-xs">
-                    Start small • Time your bids • Monitor patterns • Be patient
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Call to Action */}
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg">
             <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
               <h3 className="text-lg sm:text-xl font-bold text-purple-800">Ready to Start Winning?</h3>
               <p className="text-sm sm:text-base text-purple-600">
-                Join thousands of players in the most exciting online auction platform!
+                Join India's most exciting auction platform today!
               </p>
               <Button 
                 onClick={onBack}

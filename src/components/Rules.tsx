@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, DollarSign, Target, Trophy, AlertCircle, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -75,35 +75,36 @@ export function Rules({ onBack }: RulesProps) {
             <CardHeader>
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                <span>Welcome to Dream60</span>
+                <span>Welcome to Dream60 India</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="text-purple-700 space-y-3 sm:space-y-4 text-sm sm:text-base">
               <p>
-                Dream60 is an exciting online auction platform where you compete against other players in 60-minute auctions. 
-                Each auction features 6 boxes with valuable prizes, and smart bidding strategy is key to winning!
+                Dream60 is India's premier online auction platform where you compete in real-time for valuable prizes. 
+                Our system is transparent, fair, and exclusively uses Indian currency (₹).
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="bg-white/70 border border-purple-300 rounded-lg p-3">
                   <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                     <Sparkles className="w-4 h-4 mr-1" />
-                    Quick Overview
+                    Daily Auctions
                   </div>
                   <div className="text-xs sm:text-sm text-purple-600 space-y-1">
-                    <div>• 6 auctions run daily</div>
-                    <div>• Each lasts 60 minutes</div>
-                    <div>• 2 entry fee boxes + 4 bidding rounds</div>
+                    <div>• 6 auctions run every single day</div>
+                    <div>• Each auction lasts exactly 60 minutes</div>
+                    <div>• 2 entry boxes + 4 live bidding rounds</div>
                   </div>
                 </div>
                 <div className="bg-white/70 border border-purple-300 rounded-lg p-3">
                   <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
-                    <Trophy className="w-4 h-4 mr-1" />
-                    Prize Range
+                    <IndianRupee className="w-4 h-4 mr-1" />
+                    Participation
                   </div>
                   <div className="text-xs sm:text-sm text-purple-600 space-y-1">
-                    <div>• Entry boxes: $500-$1,500</div>
-                    <div>• Bidding rounds: $1,000-$5,000+</div>
-                    <div>• All prizes in USD</div>
+                    <div>• All transactions strictly in INR (₹)</div>
+                    <div>• Entry fees based on product value</div>
+                    <div>• Randomly generated for fairness</div>
+                    <div>• Fast and secure local payments</div>
                   </div>
                 </div>
               </div>
@@ -126,7 +127,7 @@ export function Rules({ onBack }: RulesProps) {
                     <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Pay Entry Fee</h3>
                   </div>
                   <p className="text-purple-600 text-xs sm:text-sm">
-                    Choose Box 1 or 2 and pay the exact entry fee (₹1000-₹3500). This unlocks all 4 bidding rounds.
+                    Entry fees are randomly generated based on the product worth. For a ₹10,000 product, entry might be ₹29-₹99. Pay to unlock all 4 rounds.
                   </p>
                 </div>
 
@@ -136,7 +137,7 @@ export function Rules({ onBack }: RulesProps) {
                     <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Bidding Rounds</h3>
                   </div>
                   <p className="text-purple-600 text-xs sm:text-sm">
-                    4 rounds open every 15 minutes. Strategic bidding is key - you can only bid once per interval.
+                    4 rounds open every 15 minutes. Strategically raise your bid to stay in the Top 3 and advance to the final win.
                   </p>
                 </div>
               </div>
@@ -147,9 +148,9 @@ export function Rules({ onBack }: RulesProps) {
                   Round Schedule
                 </div>
                 <div className="text-blue-700 text-xs sm:text-sm space-y-1">
-                  <div>• Round 1: Opens immediately after entry fee payment</div>
+                  <div>• Round 1: Opens immediately after entry payment</div>
                   <div>• Round 2: After 15 minutes • Round 3: After 30 minutes</div>
-                  <div>• Round 4: After 45 minutes</div>
+                  <div>• Round 4: After 45 minutes (Final Round)</div>
                 </div>
               </div>
             </CardContent>
@@ -159,29 +160,29 @@ export function Rules({ onBack }: RulesProps) {
           <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100">
               <CardTitle className="text-base sm:text-lg md:text-xl text-green-800 flex items-center space-x-2">
-                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                 <span>Key Rules</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
               <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
-                  <h4 className="text-green-800 font-semibold text-sm mb-2">Entry Boxes (1 & 2)</h4>
+                  <h4 className="text-green-800 font-semibold text-sm mb-2">Entry Phase</h4>
                   <div className="text-green-700 text-xs sm:text-sm space-y-1">
-                    <div>• Random fixed fee ₹1000-₹3500</div>
-                    <div>• Must pay exact amount</div>
+                    <div>• Random fee (varies by product)</div>
+                    <div>• Mandatory to join rounds</div>
                     <div>• Unlocks all 4 bidding rounds</div>
-                    <div>• Can pay entry fee for both boxes</div>
+                    <div>• Single payment per box</div>
                   </div>
                 </div>
 
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
-                  <h4 className="text-purple-800 font-semibold text-sm mb-2">Bidding Rounds (3-6)</h4>
+                  <h4 className="text-purple-800 font-semibold text-sm mb-2">Bidding Phase</h4>
                   <div className="text-purple-700 text-xs sm:text-sm space-y-1">
-                    <div>• Min bid: ₹700 (fixed)</div>
-                    <div>• Max: 90% of prize value</div>
-                    <div>• One bid per 15-minute interval</div>
-                    <div>• Highest bid wins the box</div>
+                    <div>• Progressive bidding required</div>
+                    <div>• One bid per 15-minute round</div>
+                    <div>• Highest final round bid wins prize</div>
+                    <div>• Non-refundable participation</div>
                   </div>
                 </div>
               </div>
@@ -189,13 +190,13 @@ export function Rules({ onBack }: RulesProps) {
               <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
                 <div className="text-red-800 font-semibold text-sm mb-2 flex items-center">
                   <AlertCircle className="w-4 h-4 mr-1" />
-                  Important Rules
+                  Important Transparency Note
                 </div>
                 <div className="text-red-700 text-xs sm:text-sm space-y-1">
-                  <div>• All payments are final and non-refundable</div>
-                  <div>• Must be 18+ years old to participate</div>
-                  <div>• One account per person strictly enforced</div>
-                  <div>• Winners must claim prizes within 30 days</div>
+                  <div>• Entry fees cannot be disclosed upfront as they are randomly generated</div>
+                  <div>• Fees are calibrated against the product market value for fairness</div>
+                  <div>• All payments monitored for platform integrity</div>
+                  <div>• Indian residents 18+ only</div>
                 </div>
               </div>
             </CardContent>
@@ -215,16 +216,13 @@ export function Rules({ onBack }: RulesProps) {
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base">Entry Phase (Boxes 1 & 2)</h3>
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
                   <p className="text-purple-700">
-                    <strong className="text-purple-800">Duration:</strong> Available throughout the entire 60-minute auction
+                    <strong className="text-purple-800">Duration:</strong> Join window opens at the start of each hour.
                   </p>
                   <p className="text-purple-700">
-                    <strong className="text-purple-800">Payment:</strong> Each box displays a random entry fee between ₹1000-₹3500. You must pay the exact amount shown.
+                    <strong className="text-purple-800">Payment:</strong> Fees are product-based and random. Example: A product worth ₹10k might have an entry fee between ₹29-₹99.
                   </p>
                   <p className="text-purple-700">
-                    <strong className="text-purple-800">Strategy:</strong> Paying an entry fee unlocks all 4 bidding rounds. You can pay for both entry boxes if desired.
-                  </p>
-                  <p className="text-purple-700">
-                    <strong className="text-purple-800">Timing:</strong> Round 1 opens immediately after your first entry fee payment.
+                    <strong className="text-purple-800">Strategy:</strong> Paying the entry fee unlocks access to bid for higher value prizes in rounds 3-6.
                   </p>
                 </div>
               </div>
@@ -234,121 +232,73 @@ export function Rules({ onBack }: RulesProps) {
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base">Bidding Phase (Boxes 3-6)</h3>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
                   <p className="text-blue-700">
-                    <strong className="text-blue-800">Round Schedule:</strong> Rounds open every 15 minutes (0, 15, 30, 45 minutes)
+                    <strong className="text-blue-800">Round Schedule:</strong> Rounds open every 15 minutes (0, 15, 30, 45 minutes).
                   </p>
                   <p className="text-blue-700">
-                    <strong className="text-blue-800">Bidding Limits:</strong> Minimum ₹700, Maximum 90% of the prize value
+                    <strong className="text-blue-800">Frequency:</strong> Users can place one bid per box during each 15-minute window.
                   </p>
                   <p className="text-blue-700">
-                    <strong className="text-blue-800">Frequency:</strong> You can place one bid per box every 15 minutes
-                  </p>
-                  <p className="text-blue-700">
-                    <strong className="text-blue-800">Win Condition:</strong> Highest bid when the round closes wins the prize
+                    <strong className="text-blue-800">Win Condition:</strong> The participant with the highest valid bid at the end of round 4 claims the prize.
                   </p>
                 </div>
               </div>
 
-              {/* Prize Distribution */}
+              {/* Prize fulfillment */}
               <div>
-                <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base">Prize Distribution & Values</h3>
-                <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
-                    <h4 className="text-yellow-800 font-semibold text-xs sm:text-sm mb-2">Entry Boxes</h4>
-                    <div className="text-yellow-700 text-xs space-y-1">
-                      <div>• Prize Value: $500 - $1,500</div>
-                      <div>• Winner: Pays entry fee</div>
-                      <div>• Examples: Electronics, Gift Cards</div>
-                    </div>
-                  </div>
-                  <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
-                    <h4 className="text-green-800 font-semibold text-xs sm:text-sm mb-2">Bidding Rounds</h4>
-                    <div className="text-green-700 text-xs space-y-1">
-                      <div>• Prize Value: $1,000 - $5,000+</div>
-                      <div>• Winner: Highest bidder</div>
-                      <div>• Examples: Laptops, Gaming Rigs</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Prohibited & Fair Play */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-red-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    Prohibited Actions
-                  </h3>
-                  <div className="bg-red-50 border border-red-200 rounded p-3">
-                    <div className="text-red-700 text-xs space-y-2">
-                      <div>• <strong>Multiple Accounts:</strong> Strictly prohibited</div>
-                      <div>• <strong>Bid Manipulation:</strong> No collusion allowed</div>
-                      <div>• <strong>Bot Usage:</strong> Automated bidding banned</div>
-                      <div>• <strong>Fraud:</strong> Zero tolerance policy</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-green-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    Fair Play Guarantee
-                  </h3>
-                  <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <div className="text-green-700 text-xs space-y-2">
-                      <div>• <strong>Random Fees:</strong> Certified algorithms</div>
-                      <div>• <strong>Real-time Bids:</strong> Timestamp verification</div>
-                      <div>• <strong>Transparent:</strong> All timers synchronized</div>
-                      <div>• <strong>Anti-Fraud:</strong> Advanced detection systems</div>
-                    </div>
-                  </div>
+                <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base">Prize Fulfillment</h3>
+                <div className="bg-green-50 border-l-4 border-green-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
+                  <p className="text-green-700">
+                    Winners receive the full market value of the product as an <strong className="text-green-800">Amazon Voucher</strong> within 24-48 hours.
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Strategy Tips */}
-          <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-yellow-50 to-white border-b border-yellow-100">
-              <CardTitle className="text-base sm:text-lg md:text-xl text-yellow-800 flex items-center space-x-2">
-                <Target className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
-                <span>Winning Strategies</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
-                  <h4 className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
-                    <Target className="w-4 h-4 mr-1" />
-                    Entry Strategy
-                  </h4>
-                  <div className="text-purple-700 text-xs space-y-1">
-                    <div>• Compare entry fees and choose wisely</div>
-                    <div>• Pay early to maximize bidding time</div>
-                    <div>• Consider paying for both boxes</div>
-                  </div>
-                </div>
-                <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
-                  <h4 className="text-blue-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    Bidding Strategy
-                  </h4>
-                  <div className="text-blue-700 text-xs space-y-1">
-                    <div>• Start with conservative bids</div>
-                    <div>• Save aggressive bids for final rounds</div>
-                    <div>• Monitor other players' patterns</div>
-                  </div>
+          {/* Prohibited & Fair Play */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-red-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                Prohibited Actions
+              </h3>
+              <div className="bg-red-50 border border-red-200 rounded p-3">
+                <div className="text-red-700 text-xs space-y-2">
+                  <div>• <strong>Multiple Accounts:</strong> Strictly prohibited</div>
+                  <div>• <strong>Bot Usage:</strong> Automated bidding systems are banned</div>
+                  <div>• <strong>Collusion:</strong> Cooperation between players results in ban</div>
                 </div>
               </div>
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
-                <h4 className="text-yellow-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  Timing Tips
-                </h4>
-                <div className="text-yellow-700 text-xs">
-                  Watch the countdown timers carefully. Bid near the end of each round for maximum impact, 
-                  but remember you can only bid once per 15-minute interval.
+            </div>
+
+            <div>
+              <h3 className="text-green-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
+                <Sparkles className="w-4 h-4 mr-1" />
+                Fair Play Guarantee
+              </h3>
+              <div className="bg-green-50 border border-green-200 rounded p-3">
+                <div className="text-green-700 text-xs space-y-2">
+                  <div>• <strong>Secured Payments:</strong> via Razorpay (INR)</div>
+                  <div>• <strong>Timestamp Sync:</strong> All bids recorded by server time</div>
+                  <div>• <strong>Zero Fraud:</strong> Advanced detection algorithms</div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg">
+            <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
+              <h3 className="text-lg sm:text-xl font-bold text-purple-800">Ready to Start Winning?</h3>
+              <p className="text-sm sm:text-base text-purple-600">
+                Participation is easy, fair, and fun. Join thousands of Indian players today!
+              </p>
+              <Button 
+                onClick={onBack}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold px-6 py-2 hover:from-purple-500 hover:to-purple-600 shadow-lg hover:shadow-xl transition-all"
+              >
+                🚀 Join Current Auction
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

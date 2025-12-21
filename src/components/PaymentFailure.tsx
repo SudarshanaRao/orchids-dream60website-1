@@ -54,7 +54,7 @@ export function PaymentFailure({
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <Snowfall 
           color="#EF4444"
-          snowflakeCount={isMobile ? 5 : 40}
+          snowflakeCount={isMobile ? 3 : 40}
           radius={[0.5, 2.5]}
           speed={[0.5, 2.0]}
           style={{ zIndex: 101, position: 'fixed' }}

@@ -574,7 +574,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                     <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
                 <Snowfall 
                   color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 5 : 40}
+                  snowflakeCount={window.innerWidth < 768 ? 3 : 40}
                   radius={[0.5, 2.5]}
                   speed={[0.5, 2.0]}
                   wind={[-0.5, 2.5]}
@@ -770,7 +770,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             >
               <Snowfall 
                 color="#8B5CF6"
-                snowflakeCount={window.innerWidth < 768 ? 8 : 40}
+                snowflakeCount={window.innerWidth < 768 ? 3 : 40}
                 radius={[0.5, 2.5]}
                 speed={[0.5, 2.0]}
                 wind={[-0.5, 2.5]}
@@ -941,7 +941,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               >
                 <Snowfall 
                   color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 8 : 30}
+                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
                   radius={[0.5, 2.5]}
                   speed={[0.5, 2.0]}
                   wind={[-0.5, 2.5]}
@@ -1013,7 +1013,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               >
                 <Snowfall 
                   color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 8 : 30}
+                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
                   radius={[0.5, 2.5]}
                   speed={[0.5, 2.0]}
                   wind={[-0.5, 2.5]}
@@ -1085,7 +1085,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               >
                 <Snowfall 
                   color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 8 : 20}
+                  snowflakeCount={window.innerWidth < 768 ? 3 : 20}
                   radius={[0.5, 2.5]}
                   speed={[0.5, 2.0]}
                   wind={[-0.5, 2.5]}

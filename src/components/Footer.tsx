@@ -159,7 +159,7 @@ export function Footer({ onNavigate }: FooterProps) {
         >
             <Snowfall 
               color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 5 : 60}
+              snowflakeCount={window.innerWidth < 768 ? 3 : 60}
               radius={[0.5, 2.5]}
               speed={[0.5, 2.0]}
               wind={[-0.5, 2.5]}

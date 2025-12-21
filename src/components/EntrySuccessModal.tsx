@@ -97,7 +97,7 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
                     <div className="relative backdrop-blur-xl bg-black/5 rounded-[26px] border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
                       <Snowfall 
                         color="#8B5CF6"
-                        snowflakeCount={window.innerWidth < 768 ? 8 : 60}
+                        snowflakeCount={window.innerWidth < 768 ? 3 : 60}
                         radius={[0.5, 2.5]}
                         speed={[0.5, 2.0]}
                         wind={[-0.5, 2.5]}

@@ -2291,7 +2291,7 @@ if (currentPage === 'support') {
                             <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
                                   <Snowfall 
                                     color="rgba(255, 255, 255, 0.4)" 
-                                    snowflakeCount={isMobile ? 5 : 40} 
+                                    snowflakeCount={isMobile ? 3 : 40} 
                                     radius={[0.5, 2.5]} 
                                     speed={[0.5, 2.0]} 
                                     wind={[-0.5, 2.5]} 
@@ -2414,7 +2414,7 @@ if (currentPage === 'support') {
                             <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
                                 <Snowfall 
                                   color="#8B5CF6"
-                                  snowflakeCount={isMobile ? 5 : 60}
+                                  snowflakeCount={isMobile ? 3 : 60}
                                   radius={[0.5, 2.5]}
                                   speed={[0.5, 2.0]}
                                   wind={[-0.5, 2.5]}

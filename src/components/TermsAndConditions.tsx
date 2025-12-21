@@ -91,155 +91,215 @@ export function TermsAndConditions({ onBack }: TermsAndConditionsProps) {
 
           {/* Terms Sections */}
           <div className="space-y-4 sm:space-y-6">
-            {/* 1. Acceptance of Terms */}
+            {/* 1. Eligibility */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
                 <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
                   <FileText className="w-5 h-5 text-purple-600" />
-                  <span>1. Acceptance of Terms</span>
+                  <span>1. Eligibility</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">1.1 Agreement:</strong> By accessing or using Dream60, you agree to be bound by these Terms of Service and all applicable laws and regulations.</p>
-                <p><strong className="text-purple-800">1.2 Eligibility:</strong> You must be at least 18 years old and legally capable of entering into binding contracts to use our services.</p>
-                <p><strong className="text-purple-800">1.3 Jurisdiction:</strong> These terms are governed by the laws of the United States and the State of Delaware.</p>
-                <p><strong className="text-purple-800">1.4 Modifications:</strong> We reserve the right to modify these terms at any time with 30 days notice via email and platform notifications.</p>
+                <p><strong className="text-purple-800">1.1 Age and Capacity:</strong> Users must be at least 18 years old and legally capable of entering binding contracts to participate in any Dream60 auction.</p>
+                <p><strong className="text-purple-800">1.2 Accurate Information:</strong> Users must provide true, accurate, current, and complete information, including full name, mobile number, email, and any other details requested during registration.</p>
+                <p><strong className="text-purple-800">1.3 Verification:</strong> Account activation may require OTP or similar verification, and Dream60 may request additional documentation to confirm identity or eligibility at any time.</p>
+                <p><strong className="text-purple-800">1.4 Right to Suspend or Terminate:</strong> Dream60 may suspend or terminate an account without prior notice if the information provided is false, misleading, incomplete, or cannot be verified to its satisfaction.</p>
               </CardContent>
             </Card>
 
-            {/* 2. Auction Rules */}
-            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
-                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-purple-600" />
-                  <span>2. Auction Rules and Mechanics</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">2.1 Auction Format:</strong> Dream60 operates 6 auctions daily, each lasting exactly 60 minutes with 6 boxes per auction.</p>
-                <p><strong className="text-purple-800">2.2 Entry Requirements:</strong> Boxes 1-2 require random entry fees (₹1000-₹3500) paid exactly as displayed. Entry fee unlocks access to all bidding rounds.</p>
-                <p><strong className="text-purple-800">2.3 Bidding Rounds:</strong> Boxes 3-6 open every 15 minutes (at 0, 15, 30, and 45-minute marks) with minimum bids of ₹700 and maximum bids of 90% of prize value.</p>
-                <p><strong className="text-purple-800">2.4 Bidding Frequency:</strong> Users may place one bid per box per 15-minute interval. No bid stacking or automated bidding allowed.</p>
-                <p><strong className="text-purple-800">2.5 Winning Conditions:</strong> Highest valid bid when each box closes wins the associated prize. Multiple winners possible per auction.</p>
-                <p><strong className="text-purple-800">2.6 Tie-Breaking:</strong> In case of identical bids, the first bid submitted wins (timestamp priority).</p>
-              </CardContent>
-            </Card>
-
-            {/* 3. Account Terms */}
+            {/* 2. Account Registration */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
                 <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
                   <Users className="w-5 h-5 text-purple-600" />
-                  <span>3. Account Terms and Security</span>
+                  <span>2. Account Registration and Access</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">3.1 Account Creation:</strong> Users must provide accurate, complete, and current information. One account per person strictly enforced.</p>
-                <p><strong className="text-purple-800">3.2 Identity Verification:</strong> We require government-issued photo ID and address verification for accounts with winnings over $600.</p>
-                <p><strong className="text-purple-800">3.3 Account Security:</strong> Users are responsible for maintaining account security. Report suspected unauthorized access immediately.</p>
-                <p><strong className="text-purple-800">3.4 Account Suspension:</strong> We reserve the right to suspend accounts for violations, fraud, or suspicious activity.</p>
-                <p><strong className="text-purple-800">3.5 Account Termination:</strong> Either party may terminate the account relationship with 30 days notice. Immediate termination for serious violations.</p>
+                <p><strong className="text-purple-800">2.1 Account Creation Requirement:</strong> Creating an account and logging in is mandatory to view full auction details, pay entry fees, and place bids.</p>
+                <p><strong className="text-purple-800">2.2 Responsibility for Credentials:</strong> Users are solely responsible for maintaining the confidentiality of their login credentials and for all activities conducted through their accounts, whether authorized or not.</p>
+                <p><strong className="text-purple-800">2.3 Notification of Unauthorized Use:</strong> Users must immediately notify Dream60 of any suspected unauthorized use or compromise of their account so Dream60 can investigate and, where appropriate, lock or suspend access.</p>
+                <p><strong className="text-purple-800">2.4 Single User, Single Account:</strong> Each natural person is allowed only one account; maintaining multiple accounts may result in immediate suspension or permanent termination.</p>
               </CardContent>
             </Card>
 
-            {/* 4. Financial Terms */}
+            {/* 3. Structure of Dream60 Auctions */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100">
-                <CardTitle className="text-lg sm:text-xl text-green-800 flex items-center space-x-2">
-                  <span className="text-2xl">💰</span>
-                  <span>4. Financial Terms and Payment</span>
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <Scale className="w-5 h-5 text-purple-600" />
+                  <span>3. Structure of Dream60 Auctions</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">4.1 Pay-As-You-Go Model:</strong> Dream60 operates on direct payment basis. No pre-funding or subscription fees required.</p>
-                <p><strong className="text-purple-800">4.2 Entry Fees:</strong> All entry fees are final and non-refundable once paid, regardless of auction outcome or user participation.</p>
-                <p><strong className="text-purple-800">4.3 Bid Payments:</strong> All bids require immediate payment and are final. No bid cancellations or modifications allowed.</p>
-                <p><strong className="text-purple-800">4.4 Payment Methods:</strong> We accept major credit cards, debit cards, PayPal, and select digital payment methods. All payments processed securely.</p>
-                <p><strong className="text-purple-800">4.5 Failed Payments:</strong> Failed payments result in immediate bid/entry disqualification. No grace period provided.</p>
-                <p><strong className="text-purple-800">4.6 Chargebacks:</strong> Unauthorized chargebacks result in immediate account termination and potential legal action.</p>
-                <p><strong className="text-purple-800">4.7 Taxes:</strong> Winners are responsible for all applicable taxes on prizes valued over $600.</p>
+                <p><strong className="text-purple-800">3.1 Entry Fee:</strong> Each auction has a clearly displayed entry fee that must be paid in full before participation. Payment grants the right to join that specific auction only.</p>
+                <p><strong className="text-purple-800">3.2 Confirmation of Participation:</strong> An auction seat is confirmed only after successful payment processing; failed or pending payments do not grant bidding rights.</p>
+                <p><strong className="text-purple-800">3.3 Non-Refundable Entry Fee:</strong> Entry fees are strictly non-refundable in all situations, including elimination in early rounds, user mistakes, or technical issues on the user’s side, except where applicable law mandates a refund.</p>
+                <p><strong className="text-purple-800">3.4 Eligibility to Bid:</strong> Only users who have successfully paid the entry fee and hold an active, compliant account are eligible to place bids and win prizes in that auction.</p>
               </CardContent>
             </Card>
 
-            {/* 5. Prize Terms */}
-            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-yellow-50 to-white border-b border-yellow-100">
-                <CardTitle className="text-lg sm:text-xl text-yellow-800 flex items-center space-x-2">
-                  <span className="text-2xl">🏆</span>
-                  <span>5. Prize Terms and Fulfillment</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">5.1 Prize Values:</strong> All prize values are stated in USD and represent fair market value at time of auction.</p>
-                <p><strong className="text-purple-800">5.2 Prize Claim Period:</strong> Winners have 30 days to claim prizes. Unclaimed prizes forfeit to Dream60.</p>
-                <p><strong className="text-purple-800">5.3 Delivery:</strong> Prizes shipped free worldwide within 14 business days of verification. Tracking information provided.</p>
-                <p><strong className="text-purple-800">5.4 Cash Alternatives:</strong> We reserve the right to substitute cash value for physical prizes at our discretion.</p>
-                <p><strong className="text-purple-800">5.5 Import Duties:</strong> International winners responsible for customs fees and import duties.</p>
-                <p><strong className="text-purple-800">5.6 Prize Condition:</strong> Prizes delivered new in original packaging unless otherwise specified.</p>
-              </CardContent>
-            </Card>
-
-            {/* 6. Prohibited Activities */}
-            <Card className="bg-white border-red-100 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-red-50 to-white border-b border-red-100">
-                <CardTitle className="text-lg sm:text-xl text-red-800 flex items-center space-x-2">
-                  <AlertTriangle className="w-5 h-5 text-red-600" />
-                  <span>6. Prohibited Activities</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-red-800">6.1 Multiple Accounts:</strong> Creating or operating multiple accounts strictly prohibited. Immediate termination of all accounts.</p>
-                <p><strong className="text-red-800">6.2 Automated Systems:</strong> Use of bots, scripts, or automated bidding systems prohibited. Technical measures in place to detect violations.</p>
-                <p><strong className="text-red-800">6.3 Collusion:</strong> Coordinating with other users to manipulate auctions prohibited. Includes bid sharing or strategic coordination.</p>
-                <p><strong className="text-red-800">6.4 System Exploitation:</strong> Attempting to exploit bugs, glitches, or vulnerabilities prohibited. Report issues to support immediately.</p>
-                <p><strong className="text-red-800">6.5 False Information:</strong> Providing false identity, payment, or contact information prohibited.</p>
-                <p><strong className="text-red-800">6.6 Harassment:</strong> Abusive behavior toward other users or staff prohibited. Respectful communication required.</p>
-              </CardContent>
-            </Card>
-
-            {/* 7. Platform Responsibilities */}
-            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
-                <CardTitle className="text-lg sm:text-xl text-blue-800 flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-blue-600" />
-                  <span>7. Platform Responsibilities</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">7.1 Service Availability:</strong> We strive for 99.9% uptime but cannot guarantee uninterrupted service. Scheduled maintenance communicated in advance.</p>
-                <p><strong className="text-purple-800">7.2 Technical Issues:</strong> In case of system failures during auctions, affected auctions may be paused, restarted, or cancelled with full refunds.</p>
-                <p><strong className="text-purple-800">7.3 Fair Play Monitoring:</strong> We actively monitor for violations using automated systems and manual review.</p>
-                <p><strong className="text-purple-800">7.4 Dispute Resolution:</strong> All legitimate disputes investigated within 5 business days. Decision final and binding.</p>
-                <p><strong className="text-purple-800">7.5 Data Security:</strong> We implement industry-standard security measures but cannot guarantee absolute security.</p>
-                <p><strong className="text-purple-800">7.6 Customer Support:</strong> Support available 24/7 via email, live chat, and phone for urgent issues.</p>
-              </CardContent>
-            </Card>
-
-            {/* 8-12 collapsed for brevity */}
+            {/* 4. Auction Rounds and Bidding Rules */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
                 <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
                   <Gavel className="w-5 h-5 text-purple-600" />
-                  <span>8. Limitation of Liability</span>
+                  <span>4. Auction Rounds and Bidding Rules</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">8.1 Maximum Liability:</strong> Our total liability for any claims related to an auction is limited to the total amount you paid for that specific auction.</p>
-                <p><strong className="text-purple-800">8.2 Indirect Damages:</strong> We are not liable for indirect, incidental, special, consequential, or punitive damages under any circumstances.</p>
-                <p><strong className="text-purple-800">8.3 Service Disclaimer:</strong> Services provided "as is" without warranties of any kind, express or implied.</p>
-                <p><strong className="text-purple-800">8.4 Force Majeure:</strong> Not liable for delays or failures due to acts of God, government actions, network failures, or other circumstances beyond our reasonable control.</p>
+                <p><strong className="text-purple-800">4.1 Rounds and Duration:</strong> Each Dream60 auction consists of four rounds, each lasting 15 minutes, associated with Boxes 3, 4, 5, and 6 respectively.</p>
+                <p><strong className="text-purple-800">4.2 Bid Submission Limits:</strong> In each round, a user may submit only one bid per eligible box; multiple bids or bid stacking in the same round is not permitted.</p>
+                <p><strong className="text-purple-800">4.3 Irrevocability of Bids:</strong> Once submitted, a bid cannot be edited, reduced, cancelled, or withdrawn for any reason, including user error.</p>
+                <p><strong className="text-purple-800">4.4 Advancement Criteria (Top 3 Rule):</strong> At the end of each round, the three highest bidders are ranked as the Top 3 and automatically advance to the next round, while all others are eliminated from the auction.</p>
+                <p><strong className="text-purple-800">4.5 Progressive Bid Requirement:</strong> Any participant who advances must place a bid in the next round that is strictly higher than their previous round’s bid; placing a lower or equal bid may be treated as invalid and can result in disqualification.</p>
+                <p><strong className="text-purple-800">4.6 Tie Handling:</strong> If two or more users submit identical bids for a position affecting advancement or ranking, Dream60 uses timestamp priority (earliest bid wins) to break ties.</p>
               </CardContent>
             </Card>
 
+            {/* 5. Determining Winners and Prize Claim */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
-                <CardTitle className="text-lg sm:text-xl text-purple-800">9-12. Additional Terms</CardTitle>
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <Shield className="w-5 h-5 text-purple-600" />
+                  <span>5. Determining Winners and Prize Claim</span>
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
-                <p><strong className="text-purple-800">9. Intellectual Property:</strong> All platform content and trademarks are our exclusive property.</p>
-                <p><strong className="text-purple-800">10. Privacy:</strong> See our Privacy Policy for details on data collection and usage.</p>
-                <p><strong className="text-purple-800">11. Dispute Resolution:</strong> Disputes resolved through binding arbitration in Delaware under AAA rules. Class action waiver applies.</p>
-                <p><strong className="text-purple-800">12. Contact:</strong> Legal notices must be sent to legal@dream60.com with certified delivery.</p>
+                <p><strong className="text-purple-800">5.1 Winner Selection:</strong> At the end of the final round, the participant with the highest valid bid is declared the provisional winner of that auction’s prize, subject to payment and verification.</p>
+                <p><strong className="text-purple-800">5.2 Payment of Winning Bid:</strong> The Rank 1 winner must pay the exact final bid amount within the time frame communicated by Dream60 (for example, via app notification, SMS, or email); failure to do so results in forfeiture.</p>
+                <p><strong className="text-purple-800">5.3 Escalation to Next Rank:</strong> If Rank 1 fails to pay on time, is disqualified, or cannot be verified, Dream60 may offer the prize to Rank 2, and then to Rank 3 if necessary, under the same payment and verification conditions.</p>
+                <p><strong className="text-purple-800">5.4 Verification Requirements:</strong> Dream60 may request identity proof, address proof, or any relevant documentation before releasing the prize; failure to provide acceptable documents may lead to cancellation of the win without compensation.</p>
+                <p><strong className="text-purple-800">5.5 Prize Delivery:</strong> Prizes are processed and dispatched only after receipt of the full winning bid amount and successful completion of verification, using methods and timelines communicated by Dream60.</p>
+              </CardContent>
+            </Card>
+
+            {/* 6. Payments, Fees, and Refund Policy */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100">
+                <CardTitle className="text-lg sm:text-xl text-green-800 flex items-center space-x-2">
+                  <span className="text-2xl">₹</span>
+                  <span>6. Payments, Fees, and Refund Policy</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">6.1 Accepted Payment Methods:</strong> Entry fees and winning bid payments must be made through payment methods supported on the platform, such as cards, wallets, bank transfers, or UPI, as available in India.</p>
+                <p><strong className="text-purple-800">6.2 Finality of Payments:</strong> All successful payments, including entry fees and bid amounts, are final and non-reversible, except where Dream60 or applicable law explicitly authorizes a refund (e.g., cancelled auction).</p>
+                <p><strong className="text-purple-800">6.3 Third-Party Payment Risks:</strong> Delays, declines, or additional charges from banks or payment gateways are outside Dream60’s control, and users must resolve such issues directly with their provider.</p>
+                <p><strong className="text-purple-800">6.4 Failed or Reversed Payments:</strong> If a payment fails, is reversed, or is flagged as suspicious, Dream60 may cancel associated bids, remove the user from ongoing auctions, and suspend or terminate the account.</p>
+                <p><strong className="text-purple-800">6.5 Taxes and Charges:</strong> Users are responsible for any taxes, duties, or additional charges imposed by authorities on winnings or payments, as required by Indian law.</p>
+              </CardContent>
+            </Card>
+
+            {/* 7. Fair Auction Practices and Restrictions */}
+            <Card className="bg-white border-red-100 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-red-50 to-white border-b border-red-100">
+                <CardTitle className="text-lg sm:text-xl text-red-800 flex items-center space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                  <span>7. Fair Auction Practices and Restrictions</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">7.1 Fair Participation:</strong> Users must participate honestly and fairly, placing bids solely for their own benefit and not on behalf of others, unless explicitly allowed by Dream60.</p>
+                <p><strong className="text-purple-800">7.2 Prohibition of Multiple Accounts:</strong> Creating or operating multiple accounts to gain an unfair advantage in auctions is strictly prohibited and may result in immediate termination of all related accounts.</p>
+                <p><strong className="text-purple-800">7.3 Ban on Automation:</strong> Use of bots, scripts, or any automated tools to monitor auctions or place bids is forbidden; Dream60 may use technical and manual checks to detect such behavior.</p>
+                <p><strong className="text-purple-800">7.4 No Collusion or Bid Rigging:</strong> Users may not collude or coordinate with others to manipulate auction outcomes, including sharing bid strategies or deliberately inflating or suppressing bids.</p>
+                <p><strong className="text-purple-800">7.5 System Abuse:</strong> Attempting to hack, disrupt, overload, or exploit bugs or vulnerabilities in the platform is prohibited and may result in legal action in addition to account termination.</p>
+                <p><strong className="text-purple-800">7.6 Enforcement Powers:</strong> Dream60 may suspend auctions, cancel bids, block accounts, or modify results if it believes fair-play rules have been violated or the integrity of an auction is compromised.</p>
+              </CardContent>
+            </Card>
+
+            {/* 8. System Errors, Interruptions, and Auction Cancellation */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
+                <CardTitle className="text-lg sm:text-xl text-blue-800 flex items-center space-x-2">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  <span>8. System Errors, Interruptions, and Auction Cancellation</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">8.1 User-Side Issues:</strong> Dream60 is not responsible for failures arising from user devices, local networks, or internet connections that prevent timely bid placement or participation.</p>
+                <p><strong className="text-purple-800">8.2 Platform-Side Failures:</strong> In case of server downtime, system errors, or platform-side technical failures that significantly affect an auction, Dream60 may cancel, pause, or re-run the auction at its sole discretion.</p>
+                <p><strong className="text-purple-800">8.3 Remedies for Cancelled Auctions:</strong> If an auction is cancelled by Dream60 before completion, Dream60 may refund entry fees or offer an alternative solution (such as credit or a replacement auction), but is not obligated to replicate prior bids or rankings.</p>
+                <p><strong className="text-purple-800">8.4 Final Decision:</strong> Dream60 has sole authority to decide whether a technical issue has materially affected an auction and what corrective actions are appropriate; such decisions will be final and binding.</p>
+              </CardContent>
+            </Card>
+
+            {/* 9. User Behaviour and Community Standards */}
+            <Card className="bg-white border-yellow-100 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-yellow-50 to-white border-b border-yellow-100">
+                <CardTitle className="text-lg sm:text-xl text-yellow-800 flex items-center space-x-2">
+                  <Users className="w-5 h-5 text-yellow-600" />
+                  <span>9. User Behaviour and Community Standards</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">9.1 Acceptable Conduct:</strong> Users must use the platform in a lawful and respectful manner and may not engage in harassment, hate speech, defamation, or any abusive conduct toward other users or Dream60 staff.</p>
+                <p><strong className="text-purple-800">9.2 Prohibited Content:</strong> Users may not upload or share content that is fraudulent, obscene, infringing, or otherwise inappropriate through platform channels or communication features.</p>
+                <p><strong className="text-purple-800">9.3 Fraud and Misuse:</strong> Any suspected fraud, identity theft, or misuse of the platform may result in immediate suspension or termination and reporting to law-enforcement authorities.</p>
+                <p><strong className="text-purple-800">9.4 Moderation Rights:</strong> Dream60 may remove content, limit communication features, or restrict access to maintain a safe environment and protect users and the platform.</p>
+              </CardContent>
+            </Card>
+
+            {/* 10. Intellectual Property and Use of the Platform */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  <span>10. Intellectual Property and Use of the Platform</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">10.1 Ownership:</strong> All logos, trademarks, designs, text, graphics, software, and other content on Dream60 are owned or licensed by Dream60 and protected by applicable intellectual property laws.</p>
+                <p><strong className="text-purple-800">10.2 Limited License:</strong> Users receive a limited, revocable, non-transferable license to access the platform and participate in auctions for personal use only.</p>
+                <p><strong className="text-purple-800">10.3 Restrictions on Use:</strong> Users may not copy, reproduce, modify, distribute, sell, or create derivative works from any part of the platform without prior written consent from Dream60.</p>
+                <p><strong className="text-purple-800">10.4 Protection of Rights:</strong> Unauthorized use of Dream60’s intellectual property may lead to immediate account termination and civil or criminal legal action.</p>
+              </CardContent>
+            </Card>
+
+            {/* 11. Risk, Responsibility, and Limitation of Liability */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <Scale className="w-5 h-5 text-purple-600" />
+                  <span>11. Risk, Responsibility, and Limitation of Liability</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">11.1 Auction Risks:</strong> Participation in auctions involves financial risk; users understand and accept that they may lose entry fees and bid amounts without winning any prize.</p>
+                <p><strong className="text-purple-800">11.2 User Mistakes:</strong> Dream60 is not responsible for user errors, such as bidding incorrect amounts, missing bidding windows, or failing to complete payments.</p>
+                <p><strong className="text-purple-800">11.3 Liability Cap:</strong> Dream60’s total liability for any claim arising from or related to a specific auction is limited to the total amount the user paid to participate in that auction.</p>
+                <p><strong className="text-purple-800">11.4 Exclusion of Indirect Damages:</strong> Dream60 will not be liable for indirect, incidental, special, consequential, or punitive damages arising from use of the platform or participation in auctions.</p>
+              </CardContent>
+            </Card>
+
+            {/* 12. Changes to Terms and Auction Policies */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  <span>12. Changes to Terms and Auction Policies</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">12.1 Right to Modify:</strong> Dream60 may amend, update, or replace these Terms & Conditions and auction rules at any time, and will make the updated version available on the platform.</p>
+                <p><strong className="text-purple-800">12.2 Notice of Changes:</strong> Changes may be notified via app notifications, email, or website banners; users are responsible for regularly reviewing the terms.</p>
+                <p><strong className="text-purple-800">12.3 Acceptance of Changes:</strong> Continued use of the platform or participation in auctions after changes take effect constitutes acceptance of the revised revised terms.</p>
+              </CardContent>
+            </Card>
+
+            {/* 13. Disputes, Governing Law, and Contact */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+                <CardTitle className="text-lg sm:text-xl text-purple-800 flex items-center space-x-2">
+                  <Shield className="w-5 h-5 text-purple-600" />
+                  <span>13. Disputes, Governing Law, and Contact</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
+                <p><strong className="text-purple-800">13.1 Internal Resolution:</strong> Users should first raise any issues or disputes related to auctions, payments, or account actions with Dream60 customer support through official channels.</p>
+                <p><strong className="text-purple-800">13.2 Governing Law:</strong> These terms are governed by the laws of India. Any disputes will be subject to the exclusive jurisdiction of the courts in Hyderabad, Telangana.</p>
+                <p><strong className="text-purple-800">13.3 Contact for Legal Notices:</strong> Formal legal notices must be sent to support@dream60.com or our registered address: Finpages Tech Private Limited, Hyderabad, Telangana, India.</p>
               </CardContent>
             </Card>
           </div>
@@ -248,10 +308,10 @@ export function TermsAndConditions({ onBack }: TermsAndConditionsProps) {
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg">
             <CardContent className="p-4 sm:p-6 text-center">
               <p className="text-sm sm:text-base text-purple-800 font-semibold">
-                Last updated: December 5, 2025
+                Last updated: December 21, 2025
               </p>
               <p className="text-sm text-purple-600 mt-2">
-                For questions about these terms, please contact our support team.
+                For questions about these terms, please contact our support team at support@dream60.com.
               </p>
             </CardContent>
           </Card>

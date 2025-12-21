@@ -32,7 +32,7 @@ export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalPro
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <Snowfall 
                   color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 8 : 40}
+                  snowflakeCount={window.innerWidth < 768 ? 3 : 40}
                   radius={[0.5, 2.5]}
                   speed={[0.5, 2.0]}
                   wind={[-0.5, 2.5]}
