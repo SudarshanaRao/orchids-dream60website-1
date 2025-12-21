@@ -122,13 +122,13 @@ export function Footer({ onNavigate }: FooterProps) {
                 className="group relative"
               >
                 <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
-                  <Snowfall 
-                    color="#8B5CF6"
-                    snowflakeCount={window.innerWidth < 768 ? 5 : 40}
-                    radius={[0.5, 2.0]}
-                    speed={[0.5, 1.5]}
-                    wind={[-0.5, 2.0]}
-                  />
+                    <Snowfall 
+                      color="#8B5CF6"
+                      snowflakeCount={window.innerWidth < 768 ? 3 : 40}
+                      radius={[0.5, 2.0]}
+                      speed={[0.5, 1.5]}
+                      wind={[-0.5, 2.0]}
+                    />
                   <div className="relative z-10">
                     <motion.div 
                       className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30`}
@@ -157,13 +157,13 @@ export function Footer({ onNavigate }: FooterProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
         >
-          <Snowfall 
-            color="#8B5CF6"
-            snowflakeCount={window.innerWidth < 768 ? 8 : 60}
-            radius={[0.5, 2.5]}
-            speed={[0.5, 2.0]}
-            wind={[-0.5, 2.5]}
-          />
+            <Snowfall 
+              color="#8B5CF6"
+              snowflakeCount={window.innerWidth < 768 ? 5 : 60}
+              radius={[0.5, 2.5]}
+              speed={[0.5, 2.0]}
+              wind={[-0.5, 2.5]}
+            />
           {/* Card shine effect */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
