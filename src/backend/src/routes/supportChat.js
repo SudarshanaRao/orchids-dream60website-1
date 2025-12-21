@@ -43,12 +43,13 @@ router.post('/message', async (req, res) => {
   }
 });
 
-// AI chat endpoint (Open-source models only)
+    // AI chat endpoint (Open-source models only)
 router.post('/ask', async (req, res) => {
   try {
-    const { sessionId, userId, message } = req.body;
+    const { sessionId, userId, message } = req.body || {};
 
     if (!sessionId || !message) {
+      console.warn('⚠️ [SUPPORT-CHAT] /ask missing sessionId or message');
       return res.status(400).json({
         success: false,
         message: 'sessionId and message are required',
@@ -58,45 +59,39 @@ router.post('/ask', async (req, res) => {
     // Persist the user message
     await saveMessage({ sessionId, userId, role: 'user', message });
 
-      // Retrieve top chunks via MongoDB text search (free; no embeddings)
-      // If indexes aren't created yet, fall back to a simple regex search.
-      let chunks = [];
-
-      try {
-        chunks = await SupportChatKnowledgeChunk.find(
-          { $text: { $search: message } },
-          { score: { $meta: 'textScore' } }
-        )
-          .select('sourceUrl content')
-          .sort({ score: { $meta: 'textScore' } })
-          .limit(6)
+    // Retrieve chunks with a more robust search
+    let chunks = [];
+    const searchTerms = String(message).toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    
+    // 1. Try text search first
+    try {
+      chunks = await SupportChatKnowledgeChunk.find(
+        { $text: { $search: message } },
+        { score: { $meta: 'textScore' } }
+      )
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(8)
+        .lean();
+    } catch (e) {
+      // 2. Fallback to regex if text search fails or index is missing
+      if (searchTerms.length > 0) {
+        const regex = new RegExp(searchTerms.join('|'), 'i');
+        chunks = await SupportChatKnowledgeChunk.find({ content: regex })
+          .limit(8)
           .lean();
-      } catch (e) {
-        const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const terms = String(message || '')
-          .split(/\s+/)
-          .map((t) => t.trim())
-          .filter((t) => t.length >= 3)
-          .slice(0, 6);
-
-        if (terms.length > 0) {
-          const regex = new RegExp(terms.map(escapeRegExp).join('|'), 'i');
-          chunks = await SupportChatKnowledgeChunk.find({ content: regex })
-            .select('sourceUrl content')
-            .limit(6)
-            .lean();
-        }
       }
+    }
 
-    const sources = Array.from(new Set(chunks.map((c) => c.sourceUrl)));
     const context = chunks
-      .map((c) => `Source: ${c.sourceUrl}\n${c.content}`)
+      .map((c) => c.content)
       .join('\n\n---\n\n');
+    
+    const sources = [...new Set(chunks.map(c => c.sourceUrl))];
 
-    // Provide short conversation history for coherence (last 6 messages)
+    // Provide conversation history
     const historyDocs = await SupportChatMessage.find({ sessionId })
       .sort({ timestamp: -1 })
-      .limit(6)
+      .limit(5)
       .lean();
 
     const conversation = historyDocs.reverse().map((m) => ({
@@ -104,6 +99,9 @@ router.post('/ask', async (req, res) => {
       content: m.message,
     }));
 
+    // If we have no context, we should still try to answer if it's a greeting, 
+    // but the system prompt will handle it if we pass "no context".
+    
     const reply = await generateAnswerFromContext({
       query: message,
       context,
@@ -120,23 +118,12 @@ router.post('/ask', async (req, res) => {
       },
     });
   } catch (error) {
-    const msg = String(error?.message || error);
-    console.error('❌ [SUPPORT-CHAT] /ask error:', msg);
-
-    // Common missing-key messages
-    if (
-      msg.includes('GROQ_API_KEY') ||
-      msg.includes('OPENROUTER_API_KEY') ||
-      msg.includes('TOGETHER_API_KEY') ||
-      msg.includes('SUPPORT_CHAT_OPENAI_COMPAT_API_KEY')
-    ) {
-      return res.status(503).json({
-        success: false,
-        message: `AI chatbot is not configured (${msg}).`,
-      });
-    }
-
-    return res.status(500).json({ success: false, message: 'Failed to generate reply' });
+    console.error('❌ [SUPPORT-CHAT] /ask error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to generate reply. Our team has been notified.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
