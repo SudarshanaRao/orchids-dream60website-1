@@ -47,6 +47,7 @@ router.post('/message', async (req, res) => {
 router.post('/ask', async (req, res) => {
   try {
     const { sessionId, userId, message } = req.body || {};
+    console.log(`[SUPPORT-CHAT] Incoming /ask. Session: ${sessionId}, Message: "${message}"`);
 
     if (!sessionId || !message) {
       console.warn('⚠️ [SUPPORT-CHAT] /ask missing sessionId or message');
@@ -61,7 +62,7 @@ router.post('/ask', async (req, res) => {
 
     // Retrieve chunks with a more robust search
     let chunks = [];
-    const searchTerms = String(message).toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    console.log(`[SUPPORT-CHAT] Searching knowledge base for: "${message}"`);
     
     // 1. Try text search first
     try {
@@ -72,13 +73,18 @@ router.post('/ask', async (req, res) => {
         .sort({ score: { $meta: 'textScore' } })
         .limit(8)
         .lean();
+      
+      console.log(`[SUPPORT-CHAT] Text search found ${chunks.length} chunks`);
     } catch (e) {
+      console.warn(`[SUPPORT-CHAT] Text search failed (index might be missing): ${e.message}`);
       // 2. Fallback to regex if text search fails or index is missing
+      const searchTerms = String(message).toLowerCase().split(/\s+/).filter(t => t.length > 2);
       if (searchTerms.length > 0) {
         const regex = new RegExp(searchTerms.join('|'), 'i');
         chunks = await SupportChatKnowledgeChunk.find({ content: regex })
           .limit(8)
           .lean();
+        console.log(`[SUPPORT-CHAT] Regex fallback found ${chunks.length} chunks`);
       }
     }
 
@@ -99,14 +105,15 @@ router.post('/ask', async (req, res) => {
       content: m.message,
     }));
 
-    // If we have no context, we should still try to answer if it's a greeting, 
-    // but the system prompt will handle it if we pass "no context".
+    console.log(`[SUPPORT-CHAT] Generating answer using provider...`);
     
     const reply = await generateAnswerFromContext({
       query: message,
       context,
       conversation,
     });
+
+    console.log(`[SUPPORT-CHAT] Generated reply length: ${reply.length}`);
 
     await saveMessage({ sessionId, userId, role: 'bot', message: reply });
 
@@ -122,7 +129,7 @@ router.post('/ask', async (req, res) => {
     return res.status(500).json({ 
       success: false, 
       message: 'Failed to generate reply. Our team has been notified.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: error.message
     });
   }
 });
