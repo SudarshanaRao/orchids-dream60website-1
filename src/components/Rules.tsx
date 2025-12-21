@@ -3,6 +3,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { motion } from 'motion/react';
+import Snowfall from 'react-snowfall';
 
 
 interface RulesProps {
@@ -70,9 +71,16 @@ export function Rules({ onBack }: RulesProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          {/* Introduction */}
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg">
-            <CardHeader>
+            {/* Introduction */}
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg relative overflow-hidden">
+              <Snowfall 
+                snowflakeCount={8}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.4 }}
+              />
+              <CardHeader>
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                 <span>Welcome to Dream60 India</span>
@@ -111,9 +119,16 @@ export function Rules({ onBack }: RulesProps) {
             </CardContent>
           </Card>
 
-          {/* How It Works */}
-          <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100">
+            {/* How It Works */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
+              <Snowfall 
+                snowflakeCount={8}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.3 }}
+              />
+              <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Target className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                 <span>How It Works</span>
@@ -156,9 +171,16 @@ export function Rules({ onBack }: RulesProps) {
             </CardContent>
           </Card>
 
-          {/* Key Rules */}
-          <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100">
+            {/* Key Rules */}
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
+              <Snowfall 
+                snowflakeCount={8}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.3 }}
+              />
+              <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-green-800 flex items-center space-x-2">
                 <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                 <span>Key Rules</span>

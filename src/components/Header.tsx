@@ -690,10 +690,10 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                   {user ? (
                     <>
                       <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { onNavigate?.('rules'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
+                          <button
+                            onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
                           <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                             <Shield className="w-5 h-5 text-purple-600" />
                           </div>
