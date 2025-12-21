@@ -83,8 +83,18 @@ const chatWithOllama = async ({ baseUrl, model, messages, temperature = 0.2 }) =
 };
 
 const getProvider = () => {
-  const provider = (process.env.SUPPORT_CHAT_PROVIDER || 'groq').toLowerCase().trim();
-  console.log(`[AI-DEBUG] Detected provider: "${provider}" (from env: "${process.env.SUPPORT_CHAT_PROVIDER}")`);
+  // Check explicit env var first
+  const envProvider = process.env.SUPPORT_CHAT_PROVIDER;
+  let provider = (envProvider || 'groq').toLowerCase().trim();
+  
+  // Safety check: If provider is ollama but we are likely on a server without local ollama,
+  // or if we have a Groq key and want to be sure.
+  if (provider === 'ollama' && !process.env.OLLAMA_BASE_URL && process.env.GROQ_API_KEY) {
+    console.warn('[AI-DEBUG] Provider was "ollama" but no OLLAMA_BASE_URL found. Falling back to "groq" because GROQ_API_KEY is present.');
+    provider = 'groq';
+  }
+
+  console.log(`[AI-DEBUG] Final provider choice: "${provider}" (from env: "${envProvider || 'undefined'}")`);
   return provider;
 };
 
@@ -105,15 +115,15 @@ const generateAnswerFromContext = async ({ query, context, conversation = [] }) 
 
   console.log(`[AI-DEBUG] Using model: "${model}" on provider: "${provider}"`);
 
-  const system =
-    'You are Dream60 Assist, the official support chatbot for Dream60 (an auction gaming platform).\n' +
-    'Your goal is to help users by answering questions based ONLY on the provided WEBSITE CONTEXT.\n' +
-    'Rules:\n' +
-    '1. If the answer is found in the context, provide a clear, concise, and friendly response.\n' +
-    '2. If the answer is NOT in the context, say: "I don\'t have that specific information on the Dream60 website yet. You can contact our support team in the Contact Us section for further assistance."\n' +
-    '3. Do NOT make up facts. Do NOT use general knowledge about other auction sites.\n' +
-    '4. Keep responses professional and localized for Indian users (Dream60 operates in India).\n' +
-    '5. Focus on: bidding rules, entry fees (random based on product), prize claims (Amazon vouchers), and participation steps.';
+    const system =
+      'You are Dream60 Assist, the official support chatbot for Dream60 (an auction gaming platform).\n' +
+      'Your goal is to help users by answering questions based STRICTLY and ONLY on the provided WEBSITE CONTEXT.\n' +
+      'Rules:\n' +
+      '1. If the answer is found in the context, provide a clear, concise, and friendly response.\n' +
+      '2. If the user asks a question that is NOT covered by the context, you MUST say exactly: "I don\'t have that specific information on the Dream60 website yet. You can contact our support team in the Contact Us section for further assistance."\n' +
+      '3. Do NOT make up any information. Do NOT use your own training data about auctions or other platforms.\n' +
+      '4. Keep responses professional and localized for Indian users.\n' +
+      '5. Only discuss topics like bidding rules, entry fees, prize claims, and participation if they appear in the context.';
 
   const messages = [
     { role: 'system', content: system + `\n\nWEBSITE CONTEXT:\n${context || '(no context provided)'}` },
