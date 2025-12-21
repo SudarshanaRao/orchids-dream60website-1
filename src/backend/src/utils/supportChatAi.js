@@ -82,7 +82,7 @@ const chatWithOllama = async ({ baseUrl, model, messages, temperature = 0.2 }) =
   return data?.message?.content?.trim();
 };
 
-const getProvider = () => String(process.env.SUPPORT_CHAT_PROVIDER || 'ollama').toLowerCase();
+const getProvider = () => String(process.env.SUPPORT_CHAT_PROVIDER || 'groq').toLowerCase();
 
 const getModelForProvider = (provider) => {
   if (process.env.SUPPORT_CHAT_MODEL) return process.env.SUPPORT_CHAT_MODEL;
