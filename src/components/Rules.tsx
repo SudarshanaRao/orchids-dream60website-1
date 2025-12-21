@@ -225,8 +225,15 @@ export function Rules({ onBack }: RulesProps) {
           </Card>
 
           {/* Detailed Mechanics */}
-          <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100">
+            <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
+              <Snowfall 
+                snowflakeCount={5}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.2 }}
+              />
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-blue-800 flex items-center space-x-2">
                 <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 <span>Detailed Auction Mechanics</span>
@@ -279,12 +286,18 @@ export function Rules({ onBack }: RulesProps) {
 
           {/* Prohibited & Fair Play */}
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-red-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
+            <div className="relative overflow-hidden group">
+              <Snowfall 
+                snowflakeCount={3}
+                radius={[0.5, 1.5]}
+                speed={[0.5, 1.0]}
+                style={{ opacity: 0.2 }}
+              />
+              <h3 className="text-red-800 font-semibold mb-3 text-sm sm:text-base flex items-center relative z-10 font-medium">
                 <AlertCircle className="w-4 h-4 mr-1" />
                 Prohibited Actions
               </h3>
-              <div className="bg-red-50 border border-red-200 rounded p-3">
+              <div className="bg-red-50 border border-red-200 rounded p-3 relative z-10">
                 <div className="text-red-700 text-xs space-y-2">
                   <div>• <strong>Multiple Accounts:</strong> Strictly prohibited</div>
                   <div>• <strong>Bot Usage:</strong> Automated bidding systems are banned</div>
@@ -293,12 +306,18 @@ export function Rules({ onBack }: RulesProps) {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-green-800 font-semibold mb-3 text-sm sm:text-base flex items-center">
+            <div className="relative overflow-hidden group">
+              <Snowfall 
+                snowflakeCount={3}
+                radius={[0.5, 1.5]}
+                speed={[0.5, 1.0]}
+                style={{ opacity: 0.2 }}
+              />
+              <h3 className="text-green-800 font-semibold mb-3 text-sm sm:text-base flex items-center relative z-10 font-medium">
                 <Sparkles className="w-4 h-4 mr-1" />
                 Fair Play Guarantee
               </h3>
-              <div className="bg-green-50 border border-green-200 rounded p-3">
+              <div className="bg-green-50 border border-green-200 rounded p-3 relative z-10">
                 <div className="text-green-700 text-xs space-y-2">
                   <div>• <strong>Secured Payments:</strong> via Razorpay (INR)</div>
                   <div>• <strong>Timestamp Sync:</strong> All bids recorded by server time</div>
@@ -309,8 +328,15 @@ export function Rules({ onBack }: RulesProps) {
           </div>
 
           {/* Call to Action */}
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg">
-            <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4">
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg relative overflow-hidden">
+             <Snowfall 
+                snowflakeCount={5}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.25 }}
+              />
+            <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4 relative z-10">
               <h3 className="text-lg sm:text-xl font-bold text-purple-800">Ready to Start Winning?</h3>
               <p className="text-sm sm:text-base text-purple-600">
                 Participation is easy, fair, and fun. Join thousands of Indian players today!

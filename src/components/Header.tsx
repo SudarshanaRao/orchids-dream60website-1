@@ -433,17 +433,17 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                           </Button>
                         </motion.div>
 
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            onClick={() => onNavigate?.('participation')}
-                            variant="ghost"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
-                            size="sm"
-                          >
-                            <Shield className="w-4 h-4 mr-1.5" />
-                            Play Guide
-                          </Button>
-                        </motion.div>
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              onClick={() => onNavigate?.('participation')}
+                              variant="ghost"
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
+                              size="sm"
+                            >
+                              <Shield className="w-4 h-4 mr-1.5" />
+                              Participation
+                            </Button>
+                          </motion.div>
 
 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                               <Button
@@ -697,7 +697,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                           <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                             <Shield className="w-5 h-5 text-purple-600" />
                           </div>
-                          <span className="font-medium text-purple-900">Play Guide</span>
+                          <span className="font-medium text-purple-900">Participation</span>
                         </button>
                       </motion.div>
 
@@ -819,17 +819,17 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                         </button>
                       </motion.div>
 
-                      <motion.div variants={menuItemVariants}>
-                        <button
-                          onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
-                          className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                        >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <Shield className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Play Guide</span>
-                        </button>
-                      </motion.div>
+                        <motion.div variants={menuItemVariants}>
+                          <button
+                            onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
+                            className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Shield className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Participation</span>
+                          </button>
+                        </motion.div>
 
                         <motion.div variants={menuItemVariants}>
                           <button

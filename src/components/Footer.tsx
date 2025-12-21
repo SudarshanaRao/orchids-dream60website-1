@@ -216,82 +216,88 @@ export function Footer({ onNavigate }: FooterProps) {
           </div>
         </motion.div>
 
-        {/* Bottom Section */}
-        <motion.div 
-          className="border-t border-purple-200/50 pt-6 sm:pt-8"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 mb-6">
-            <motion.div 
-              className="flex items-center space-x-2 sm:space-x-3"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <motion.div 
-                className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30"
-                initial={{ scale: 0, rotate: -180 }}
-                whileInView={{ scale: 1, rotate: 0 }}
-                viewport={{ once: true }}
-                transition={{ 
-                  delay: 0.9,
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 15
-                }}
-                whileHover={{ 
-                  scale: 1.05,
-                  rotate: 5,
-                  transition: { duration: 0.2 }
-                }}
-              >
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </motion.div>
-              <div>
-                <span className="text-purple-800 font-bold text-base sm:text-lg bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">Dream60</span>
-                <p className="text-purple-600 text-xs sm:text-sm">The Ultimate Auction Play</p>
-              </div>
-            </motion.div>
-            
-            <motion.div 
-              className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-            >
-              {[
-                { label: 'Terms of Service', page: 'terms' },
-                { label: 'Privacy Policy', page: 'privacy' },
-                { label: 'Support', page: 'support' },
-                { label: 'Contact', page: 'contact' }
-              ].map((link, index) => (
-                <motion.button
-                  key={index}
-                  onClick={() => onNavigate?.(link.page)}
-                  className="text-purple-600 hover:text-purple-800 transition-all cursor-pointer px-2 py-1 rounded-xl hover:bg-purple-50/80 font-medium"
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {link.label}
-                </motion.button>
-              ))}
-            </motion.div>
+          {/* Links Section */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 border-t border-purple-200/50 pt-12 text-center md:text-left">
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Product</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('game')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Live Auctions</button></li>
+                <li><button onClick={() => onNavigate?.('rules')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction Rules</button></li>
+                <li><button onClick={() => onNavigate?.('participation')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Participation</button></li>
+                <li><button onClick={() => onNavigate?.('leaderboard')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Leaderboard</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Quick Guide</button></li>
+                <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Winning Tips</button></li>
+                <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">AI Assistant</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Support Center</button></li>
+                <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Contact Us</button></li>
+                <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Terms of Service</button></li>
+                <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Privacy Policy</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">My Profile</button></li>
+                <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Transactions</button></li>
+                <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction History</button></li>
+              </ul>
+            </div>
           </div>
-          
+
+          {/* Bottom Section */}
           <motion.div 
-            className="text-center text-purple-500/80 text-xs sm:text-sm"
+            className="border-t border-purple-200/50 pt-6 sm:pt-8"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 1 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
           >
-            © 2025 Dream60. All rights reserved. Play responsibly.
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 mb-6">
+              <motion.div 
+                className="flex items-center space-x-2 sm:space-x-3"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div 
+                  className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30"
+                  initial={{ scale: 0, rotate: -180 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ 
+                    delay: 0.9,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15
+                  }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    rotate: 5,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </motion.div>
+                <div>
+                  <span className="text-purple-800 font-bold text-base sm:text-lg bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent">Dream60 India</span>
+                  <p className="text-purple-600 text-xs sm:text-sm">The Ultimate Auction Play</p>
+                </div>
+              </motion.div>
+              
+              <div className="text-purple-500/80 text-xs sm:text-sm font-medium">
+                © 2025 Dream60. All rights reserved. Play responsibly.
+              </div>
+            </div>
           </motion.div>
-        </motion.div>
       </div>
     </footer>
   );
