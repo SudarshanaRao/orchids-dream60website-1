@@ -75,7 +75,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   };
 
   const roundBoxes = auction.boxes.filter(box => box.type === 'round');
-  const canShowBoxes = auction.userHasPaidEntry;
+  const canShowBoxes = auction.userHasPaidEntry || auction.winnersAnnounced;
   const showGuestPreview = false;
 
   return (
