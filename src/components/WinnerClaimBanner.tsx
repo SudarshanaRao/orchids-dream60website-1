@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import Snowfall from 'react-snowfall';
 import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle, XCircle, Award, Timer } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
@@ -626,7 +625,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   return (
     <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-lg border-b border-white/10">
       <div className={`relative py-3 bg-gradient-to-r ${config.gradient}`}>
-        <Snowfall color="white" snowflakeCount={window.innerWidth < 768 ? 3 : 40} radius={[0.5, 2.0]} />
+
         <button
           onClick={handleClose}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-10"

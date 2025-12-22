@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { XCircle, Home, RefreshCw, AlertTriangle, Info, Clock, X } from 'lucide-react';
+import { XCircle, Home, RefreshCw, AlertTriangle, Info, Clock, X, IndianRupee } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
-import Snowfall from 'react-snowfall';
 
 interface PaymentFailureProps {
   amount: number;
   errorMessage?: string;
+  prizeName?: string;
   onRetry: () => void;
   onBackToHome: () => void;
   onClose?: () => void;
@@ -15,6 +15,7 @@ interface PaymentFailureProps {
 export function PaymentFailure({ 
   amount, 
   errorMessage = 'Payment processing failed',
+  prizeName,
   onRetry,
   onBackToHome,
   onClose
@@ -52,13 +53,7 @@ export function PaymentFailure({
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <Snowfall 
-          color="#EF4444"
-          snowflakeCount={isMobile ? 3 : 40}
-          radius={[0.5, 2.5]}
-          speed={[0.5, 2.0]}
-          style={{ zIndex: 101, position: 'fixed' }}
-        />
+
         <motion.div 
           className="absolute inset-0 bg-black/60 backdrop-blur-md"
           initial={{ opacity: 0 }}
@@ -111,8 +106,16 @@ export function PaymentFailure({
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   Error Details
                 </p>
-                <div className="bg-red-50 rounded-2xl p-4 border border-dashed border-red-200">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="bg-red-50 rounded-2xl p-4 border border-dashed border-red-200">
+                    {prizeName && (
+                      <div className="flex justify-between items-center mb-4 text-left">
+                        <span className="text-gray-500 text-sm">Prize</span>
+                        <span className="text-red-600 font-bold text-sm text-right max-w-[200px] truncate">
+                          {prizeName}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-500 text-sm">Amount Attempted</span>
                     <span className="text-gray-900 font-bold flex items-center gap-1 text-lg">
                       <IndianRupee className="w-4 h-4" />

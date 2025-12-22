@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
-import Snowfall from 'react-snowfall';
 
 interface PaymentSuccessProps {
   amount: number;
   type: 'entry' | 'bid';
   boxNumber?: number;
+  prizeName?: string;
   onBackToHome: () => void;
   onClose?: () => void;
 }
@@ -16,6 +16,7 @@ interface PaymentSuccessProps {
     amount, 
     type, 
     boxNumber, 
+    prizeName,
     onBackToHome,
     onClose
   }: PaymentSuccessProps) {
@@ -53,13 +54,7 @@ interface PaymentSuccessProps {
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
-        <Snowfall 
-          color="#A78BFA"
-          snowflakeCount={isMobile ? 3 : 40}
-          radius={[0.5, 3.0]}
-          speed={[1.0, 3.0]}
-          style={{ zIndex: 101, position: 'fixed' }}
-        />
+
         <motion.div 
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           initial={{ opacity: 0 }}
@@ -112,8 +107,16 @@ interface PaymentSuccessProps {
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   {type === 'entry' ? 'Join Details' : 'Bid Details'}
                 </p>
-                <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200">
+                    {prizeName && (
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-gray-500 text-sm">Prize</span>
+                        <span className="text-purple-600 font-bold text-sm text-right max-w-[200px] truncate">
+                          {prizeName}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-500 text-sm">Amount Paid</span>
                     <span className="text-gray-900 font-bold flex items-center gap-1 text-lg">
                       <IndianRupee className="w-4 h-4" />

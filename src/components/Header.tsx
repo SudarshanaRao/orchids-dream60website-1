@@ -697,9 +697,9 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                           <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                             <Shield className="w-5 h-5 text-purple-600" />
                           </div>
-                          <span className="font-medium text-purple-900">Participation</span>
-                        </button>
-                      </motion.div>
+                            <span className="font-medium text-purple-900">Play Guide</span>
+                          </button>
+                        </motion.div>
 
 <motion.div variants={menuItemVariants}>
                             <button
@@ -827,7 +827,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Shield className="w-5 h-5 text-purple-600" />
                             </div>
-                            <span className="font-medium text-purple-900">Participation</span>
+                            <span className="font-medium text-purple-900">Play Guide</span>
                           </button>
                         </motion.div>
 

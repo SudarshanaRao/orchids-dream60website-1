@@ -997,9 +997,13 @@ const updateHourlyAuctionStatus = async (req, res) => {
  * Get the current live hourly auction
  * GET /scheduler/live-auction
  * Returns only one hourly auction with status LIVE
+ * ✅ OPTIMIZED: Supports ?userId=xxx to return only specific participant data
  */
 const getLiveHourlyAuction = async (req, res) => {
   try {
+    const { userId } = req.query;
+    
+    // Find live auction but project only what's needed to keep payload small
     const liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
       .lean();
@@ -1011,10 +1015,54 @@ const getLiveHourlyAuction = async (req, res) => {
         data: null,
       });
     }
+
+    // ✅ If userId provided, only include that user's participant data
+    if (userId) {
+      const userParticipant = liveAuction.participants?.find(p => p.playerId === userId);
+      // We still need participants count
+      const participantsCount = liveAuction.participants?.length || 0;
+      
+      // Clean up rounds data to remove all playersData except maybe the top ones
+      const cleanedRounds = liveAuction.rounds?.map(round => {
+        // Keep only top3 for leaderboard preview OR user's own bid
+        const userBid = round.playersData?.find(p => p.playerId === userId);
+        const top3 = round.playersData?.sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount).slice(0, 3);
+        
+        return {
+          ...round,
+          playersData: userBid ? [...new Set([...top3, userBid])] : top3,
+          totalParticipants: round.playersData?.length || 0
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          ...liveAuction,
+          participants: userParticipant ? [userParticipant] : [],
+          totalParticipants: participantsCount,
+          rounds: cleanedRounds
+        },
+      });
+    }
     
+    // If no userId, return a summary version without ALL participants
+    // (This is what guest users see)
+    const participantsCount = liveAuction.participants?.length || 0;
+    const summaryRounds = liveAuction.rounds?.map(round => ({
+      ...round,
+      playersData: round.playersData?.sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount).slice(0, 3),
+      totalParticipants: round.playersData?.length || 0
+    }));
+
     return res.status(200).json({
       success: true,
-      data: liveAuction,
+      data: {
+        ...liveAuction,
+        participants: [], // Don't send full list to guests
+        totalParticipants: participantsCount,
+        rounds: summaryRounds
+      },
     });
   } catch (error) {
     console.error('Error in getLiveHourlyAuction:', error);

@@ -777,12 +777,17 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   };
 
   // ✅ NEW: Fetch live auction data and refresh every 15 minutes (aligned with UTC/IST 15-min marks)
-  const fetchLiveAuction = useCallback(async (showLoading = false) => {
-    if (showLoading) {
-      setIsLoadingLiveAuction(true);
-    }
-    try {
-      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+    const fetchLiveAuction = useCallback(async (showLoading = false) => {
+      if (showLoading) {
+        setIsLoadingLiveAuction(true);
+      }
+      try {
+        const userId = currentUser?.id || localStorage.getItem('user_id');
+        const url = userId 
+          ? `${API_ENDPOINTS.scheduler.liveAuction}?userId=${userId}`
+          : API_ENDPOINTS.scheduler.liveAuction;
+          
+        const response = await fetch(url);
       
       if (!response.ok) {
         console.log('⚠️ No live auction available');
@@ -1183,25 +1188,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
   // Fetch current hourly auction ID when user is logged in and has paid entry
   useEffect(() => {
-    const fetchCurrentAuctionId = async () => {
-      // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
-      // This ensures fresh data is loaded and no stale bids from previous users are shown
-      if (!currentUser?.id) return;
-      
-      // Only fetch if user has paid entry OR just logged in
-      if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
-      
-      // ✅ Reset justLoggedIn flag after triggering refetch
-      if (justLoggedIn) {
-        console.log('🔄 User just logged in - forcing immediate auction data refresh');
-        setJustLoggedIn(false);
-      }
-      
-      // ✅ NEW: Set loading state at the start
-      setIsLoadingLiveAuction(true);
-      
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+      const fetchCurrentAuctionId = async () => {
+        // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
+        // This ensures fresh data is loaded and no stale bids from previous users are shown
+        if (!currentUser?.id) return;
+        
+        // Only fetch if user has paid entry OR just logged in
+        if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
+        
+        // ✅ Reset justLoggedIn flag after triggering refetch
+        if (justLoggedIn) {
+          console.log('🔄 User just logged in - forcing immediate auction data refresh');
+          setJustLoggedIn(false);
+        }
+        
+        // ✅ NEW: Set loading state at the start
+        setIsLoadingLiveAuction(true);
+        
+        try {
+          const url = `${API_ENDPOINTS.scheduler.liveAuction}?userId=${currentUser.id}`;
+          const response = await fetch(url);
         if (!response.ok) return;
         
         const result = await response.json();
@@ -2288,16 +2294,8 @@ if (currentPage === 'support') {
                         const displayTime = `${timeSlot} to ${formattedEndTime}`;
                         
                         return (
-                            <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                                  <Snowfall 
-                                    color="rgba(255, 255, 255, 0.4)" 
-                                    snowflakeCount={isMobile ? 3 : 40} 
-                                    radius={[0.5, 2.5]} 
-                                    speed={[0.5, 2.0]} 
-                                    wind={[-0.5, 2.5]} 
-                                  />
-
-                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+<div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
                                 <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                                   <div>
@@ -2329,14 +2327,19 @@ if (currentPage === 'support') {
                       serverTime={serverTime}
                       liveAuctionData={liveAuctionData}
                     isLoadingLiveAuction={isLoadingLiveAuction}
-                    onPayEntry={(_boxId, totalEntryFee) => {
-                      if (!currentUser) return;
-                      
-                      console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                      
-                      // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
-                      // This happens in the background while modal is showing
-                      setForceRefetchTrigger(prev => prev + 1);
+                      onPayEntry={(_boxId, totalEntryFee) => {
+                        if (!currentUser) return;
+                        
+                        console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                        
+                        // ✅ IMMEDIATE LOCAL UPDATE: Show boxes instantly
+                        setCurrentAuction(prev => ({
+                          ...prev,
+                          userHasPaidEntry: true
+                        }));
+
+                        // ✅ Background refresh and smooth scroll to auctionBoxes
+                        setForceRefetchTrigger(prev => prev + 1);
                       if (currentUser.id) {
                         fetchAndSetUser(currentUser.id);
                       }
@@ -2411,16 +2414,8 @@ if (currentPage === 'support') {
                     
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (
-                            <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                                <Snowfall 
-                                  color="#8B5CF6"
-                                  snowflakeCount={isMobile ? 3 : 60}
-                                  radius={[0.5, 2.5]}
-                                  speed={[0.5, 2.0]}
-                                  wind={[-0.5, 2.5]}
-                                />
-
-                          <div className="max-w-2xl mx-auto space-y-6 relative z-10">
+<div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
+                            <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
                           <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
                             Create your free account and start bidding on amazing prizes with direct payment!
@@ -2469,21 +2464,23 @@ if (currentPage === 'support') {
 
           <AnimatePresence mode="sync">
               {/* Payment Success Modal */}
-              {showEntrySuccess && (
-                <PaymentSuccess
-                  amount={showEntrySuccess.entryFee}
-                  type="entry"
-                  boxNumber={showEntrySuccess.boxNumber}
-                  onBackToHome={handleEntrySuccess}
-                  onClose={() => setShowEntrySuccess(null)}
-                />
-              )}
+                {showEntrySuccess && (
+                  <PaymentSuccess
+                    amount={showEntrySuccess.entryFee}
+                    type="entry"
+                    boxNumber={showEntrySuccess.boxNumber}
+                    prizeName={currentAuction.prize}
+                    onBackToHome={handleEntrySuccess}
+                    onClose={() => setShowEntrySuccess(null)}
+                  />
+                )}
 
             {/* Payment Failure Modal */}
             {showEntryFailure && (
               <PaymentFailure
                 amount={showEntryFailure.entryFee}
                 errorMessage={showEntryFailure.errorMessage}
+                prizeName={currentAuction.prize}
                 onRetry={handleRetryPayment}
                 onBackToHome={() => {
                   handleEntryFailure();
@@ -2493,19 +2490,20 @@ if (currentPage === 'support') {
               />
             )}
 
-            {/* Bid Success Modal */}
-            {showBidSuccess && (
-              <PaymentSuccess
-                amount={showBidSuccess.amount}
-                type="bid"
-                boxNumber={showBidSuccess.boxNumber}
-                onBackToHome={() => {
-                  setShowBidSuccess(null);
-                  setCurrentPage('game');
-                }}
-                onClose={() => setShowBidSuccess(null)}
-              />
-            )}
+              {/* Bid Success Modal */}
+              {showBidSuccess && (
+                <PaymentSuccess
+                  amount={showBidSuccess.amount}
+                  type="bid"
+                  boxNumber={showBidSuccess.boxNumber}
+                  prizeName={currentAuction.prize}
+                  onBackToHome={() => {
+                    setShowBidSuccess(null);
+                    setCurrentPage('game');
+                  }}
+                  onClose={() => setShowBidSuccess(null)}
+                />
+              )}
           </AnimatePresence>
 
             {/* What's New Tutorial Overlay - Only show on first login/signup or when manually triggered */}
