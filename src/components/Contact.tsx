@@ -152,12 +152,12 @@ export function Contact({ onBack }: ContactProps) {
           {/* Quick Contact Methods */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 relative z-10">
             <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-               <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
+                 <Snowfall 
+                  snowflakeCount={isMobile ? 1 : 2}
+                  radius={[0.3, 0.8]}
+                  speed={[0.1, 0.4]}
+                  style={{ opacity: 0.1 }}
+                />
               <CardHeader className="text-center pb-2 relative z-10 font-medium">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
                 <CardTitle className="text-purple-800">Live Chat</CardTitle>
@@ -230,11 +230,11 @@ export function Contact({ onBack }: ContactProps) {
             <div className="lg:col-span-2">
               <Card className="bg-white/90 backdrop-blur-sm border-purple-200 shadow-xl relative overflow-hidden">
                 <Snowfall 
-                  snowflakeCount={6}
-                  radius={[0.5, 2.0]}
-                  speed={[0.5, 1.5]}
-                  wind={[-0.5, 2.0]}
-                  style={{ opacity: 0.2 }}
+                  snowflakeCount={isMobile ? 1 : 5}
+                  radius={[0.3, 1.2]}
+                  speed={[0.2, 0.6]}
+                  wind={[-0.2, 0.5]}
+                  style={{ opacity: 0.15 }}
                 />
                 <CardHeader className="relative z-10 font-medium">
                   <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
@@ -343,9 +343,9 @@ export function Contact({ onBack }: ContactProps) {
               {/* Company Information */}
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg relative overflow-hidden group">
                  <Snowfall 
-                  snowflakeCount={4}
-                  radius={[0.5, 1.5]}
-                  speed={[0.5, 1.0]}
+                  snowflakeCount={isMobile ? 1 : 4}
+                  radius={[0.3, 1.0]}
+                  speed={[0.1, 0.5]}
                   style={{ opacity: 0.15 }}
                 />
                 <CardHeader className="relative z-10 font-medium">
@@ -395,9 +395,9 @@ export function Contact({ onBack }: ContactProps) {
               {/* Response Times */}
               <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg relative overflow-hidden group">
                 <Snowfall 
-                  snowflakeCount={4}
-                  radius={[0.5, 1.5]}
-                  speed={[0.5, 1.0]}
+                  snowflakeCount={isMobile ? 1 : 4}
+                  radius={[0.3, 1.0]}
+                  speed={[0.1, 0.5]}
                   style={{ opacity: 0.15 }}
                 />
                 <CardHeader className="relative z-10 font-medium">

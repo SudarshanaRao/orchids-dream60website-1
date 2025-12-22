@@ -294,6 +294,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
+    if (path === '/success-page') return 'success-preview';
+    if (path === '/failure-page') return 'failure-preview';
     if (path === '/history') return 'history';
     if (path.startsWith('/history/')) return 'history';
       if (path === '/leaderboard') return 'leaderboard';
@@ -323,6 +325,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/support') setCurrentPage('support');
       else if (path === '/contact') setCurrentPage('contact');
       else if (path === '/profile') setCurrentPage('profile');
+      else if (path === '/success-page') setCurrentPage('success-preview');
+      else if (path === '/failure-page') setCurrentPage('failure-preview');
       else if (path === '/history' || path.startsWith('/history/')) {
         setCurrentPage('history');
         // ✅ If navigating back from details to history list, clear selected auction
@@ -813,10 +817,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }
   }, []);
 
-  // Effect to trigger fetch on mount and when forced
-  useEffect(() => {
-    fetchLiveAuction(true);
-  }, [fetchLiveAuction, forceRefetchTrigger]);
+    // Effect to trigger fetch on mount and when forced
+    useEffect(() => {
+      // ✅ Background refresh when force triggered to avoid visible "Loading..." flicker
+      const showLoading = forceRefetchTrigger === 0;
+      fetchLiveAuction(showLoading);
+    }, [fetchLiveAuction, forceRefetchTrigger]);
 
   // Effect to handle 15-minute alignment auto-refresh
   useEffect(() => {
@@ -2229,11 +2235,45 @@ if (currentPage === 'support') {
           <Contact onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
-    );
-  }
+      );
+    }
 
-  // Default game page
-  return (
+    if (currentPage === 'success-preview') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <PaymentSuccess
+              amount={1000}
+              type="entry"
+              boxNumber={0}
+              onBackToHome={handleBackToGame}
+              onClose={handleBackToGame}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'failure-preview') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <PaymentFailure
+              amount={1000}
+              errorMessage="This is a test failure message for preview."
+              onRetry={handleBackToGame}
+              onBackToHome={handleBackToGame}
+              onClose={handleBackToGame}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    // Default game page
+    return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="min-h-screen bg-background">
@@ -2289,13 +2329,13 @@ if (currentPage === 'support') {
                         
                         return (
                             <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                                  <Snowfall 
-                                    color="rgba(255, 255, 255, 0.4)" 
-                                    snowflakeCount={isMobile ? 3 : 40} 
-                                    radius={[0.5, 2.5]} 
-                                    speed={[0.5, 2.0]} 
-                                    wind={[-0.5, 2.5]} 
-                                  />
+                                    <Snowfall 
+                                      color="rgba(255, 255, 255, 0.4)" 
+                                      snowflakeCount={isMobile ? 2 : 20} 
+                                      radius={[0.3, 1.2]} 
+                                      speed={[0.1, 0.5]} 
+                                      wind={[-0.2, 0.5]} 
+                                    />
 
                             <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
@@ -2329,14 +2369,26 @@ if (currentPage === 'support') {
                       serverTime={serverTime}
                       liveAuctionData={liveAuctionData}
                     isLoadingLiveAuction={isLoadingLiveAuction}
-                    onPayEntry={(_boxId, totalEntryFee) => {
-                      if (!currentUser) return;
-                      
-                      console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
-                      
-                      // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
-                      // This happens in the background while modal is showing
-                      setForceRefetchTrigger(prev => prev + 1);
+                      onPayEntry={(_boxId, totalEntryFee) => {
+                        if (!currentUser) return;
+                        
+                        console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                        
+                        // ✅ Update local state immediately for instant rendering without reload
+                        setCurrentAuction(prev => ({
+                          ...prev,
+                          userHasPaidEntry: true,
+                          boxes: prev.boxes.map(box => {
+                            if (box.type === 'entry') {
+                              return { ...box, hasPaid: true, currentBid: (box as EntryBox).entryFee || 0, bidder: currentUser.username };
+                            }
+                            return box;
+                          })
+                        }));
+
+                        // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
+                        // This happens in the background while modal is showing
+                        setForceRefetchTrigger(prev => prev + 1);
                       if (currentUser.id) {
                         fetchAndSetUser(currentUser.id);
                       }
@@ -2412,13 +2464,13 @@ if (currentPage === 'support') {
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (
                             <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                                <Snowfall 
-                                  color="#8B5CF6"
-                                  snowflakeCount={isMobile ? 3 : 60}
-                                  radius={[0.5, 2.5]}
-                                  speed={[0.5, 2.0]}
-                                  wind={[-0.5, 2.5]}
-                                />
+                                  <Snowfall 
+                                    color="#8B5CF6"
+                                    snowflakeCount={isMobile ? 2 : 25}
+                                    radius={[0.3, 1.2]}
+                                    speed={[0.2, 0.6]}
+                                    wind={[-0.2, 0.5]}
+                                  />
 
                           <div className="max-w-2xl mx-auto space-y-6 relative z-10">
                           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>

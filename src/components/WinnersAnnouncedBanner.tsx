@@ -159,7 +159,7 @@ export function WinnersAnnouncedBanner({
       animate={{ opacity: 1, y: 0 }}
       className="w-full bg-gradient-to-r from-[#1a0b2e] via-[#2d1b4d] to-[#1a0b2e] border-y border-purple-500/30 overflow-hidden relative"
     >
-      <Snowfall color="white" snowflakeCount={window.innerWidth < 768 ? 3 : 40} radius={[0.5, 2.0]} />
+      <Snowfall color="white" snowflakeCount={window.innerWidth < 768 ? 2 : 15} radius={[0.3, 1.2]} speed={[0.2, 0.6]} />
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-1/4 w-32 h-full bg-purple-500 blur-[80px] animate-pulse" />
         <div className="absolute top-0 right-1/4 w-32 h-full bg-indigo-500 blur-[80px] animate-pulse delay-700" />

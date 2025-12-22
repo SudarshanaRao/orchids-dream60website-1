@@ -572,13 +572,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           >
                 <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
                     <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 40}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
+                  <Snowfall 
+                    color="#8B5CF6"
+                    snowflakeCount={window.innerWidth < 768 ? 2 : 15}
+                    radius={[0.3, 1.2]}
+                    speed={[0.2, 0.6]}
+                    wind={[-0.2, 0.5]}
+                  />
                   {/* Card shine effect */}
 
                 <motion.div
@@ -939,13 +939,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 variants={cardVariants}
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
               >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
+                  <Snowfall 
+                    color="#8B5CF6"
+                    snowflakeCount={window.innerWidth < 768 ? 2 : 10}
+                    radius={[0.3, 1.0]}
+                    speed={[0.1, 0.5]}
+                    wind={[-0.2, 0.5]}
+                  />
               {/* Card shine effect */}
 
             <motion.div
@@ -1011,13 +1011,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 variants={cardVariants}
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
               >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
+                  <Snowfall 
+                    color="#8B5CF6"
+                    snowflakeCount={window.innerWidth < 768 ? 2 : 10}
+                    radius={[0.3, 1.0]}
+                    speed={[0.1, 0.5]}
+                    wind={[-0.2, 0.5]}
+                  />
               {/* Card shine effect */}
 
             <motion.div

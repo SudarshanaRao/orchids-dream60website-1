@@ -55,9 +55,9 @@ interface PaymentSuccessProps {
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
         <Snowfall 
           color="#A78BFA"
-          snowflakeCount={isMobile ? 3 : 40}
-          radius={[0.5, 3.0]}
-          speed={[1.0, 3.0]}
+          snowflakeCount={isMobile ? 3 : 20}
+          radius={[0.3, 1.5]}
+          speed={[0.2, 0.8]}
           style={{ zIndex: 101, position: 'fixed' }}
         />
         <motion.div 

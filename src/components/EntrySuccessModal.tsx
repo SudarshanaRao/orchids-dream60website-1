@@ -95,13 +95,13 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
             
                 {/* Content */}
                     <div className="relative backdrop-blur-xl bg-black/5 rounded-[26px] border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
-                      <Snowfall 
-                        color="#8B5CF6"
-                        snowflakeCount={window.innerWidth < 768 ? 3 : 60}
-                        radius={[0.5, 2.5]}
-                        speed={[0.5, 2.0]}
-                        wind={[-0.5, 2.5]}
-                      />
+                        <Snowfall 
+                          color="#8B5CF6"
+                          snowflakeCount={window.innerWidth < 768 ? 2 : 15}
+                          radius={[0.3, 1.2]}
+                          speed={[0.2, 0.6]}
+                          wind={[-0.2, 0.5]}
+                        />
                 {/* Animated Success Header */}
 
               <div className="relative overflow-hidden">

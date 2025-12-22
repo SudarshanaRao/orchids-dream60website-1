@@ -305,13 +305,19 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                   <Download className="w-5 h-5" />
                 </motion.button>
 
-              <motion.button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <AnimatePresence mode="wait">
+                <motion.button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {showStatsDot && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3 z-20">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                  <AnimatePresence mode="wait">
                   {mobileMenuOpen ? (
                     <motion.div
                       key="close"
@@ -664,22 +670,22 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       </div>
                         <div className="flex-1">
                           <p className="text-white font-semibold">{user.username}</p>
-                          <div className="flex items-center space-x-3 text-xs text-purple-200 relative">
-                            {showStatsDot && (
-                              <span className="absolute -top-1 -right-2 flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            <div className="flex items-center space-x-3 text-xs text-purple-200 relative">
+                              <span className="flex items-center">
+                                <Trophy className="w-3 h-3 mr-1" />
+                                {userStats.totalWins} Wins
                               </span>
-                            )}
-                            <span className="flex items-center">
-                              <Trophy className="w-3 h-3 mr-1" />
-                              {userStats.totalWins} Wins
-                            </span>
-                            <span className="flex items-center">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              {userStats.totalLosses ?? 0} Losses
-                            </span>
-                          </div>
+                              <span className="flex items-center">
+                                <XCircle className="w-3 h-3 mr-1" />
+                                {userStats.totalLosses ?? 0} Losses
+                              </span>
+                              {showStatsDot && (
+                                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                              )}
+                            </div>
                         </div>
                     </motion.div>
                   )}
@@ -690,15 +696,15 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                   {user ? (
                     <>
                       <motion.div variants={menuItemVariants}>
-                          <button
-                            onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
-                            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                          >
-                          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <Shield className="w-5 h-5 text-purple-600" />
-                          </div>
-                          <span className="font-medium text-purple-900">Participation</span>
-                        </button>
+                            <button
+                              onClick={() => { onNavigate?.('participation'); setMobileMenuOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                            >
+                            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                              <Shield className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <span className="font-medium text-purple-900">Play Guide</span>
+                          </button>
                       </motion.div>
 
 <motion.div variants={menuItemVariants}>
@@ -827,7 +833,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Shield className="w-5 h-5 text-purple-600" />
                             </div>
-                            <span className="font-medium text-purple-900">Participation</span>
+                            <span className="font-medium text-purple-900">Play Guide</span>
                           </button>
                         </motion.div>
 

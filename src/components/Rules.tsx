@@ -73,13 +73,13 @@ export function Rules({ onBack }: RulesProps) {
         >
             {/* Introduction */}
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={8}
-                radius={[0.5, 2.0]}
-                speed={[0.5, 1.5]}
-                wind={[-0.5, 2.0]}
-                style={{ opacity: 0.4 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 2 : 10}
+                  radius={[0.3, 1.2]}
+                  speed={[0.2, 0.6]}
+                  wind={[-0.2, 0.5]}
+                  style={{ opacity: 0.3 }}
+                />
               <CardHeader>
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
@@ -121,13 +121,13 @@ export function Rules({ onBack }: RulesProps) {
 
             {/* How It Works */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={8}
-                radius={[0.5, 2.0]}
-                speed={[0.5, 1.5]}
-                wind={[-0.5, 2.0]}
-                style={{ opacity: 0.3 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 2 : 10}
+                  radius={[0.3, 1.2]}
+                  speed={[0.2, 0.6]}
+                  wind={[-0.2, 0.5]}
+                  style={{ opacity: 0.2 }}
+                />
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                 <Target className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
@@ -173,13 +173,13 @@ export function Rules({ onBack }: RulesProps) {
 
             {/* Key Rules */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={8}
-                radius={[0.5, 2.0]}
-                speed={[0.5, 1.5]}
-                wind={[-0.5, 2.0]}
-                style={{ opacity: 0.3 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 2 : 10}
+                  radius={[0.3, 1.2]}
+                  speed={[0.2, 0.6]}
+                  wind={[-0.2, 0.5]}
+                  style={{ opacity: 0.2 }}
+                />
               <CardHeader className="bg-gradient-to-r from-green-50 to-white border-b border-green-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-green-800 flex items-center space-x-2">
                 <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
@@ -226,13 +226,12 @@ export function Rules({ onBack }: RulesProps) {
 
           {/* Detailed Mechanics */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={5}
-                radius={[0.5, 2.0]}
-                speed={[0.5, 1.5]}
-                wind={[-0.5, 2.0]}
-                style={{ opacity: 0.2 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 1 : 5}
+                  radius={[0.3, 1.0]}
+                  speed={[0.1, 0.5]}
+                  style={{ opacity: 0.15 }}
+                />
               <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 relative z-10">
               <CardTitle className="text-base sm:text-lg md:text-xl text-blue-800 flex items-center space-x-2">
                 <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
@@ -287,12 +286,12 @@ export function Rules({ onBack }: RulesProps) {
           {/* Prohibited & Fair Play */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="relative overflow-hidden group">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.2 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 1 : 3}
+                  radius={[0.3, 0.8]}
+                  speed={[0.1, 0.4]}
+                  style={{ opacity: 0.1 }}
+                />
               <h3 className="text-red-800 font-semibold mb-3 text-sm sm:text-base flex items-center relative z-10 font-medium">
                 <AlertCircle className="w-4 h-4 mr-1" />
                 Prohibited Actions
@@ -307,12 +306,12 @@ export function Rules({ onBack }: RulesProps) {
             </div>
 
             <div className="relative overflow-hidden group">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.2 }}
-              />
+                <Snowfall 
+                  snowflakeCount={isMobile ? 1 : 3}
+                  radius={[0.3, 0.8]}
+                  speed={[0.1, 0.4]}
+                  style={{ opacity: 0.1 }}
+                />
               <h3 className="text-green-800 font-semibold mb-3 text-sm sm:text-base flex items-center relative z-10 font-medium">
                 <Sparkles className="w-4 h-4 mr-1" />
                 Fair Play Guarantee

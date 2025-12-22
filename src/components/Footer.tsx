@@ -124,10 +124,10 @@ export function Footer({ onNavigate }: FooterProps) {
                 <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
                     <Snowfall 
                       color="#8B5CF6"
-                      snowflakeCount={window.innerWidth < 768 ? 3 : 40}
-                      radius={[0.5, 2.0]}
-                      speed={[0.5, 1.5]}
-                      wind={[-0.5, 2.0]}
+                      snowflakeCount={window.innerWidth < 768 ? 2 : 20}
+                      radius={[0.3, 1.2]}
+                      speed={[0.2, 0.6]}
+                      wind={[-0.2, 0.5]}
                     />
                   <div className="relative z-10">
                     <motion.div 
@@ -159,10 +159,10 @@ export function Footer({ onNavigate }: FooterProps) {
         >
             <Snowfall 
               color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 3 : 60}
-              radius={[0.5, 2.5]}
-              speed={[0.5, 2.0]}
-              wind={[-0.5, 2.5]}
+              snowflakeCount={window.innerWidth < 768 ? 3 : 30}
+              radius={[0.3, 1.5]}
+              speed={[0.2, 0.8]}
+              wind={[-0.2, 0.6]}
             />
           {/* Card shine effect */}
           <motion.div
@@ -221,37 +221,36 @@ export function Footer({ onNavigate }: FooterProps) {
             <div className="space-y-4">
               <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Product</h4>
               <ul className="space-y-2">
-                <li><button onClick={() => onNavigate?.('game')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Live Auctions</button></li>
-                <li><button onClick={() => onNavigate?.('rules')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction Rules</button></li>
-                <li><button onClick={() => onNavigate?.('participation')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Participation</button></li>
-                <li><button onClick={() => onNavigate?.('leaderboard')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Leaderboard</button></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
-              <ul className="space-y-2">
-                <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Quick Guide</button></li>
-                <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Winning Tips</button></li>
-                <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">AI Assistant</button></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
-              <ul className="space-y-2">
-                <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Support Center</button></li>
-                <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Contact Us</button></li>
-                <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Terms of Service</button></li>
-                <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Privacy Policy</button></li>
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
-              <ul className="space-y-2">
-                <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">My Profile</button></li>
-                <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Transactions</button></li>
-                <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction History</button></li>
-              </ul>
-            </div>
+                  <li><button onClick={() => onNavigate?.('game')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Live Auctions</button></li>
+                  <li><button onClick={() => onNavigate?.('rules')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Auction Rules</button></li>
+                  <li><button onClick={() => onNavigate?.('participation')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Play Guide</button></li>
+                </ul>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
+                <ul className="space-y-2">
+                  <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Quick Guide</button></li>
+                  <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Winning Tips</button></li>
+                  <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">AI Assistant</button></li>
+                </ul>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
+                <ul className="space-y-2">
+                  <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Support Center</button></li>
+                  <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Contact Us</button></li>
+                  <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Terms of Service</button></li>
+                  <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Privacy Policy</button></li>
+                </ul>
+              </div>
+              <div className="space-y-4">
+                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
+                <ul className="space-y-2">
+                  <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">My Profile</button></li>
+                  <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Transactions</button></li>
+                  <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Auction History</button></li>
+                </ul>
+              </div>
           </div>
 
           {/* Bottom Section */}
