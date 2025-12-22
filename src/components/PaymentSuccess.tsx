@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock, X } from 'lucide-react';
+import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock, X, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
 import Snowfall from 'react-snowfall';
+import jsPDF from 'jspdf';
 
 interface PaymentSuccessProps {
   amount: number;
@@ -34,11 +35,10 @@ interface PaymentSuccessProps {
       }, []);
     
       useEffect(() => {
-        // Fast redirect for SUCCESS - 5 ticks of 100ms = 500ms total
-        // Users can't see anything if it's truly 5ms
+        // Stay for 5 seconds as requested
         const timer = setTimeout(() => {
           onBackToHome();
-        }, 500);
+        }, 5000);
         
         return () => clearTimeout(timer);
       }, [onBackToHome]);
@@ -48,10 +48,67 @@ interface PaymentSuccessProps {
     
         const interval = setInterval(() => {
           setCountdown((prev) => Math.max(0, prev - 1));
-        }, 100); // 100ms ticks
+        }, 1000); // 1 second ticks
     
         return () => clearInterval(interval);
       }, [countdown]);
+
+      const downloadReceipt = () => {
+        const doc = new jsPDF();
+        
+        // Theme colors
+        const primaryColor = [16, 185, 129]; // Emerald
+        
+        // Header
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(28);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DREAM60', 105, 25, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('PAYMENT SUCCESS RECEIPT', 105, 33, { align: 'center' });
+        
+        // Content
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text('Transaction Details:', 20, 55);
+        
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, 58, 190, 58);
+        
+        let y = 70;
+        const details = [
+          ['Transaction Type', type === 'entry' ? 'Entry Fee' : 'Auction Bid'],
+          ['Status', 'SUCCESSFUL'],
+          ['Amount Paid', `INR ${amount.toLocaleString('en-IN')}`],
+          ['Auction ID', auctionId || 'N/A'],
+          ['Auction Number', auctionNumber ? `#${auctionNumber}` : 'N/A'],
+          ['Box Number', boxNumber !== undefined ? String(boxNumber) : 'N/A'],
+          ['Date', new Date().toLocaleString('en-IN')]
+        ];
+        
+        details.forEach(([label, value]) => {
+          doc.setFont('helvetica', 'bold');
+          doc.text(label, 20, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(String(value), 80, y);
+          y += 10;
+        });
+        
+        // Footer
+        doc.setFillColor(245, 245, 245);
+        doc.rect(0, 270, 210, 27, 'F');
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(8);
+        doc.text('This is a computer-generated proof of payment.', 105, 280, { align: 'center' });
+        doc.text('Dream60 Official Website - Thank you for participating!', 105, 285, { align: 'center' });
+        
+        doc.save(`Dream60_Success_Receipt_${Date.now()}.pdf`);
+      };
 
 
     return (
@@ -149,28 +206,38 @@ interface PaymentSuccessProps {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  onClick={onBackToHome}
-                  className="w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-base transition-all shadow-lg"
-                >
-                  Done
-                </Button>
-                
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                    Closing in few milliseconds...
-                  </span>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`h-0.5 w-6 rounded-full transition-all duration-300 ${i < (5-countdown) ? 'bg-green-500' : 'bg-gray-100'}`} 
-                      />
-                    ))}
+                <div className="space-y-2">
+                  <Button
+                    onClick={onBackToHome}
+                    className="w-full h-11 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95"
+                  >
+                    Done
+                  </Button>
+
+                  <Button
+                    onClick={downloadReceipt}
+                    variant="outline"
+                    className="w-full h-11 border-2 border-green-100 text-green-600 hover:bg-green-50 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Receipt
+                  </Button>
+                  
+                  <div className="flex flex-col items-center gap-1.5 pt-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      Closing in <span className="text-green-500 text-sm font-black">{countdown}s</span>
+                    </span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div 
+                          key={i} 
+                          className={`h-1 w-8 rounded-full transition-all duration-300 ${i <= (6-countdown) ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]' : 'bg-gray-100'}`} 
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+
             </div>
           </div>
         </motion.div>

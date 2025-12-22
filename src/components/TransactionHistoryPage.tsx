@@ -536,7 +536,13 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           className="mb-3 sm:mb-4"
         >
           <Card className={`relative overflow-hidden border-2 shadow-xl ${user.username?.toLowerCase() === 'dharsh650' ? 'bg-gradient-to-r from-purple-100 via-violet-50 to-white border-purple-200' : 'bg-white border-purple-100'}`}>
-            <Snowfall color="#8B5CF6" snowflakeCount={window.innerWidth < 768 ? 3 : 40} radius={[0.5, 2.0]} />
+            <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 2 : 10} 
+              radius={[1.0, 3.0]} 
+              speed={[0.1, 0.4]}
+              style={{ opacity: 0.6 }}
+            />
             <CardContent className="p-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">

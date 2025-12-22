@@ -217,41 +217,70 @@ export function Footer({ onNavigate }: FooterProps) {
         </motion.div>
 
           {/* Links Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 border-t border-purple-200/50 pt-12 text-center md:text-left">
-            <div className="space-y-4">
-              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Product</h4>
-              <ul className="space-y-2">
-                  <li><button onClick={() => onNavigate?.('game')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Live Auctions</button></li>
-                  <li><button onClick={() => onNavigate?.('rules')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Auction Rules</button></li>
-                  <li><button onClick={() => onNavigate?.('participation')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Play Guide</button></li>
-                </ul>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12 border-t border-purple-100 pt-12">
+            <div className="space-y-6 text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg flex items-center justify-center shadow-md">
+                  <Clock className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-purple-900 font-black text-xl tracking-tight">Dream60<span className="text-purple-600"> India</span></span>
               </div>
+              <p className="text-purple-600 text-sm leading-relaxed max-w-xs mx-auto sm:mx-0 font-medium">
+                India's premium 60-minute live auction platform where strategy meets excitement. Win real prizes every hour!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 col-span-1 lg:col-span-3 gap-8">
               <div className="space-y-4">
-                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
-                <ul className="space-y-2">
-                  <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Quick Guide</button></li>
-                  <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Winning Tips</button></li>
-                  <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">AI Assistant</button></li>
+                <h4 className="text-purple-800 font-bold text-xs uppercase tracking-[0.2em]">Product</h4>
+                <ul className="space-y-2.5">
+                  {['Live Auctions', 'Auction Rules', 'Play Guide'].map((item) => (
+                    <li key={item}>
+                      <button 
+                        onClick={() => onNavigate?.(item === 'Live Auctions' ? 'game' : item === 'Auction Rules' ? 'rules' : 'participation')} 
+                        className="text-purple-500 hover:text-purple-800 text-sm transition-all duration-300 font-semibold hover:translate-x-1 inline-block"
+                      >
+                        {item}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
+
               <div className="space-y-4">
-                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
-                <ul className="space-y-2">
-                  <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Support Center</button></li>
-                  <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Contact Us</button></li>
-                  <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Terms of Service</button></li>
-                  <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Privacy Policy</button></li>
+                <h4 className="text-purple-800 font-bold text-xs uppercase tracking-[0.2em]">Support</h4>
+                <ul className="space-y-2.5">
+                  {['Support Center', 'Contact Us', 'AI Assistant'].map((item) => (
+                    <li key={item}>
+                      <button 
+                        onClick={() => onNavigate?.(item === 'Support Center' ? 'support' : item === 'Contact Us' ? 'contact' : 'support-chat')}
+                        className="text-purple-500 hover:text-purple-800 text-sm transition-all duration-300 font-semibold hover:translate-x-1 inline-block"
+                      >
+                        {item}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
+
               <div className="space-y-4">
-                <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
-                <ul className="space-y-2">
-                  <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">My Profile</button></li>
-                  <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Transactions</button></li>
-                  <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors font-medium">Auction History</button></li>
+                <h4 className="text-purple-800 font-bold text-xs uppercase tracking-[0.2em]">Legal</h4>
+                <ul className="space-y-2.5">
+                  {['Terms of Service', 'Privacy Policy'].map((item) => (
+                    <li key={item}>
+                      <button 
+                        onClick={() => onNavigate?.(item === 'Terms of Service' ? 'terms' : 'privacy')}
+                        className="text-purple-500 hover:text-purple-800 text-sm transition-all duration-300 font-semibold hover:translate-x-1 inline-block"
+                      >
+                        {item}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
+            </div>
           </div>
+
 
           {/* Bottom Section */}
           <motion.div 
