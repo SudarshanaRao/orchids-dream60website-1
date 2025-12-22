@@ -666,13 +666,25 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       variants={menuItemVariants}
                     >
                       <div className="relative group flex items-center justify-center">
-                        {/* Spinning ring loader */}
+                        {/* Premium Glowing Pulse Loader */}
                         <motion.div 
-                          className="absolute inset-x-0 inset-y-0 border-2 border-white/30 border-t-white rounded-full"
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                          className="absolute inset-x-[-4px] inset-y-[-4px] border-2 border-white/40 rounded-full"
+                          animate={{ 
+                            scale: [1, 1.2, 1],
+                            opacity: [0.5, 0, 0.5],
+                            borderWidth: ['2px', '1px', '2px']
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                         />
-                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center relative z-10 border border-white/30 transition-transform group-hover:scale-110">
+                        <motion.div 
+                          className="absolute inset-x-[-8px] inset-y-[-8px] border border-white/20 rounded-full"
+                          animate={{ 
+                            scale: [1, 1.4, 1],
+                            opacity: [0.3, 0, 0.3]
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                        />
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center relative z-10 border border-white/40 transition-transform group-hover:scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                           <span className="text-white font-bold">{user.username.charAt(0).toUpperCase()}</span>
                         </div>
                       </div>

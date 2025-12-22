@@ -58,18 +58,6 @@ export function Footer({ onNavigate }: FooterProps) {
               Experience the adrenaline of India's fastest live auction platform. 
               Transparent, secure, and rewarding with new winners every 60 minutes.
             </p>
-
-            <div className="flex items-center gap-3 pt-2">
-              <div className="w-9 h-9 bg-white border border-purple-100 rounded-lg flex items-center justify-center text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm cursor-pointer">
-                <Users className="w-4 h-4" />
-              </div>
-              <div className="w-9 h-9 bg-white border border-purple-100 rounded-lg flex items-center justify-center text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm cursor-pointer">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div className="w-9 h-9 bg-white border border-purple-100 rounded-lg flex items-center justify-center text-purple-600 hover:bg-purple-600 hover:text-white transition-all shadow-sm cursor-pointer">
-                <Zap className="w-4 h-4" />
-              </div>
-            </div>
           </div>
 
           {/* Links Sections */}
