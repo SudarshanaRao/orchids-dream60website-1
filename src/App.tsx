@@ -2477,17 +2477,18 @@ if (currentPage === 'support') {
                       onBid={handlePlaceBid}
                       serverTime={serverTime} // ✅ Pass server time to AuctionGrid
                     />
-                  </div>
+                    </div>
+  
+                  </>
+                    ) : (
+                    <>
+                      {/* Guest View - Empty placeholder when not logged in */}
+                    </>
+                  )}
 
                   <HowDream60Works />
-              </>
-                ) : (
-                  <>
-                    {/* Guest View - Empty placeholder when not logged in */}
-                  </>
-                )}
 
-                    <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
+                      <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
                     
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (

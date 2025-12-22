@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useRazorpay, RazorpayOrderOptions } from 'react-razorpay';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { setCookie, deleteCookie } from '@/utils/cookies';
 
 interface CreateOrderPayload {
   userId: string;

@@ -665,8 +665,13 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       className="mt-4 flex items-center justify-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl p-3 border border-white/20"
                       variants={menuItemVariants}
                     >
-                      <div className="relative group">
-                        <div className="absolute inset-0 bg-white/20 rounded-full animate-pulse group-hover:animate-none"></div>
+                      <div className="relative group flex items-center justify-center">
+                        {/* Spinning ring loader */}
+                        <motion.div 
+                          className="absolute inset-x-0 inset-y-0 border-2 border-white/30 border-t-white rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        />
                         <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center relative z-10 border border-white/30 transition-transform group-hover:scale-110">
                           <span className="text-white font-bold">{user.username.charAt(0).toUpperCase()}</span>
                         </div>
