@@ -96,10 +96,12 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     };
   }, [allTransactions, transactions]);
 
-  const formatDateTime = (value?: string | number | Date | null) => {
-    if (!value) return '--';
-    const date = new Date(value);
-    return date.toLocaleString('en-IN', {
+    const formatDateTime = (value?: string | number | Date | null) => {
+      if (!value) return '--';
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return '--';
+      return date.toLocaleString('en-IN', {
+
       timeZone: 'Asia/Kolkata',
       month: 'short',
       day: 'numeric',

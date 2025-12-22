@@ -1062,10 +1062,12 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   const lostAuctions = history.filter(a => a.status === 'lost');
   const { winRate, totalSpent, totalWon, netGain } = stats;
   
-  const formatDateTime = (value?: string | number | Date) => {
-    if (!value) return '--';
-    const date = new Date(value);
-    return date.toLocaleString('en-IN', {
+    const formatDateTime = (value?: string | number | Date) => {
+      if (!value) return '--';
+      const date = new Date(value);
+      if (isNaN(date.getTime())) return '--';
+      return date.toLocaleString('en-IN', {
+
       timeZone: 'Asia/Kolkata',
       month: 'short',
       day: 'numeric',
@@ -1960,17 +1962,19 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 </TabsContent>
 
                 <TabsContent value="lost" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
-                  {lostAuctions.length > 0 ? (
-                    lostAuctions.map((auction, index) => <AuctionCard 
-                      key={`${activeTab}-${auction.id}`}
-                      auction={auction}
-                      index={index}
-                      tabPrefix={activeTab}
-                      user={user}
-                      onViewDetails={onViewDetails}
-                      onClaimSuccess={() => fetchAuctionHistory()}
-                      userProfile={userProfile}
-                    />)
+                    {lostAuctions.length > 0 ? (
+                      lostAuctions.map((auction, index) => <AuctionCard 
+                        key={`${activeTab}-${auction.id}`}
+                        auction={auction}
+                        index={index}
+                        tabPrefix={activeTab}
+                        user={user}
+                        onViewDetails={onViewDetails}
+                        onClaimSuccess={() => fetchAuctionHistory()}
+                        userProfile={userProfile}
+                        serverTime={serverTime}
+                      />)
+
                   ) : (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}

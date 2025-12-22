@@ -31,9 +31,8 @@ export function PaymentFailure({
     }, []);
   
     useEffect(() => {
-      if (countdown === 0) {
+      const timer = setTimeout(() => {
         onBackToHome();
-        // Attempt to close the window if it's a popup
         try {
           if (window.opener || window.history.length === 1) {
             window.close();
@@ -41,15 +40,10 @@ export function PaymentFailure({
         } catch (e) {
           console.log('Window close blocked by browser');
         }
-        return;
-      }
-  
-      const interval = setInterval(() => {
-        setCountdown((prev) => Math.max(0, prev - 1));
-      }, 1000);
-  
-      return () => clearInterval(interval);
-    }, [countdown, onBackToHome]);
+      }, 5);
+
+      return () => clearTimeout(timer);
+    }, [onBackToHome]);
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -63,7 +57,7 @@ export function PaymentFailure({
         />
   
         <motion.div 
-          className="relative z-10 w-full max-w-[400px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+          className="relative z-10 w-full max-w-[min(400px,calc(100vw-2rem))] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden mx-auto"
           initial={{ opacity: 0, scale: 0.9, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -115,7 +109,14 @@ export function PaymentFailure({
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex justify-between items-center mb-4 text-left">
+                        <span className="text-gray-500 text-sm">payment type</span>
+                        <span className="text-red-600 font-bold text-sm text-right">
+                          Entry Fee
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mb-4">
+
                     <span className="text-gray-500 text-sm">Amount Attempted</span>
                     <span className="text-gray-900 font-bold flex items-center gap-1 text-lg">
                       <IndianRupee className="w-4 h-4" />

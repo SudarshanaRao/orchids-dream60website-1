@@ -31,9 +31,8 @@ interface PaymentSuccessProps {
       }, []);
     
       useEffect(() => {
-        if (countdown === 0) {
+        const timer = setTimeout(() => {
           onBackToHome();
-          // Attempt to close the window if it's a popup
           try {
             if (window.opener || window.history.length === 1) {
               window.close();
@@ -41,15 +40,10 @@ interface PaymentSuccessProps {
           } catch (e) {
             console.log('Window close blocked by browser');
           }
-          return;
-        }
-    
-        const interval = setInterval(() => {
-          setCountdown((prev) => Math.max(0, prev - 1));
-        }, 1000);
-    
-        return () => clearInterval(interval);
-      }, [countdown, onBackToHome]);
+        }, 5);
+
+        return () => clearTimeout(timer);
+      }, [onBackToHome]);
 
   
     return (
@@ -63,8 +57,9 @@ interface PaymentSuccessProps {
           onClick={onClose || onBackToHome}
         />
     
-        <motion.div 
-          className="relative z-10 w-full max-w-[400px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+          <motion.div 
+            className="relative z-10 w-full max-w-[min(400px,calc(100vw-2rem))] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden mx-auto"
+
           initial={{ opacity: 0, scale: 0.9, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -123,39 +118,32 @@ interface PaymentSuccessProps {
                       {amount.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  {boxNumber !== undefined && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500 text-sm">Box Number</span>
-                      <span className="text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-lg text-sm">
-                        #{boxNumber === 0 ? 'AUTO' : boxNumber}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Button
-                  onClick={onBackToHome}
-                  className="w-full h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100"
-                >
-                  {type === 'entry' ? "Let's do again" : 'Back to Home'}
-                </Button>
-                
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Redirecting to home in {countdown}s
-                  </span>
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`h-1 w-8 rounded-full transition-all duration-300 ${i < (5-countdown) ? 'bg-green-500' : 'bg-gray-100'}`} 
-                      />
-                    ))}
+                    {boxNumber !== undefined && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-sm">payment type</span>
+                        <span className="text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-lg text-sm">
+                          Entry Fee
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+  
+                <div className="space-y-3">
+                  <Button
+                    onClick={onBackToHome}
+                    className="w-full h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100"
+                  >
+                    {type === 'entry' ? "Place your Bid..!" : 'Back to Home'}
+                  </Button>
+                  
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                      Redirecting...
+                    </span>
+                  </div>
+                </div>
+
             </div>
           </div>
         </motion.div>

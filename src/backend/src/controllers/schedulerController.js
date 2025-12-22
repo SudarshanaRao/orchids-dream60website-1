@@ -1003,9 +1003,17 @@ const getLiveHourlyAuction = async (req, res) => {
   try {
     const { userId } = req.query;
     
-    // Find live auction but project basic fields to keep payload small initially
-    const liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
+    // ✅ OPTIMIZATION: Use projection to avoid fetching the massive participants array if not needed
+    // We also avoid fetching all playersData in rounds initially
+    const projection = {
+      participants: 0, 
+      "rounds.playersData": 0,
+      "rounds.qualifiedPlayers": 0
+    };
+
+    let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
+      .projection(projection)
       .lean();
     
     if (!liveAuction) {
@@ -1016,57 +1024,54 @@ const getLiveHourlyAuction = async (req, res) => {
       });
     }
 
-    // ✅ OPTIMIZATION: Extract participants array away from the main object to avoid spreading it
-    const allParticipants = liveAuction.participants || [];
+    // Now fetch only what's specifically needed
+    // 1. Get the total participants count (very fast)
+    const fullAuction = await HourlyAuction.findOne({ hourlyAuctionId: liveAuction.hourlyAuctionId }, { participants: 1 }).lean();
+    const allParticipants = fullAuction?.participants || [];
     const participantsCount = allParticipants.length;
-    
-    // Remove participants from the main object before spreading
-    delete liveAuction.participants;
 
-    // ✅ If userId provided, only include that user's participant data
+    // 2. Fetch specific user data if userId provided
+    let userParticipant = null;
     if (userId) {
-      const userParticipant = allParticipants.find(p => p.playerId === userId);
-      
-      // Clean up rounds data to remove all playersData except maybe the top ones
-      const cleanedRounds = liveAuction.rounds?.map(round => {
-        // Keep only top3 for leaderboard preview OR user's own bid
-        const userBid = round.playersData?.find(p => p.playerId === userId);
-        const top3 = round.playersData?.sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount).slice(0, 3);
-        
-        return {
-          ...round,
-          playersData: userBid ? [...new Set([...top3, userBid])] : top3,
-          totalParticipants: round.playersData?.length || 0
-        };
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          ...liveAuction,
-          participants: userParticipant ? [userParticipant] : [],
-          totalParticipants: participantsCount,
-          rounds: cleanedRounds
-        },
-      });
+      userParticipant = allParticipants.find(p => p.playerId === userId);
     }
-    
-    // If no userId, return a summary version without ALL participants
-    // (This is what guest users see)
-    // participantsCount already declared above
-    const summaryRounds = liveAuction.rounds?.map(round => ({
-      ...round,
-      playersData: round.playersData?.sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount).slice(0, 3),
-      totalParticipants: round.playersData?.length || 0
-    }));
+
+    // 3. Fetch top bids for rounds (for leaderboard preview)
+    const roundsWithBids = await HourlyAuction.findOne(
+      { hourlyAuctionId: liveAuction.hourlyAuctionId },
+      { "rounds.roundNumber": 1, "rounds.playersData": 1, "rounds.status": 1 }
+    ).lean();
+
+    const cleanedRounds = liveAuction.rounds?.map(round => {
+      const roundWithBids = roundsWithBids.rounds?.find(r => r.roundNumber === round.roundNumber);
+      const playersData = roundWithBids?.playersData || [];
+      
+      // Sort and take top 3
+      const sorted = [...playersData].sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount);
+      const top3 = sorted.slice(0, 3);
+      
+      // Add current user's bid if they are not in top 3
+      if (userId) {
+        const userBid = playersData.find(p => p.playerId === userId);
+        if (userBid && !top3.some(p => p.playerId === userId)) {
+          top3.push(userBid);
+        }
+      }
+
+      return {
+        ...round,
+        playersData: top3,
+        totalParticipants: playersData.length
+      };
+    });
 
     return res.status(200).json({
       success: true,
       data: {
         ...liveAuction,
-        participants: [], // Don't send full list to guests
+        participants: userParticipant ? [userParticipant] : [],
         totalParticipants: participantsCount,
-        rounds: summaryRounds
+        rounds: cleanedRounds
       },
     });
   } catch (error) {
@@ -1502,8 +1507,9 @@ const getUserAuctionHistory = async (req, res) => {
       });
     }
 
-    // ✅ Ensure priority claim queue is up to date before returning history
-    await AuctionHistory.processClaimQueues();
+    // ✅ OPTIMIZATION: processClaimQueues is already handled by a background cron job (scheduler.js)
+    // Removing it from here reduces response time significantly.
+    // await AuctionHistory.processClaimQueues();
     
     // Get user's history
     const history = await AuctionHistory.getUserHistory(userId);
@@ -1589,8 +1595,8 @@ const getAuctionDetails = async (req, res) => {
       });
     }
 
-    // ✅ Ensure claim queue advances instantly when a window expires
-    await AuctionHistory.processClaimQueues();
+    // ✅ OPTIMIZATION: processClaimQueues is already handled by a background cron job (scheduler.js)
+    // await AuctionHistory.processClaimQueues();
     
     // Find the auction
     const auctionDoc = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
