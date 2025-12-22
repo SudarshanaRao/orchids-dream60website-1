@@ -20,190 +20,227 @@ interface PaymentSuccessProps {
   onClose?: () => void;
 }
 
-  export function PaymentSuccess({ 
-    amount, 
-    type, 
-    boxNumber, 
-    auctionId,
-    auctionNumber,
-    productName = 'Auction Participation',
-    productWorth,
-    timeSlot,
-    paidBy,
-    paymentMethod = 'UPI / Razorpay',
-    onBackToHome,
-    onClose
-  }: PaymentSuccessProps) {
-    const [countdown, setCountdown] = useState(5);
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-      const checkMobile = () => setIsMobile(window.innerWidth < 768);
-      checkMobile();
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+    export function PaymentSuccess({ 
+      amount, 
+      type, 
+      boxNumber, 
+      auctionId,
+      auctionNumber,
+      productName = 'Auction Participation',
+      productWorth,
+      timeSlot,
+      paidBy,
+      paymentMethod = 'UPI / Razorpay',
+      onBackToHome,
+      onClose
+    }: PaymentSuccessProps) {
+      const [countdown, setCountdown] = useState(5);
+      const [isMobile, setIsMobile] = useState(false);
   
-    useEffect(() => {
-      // Stay for 5 seconds as requested
-      const timer = setTimeout(() => {
-        onBackToHome();
-      }, 5000);
-      
-      return () => clearTimeout(timer);
-    }, [onBackToHome]);
+      useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+      }, []);
+    
+      useEffect(() => {
+        // Stay for 5 seconds as requested
+        const timer = setTimeout(() => {
+          onBackToHome();
+        }, 5000);
+        
+        return () => clearTimeout(timer);
+      }, [onBackToHome]);
+    
+      useEffect(() => {
+        if (countdown === 0) return;
+    
+        const interval = setInterval(() => {
+          setCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000); // 1 second ticks
+    
+        return () => clearInterval(interval);
+      }, [countdown]);
   
-    useEffect(() => {
-      if (countdown === 0) return;
-  
-      const interval = setInterval(() => {
-        setCountdown((prev) => Math.max(0, prev - 1));
-      }, 1000); // 1 second ticks
-  
-      return () => clearInterval(interval);
-    }, [countdown]);
+      const downloadReceipt = () => {
+        const doc = jsPDF ? new jsPDF() : null;
+        if (!doc) return;
 
-    const downloadReceipt = () => {
-      const doc = new jsPDF();
-      const primaryColor = [139, 92, 246]; // Purple theme
-      
-      // Header Background
-      doc.setFillColor(252, 251, 255);
-      doc.rect(0, 0, 210, 297, 'F');
+        const primaryColor = [16, 185, 129]; // Emerald theme for success
+        const secondaryColor = [6, 78, 59]; // Dark emerald
+        
+        // Header Background
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, 210, 297, 'F');
 
-      // Top Header Bar
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(0, 0, 210, 3, 'F');
-      
-      // Logo and Title
-      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Dream60 India', 20, 25);
-      
-      doc.setTextColor(150, 150, 150);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Premium Online Auctions', 20, 32);
+        // Top Header Bar
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, 210, 5, 'F');
+        
+        // Decorative Circles
+        doc.setFillColor(240, 253, 244);
+        doc.circle(210, 0, 60, 'F');
+        doc.circle(0, 297, 40, 'F');
 
-      // Receipt Badge
-      doc.setFillColor(243, 232, 255);
-      doc.roundedRect(140, 15, 50, 20, 3, 3, 'F');
-      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('RECEIPT', 165, 28, { align: 'center' });
-
-      // Main Info Section
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Payment Receipt', 20, 50);
-
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Receipt Date: ${new Date().toLocaleDateString('en-IN')}`, 20, 56);
-      doc.text(`Transaction ID: TXN-${Math.random().toString(36).substr(2, 9).toUpperCase()}`, 20, 61);
-
-      // Info Grid
-      const col1 = 20;
-      const col2 = 110;
-      let curY = 80;
-
-      const drawInfoBox = (label: string, value: string, x: number, y: number) => {
+        // Logo and Title
+        doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+        doc.setFontSize(28);
         doc.setFont('helvetica', 'bold');
+        doc.text('DREAM60', 20, 25);
+        
         doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-        doc.setFontSize(8);
-        doc.text(label.toUpperCase(), x, y);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INDIA\'S PREMIER AUCTION PLATFORM', 20, 32);
+
+        // Receipt Details Header
+        doc.setFillColor(249, 250, 251);
+        doc.roundedRect(140, 15, 55, 30, 3, 3, 'F');
+        doc.setTextColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+        doc.setFontSize(9);
+        doc.text('RECEIPT NO:', 145, 25);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`D60-${Math.floor(Math.random() * 90000) + 10000}`, 145, 32);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.text(new Date().toLocaleDateString('en-IN'), 145, 38);
+
+        // Billing Section
+        let curY = 60;
+        doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setLineWidth(0.5);
+        doc.line(20, curY, 190, curY);
+
+        curY += 15;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PAID BY:', 20, curY);
+        doc.text('PAID TO:', 120, curY);
+
+        curY += 7;
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'bold');
+        doc.text(paidBy || 'Valued User', 20, curY);
+        doc.text('Dream60 India Official', 120, curY);
+
+        curY += 5;
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Registered Member', 20, curY);
+        doc.text('support@dream60.com', 120, curY);
+
+        // Payment Info Grid
+        curY += 20;
+        doc.setFillColor(249, 250, 251);
+        doc.roundedRect(20, curY, 170, 25, 2, 2, 'F');
+        
+        const drawGridItem = (label: string, value: string, x: number, y: number) => {
+          doc.setFontSize(8);
+          doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+          doc.setFont('helvetica', 'bold');
+          doc.text(label.toUpperCase(), x, y);
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+          doc.text(value || 'N/A', x, y + 6);
+        };
+
+        drawGridItem('Payment Method', paymentMethod, 30, curY + 10);
+        drawGridItem('Time Slot', timeSlot || String(auctionNumber) || 'N/A', 85, curY + 10);
+        drawGridItem('Status', 'SUCCESSFUL', 145, curY + 10);
+
+        curY += 40;
+        // Table Header
+        doc.setFillColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+        doc.rect(20, curY, 170, 12, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DESCRIPTION', 25, curY + 8);
+        doc.text('AMOUNT', 160, curY + 8, { align: 'right' });
+
+        // Table Rows
+        curY += 12;
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.text(value || 'N/A', x, y + 6);
-      };
+        
+        const rows = [
+          { desc: type === 'entry' ? `Auction Entry Fee: ${productName}` : `Auction Bid: ${productName}`, price: amount },
+          { desc: `Product Worth: INR ${productWorth?.toLocaleString('en-IN') || 'TBD'}`, price: 0 }
+        ];
 
-      drawInfoBox('Paid By', paidBy || 'Valued User', col1, curY);
-      drawInfoBox('Paid To', 'Dream60 India Corp', col2, curY);
-      
-      curY += 20;
-      drawInfoBox('Auction Time Slot', timeSlot || String(auctionNumber) || 'N/A', col1, curY);
-      drawInfoBox('Payment Method', paymentMethod, col2, curY);
+        rows.forEach((row, i) => {
+          doc.setFillColor(i % 2 === 0 ? 255 : 252, i % 2 === 0 ? 255 : 252, i % 2 === 0 ? 255 : 252);
+          doc.rect(20, curY, 170, 12, 'F');
+          doc.text(row.desc, 25, curY + 8);
+          if (row.price > 0) {
+            doc.text(`INR ${row.price.toLocaleString('en-IN')}`, 160, curY + 8, { align: 'right' });
+          } else {
+             doc.text('Included', 160, curY + 8, { align: 'right' });
+          }
+          curY += 12;
+        });
 
-      curY += 25;
+        // Summary Section
+        curY += 10;
+        doc.setDrawColor(229, 231, 235);
+        doc.line(120, curY, 190, curY);
 
-      // Table Header
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(20, curY, 170, 10, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DESCRIPTION', 25, curY + 6.5);
-      doc.text('PRICE', 130, curY + 6.5);
-      doc.text('QTY', 155, curY + 6.5);
-      doc.text('TOTAL', 175, curY + 6.5);
+        curY += 10;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Total Paid', 120, curY);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setFontSize(16);
+        doc.text(`INR ${amount.toLocaleString('en-IN')}`, 190, curY, { align: 'right' });
 
-      // Table Row
-      curY += 10;
-      doc.setFillColor(255, 255, 255);
-      doc.rect(20, curY, 170, 15, 'F');
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(type === 'entry' ? `Entry Fee: ${productName}` : `Bid for ${productName}`, 25, curY + 9);
-      doc.text(`INR ${amount.toLocaleString('en-IN')}`, 130, curY + 9);
-      doc.text('1', 157, curY + 9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`INR ${amount.toLocaleString('en-IN')}`, 175, curY + 9);
+        // Signature/Stamp
+        curY += 30;
+        doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setLineWidth(1);
+        doc.roundedRect(150, curY, 35, 15, 2, 2);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VALID', 167.5, curY + 10, { align: 'center' });
 
-      // Product Worth (Optional Note)
-      if (productWorth) {
-        curY += 15;
-        doc.setFontSize(8);
+        // Terms
+        curY += 40;
         doc.setTextColor(150, 150, 150);
-        doc.text(`* Prize Value Worth: INR ${productWorth.toLocaleString('en-IN')}`, 25, curY);
-      }
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Terms & Conditions:', 20, curY);
+        curY += 5;
+        doc.text('1. Entry fee is non-refundable once the auction starts.', 20, curY);
+        curY += 5;
+        doc.text('2. Please keep this receipt for future reference regarding prize claims.', 20, curY);
 
-      // Total Section
-      curY = 200;
-      doc.setDrawColor(230, 230, 230);
-      doc.line(120, curY, 190, curY);
-      
-      curY += 10;
-      doc.setTextColor(100, 100, 100);
-      doc.setFontSize(10);
-      doc.text('Total Amount', 120, curY);
-      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`INR ${amount.toLocaleString('en-IN')}`, 190, curY, { align: 'right' });
+        // Footer
+        doc.setFillColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+        doc.rect(0, 280, 210, 17, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.text('THANK YOU FOR BIDDING WITH DREAM60 INDIA', 105, 290, { align: 'center' });
+        
+        doc.save(`Dream60_Success_${auctionId || 'Receipt'}.pdf`);
+      };
+  
+  
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
+          <Snowfall 
+            color="#10B981"
+            snowflakeCount={isMobile ? 10 : 40}
+            radius={[0.8, 2.5]}
+            speed={[0.6, 1.5]}
+            style={{ zIndex: 101, position: 'fixed' }}
+          />
 
-      // Status Stamp
-      doc.setDrawColor(34, 197, 94); // Green
-      doc.setLineWidth(0.8);
-      doc.roundedRect(20, 230, 40, 15, 2, 2);
-      doc.setTextColor(34, 197, 94);
-      doc.setFontSize(12);
-      doc.text('PAID', 40, 240, { align: 'center' });
-
-      // Footer
-      doc.setTextColor(180, 180, 180);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Thank you for choosing Dream60 India.', 105, 275, { align: 'center' });
-      doc.text('For support, visit help.dream60.com or contact our AI assistant.', 105, 280, { align: 'center' });
-      
-      doc.save(`Dream60_Receipt_${auctionId || 'Payment'}.pdf`);
-    };
-
-
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
-        <Snowfall 
-          color="#A78BFA"
-          snowflakeCount={isMobile ? 3 : 15}
-          radius={[1.0, 3.0]}
-          speed={[0.5, 1.2]}
-          style={{ zIndex: 101, position: 'fixed' }}
-        />
         <motion.div 
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           initial={{ opacity: 0 }}
@@ -249,37 +286,43 @@ interface PaymentSuccessProps {
             </motion.div>
           </div>
 
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">
-                  Transaction Details
-                </p>
-                <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Service</span>
-                    <span className="text-gray-900 font-bold">{type === 'entry' ? 'Auction Entry Fee' : 'Auction Bid'}</span>
-                  </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">
+                    Transaction Details
+                  </p>
+                  <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500">Service</span>
+                      <span className="text-gray-900 font-bold">{type === 'entry' ? 'Auction Entry Fee' : 'Auction Bid'}</span>
+                    </div>
 
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Product</span>
-                    <span className="text-gray-900 font-semibold truncate max-w-[150px]">{productName}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100 italic">
-                    <span className="text-gray-400">Time Slot</span>
-                    <span className="text-gray-600 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
-                  </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500">Product</span>
+                      <span className="text-gray-900 font-semibold truncate max-w-[150px]">{productName}</span>
+                    </div>
 
-                  <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
-                    <span className="text-gray-500 font-medium">Amount Paid</span>
-                    <span className="text-emerald-600 font-black flex items-center gap-0.5 text-lg">
-                      <IndianRupee className="w-4 h-4" />
-                      {amount.toLocaleString('en-IN')}
-                    </span>
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-gray-500">Paid By</span>
+                      <span className="text-gray-900 font-medium">{paidBy || 'Member'}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100 italic">
+                      <span className="text-gray-400">Time Slot</span>
+                      <span className="text-gray-600 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                      <span className="text-gray-500 font-medium">Amount Paid</span>
+                      <span className="text-emerald-600 font-black flex items-center gap-0.5 text-lg">
+                        <IndianRupee className="w-4 h-4" />
+                        {amount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+
 
                 <div className="space-y-3 pt-2">
                   <div className="grid grid-cols-2 gap-3">

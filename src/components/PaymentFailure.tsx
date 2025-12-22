@@ -5,25 +5,35 @@ import { useEffect, useState } from 'react';
 import Snowfall from 'react-snowfall';
 import jsPDF from 'jspdf';
 
-interface PaymentFailureProps {
-  amount: number;
-  errorMessage?: string;
-  auctionId?: string;
-  auctionNumber?: string | number;
-  onRetry: () => void;
-  onBackToHome: () => void;
-  onClose?: () => void;
-}
-
-export function PaymentFailure({ 
-  amount, 
-  errorMessage = 'Payment processing failed',
-  auctionId,
-  auctionNumber,
-  onRetry,
-  onBackToHome,
-  onClose
-}: PaymentFailureProps) {
+  interface PaymentFailureProps {
+    amount: number;
+    errorMessage?: string;
+    auctionId?: string;
+    auctionNumber?: string | number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
+    paymentMethod?: string;
+    onRetry: () => void;
+    onBackToHome: () => void;
+    onClose?: () => void;
+  }
+  
+  export function PaymentFailure({ 
+    amount, 
+    errorMessage = 'Payment processing failed',
+    auctionId,
+    auctionNumber,
+    productName = 'Auction Participation',
+    productWorth,
+    timeSlot,
+    paidBy,
+    paymentMethod = 'UPI / Razorpay',
+    onRetry,
+    onBackToHome,
+    onClose
+  }: PaymentFailureProps) {
     const [countdown, setCountdown] = useState(5);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -54,71 +64,148 @@ export function PaymentFailure({
     }, [countdown]);
 
     const downloadReceipt = () => {
-      const doc = new jsPDF();
+      const doc = jsPDF ? new jsPDF() : null;
+      if (!doc) return;
+
+      const primaryColor = [239, 68, 68]; // Red/Rose theme for failure
+      const secondaryColor = [159, 18, 57]; // Dark rose
       
-      // Theme colors
-      const primaryColor = [239, 68, 68]; // Red
-      
-      // Header
+      // Header Background
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, 210, 297, 'F');
+
+      // Top Header Bar
       doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(0, 0, 210, 40, 'F');
+      doc.rect(0, 0, 210, 5, 'F');
       
-      doc.setTextColor(255, 255, 255);
+      // Decorative Elements
+      doc.setFillColor(254, 242, 242);
+      doc.circle(210, 0, 60, 'F');
+
+      // Logo and Title
+      doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
-      doc.text('DREAM60', 105, 25, { align: 'center' });
+      doc.text('DREAM60', 20, 25);
       
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PAYMENT ATTEMPT FAILED', 20, 32);
+
+      // Receipt Details Header
+      doc.setFillColor(249, 250, 251);
+      doc.roundedRect(140, 15, 55, 30, 3, 3, 'F');
+      doc.setTextColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+      doc.setFontSize(9);
+      doc.text('REFERENCE NO:', 145, 25);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`ERR-${Math.floor(Math.random() * 90000) + 10000}`, 145, 32);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text('PAYMENT FAILURE RECEIPT', 105, 33, { align: 'center' });
-      
-      // Content
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(12);
-      doc.text('Transaction Details:', 20, 55);
-      
-      doc.setDrawColor(200, 200, 200);
-      doc.line(20, 58, 190, 58);
-      
-      let y = 70;
-      const details = [
-        ['Transaction Type', 'Entry Fee (Attempted)'],
-        ['Status', 'FAILED'],
-        ['Amount', `INR ${amount.toLocaleString('en-IN')}`],
-        ['Auction ID', auctionId || 'N/A'],
-        ['Auction Number', auctionNumber ? `#${auctionNumber}` : 'N/A'],
-        ['Error Message', errorMessage.substring(0, 100)],
-        ['Date', new Date().toLocaleString('en-IN')]
-      ];
-      
-      details.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, 20, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(String(value), 80, y);
-        y += 10;
-      });
-      
-      // Footer
-      doc.setFillColor(245, 245, 245);
-      doc.rect(0, 270, 210, 27, 'F');
+      doc.text(new Date().toLocaleDateString('en-IN'), 145, 38);
+
+      // Info Section
+      let curY = 60;
+      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setLineWidth(0.5);
+      doc.line(20, curY, 190, curY);
+
+      curY += 15;
+      doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
-      doc.setFontSize(8);
-      doc.text('This is a computer-generated failure record.', 105, 280, { align: 'center' });
-      doc.text('Dream60 Official Website - Contact support for any issues.', 105, 285, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('CUSTOMER:', 20, curY);
+      doc.text('MERCHANT:', 120, curY);
+
+      curY += 7;
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.text(paidBy || 'Valued User', 20, curY);
+      doc.text('Dream60 India Official', 120, curY);
+
+      // Info Grid
+      curY += 20;
+      doc.setFillColor(254, 242, 242);
+      doc.roundedRect(20, curY, 170, 25, 2, 2, 'F');
       
-      doc.save(`Dream60_Failure_Receipt_${Date.now()}.pdf`);
+      const drawGridItem = (label: string, value: string, x: number, y: number) => {
+        doc.setFontSize(8);
+        doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(label.toUpperCase(), x, y);
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value || 'N/A', x, y + 6);
+      };
+
+      drawGridItem('Method Attempted', paymentMethod, 30, curY + 10);
+      drawGridItem('Time Slot', timeSlot || String(auctionNumber) || 'N/A', 85, curY + 10);
+      drawGridItem('Failure Type', 'TXN_DECLINED', 145, curY + 10);
+
+      curY += 40;
+      // Table Header
+      doc.setFillColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+      doc.rect(20, curY, 170, 12, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ITEM DESCRIPTION', 25, curY + 8);
+      doc.text('STATUS', 160, curY + 8, { align: 'right' });
+
+      // Table Row
+      curY += 12;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Entry Attempt: ${productName}`, 25, curY + 8);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FAILED', 160, curY + 8, { align: 'right' });
+
+      // Error Message Box
+      curY += 20;
+      doc.setFillColor(255, 245, 245);
+      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.rect(20, curY, 170, 20, 'FD');
+      doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+      doc.setFontSize(9);
+      doc.text('REASON:', 25, curY + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(errorMessage.substring(0, 80), 45, curY + 8);
+
+      // Summary Section
+      curY += 35;
+      doc.setTextColor(150, 150, 150);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('Amount Not Deducted', 120, curY);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setFontSize(16);
+      doc.text(`INR ${amount.toLocaleString('en-IN')}`, 190, curY, { align: 'right' });
+
+      // Footer
+      doc.setFillColor( secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+      doc.rect(0, 280, 210, 17, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.text('PLEASE RETRY THE TRANSACTION OR CONTACT SUPPORT', 105, 290, { align: 'center' });
+      
+      doc.save(`Dream60_Failure_${Date.now()}.pdf`);
     };
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <Snowfall 
           color="#EF4444"
-          snowflakeCount={isMobile ? 2 : 20}
-          radius={[0.3, 1.2]}
-          speed={[0.2, 0.6]}
+          snowflakeCount={isMobile ? 10 : 35}
+          radius={[0.8, 2.5]}
+          speed={[0.6, 1.2]}
           style={{ zIndex: 101, position: 'fixed' }}
         />
+
         <motion.div 
           className="absolute inset-0 bg-black/60 backdrop-blur-md"
           initial={{ opacity: 0 }}
@@ -165,52 +252,45 @@ export function PaymentFailure({
             </motion.div>
           </div>
 
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">
-                  Error Details
-                </p>
-                <div className="bg-red-50 rounded-2xl p-4 border border-dashed border-red-200 space-y-3">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Transaction Type</span>
-                    <span className="text-gray-900 font-bold">Entry Fee</span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500 text-xs">Amount Attempted</span>
-                    <span className="text-red-600 font-bold flex items-center gap-1 text-base">
-                      <IndianRupee className="w-3.5 h-3.5" />
-                      {amount.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-
-                  {auctionId && (
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">
+                    Error Details
+                  </p>
+                  <div className="bg-red-50 rounded-2xl p-4 border border-dashed border-red-200 space-y-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500">Auction ID</span>
-                      <span className="text-gray-900 font-mono text-[9px] bg-white px-2 py-0.5 border border-gray-100 rounded">
-                        {auctionId}
+                      <span className="text-gray-500">Service</span>
+                      <span className="text-gray-900 font-bold">Auction Entry Fee</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500">Product</span>
+                      <span className="text-gray-900 font-semibold truncate max-w-[150px]">{productName}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-500 text-xs">Amount Attempted</span>
+                      <span className="text-red-600 font-bold flex items-center gap-1 text-base">
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        {amount.toLocaleString('en-IN')}
                       </span>
                     </div>
-                  )}
 
-                  {auctionNumber && (
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500">Auction Number</span>
-                      <span className="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded text-[10px]">
-                        #{auctionNumber}
-                      </span>
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100 italic">
+                      <span className="text-gray-400">Time Slot</span>
+                      <span className="text-red-500 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
                     </div>
-                  )}
 
-                  <div className="text-left pt-2 border-t border-red-100">
-                    <span className="text-gray-400 text-[9px] font-bold uppercase tracking-widest block mb-1">Error Message</span>
-                    <p className="text-red-500 text-[10px] font-medium leading-relaxed italic">
-                      {errorMessage}
-                    </p>
+                    <div className="text-left pt-2 border-t border-red-100">
+                      <span className="text-gray-400 text-[9px] font-bold uppercase tracking-widest block mb-1">Error Message</span>
+                      <p className="text-red-500 text-[10px] font-medium leading-relaxed italic">
+                        {errorMessage}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+
 
                 <div className="space-y-2">
                   <Button
