@@ -96,7 +96,11 @@ export function PaymentFailure({
     };
     
     doc.text(`Scenario: ${scenarios[type as keyof typeof scenarios] || 'PAYMENT FAILURE'}`, 20, 55);
-    doc.text(`Status: TRANSACTION UNSUCCESSFUL`, 140, 55);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont('helvetica', 'normal');
+    const displayDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+    doc.text(`Date: ${displayDate}`, 90, 55);
+    doc.text(`ID: ${auctionId || 'TXN-' + Math.floor(Date.now() / 1000)}`, 150, 55);
 
     // Main content
     let curY = 80;

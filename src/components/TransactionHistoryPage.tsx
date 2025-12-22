@@ -195,12 +195,22 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
       }
       const result = await response.json();
       if (result?.data) {
-        setSelectedTransaction(result.data);
-        sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(result.data));
+        // Merge with existing data to ensure we don't lose any fields from the list
+        setSelectedTransaction(prev => ({
+          ...prev,
+          ...result.data
+        }));
+        sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify({
+          ...(selectedTransaction || {}),
+          ...result.data
+        }));
       }
     } catch (error) {
       console.error('Error fetching transaction detail:', error);
-      toast.error('Could not load transaction details');
+      // Only show error if we don't have basic data already
+      if (!selectedTransaction) {
+        toast.error('Could not load transaction details');
+      }
     } finally {
       setDetailLoading(false);
     }
@@ -303,8 +313,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFont('helvetica', 'normal');
     const displayDate = formatDateTime(tx.paidAt || tx.createdAt || new Date());
-    doc.text(`Date: ${displayDate}`, 100, 55);
-    doc.text(`Transaction ID: TXN-${Math.floor(Date.now() / 1000)}`, 160, 55);
+    doc.text(`Date: ${displayDate}`, 90, 55);
+    doc.text(`ID: ${tx.orderId || tx.paymentId || 'TXN-' + Math.floor(Date.now() / 1000)}`, 150, 55);
 
     // Main content
     let curY = 80;
