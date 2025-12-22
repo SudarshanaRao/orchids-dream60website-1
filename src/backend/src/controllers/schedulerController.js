@@ -1053,7 +1053,7 @@ const getLiveHourlyAuction = async (req, res) => {
     
     // If no userId, return a summary version without ALL participants
     // (This is what guest users see)
-    const participantsCount = liveAuction.participants?.length || 0;
+    // participantsCount already declared above
     const summaryRounds = liveAuction.rounds?.map(round => ({
       ...round,
       playersData: round.playersData?.sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount).slice(0, 3),
