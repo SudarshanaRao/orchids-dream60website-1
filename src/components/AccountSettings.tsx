@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import Snowfall from 'react-snowfall';
 import { Label } from './ui/label';
 import { Switch } from './ui/switch';
 import { SuccessModal } from './SuccessModal';
@@ -572,13 +571,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           >
                 <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
                     <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 40}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
                   {/* Card shine effect */}
 
                 <motion.div
@@ -768,13 +760,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               variants={cardVariants}
               className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
             >
-              <Snowfall 
-                color="#8B5CF6"
-                snowflakeCount={window.innerWidth < 768 ? 3 : 40}
-                radius={[0.5, 2.5]}
-                speed={[0.5, 2.0]}
-                wind={[-0.5, 2.5]}
-              />
               {/* Card shine effect */}
 
             <motion.div
@@ -932,21 +917,14 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           </motion.div>
 
           {/* Security Section */}
-              <motion.div
-                custom={2}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
-              >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
-              {/* Card shine effect */}
+          <motion.div
+            custom={2}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+          >
+          {/* Card shine effect */}
 
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
@@ -1004,21 +982,14 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           </motion.div>
 
             {/* Auction History Section */}
-              <motion.div
-                custom={3}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
-              >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 30}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
-              {/* Card shine effect */}
+          <motion.div
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+          >
+          {/* Card shine effect */}
 
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
@@ -1076,21 +1047,14 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           </motion.div>
 
             {/* Danger Zone */}
-              <motion.div
-                custom={4}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
-              >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 20}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
-              {/* Card shine effect */}
+          <motion.div
+            custom={4}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
+          >
+          {/* Card shine effect */}
 
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"

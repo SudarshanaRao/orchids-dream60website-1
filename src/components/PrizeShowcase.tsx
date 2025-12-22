@@ -1,7 +1,6 @@
 import { Gift, IndianRupee, Users, CreditCard, Sparkles, TrendingUp, Trophy, Clock, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
-import Snowfall from 'react-snowfall';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { parseAPITimestamp, getCurrentIST } from '../utils/timezone';
 import { API_ENDPOINTS } from '@/lib/api-config';

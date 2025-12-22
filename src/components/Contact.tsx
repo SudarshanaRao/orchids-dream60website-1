@@ -1,6 +1,5 @@
 import  { useState } from 'react';
 import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, Users, Headphones, Shield, Globe, Zap, Building2, Clock } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -152,12 +151,6 @@ export function Contact({ onBack }: ContactProps) {
           {/* Quick Contact Methods */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 relative z-10">
             <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-               <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
               <CardHeader className="text-center pb-2 relative z-10 font-medium">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
                 <CardTitle className="text-purple-800">Live Chat</CardTitle>
@@ -169,14 +162,8 @@ export function Contact({ onBack }: ContactProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
+              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <CardHeader className="text-center pb-2 relative z-10 font-medium">
                 <Mail className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
                 <CardTitle className="text-purple-800">Email Support</CardTitle>
               </CardHeader>
@@ -187,14 +174,8 @@ export function Contact({ onBack }: ContactProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
+              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <CardHeader className="text-center pb-2 relative z-10 font-medium">
                 <Headphones className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
                 <CardTitle className="text-purple-800">Priority Support</CardTitle>
               </CardHeader>
@@ -205,14 +186,8 @@ export function Contact({ onBack }: ContactProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
+              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <CardHeader className="text-center pb-2 relative z-10 font-medium">
                 <Users className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
                 <CardTitle className="text-purple-800">Community</CardTitle>
               </CardHeader>
@@ -227,16 +202,9 @@ export function Contact({ onBack }: ContactProps) {
           {/* Detailed Contact Information */}
           <div className="grid lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
             {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card className="bg-white/90 backdrop-blur-sm border-purple-200 shadow-xl relative overflow-hidden">
-                <Snowfall 
-                  snowflakeCount={6}
-                  radius={[0.5, 2.0]}
-                  speed={[0.5, 1.5]}
-                  wind={[-0.5, 2.0]}
-                  style={{ opacity: 0.2 }}
-                />
-                <CardHeader className="relative z-10 font-medium">
+              <div className="lg:col-span-2">
+                <Card className="bg-white/90 backdrop-blur-sm border-purple-200 shadow-xl relative overflow-hidden">
+                  <CardHeader className="relative z-10 font-medium">
                   <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                     <Send className="w-5 h-5 sm:w-6 sm:h-6" />
                     <span>Send us a Message</span>

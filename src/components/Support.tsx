@@ -1,7 +1,6 @@
 import  { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, IndianRupee, Trophy, AlertCircle, Search, Send } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -222,12 +221,6 @@ export function Support({ onBack, onNavigate }: SupportProps) {
               transition={{ duration: 0.4, delay: 0.1 }}
             >
                 <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10 relative overflow-hidden group">
-                  <Snowfall 
-                    snowflakeCount={4}
-                    radius={[0.5, 1.5]}
-                    speed={[0.5, 1.0]}
-                    style={{ opacity: 0.2 }}
-                  />
                   <div className="relative z-10 font-medium">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
                       <Book className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -248,12 +241,6 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                 </Card>
   
                 <Card className="bg-white/80 backdrop-blur-xl border-green-200/50 p-4 sm:p-6 text-center shadow-xl shadow-green-500/10 relative overflow-hidden group">
-                  <Snowfall 
-                    snowflakeCount={4}
-                    radius={[0.5, 1.5]}
-                    speed={[0.5, 1.0]}
-                    style={{ opacity: 0.2 }}
-                  />
                   <div className="relative z-10 font-medium">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-green-500/30">
                       <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -274,12 +261,6 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                 </Card>
   
                 <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 text-center shadow-xl shadow-purple-500/10 sm:col-span-2 lg:col-span-1 relative overflow-hidden group">
-                  <Snowfall 
-                    snowflakeCount={4}
-                    radius={[0.5, 1.5]}
-                    speed={[0.5, 1.0]}
-                    style={{ opacity: 0.2 }}
-                  />
                   <div className="relative z-10 font-medium">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-purple-500/30">
                       <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -336,12 +317,6 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                     transition={{ delay: categoryIndex * 0.1 }}
                   >
                     <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 shadow-xl shadow-purple-500/10 relative overflow-hidden group">
-                      <Snowfall 
-                        snowflakeCount={3}
-                        radius={[0.5, 1.5]}
-                        speed={[0.5, 1.0]}
-                        style={{ opacity: 0.15 }}
-                      />
                       <div className="p-3 sm:p-4 relative z-10">
                         <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
                           <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center text-white shadow-lg`}>
@@ -377,24 +352,17 @@ export function Support({ onBack, onNavigate }: SupportProps) {
           </motion.div>
 
           {/* Support Ticket Form */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <h2 className="text-xl sm:text-2xl font-semibold text-purple-800 mb-4 sm:mb-6">
-              Contact Support
-            </h2>
-            
-            <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 shadow-xl shadow-purple-500/10 relative overflow-hidden group">
-               <Snowfall 
-                  snowflakeCount={5}
-                  radius={[0.5, 2.0]}
-                  speed={[0.5, 1.5]}
-                  wind={[-0.5, 2.0]}
-                  style={{ opacity: 0.2 }}
-                />
-              <div className="relative z-10 font-medium">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <h2 className="text-xl sm:text-2xl font-semibold text-purple-800 mb-4 sm:mb-6">
+                Contact Support
+              </h2>
+              
+              <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 shadow-xl shadow-purple-500/10 relative overflow-hidden group">
+                <div className="relative z-10 font-medium">
                 <div className="flex items-start space-x-2 sm:space-x-3 mb-4 sm:mb-6">
                   <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 mt-1 flex-shrink-0" />
                   <div>
@@ -478,12 +446,6 @@ export function Support({ onBack, onNavigate }: SupportProps) {
 
             {/* Contact Info */}
             <Card className="bg-white/80 backdrop-blur-xl border-purple-200/50 p-4 sm:p-6 mt-4 sm:mt-6 shadow-xl shadow-purple-500/10 relative overflow-hidden">
-               <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
               <div className="relative z-10 font-medium">
                 <h3 className="text-base sm:text-lg font-semibold text-purple-800 mb-3 sm:mb-4">Other Ways to Reach Us</h3>
                 <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-purple-600">

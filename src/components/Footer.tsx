@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Clock, Shield, Zap, Users } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 
 interface FooterProps {
   onNavigate?: (page: string) => void;
