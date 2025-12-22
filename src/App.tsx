@@ -508,8 +508,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     productWorth?: number;
     timeSlot?: string;
     paidBy?: string;
-    paymentMethod?: string;
-    paymentId?: string;
   } | null>(null);
 
   const [showEntryFailure, setShowEntryFailure] = useState<{
@@ -517,12 +515,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     errorMessage: string;
     auctionId?: string;
     auctionNumber?: string | number;
-    productName?: string;
-    productWorth?: number;
-    timeSlot?: string;
-    paidBy?: string;
-    paymentMethod?: string;
-    paymentId?: string;
   } | null>(null);
 
   const [showBidSuccess, setShowBidSuccess] = useState<{
@@ -532,8 +524,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     productWorth?: number;
     timeSlot?: string;
     paidBy?: string;
-    paymentMethod?: string;
-    paymentId?: string;
   } | null>(null);
 
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<{
@@ -2431,43 +2421,41 @@ if (currentPage === 'support') {
                             }
                           }, 100);
 
-                                setShowEntrySuccess({
-                                  entryFee: totalEntryFee,
-                                  boxNumber: 0,
-                                  auctionId: currentAuction.id,
-                                  auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                  productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
-                                  productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
-                                  timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                  paidBy: currentUser.username || currentUser.email,
-                                  paymentMethod: upiId ? `${method} (${upiId})` : method,
-                                  paymentId: paymentData?.payment?.razorpayPaymentId || paymentData?.paymentId
-                                });
-                              }}
-                              onPaymentFailure={(totalEntryFee, errorMessage) => {
-                                // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
-                                setForceRefetchTrigger(prev => prev + 1);
-                                
-                                // Smooth scroll to auction boxes in background
-                                setTimeout(() => {
-                                  const element = document.getElementById('auction-grid');
-                                  if (element) {
-                                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                  }
-                                }, 100);
-          
-                                setShowEntryFailure({
-                                  entryFee: totalEntryFee,
-                                  errorMessage,
-                                  auctionId: currentAuction.id,
-                                  auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                  productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
-                                  productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
-                                  timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                  paidBy: currentUser.username || currentUser.email,
-                                  paymentMethod: 'UPI / Card (Razorpay)',
-                                  paymentId: `FAILED-${Date.now()}`
-                                });
+                              setShowEntrySuccess({
+                                entryFee: totalEntryFee,
+                                boxNumber: 0,
+                                auctionId: currentAuction.id,
+                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                paidBy: currentUser.username || currentUser.email,
+                                paymentMethod: upiId ? `${method} (${upiId})` : method
+                              });
+                            }}
+                            onPaymentFailure={(totalEntryFee, errorMessage) => {
+                              // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
+                              setForceRefetchTrigger(prev => prev + 1);
+                              
+                              // Smooth scroll to auction boxes in background
+                              setTimeout(() => {
+                                const element = document.getElementById('auction-grid');
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }, 100);
+        
+                              setShowEntryFailure({
+                                entryFee: totalEntryFee,
+                                errorMessage,
+                                auctionId: currentAuction.id,
+                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                paidBy: currentUser.username || currentUser.email,
+                                paymentMethod: 'UPI / Card (Razorpay)'
+                              });
 
                         }}
                         onUserParticipationChange={handleUserParticipationChange}
@@ -2500,48 +2488,49 @@ if (currentPage === 'support') {
                       )}
                     </div> {/* End of six-box-system-container */}
 
-                    <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
+                          <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
 
-                    
-                      {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
-                      {!currentUser && (
-                            <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
-                                  <Snowfall 
-                                    color="#8B5CF6"
-                                    snowflakeCount={isMobile ? 2 : 25}
-                                    radius={[0.8, 2.0]}
-                                    speed={[0.2, 0.6]}
-                                    wind={[-0.2, 0.5]}
-                                  />
+                      
+                        {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
+                        {!currentUser && (
+                              <div className="text-center py-8 sm:py-12 md:py-16 px-4 relative overflow-hidden">
+                                    <Snowfall 
+                                      color="#8B5CF6"
+                                      snowflakeCount={isMobile ? 2 : 25}
+                                      radius={[0.8, 2.0]}
+                                      speed={[0.2, 0.6]}
+                                      wind={[-0.2, 0.5]}
+                                    />
 
-                          <div className="max-w-2xl mx-auto space-y-6 relative z-10">
-                          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
-                          <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
-                            Create your free account and start bidding on amazing prizes with direct payment!
-                          </p>
-                          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
-                            <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
-                            <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
-                              <div>
-                                <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
-                                <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
-                              </div>
-                              <div>
-                                <div className="text-xl sm:text-2xl font-bold text-purple-700">{dailyStats.totalAuctions}x</div>
-                                <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
-                              </div>
-                              <div>
-                                <div className="text-xl sm:text-2xl font-bold text-purple-700">₹{dailyStats.totalPrizeValue.toLocaleString()}+</div>
-                                <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                            <div className="max-w-2xl mx-auto space-y-6 relative z-10">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Start Winning?</h2>
+                            <p className="text-lg sm:text-xl text-purple-600 mb-8 px-2">
+                              Create your free account and start bidding on amazing prizes with direct payment!
+                            </p>
+                            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 sm:p-6 shadow-lg">
+                              <h3 className="text-lg sm:text-xl font-semibold text-purple-700 mb-4">Why Join Dream60?</h3>
+                              <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                                <div>
+                                  <div className="text-xl sm:text-2xl font-bold text-purple-700">Pay</div>
+                                  <div className="text-sm sm:text-base text-purple-600">Per Bid</div>
+                                </div>
+                                <div>
+                                  <div className="text-xl sm:text-2xl font-bold text-purple-700">{dailyStats.totalAuctions}x</div>
+                                  <div className="text-sm sm:text-base text-purple-600">Daily Auctions</div>
+                                </div>
+                                <div>
+                                  <div className="text-xl sm:text-2xl font-bold text-purple-700">₹{dailyStats.totalPrizeValue.toLocaleString()}+</div>
+                                  <div className="text-sm sm:text-base text-purple-600">Prize Values</div>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    <AuctionScheduleInfo />
-                    <HowDream60Works />
+                      <AuctionScheduleInfo />
+
+                      <HowDream60Works />
 
                 </main>
 
@@ -2564,65 +2553,62 @@ if (currentPage === 'support') {
 
           <AnimatePresence mode="sync">
               {/* Payment Success Modal */}
-                    {showEntrySuccess && (
-                      <PaymentSuccess
-                        amount={showEntrySuccess.entryFee}
-                        type="entry"
-                        boxNumber={showEntrySuccess.boxNumber}
-                        auctionId={showEntrySuccess.auctionId}
-                        auctionNumber={showEntrySuccess.auctionNumber}
-                        productName={showEntrySuccess.productName}
-                        productWorth={showEntrySuccess.productWorth}
-                        timeSlot={showEntrySuccess.timeSlot}
-                        paidBy={showEntrySuccess.paidBy}
-                        paymentMethod={showEntrySuccess.paymentMethod}
-                        paymentId={showEntrySuccess.paymentId}
-                        onBackToHome={handleEntrySuccess}
-                        onClose={() => setShowEntrySuccess(null)}
-                      />
-                    )}
-                    {showEntryFailure && (
-                      <PaymentFailure
-                        amount={showEntryFailure.entryFee}
-                        errorMessage={showEntryFailure.errorMessage}
-                        auctionId={showEntryFailure.auctionId}
-                        auctionNumber={showEntryFailure.auctionNumber}
-                        productName={showEntryFailure.productName}
-                        productWorth={showEntryFailure.productWorth}
-                        timeSlot={showEntryFailure.timeSlot}
-                        paidBy={showEntryFailure.paidBy}
-                        paymentMethod={showEntryFailure.paymentMethod}
-                        paymentId={showEntryFailure.paymentId}
-                        onRetry={handleRetryPayment}
-                        onBackToHome={() => {
-                          handleEntryFailure();
-                          setCurrentPage('game');
-                        }}
-                        onClose={() => setShowEntryFailure(null)}
-                      />
-                    )}
-    
-                {/* Bid Success Modal */}
-                {showBidSuccess && (
-                  <PaymentSuccess
-                    amount={showBidSuccess.amount}
-                    type="bid"
-                    boxNumber={showBidSuccess.boxNumber}
-                    auctionId={currentAuction.id}
-                    auctionNumber={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
-                    productName={currentAuction.prizeName || 'Auction Prize'}
-                    productWorth={currentAuction.prizeValue}
-                    timeSlot={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
-                    paidBy={currentUser?.username || currentUser?.email}
-                    paymentMethod={showBidSuccess.paymentMethod || "Wallet / Razorpay"}
-                    paymentId={showBidSuccess.paymentId}
-                    onBackToHome={() => {
-                      setShowBidSuccess(null);
-                      setCurrentPage('game');
-                    }}
-                    onClose={() => setShowBidSuccess(null)}
-                  />
-                )}
+                  {showEntrySuccess && (
+                    <PaymentSuccess
+                      amount={showEntrySuccess.entryFee}
+                      type="entry"
+                      boxNumber={showEntrySuccess.boxNumber}
+                      auctionId={showEntrySuccess.auctionId}
+                      auctionNumber={showEntrySuccess.auctionNumber}
+                      productName={showEntrySuccess.productName}
+                      productWorth={showEntrySuccess.productWorth}
+                      timeSlot={showEntrySuccess.timeSlot}
+                      paidBy={showEntrySuccess.paidBy}
+                      paymentMethod={showEntrySuccess.paymentMethod}
+                      onBackToHome={handleEntrySuccess}
+                      onClose={() => setShowEntrySuccess(null)}
+                    />
+                  )}
+                  {showEntryFailure && (
+                    <PaymentFailure
+                      amount={showEntryFailure.entryFee}
+                      errorMessage={showEntryFailure.errorMessage}
+                      auctionId={showEntryFailure.auctionId}
+                      auctionNumber={showEntryFailure.auctionNumber}
+                      productName={showEntryFailure.productName}
+                      productWorth={showEntryFailure.productWorth}
+                      timeSlot={showEntryFailure.timeSlot}
+                      paidBy={showEntryFailure.paidBy}
+                      paymentMethod={showEntryFailure.paymentMethod}
+                      onRetry={handleRetryPayment}
+                      onBackToHome={() => {
+                        handleEntryFailure();
+                        setCurrentPage('game');
+                      }}
+                      onClose={() => setShowEntryFailure(null)}
+                    />
+                  )}
+  
+              {/* Bid Success Modal */}
+              {showBidSuccess && (
+                <PaymentSuccess
+                  amount={showBidSuccess.amount}
+                  type="bid"
+                  boxNumber={showBidSuccess.boxNumber}
+                  auctionId={currentAuction.id}
+                  auctionNumber={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
+                  productName={currentAuction.prizeName || 'Auction Prize'}
+                  productWorth={currentAuction.prizeValue}
+                  timeSlot={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
+                  paidBy={currentUser?.username || currentUser?.email}
+                  paymentMethod="Wallet / Razorpay"
+                  onBackToHome={() => {
+                    setShowBidSuccess(null);
+                    setCurrentPage('game');
+                  }}
+                  onClose={() => setShowBidSuccess(null)}
+                />
+              )}
 
           </AnimatePresence>
 

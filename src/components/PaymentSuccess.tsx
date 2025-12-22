@@ -15,140 +15,136 @@ interface PaymentSuccessProps {
   productWorth?: number;
   timeSlot?: string;
   paidBy?: string;
-    paymentMethod?: string;
-    paymentId?: string;
-    onBackToHome: () => void;
-    onClose?: () => void;
-  }
-  
-  export function PaymentSuccess({ 
-    amount, 
-    type, 
-    boxNumber, 
-    auctionId,
-    auctionNumber,
-    productName = 'Auction Participation',
-    productWorth,
-    timeSlot,
-    paidBy,
-    paymentMethod = 'UPI / Razorpay',
-    paymentId,
-    onBackToHome,
-    onClose
-  }: PaymentSuccessProps) {
-    const [countdown, setCountdown] = useState(5);
-    const [isMobile, setIsMobile] = useState(false);
-  
-    useEffect(() => {
-      const checkMobile = () => setIsMobile(window.innerWidth < 768);
-      checkMobile();
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-  
-    useEffect(() => {
-      if (countdown === 0) {
-        onBackToHome();
-        return;
+  paymentMethod?: string;
+  onBackToHome: () => void;
+  onClose?: () => void;
+}
+
+export function PaymentSuccess({ 
+  amount, 
+  type, 
+  boxNumber, 
+  auctionId,
+  auctionNumber,
+  productName = 'Auction Participation',
+  productWorth,
+  timeSlot,
+  paidBy,
+  paymentMethod = 'UPI / Razorpay',
+  onBackToHome,
+  onClose
+}: PaymentSuccessProps) {
+  const [countdown, setCountdown] = useState(5);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (countdown === 0) {
+      onBackToHome();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => Math.max(0, prev - 1));
+    }, 600);
+
+    return () => clearInterval(interval);
+  }, [countdown, onBackToHome]);
+
+  const downloadReceipt = () => {
+    const doc = jsPDF ? new jsPDF() : null;
+    if (!doc) return;
+
+    // Theme Colors based on type
+    const themes = {
+      entry: { primary: [16, 185, 129], bg: [240, 253, 244], label: 'ENTRY SUCCESS' },
+      bid: { primary: [59, 130, 246], bg: [239, 246, 255], label: 'BID SUCCESS' },
+      claim: { primary: [217, 119, 6], bg: [255, 251, 235], label: 'PRIZE CLAIM SUCCESS' }
+    };
+    
+    const theme = themes[type as keyof typeof themes] || themes.entry;
+    const darkViolet = [83, 49, 123];
+    const gray = [107, 114, 128];
+    
+    // Header section with brand color
+    doc.setFillColor(darkViolet[0], darkViolet[1], darkViolet[2]);
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DREAM60 INDIA', 20, 30);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
+
+    doc.setFontSize(18);
+    doc.text('OFFICIAL RECEIPT', 140, 30);
+    
+    // Receipt info line
+    doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
+    doc.rect(0, 45, 210, 15, 'F');
+    doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Scenario: ${theme.label}`, 20, 55);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`, 100, 55);
+    doc.text(`ID: TXN-${Math.floor(Date.now() / 1000)}`, 160, 55);
+
+    // Main content
+    let curY = 80;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transaction Details', 20, 72);
+    
+    doc.setDrawColor(229, 231, 235);
+    doc.line(20, 75, 190, 75);
+
+    const drawDetailRow = (label: string, value: string, isTotal = false) => {
+      if (isTotal) {
+        doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
+        doc.rect(20, curY - 8, 170, 12, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
       }
-  
-      // Fast forward interval (600ms instead of 1000ms)
-      const interval = setInterval(() => {
-        setCountdown((prev) => Math.max(0, prev - 1));
-      }, 600);
-  
-      return () => clearInterval(interval);
-    }, [countdown, onBackToHome]);
-  
-    const downloadReceipt = () => {
-      const doc = jsPDF ? new jsPDF() : null;
-      if (!doc) return;
-  
-      // Theme Colors based on type
-      const themes = {
-        entry: { primary: [16, 185, 129], bg: [240, 253, 244], label: 'ENTRY SUCCESS' },
-        bid: { primary: [59, 130, 246], bg: [239, 246, 255], label: 'BID SUCCESS' },
-        claim: { primary: [217, 119, 6], bg: [255, 251, 235], label: 'PRIZE CLAIM SUCCESS' }
-      };
       
-      const theme = themes[type as keyof typeof themes] || themes.entry;
-      const darkViolet = [83, 49, 123];
-      const gray = [107, 114, 128];
-      
-      // Header section with brand color
-      doc.setFillColor(darkViolet[0], darkViolet[1], darkViolet[2]);
-      doc.rect(0, 0, 210, 45, 'F');
-      
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(28);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DREAM60 INDIA', 20, 30);
-      
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
-  
-      doc.setFontSize(18);
-      doc.text('OFFICIAL RECEIPT', 140, 30);
-      
-      // Receipt info line
-      doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
-      doc.rect(0, 45, 210, 15, 'F');
-      doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Scenario: ${theme.label}`, 20, 55);
       doc.setTextColor(gray[0], gray[1], gray[2]);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`, 100, 55);
-      doc.text(`ID: ${paymentId || `TXN-${Math.floor(Date.now() / 1000)}`}`, 160, 55);
-  
-      // Main content
-      let curY = 80;
-      doc.setTextColor(31, 41, 55);
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Transaction Details', 20, 72);
+      doc.text(label, 25, curY);
       
-      doc.setDrawColor(229, 231, 235);
-      doc.line(20, 75, 190, 75);
-  
-      const drawDetailRow = (label: string, value: string, isTotal = false) => {
-        if (isTotal) {
-          doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
-          doc.rect(20, curY - 8, 170, 12, 'F');
-          doc.setFont('helvetica', 'bold');
-          doc.setFontSize(12);
-        } else {
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(10);
-        }
-        
-        doc.setTextColor(gray[0], gray[1], gray[2]);
-        doc.text(label, 25, curY);
-        
-        doc.setTextColor(31, 41, 55);
-        if (isTotal) doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
-        doc.text(value || 'N/A', 100, curY);
-        
-        doc.setDrawColor(243, 244, 246);
-        doc.line(20, curY + 4, 190, curY + 4);
-        curY += 12;
-      };
-  
-      const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Fee' : 'Auction Bid';
-      const detailLabel = type === 'entry' ? 'Registration for' : 'Product Name';
-  
-      drawDetailRow('Service Type', auctionType);
-      drawDetailRow('Customer Name', paidBy || 'Valued Player');
-      drawDetailRow(detailLabel, productName);
-      drawDetailRow('Prize Worth', `INR ${productWorth?.toLocaleString('en-IN') || 'TBD'}`);
-      drawDetailRow('Auction ID', auctionId || 'N/A');
-      if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
-      drawDetailRow('Payment Method', paymentMethod);
-      if (paymentId) drawDetailRow('Payment ID', paymentId);
-      curY += 5;
-      drawDetailRow('TOTAL AMOUNT PAID', `INR ${amount.toLocaleString('en-IN')}`, true);
+      doc.setTextColor(31, 41, 55);
+      if (isTotal) doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
+      doc.text(value || 'N/A', 100, curY);
+      
+      doc.setDrawColor(243, 244, 246);
+      doc.line(20, curY + 4, 190, curY + 4);
+      curY += 12;
+    };
+
+    const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Fee' : 'Auction Bid';
+    const detailLabel = type === 'entry' ? 'Registration for' : 'Product Name';
+
+    drawDetailRow('Service Type', auctionType);
+    drawDetailRow('Customer Name', paidBy || 'Valued Player');
+    drawDetailRow(detailLabel, productName);
+    drawDetailRow('Prize Worth', `INR ${productWorth?.toLocaleString('en-IN') || 'TBD'}`);
+    drawDetailRow('Auction ID', auctionId || 'N/A');
+    if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
+    drawDetailRow('Payment Method', paymentMethod);
+    curY += 5;
+    drawDetailRow('TOTAL AMOUNT PAID', `INR ${amount.toLocaleString('en-IN')}`, true);
 
     // Authenticity Stamp
     curY += 30;
