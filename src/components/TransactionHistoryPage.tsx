@@ -284,7 +284,16 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Scenario: ${isFailed ? (tx.paymentType === 'PRIZE_CLAIM' ? 'PRIZE CLAIM FAILURE' : 'PAYMENT FAILURE') : (tx.paymentType === 'PRIZE_CLAIM' ? 'PRIZE CLAIM SUCCESS' : 'PAYMENT SUCCESS')}`, 20, 55);
+    const getScenarioLabel = () => {
+      if (isFailed) {
+        if (tx.paymentType === 'PRIZE_CLAIM') return 'PRIZE CLAIM FAILURE';
+        return 'ENTRY FAILURE';
+      }
+      if (tx.paymentType === 'PRIZE_CLAIM') return 'PRIZE CLAIM SUCCESS';
+      return 'ENTRY SUCCESS';
+    };
+    
+    doc.text(`Scenario: ${getScenarioLabel()}`, 20, 55);
     doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFont('helvetica', 'normal');
     const displayDate = formatDateTime(tx.paidAt || tx.createdAt || new Date());

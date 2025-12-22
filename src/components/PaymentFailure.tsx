@@ -89,7 +89,13 @@ export function PaymentFailure({
     doc.setTextColor(rose[0], rose[1], rose[2]);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Scenario: ${type === 'claim' ? 'PRIZE CLAIM FAILURE' : 'PAYMENT FAILURE'}`, 20, 55);
+    const scenarios = {
+      entry: 'ENTRY FAILURE',
+      bid: 'BID FAILURE',
+      claim: 'PRIZE CLAIM FAILURE'
+    };
+    
+    doc.text(`Scenario: ${scenarios[type as keyof typeof scenarios] || 'PAYMENT FAILURE'}`, 20, 55);
     doc.text(`Status: TRANSACTION UNSUCCESSFUL`, 140, 55);
 
     // Main content
