@@ -83,6 +83,22 @@ const auctionHistorySchema = new mongoose.Schema(
       default: 0,
     },
     
+    // Payment details for entry fee
+    paymentMethod: {
+      type: String,
+      default: null,
+    },
+    
+    razorpayPaymentId: {
+      type: String,
+      default: null,
+    },
+    
+    paymentDetails: {
+      type: Object,
+      default: null,
+    },
+    
     // Total amount bid across all rounds
     totalAmountBid: {
       type: Number,
@@ -290,6 +306,9 @@ auctionHistorySchema.statics.createEntry = async function(data) {
       prizeValue: data.prizeValue,
       TimeSlot: data.TimeSlot,
       entryFeePaid: data.entryFeePaid || 0,
+      paymentMethod: data.paymentMethod || null,
+      razorpayPaymentId: data.razorpayPaymentId || null,
+      paymentDetails: data.paymentDetails || null,
       auctionStatus: 'JOINED',
       joinedAt: getISTTime(), // ✅ Use IST time
     });

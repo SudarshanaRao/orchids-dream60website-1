@@ -94,25 +94,7 @@ export function Footer({ onNavigate }: FooterProps) {
           </div>
         </div>
 
-        {/* Feature Badges - Mobile Optimized */}
-        <div className="mt-12 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-purple-50/50 rounded-3xl border border-purple-100/50">
-          {[
-            { icon: Shield, title: 'Safe & Secure', desc: 'Secure Payments' },
-            { icon: Zap, title: 'Instant Win', desc: '60 Min Results' },
-            { icon: Clock, title: '24/7 Live', desc: 'Round the clock' },
-            { icon: Users, title: 'Big Community', desc: 'Active Bidders' }
-          ].map((f, i) => (
-            <div key={i} className="flex items-center gap-3 p-2">
-              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-                <f.icon className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                 <div className="text-[11px] font-bold text-purple-900">{f.title}</div>
-                 <div className="text-[9px] text-purple-500 font-medium">{f.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+
 
         {/* Bottom Bar */}
         <div className="mt-12 py-8 border-t border-purple-100 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -151,7 +133,7 @@ export function Footer({ onNavigate }: FooterProps) {
       <Snowfall 
         color="#F3E8FF" 
         snowflakeCount={isMobile ? 12 : 30} 
-        radius={[1.5, 4.0]} 
+        radius={[2.0, 5.0]} 
         speed={[0.5, 1.2]} 
       />
     </footer>

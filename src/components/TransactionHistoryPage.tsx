@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
+import jsPDF from 'jspdf';
 import {
   ArrowLeft,
   IndianRupee,
@@ -15,6 +16,7 @@ import {
   TrendingDown,
   BarChart3,
   Gift,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import Snowfall from 'react-snowfall';
@@ -246,6 +248,82 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     }
   };
 
+  const downloadReceipt = (tx: TransactionItem) => {
+    const doc = new jsPDF();
+    const primaryColor = tx.status?.toLowerCase() === 'failed' ? [239, 68, 68] : [16, 185, 129];
+    const secondaryColor = [31, 41, 55];
+    
+    // Header section
+    doc.setFillColor(243, 244, 246);
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DREAM60 INDIA', 20, 25);
+    
+    doc.setTextColor(107, 114, 128);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(tx.status?.toLowerCase() === 'failed' ? 'PAYMENT FAILURE REPORT' : 'OFFICIAL PAYMENT CONFIRMATION', 20, 32);
+
+    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    doc.setFontSize(18);
+    doc.text('Payment Receipt', 140, 25);
+    
+    // Content Table
+    let curY = 60;
+    const tableX = 20;
+    const col1X = 25;
+    const col2X = 80;
+    const rowHeight = 12;
+
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.1);
+
+    const drawRow = (label: string, value: string) => {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(tableX, curY, 170, rowHeight, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(75, 85, 99);
+      doc.text(label + ':', col1X, curY + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(31, 41, 55);
+      doc.text(value || 'N/A', col2X, curY + 8);
+      doc.line(tableX, curY + rowHeight, tableX + 170, curY + rowHeight);
+      curY += rowHeight;
+    };
+
+    drawRow('Customer Name', user.username);
+    drawRow('Product Name', tx.auctionName || tx.productName || 'Auction Participation');
+    drawRow('Service', paymentTypeLabel(tx.paymentType));
+    drawRow('Auction ID', tx.auctionId || 'N/A');
+    drawRow('Time Slot', tx.timeSlot || tx.productTimeSlot || 'Active');
+    drawRow('Payment Method', paymentMethodLabel(tx));
+    drawRow('Amount Paid', `INR ${tx.amount.toLocaleString('en-IN')}`);
+    drawRow('Status', tx.status?.toUpperCase() || 'PAID');
+    drawRow('Date', formatDateTime(tx.paidAt || tx.createdAt));
+    drawRow('Order ID', tx.orderId || 'N/A');
+    drawRow('Payment ID', tx.paymentId || 'N/A');
+
+    // Status Message
+    curY += 20;
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(10);
+    doc.text(tx.status?.toLowerCase() === 'failed' ? 'This payment attempt was not successful.' : 'Thank you for your payment. This transaction has been successfully processed.', 20, curY);
+
+    // Footer
+    doc.setFillColor(249, 250, 251);
+    doc.rect(0, 270, 210, 27, 'F');
+    doc.setTextColor(107, 114, 128);
+    doc.setFontSize(8);
+    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 280, { align: 'center' });
+    doc.text('This is a computer-generated receipt and does not require a physical signature.', 105, 285, { align: 'center' });
+    
+    doc.save(`Dream60_Receipt_${tx.orderId || Date.now()}.pdf`);
+  };
+
   const renderTransactionList = (items: TransactionItem[], emptyLabel: string) => {
     if (isLoading) {
       return (
@@ -281,7 +359,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                       <Snowfall 
                     color="#8B5CF6" 
                     snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[0.8, 2.5]} 
+                    radius={[1.5, 3.5]} 
                     speed={[0.2, 0.6]}
                     wind={[-0.2, 0.5]}
                   />
@@ -486,6 +564,16 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                   </CardContent>
                 </Card>
               </div>
+
+              <div className="flex justify-center pt-4">
+                <Button
+                  onClick={() => downloadReceipt(selectedTransaction)}
+                  className="w-full sm:w-auto h-12 bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold rounded-xl px-8 shadow-lg transition-all active:scale-95 flex items-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  Download Official Receipt
+                </Button>
+              </div>
             </CardContent>
           </Card>
           </motion.div>
@@ -510,7 +598,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-4 sm:mb-6"
           >
               <Card className="relative overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white" data-whatsnew-target="transactions-hero">
-                  <Snowfall color="#FFFFFF" snowflakeCount={window.innerWidth < 768 ? 8 : 40} radius={[0.8, 2.5]} speed={[0.2, 0.6]} />
+                  <Snowfall color="#FFFFFF" snowflakeCount={window.innerWidth < 768 ? 8 : 40} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
 
               <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -574,7 +662,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                           <Snowfall 
                     color="#8B5CF6" 
                     snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[0.8, 2.5]} 
+                    radius={[1.5, 3.5]} 
                     speed={[0.2, 0.6]}
                     wind={[-0.2, 0.5]}
                   />
@@ -592,7 +680,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                           <Snowfall 
                     color="#8B5CF6" 
                     snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[0.8, 2.5]} 
+                    radius={[1.5, 3.5]} 
                     speed={[0.2, 0.6]}
                     wind={[-0.2, 0.5]}
                   />
@@ -610,7 +698,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                           <Snowfall 
                     color="#8B5CF6" 
                     snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[0.8, 2.5]} 
+                    radius={[1.5, 3.5]} 
                     speed={[0.2, 0.6]}
                     wind={[-0.2, 0.5]}
                   />
@@ -657,7 +745,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-3 sm:mb-6"
           >
             <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/90 shadow-2xl">
-                <Snowfall color="#8B5CF6" snowflakeCount={isMobile ? 8 : 40} radius={[0.8, 2.5]} speed={[0.2, 0.6]} />
+                <Snowfall color="#8B5CF6" snowflakeCount={isMobile ? 8 : 40} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"

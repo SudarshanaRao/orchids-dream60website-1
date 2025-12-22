@@ -69,7 +69,7 @@ interface PrizeShowcaseProps {
       hasPaid?: boolean;
     }> ;
   };
-  onPayEntry?: (boxId: number, entryFee: number) => void;
+  onPayEntry?: (boxId: number, entryFee: number, paymentData?: any) => void;
   onPaymentFailure?: (entryFee: number, errorMessage: string) => void;
   onUserParticipationChange?: (isParticipating: boolean) => void;
   isLoggedIn?: boolean;
@@ -373,14 +373,14 @@ interface PrizeShowcaseProps {
         email: userEmail,
         contact: userMobile,
       },
-      (response) => {
-        // Payment success - update local state
-        console.log('Payment verified successfully:', response);
-        setIsUserParticipating(true);
-        
-        // Notify parent to refetch auction data
-        onPayEntry?.(0, totalEntryFee);
-      },
+        (response) => {
+          // Payment success - update local state
+          console.log('Payment verified successfully:', response);
+          setIsUserParticipating(true);
+          
+          // Notify parent to refetch auction data
+          onPayEntry?.(0, totalEntryFee, response.data);
+        },
       (error) => {
         // Payment failure
         console.error('Payment failed:', error);
@@ -422,7 +422,7 @@ interface PrizeShowcaseProps {
             <Snowfall 
               color="#8B5CF6"
               snowflakeCount={isMobile ? 2 : 20}
-              radius={[0.3, 1.2]}
+              radius={[0.8, 2.0]}
               speed={[0.2, 0.6]}
               wind={[-0.2, 0.5]}
             />
@@ -468,7 +468,7 @@ interface PrizeShowcaseProps {
             <Snowfall 
               color="#8B5CF6"
               snowflakeCount={isMobile ? 2 : 20}
-              radius={[0.3, 1.2]}
+              radius={[0.8, 2.0]}
               speed={[0.2, 0.6]}
               wind={[-0.2, 0.5]}
             />

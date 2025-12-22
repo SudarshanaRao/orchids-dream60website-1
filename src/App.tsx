@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Snowfall from 'react-snowfall';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { HowDream60Works } from './components/HowDream60Works';
 import { Header } from './components/Header';
 import { AuctionGrid } from './components/AuctionGrid';
 import { AuctionSchedule } from './components/AuctionSchedule';
@@ -2344,7 +2345,7 @@ if (currentPage === 'support') {
                                     <Snowfall 
                                       color="rgba(255, 255, 255, 0.4)" 
                                       snowflakeCount={isMobile ? 8 : 40} 
-                                      radius={[0.8, 2.5]} 
+                                      radius={[1.5, 3.5]} 
                                       speed={[0.2, 0.6]} 
                                       wind={[-0.2, 0.5]}
                                       style={{ zIndex: 1 }}
@@ -2383,10 +2384,14 @@ if (currentPage === 'support') {
                       serverTime={serverTime}
                       liveAuctionData={liveAuctionData}
                     isLoadingLiveAuction={isLoadingLiveAuction}
-                      onPayEntry={(_boxId, totalEntryFee) => {
+                      onPayEntry={(_boxId, totalEntryFee, paymentData) => {
                         if (!currentUser) return;
                         
-                        console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh');
+                        console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
+                        
+                        // Extract payment method and UPI from paymentData if available
+                        const method = paymentData?.payment?.paymentMethod || 'UPI / Card (Razorpay)';
+                        const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
                         
                         // ✅ Update local state immediately for instant rendering without reload
                         setCurrentAuction(prev => ({
@@ -2424,7 +2429,7 @@ if (currentPage === 'support') {
                             productWorth: currentAuction.prizeValue,
                             timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
                             paidBy: currentUser.username || currentUser.email,
-                            paymentMethod: 'UPI / Card (Razorpay)'
+                            paymentMethod: upiId ? `${method} (${upiId})` : method
                           });
                         }}
                         onPaymentFailure={(totalEntryFee, errorMessage) => {
@@ -2463,25 +2468,19 @@ if (currentPage === 'support') {
             )}
 
             {currentUser ? (
-                  <div ref={auctionGridRef} data-auction-grid id="auction-grid">
-                    {/* Auction Grid */}
-                    <AuctionGrid
-                    auction={{
-                      boxes: currentAuction.boxes as any,
-                      prizeValue: currentAuction.prizeValue,
-                      userBidsPerRound: currentAuction.userBidsPerRound,
-                      userHasPaidEntry: currentAuction.userHasPaidEntry,
-                      userQualificationPerRound: currentAuction.userQualificationPerRound,
-                      winnersAnnounced: currentAuction.winnersAnnounced,
-                      userEntryFee: (currentAuction as any).userEntryFeeFromAPI || currentAuction.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid)?.entryFee,
-                      hourlyAuctionId: currentHourlyAuctionId, // ✅ Pass auction ID to detect changes
-                    }}
-                    user={currentUser}
-                    onShowLeaderboard={handleShowLeaderboard}
-                    onBid={handlePlaceBid}
-                    serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                  />
-                </div>
+              <>
+                    <div ref={auctionGridRef} data-auction-grid id="auction-grid">
+                      {/* Auction Grid */}
+                      <AuctionGrid
+                    auction={currentAuction}
+                      onShowLeaderboard={handleShowLeaderboard}
+                      onBid={handlePlaceBid}
+                      serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                    />
+                  </div>
+
+                  <HowDream60Works />
+              </>
                 ) : (
                   <>
                     {/* Guest View - Empty placeholder when not logged in */}
@@ -2496,7 +2495,7 @@ if (currentPage === 'support') {
                                   <Snowfall 
                                     color="#8B5CF6"
                                     snowflakeCount={isMobile ? 2 : 25}
-                                    radius={[0.3, 1.2]}
+                                    radius={[0.8, 2.0]}
                                     speed={[0.2, 0.6]}
                                     wind={[-0.2, 0.5]}
                                   />

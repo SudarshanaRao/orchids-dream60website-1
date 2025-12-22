@@ -649,18 +649,21 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
 
     // ✅ 7. Create AuctionHistory entry for tracking user's auction participation
     // ✅ CRITICAL FIX: Use hourlyAuction.hourlyAuctionId from database to ensure consistency
-    try {
-      await AuctionHistory.createEntry({
-        userId: payment.userId,
-        username: actualUsername, // ✅ Use actual username
-        hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Use from database, not payment
-        dailyAuctionId: hourlyAuction.dailyAuctionId,
-        auctionDate: hourlyAuction.auctionDate,
-        auctionName: hourlyAuction.auctionName,
-        prizeValue: hourlyAuction.prizeValue,
-        TimeSlot: hourlyAuction.TimeSlot,
-        entryFeePaid: payment.amount,
-      });
+      try {
+        await AuctionHistory.createEntry({
+          userId: payment.userId,
+          username: actualUsername, // ✅ Use actual username
+          hourlyAuctionId: hourlyAuction.hourlyAuctionId, // ✅ Use from database, not payment
+          dailyAuctionId: hourlyAuction.dailyAuctionId,
+          auctionDate: hourlyAuction.auctionDate,
+          auctionName: hourlyAuction.auctionName,
+          prizeValue: hourlyAuction.prizeValue,
+          TimeSlot: hourlyAuction.TimeSlot,
+          entryFeePaid: payment.amount,
+          paymentMethod: payment.paymentMethod,
+          razorpayPaymentId: payment.razorpayPaymentId,
+          paymentDetails: payment.paymentDetails,
+        });
       
       console.log('✅ [AUCTION_HISTORY] Entry created for user:', {
         userId: payment.userId,
