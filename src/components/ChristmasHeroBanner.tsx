@@ -4,7 +4,21 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles } from 'lucide-react';
 
-export const ChristmasHeroBanner: React.FC = () => {
+interface ChristmasHeroBannerProps {
+  user?: any;
+  onJoinNow?: () => void;
+}
+
+export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <section className="relative w-full h-[60vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
@@ -47,7 +61,7 @@ export const ChristmasHeroBanner: React.FC = () => {
 
       {/* Golden Particle System */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(30)].map((_, i) => (
+        {[...Array(isMobile ? 12 : 30)].map((_, i) => (
           <motion.div
             key={`gold-particle-${i}`}
             initial={{ 
@@ -73,31 +87,31 @@ export const ChristmasHeroBanner: React.FC = () => {
       </div>
 
       {/* Gentle Snowfall - Optimized */}
-      <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(40)].map((_, i) => (
-          <motion.div
-            key={`snow-${i}`}
-            initial={{ 
-              top: -20, 
-              left: `${Math.random() * 100}%`, 
-              opacity: 0,
-              scale: Math.random() * 0.4 + 0.2
-            }}
-            animate={{
-              top: '110%',
-              opacity: [0, 0.4, 0.4, 0],
-              x: [0, Math.sin(i) * 50, 0],
-            }}
-            transition={{
-              duration: 12 + Math.random() * 15,
-              repeat: Infinity,
-              ease: "linear",
-              delay: Math.random() * 10,
-            }}
-            className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px]"
-          />
-        ))}
-      </div>
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {[...Array(isMobile ? 8 : 40)].map((_, i) => (
+            <motion.div
+              key={`snow-${i}`}
+              initial={{ 
+                top: -20, 
+                left: `${Math.random() * 100}%`, 
+                opacity: 0,
+                scale: Math.random() * 0.4 + 0.2
+              }}
+              animate={{
+                top: '110%',
+                opacity: [0, 0.4, 0.4, 0],
+                x: [0, Math.sin(i) * 50, 0],
+              }}
+              transition={{
+                duration: 12 + Math.random() * 15,
+                repeat: Infinity,
+                ease: "linear",
+                delay: Math.random() * 10,
+              }}
+              className="absolute w-1.5 h-1.5 bg-white rounded-full blur-[1px]"
+            />
+          ))}
+        </div>
 
       {/* Main Content Area */}
             <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
@@ -157,9 +171,10 @@ export const ChristmasHeroBanner: React.FC = () => {
                   >
                     <motion.button
                       whileTap={{ scale: 0.95 }}
+                      onClick={onJoinNow}
                       className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/90 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
                     >
-                    <span className="relative z-10">Join Now</span>
+                    <span className="relative z-10">{user ? 'Start Winning' : 'Join Now'}</span>
                     <ChevronRight className="w-5 h-5 relative z-10" />
                   </motion.button>
                 </motion.div>

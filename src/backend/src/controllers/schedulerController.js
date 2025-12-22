@@ -997,23 +997,11 @@ const updateHourlyAuctionStatus = async (req, res) => {
  * Get the current live hourly auction
  * GET /scheduler/live-auction
  * Returns only one hourly auction with status LIVE
- * ✅ OPTIMIZED: Supports ?userId=xxx to return only specific participant data
  */
 const getLiveHourlyAuction = async (req, res) => {
   try {
-    const { userId } = req.query;
-    
-    // ✅ OPTIMIZATION: Use projection to avoid fetching the massive participants array if not needed
-    // We also avoid fetching all playersData in rounds initially
-    const projection = {
-      participants: 0, 
-      "rounds.playersData": 0,
-      "rounds.qualifiedPlayers": 0
-    };
-
-    let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
+    const liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
-      .projection(projection)
       .lean();
     
     if (!liveAuction) {
@@ -1023,56 +1011,10 @@ const getLiveHourlyAuction = async (req, res) => {
         data: null,
       });
     }
-
-    // Now fetch only what's specifically needed
-    // 1. Get the total participants count (very fast)
-    const fullAuction = await HourlyAuction.findOne({ hourlyAuctionId: liveAuction.hourlyAuctionId }, { participants: 1 }).lean();
-    const allParticipants = fullAuction?.participants || [];
-    const participantsCount = allParticipants.length;
-
-    // 2. Fetch specific user data if userId provided
-    let userParticipant = null;
-    if (userId) {
-      userParticipant = allParticipants.find(p => p.playerId === userId);
-    }
-
-    // 3. Fetch top bids for rounds (for leaderboard preview)
-    const roundsWithBids = await HourlyAuction.findOne(
-      { hourlyAuctionId: liveAuction.hourlyAuctionId },
-      { "rounds.roundNumber": 1, "rounds.playersData": 1, "rounds.status": 1 }
-    ).lean();
-
-    const cleanedRounds = liveAuction.rounds?.map(round => {
-      const roundWithBids = roundsWithBids.rounds?.find(r => r.roundNumber === round.roundNumber);
-      const playersData = roundWithBids?.playersData || [];
-      
-      // Sort and take top 3
-      const sorted = [...playersData].sort((a, b) => b.auctionPlacedAmount - a.auctionPlacedAmount);
-      const top3 = sorted.slice(0, 3);
-      
-      // Add current user's bid if they are not in top 3
-      if (userId) {
-        const userBid = playersData.find(p => p.playerId === userId);
-        if (userBid && !top3.some(p => p.playerId === userId)) {
-          top3.push(userBid);
-        }
-      }
-
-      return {
-        ...round,
-        playersData: top3,
-        totalParticipants: playersData.length
-      };
-    });
-
+    
     return res.status(200).json({
       success: true,
-      data: {
-        ...liveAuction,
-        participants: userParticipant ? [userParticipant] : [],
-        totalParticipants: participantsCount,
-        rounds: cleanedRounds
-      },
+      data: liveAuction,
     });
   } catch (error) {
     console.error('Error in getLiveHourlyAuction:', error);
@@ -1507,9 +1449,8 @@ const getUserAuctionHistory = async (req, res) => {
       });
     }
 
-    // ✅ OPTIMIZATION: processClaimQueues is already handled by a background cron job (scheduler.js)
-    // Removing it from here reduces response time significantly.
-    // await AuctionHistory.processClaimQueues();
+    // ✅ Ensure priority claim queue is up to date before returning history
+    await AuctionHistory.processClaimQueues();
     
     // Get user's history
     const history = await AuctionHistory.getUserHistory(userId);
@@ -1517,15 +1458,10 @@ const getUserAuctionHistory = async (req, res) => {
     // Get user's statistics
     const stats = await AuctionHistory.getUserStats(userId);
     
-    // ✅ OPTIMIZED: Fetch all relevant hourly auctions in one query to avoid N+1 problem
-    const auctionIds = history.map(h => h.hourlyAuctionId);
-    const auctions = await HourlyAuction.find({ hourlyAuctionId: { $in: auctionIds } }).lean();
-    const auctionMap = new Map(auctions.map(a => [a.hourlyAuctionId, a]));
-    
     // ✅ UPDATED: Calculate correct totalAmountSpent for each auction entry
     // Logic: If won AND claimed, totalSpent = entryFee + lastRoundBidAmount
     //        Otherwise, totalSpent = entryFee only
-    const enrichedHistory = history.map((entry) => {
+    const enrichedHistory = await Promise.all(history.map(async (entry) => {
       // Calculate correct totalSpent for this auction
       let calculatedTotalSpent = entry.entryFeePaid || 0;
       
@@ -1536,7 +1472,7 @@ const getUserAuctionHistory = async (req, res) => {
       
       // ✅ NEW: Check if the auction is "Settled" (completely closed)
       let isSettled = false;
-      const auction = auctionMap.get(entry.hourlyAuctionId);
+      const auction = await HourlyAuction.findOne({ hourlyAuctionId: entry.hourlyAuctionId }).lean();
       if (auction) {
         if (auction.winners && auction.winners.length > 0) {
           const hasClaimed = auction.winners.some(w => w.prizeClaimStatus === 'CLAIMED');
@@ -1558,7 +1494,7 @@ const getUserAuctionHistory = async (req, res) => {
         claimWindowStartedAt: entry.claimWindowStartedAt || null,
         ranksOffered: entry.ranksOffered || [],
       };
-    });
+    }));
     
     return res.status(200).json({
       success: true,
@@ -1595,8 +1531,8 @@ const getAuctionDetails = async (req, res) => {
       });
     }
 
-    // ✅ OPTIMIZATION: processClaimQueues is already handled by a background cron job (scheduler.js)
-    // await AuctionHistory.processClaimQueues();
+    // ✅ Ensure claim queue advances instantly when a window expires
+    await AuctionHistory.processClaimQueues();
     
     // Find the auction
     const auctionDoc = await HourlyAuction.findOne({ hourlyAuctionId }).lean();

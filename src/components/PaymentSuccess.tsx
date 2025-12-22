@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
+import Snowfall from 'react-snowfall';
 
 interface PaymentSuccessProps {
   amount: number;
   type: 'entry' | 'bid';
   boxNumber?: number;
-  prizeName?: string;
   onBackToHome: () => void;
   onClose?: () => void;
 }
@@ -16,7 +16,6 @@ interface PaymentSuccessProps {
     amount, 
     type, 
     boxNumber, 
-    prizeName,
     onBackToHome,
     onClose
   }: PaymentSuccessProps) {
@@ -31,8 +30,9 @@ interface PaymentSuccessProps {
       }, []);
     
       useEffect(() => {
-        const timer = setTimeout(() => {
+        if (countdown === 0) {
           onBackToHome();
+          // Attempt to close the window if it's a popup
           try {
             if (window.opener || window.history.length === 1) {
               window.close();
@@ -40,15 +40,26 @@ interface PaymentSuccessProps {
           } catch (e) {
             console.log('Window close blocked by browser');
           }
-        }, 5);
-
-        return () => clearTimeout(timer);
-      }, [onBackToHome]);
+          return;
+        }
+    
+        const interval = setInterval(() => {
+          setCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+    
+        return () => clearInterval(interval);
+      }, [countdown, onBackToHome]);
 
   
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
-
+        <Snowfall 
+          color="#A78BFA"
+          snowflakeCount={isMobile ? 3 : 40}
+          radius={[0.5, 3.0]}
+          speed={[1.0, 3.0]}
+          style={{ zIndex: 101, position: 'fixed' }}
+        />
         <motion.div 
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
           initial={{ opacity: 0 }}
@@ -57,9 +68,8 @@ interface PaymentSuccessProps {
           onClick={onClose || onBackToHome}
         />
     
-          <motion.div 
-            className="relative z-10 w-full max-w-[min(400px,calc(100vw-2rem))] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden mx-auto"
-
+        <motion.div 
+          className="relative z-10 w-full max-w-[400px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
           initial={{ opacity: 0, scale: 0.9, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
@@ -102,48 +112,47 @@ interface PaymentSuccessProps {
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
                   {type === 'entry' ? 'Join Details' : 'Bid Details'}
                 </p>
-                  <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200">
-                    {prizeName && (
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-gray-500 text-sm">Prize</span>
-                        <span className="text-purple-600 font-bold text-sm text-right max-w-[200px] truncate">
-                          {prizeName}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center mb-4">
+                <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200">
+                  <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-500 text-sm">Amount Paid</span>
                     <span className="text-gray-900 font-bold flex items-center gap-1 text-lg">
                       <IndianRupee className="w-4 h-4" />
                       {amount.toLocaleString('en-IN')}
                     </span>
                   </div>
-                    {boxNumber !== undefined && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 text-sm">payment type</span>
-                        <span className="text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-lg text-sm">
-                          Entry Fee
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {boxNumber !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-sm">Box Number</span>
+                      <span className="text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-lg text-sm">
+                        #{boxNumber === 0 ? 'AUTO' : boxNumber}
+                      </span>
+                    </div>
+                  )}
                 </div>
-  
-                <div className="space-y-3">
-                  <Button
-                    onClick={onBackToHome}
-                    className="w-full h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100"
-                  >
-                    {type === 'entry' ? "Place your Bid..!" : 'Back to Home'}
-                  </Button>
-                  
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Redirecting...
-                    </span>
-                  </div>
-                </div>
+              </div>
 
+              <div className="space-y-3">
+                <Button
+                  onClick={onBackToHome}
+                  className="w-full h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100"
+                >
+                  {type === 'entry' ? "Let's do again" : 'Back to Home'}
+                </Button>
+                
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Redirecting to home in {countdown}s
+                  </span>
+                  <div className="flex gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className={`h-1 w-8 rounded-full transition-all duration-300 ${i < (5-countdown) ? 'bg-green-500' : 'bg-gray-100'}`} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>

@@ -1,4 +1,5 @@
 import { ArrowLeft, Clock, Shield, Star, Play, CreditCard, TrendingUp, Gift } from 'lucide-react';
+import Snowfall from 'react-snowfall';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { motion } from 'motion/react';
@@ -71,6 +72,13 @@ export function Participation({ onBack }: ParticipationProps) {
           >
             {/* Getting Started */}
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg relative overflow-hidden group">
+              <Snowfall 
+                snowflakeCount={8}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.25 }}
+              />
               <CardHeader className="relative z-10 font-medium">
                 <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                   <Star className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
@@ -114,7 +122,13 @@ export function Participation({ onBack }: ParticipationProps) {
 
             {/* Video Tutorial */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
-
+              <Snowfall 
+                snowflakeCount={5}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.2 }}
+              />
               <CardHeader className="bg-gradient-to-r from-purple-50 to-white border-b border-purple-100 relative z-10">
                 <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
                   <Play className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
@@ -141,6 +155,13 @@ export function Participation({ onBack }: ParticipationProps) {
 
             {/* Complete Participation Guide */}
             <Card className="bg-white border-purple-200 shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden group">
+               <Snowfall 
+                snowflakeCount={6}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.15 }}
+              />
               <CardHeader className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 relative z-10">
                 <CardTitle className="text-base sm:text-lg md:text-xl text-blue-800">Complete Participation Guide</CardTitle>
               </CardHeader>
@@ -344,6 +365,13 @@ export function Participation({ onBack }: ParticipationProps) {
 
             {/* Call to Action */}
             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-300 shadow-lg relative overflow-hidden group">
+               <Snowfall 
+                snowflakeCount={8}
+                radius={[0.5, 2.0]}
+                speed={[0.5, 1.5]}
+                wind={[-0.5, 2.0]}
+                style={{ opacity: 0.25 }}
+              />
               <CardContent className="p-4 sm:p-6 text-center space-y-3 sm:space-y-4 relative z-10 font-medium">
                 <h3 className="text-lg sm:text-xl font-bold text-purple-800">Ready to Start Winning?</h3>
                 <p className="text-sm sm:text-base text-purple-600">

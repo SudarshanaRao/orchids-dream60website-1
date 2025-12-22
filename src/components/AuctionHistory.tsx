@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
+import Snowfall from 'react-snowfall';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { motion, AnimatePresence } from 'motion/react';
@@ -508,6 +509,13 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
       className="cursor-pointer"
     >
         <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
+            <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
         {/* Subtle Background Gradient */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
           <div
@@ -1062,12 +1070,10 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   const lostAuctions = history.filter(a => a.status === 'lost');
   const { winRate, totalSpent, totalWon, netGain } = stats;
   
-    const formatDateTime = (value?: string | number | Date) => {
-      if (!value) return '--';
-      const date = new Date(value);
-      if (isNaN(date.getTime())) return '--';
-      return date.toLocaleString('en-IN', {
-
+  const formatDateTime = (value?: string | number | Date) => {
+    if (!value) return '--';
+    const date = new Date(value);
+    return date.toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       month: 'short',
       day: 'numeric',
@@ -1476,6 +1482,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
           className="mb-3 sm:mb-4 md:mb-6"
         >
           <Card className="relative overflow-hidden border-2 border-purple-300/60 bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-fuchsia-50/70 backdrop-blur-xl shadow-lg">
+              <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
             <CardContent className="p-2.5 sm:p-3 md:p-4">
               <div className="flex items-start gap-2 sm:gap-3">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl flex items-center justify-center shrink-0">
@@ -1501,6 +1514,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
         >
           {/* Mobile: Beautiful Premium Stats Card */}
             <Card className="sm:hidden relative overflow-hidden border-2 border-purple-300/60 backdrop-blur-2xl bg-gradient-to-br from-white/90 via-purple-50/60 to-violet-50/70 shadow-2xl">
+                <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
               {/* Animated Background Orb */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <motion.div
@@ -1549,6 +1569,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                   className="relative overflow-hidden"
                 >
                   <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-3 border-2 border-purple-200/60 shadow-lg relative overflow-hidden">
+                      <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                     <div className="flex items-center gap-1.5 mb-2 relative z-10">
                       <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center shadow-md">
                         <TrendingDown className="w-4 h-4 text-white" />
@@ -1596,6 +1623,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               className="lg:row-span-2"
             >
                 <Card className="relative overflow-hidden border-2 border-purple-300/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 via-purple-50/50 to-violet-50/60 shadow-2xl h-full">
+                    <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <motion.div
                     className="absolute w-64 h-64 rounded-full blur-3xl opacity-20"
@@ -1662,6 +1696,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 transition={{ delay: 0.25, duration: 0.5 }}
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 to-purple-50/60 shadow-xl">
+                    <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/10" />
                   <CardContent className="p-6 relative z-10">
                     <motion.div
@@ -1691,6 +1732,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 to-purple-50/60 shadow-xl">
+                    <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/10" />
                   <CardContent className="p-6 relative z-10">
                     <motion.div
@@ -1723,7 +1771,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 transition={{ delay: 0.35, duration: 0.5 }}
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 via-violet-50/50 to-fuchsia-50/60 shadow-xl">
-
+                    <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/10" />
                   <CardContent className="p-6 relative z-10">
                     <motion.div
@@ -1760,7 +1814,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     ? 'border-violet-200/60 bg-gradient-to-br from-white/80 via-violet-50/50 to-fuchsia-50/60'
                     : 'border-purple-200/60 bg-gradient-to-br from-white/80 to-purple-50/60'
                 }`}>
-
+                    <Snowfall 
+              color="#8B5CF6" 
+              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
+              radius={[0.5, 2.0]} 
+              speed={[0.5, 1.5]}
+              wind={[-0.5, 2.0]}
+            />
                   <div className={`absolute inset-0 ${
                     netGain >= 0
                       ? 'bg-gradient-to-br from-violet-500/5 to-fuchsia-500/10'
@@ -1816,6 +1876,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/80 shadow-2xl">
+              <Snowfall color="#8B5CF6" snowflakeCount={window.innerWidth < 768 ? 3 : 60} radius={[0.5, 2.0]} />
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <motion.div
                 className="absolute w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl opacity-10"
@@ -1962,19 +2023,17 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 </TabsContent>
 
                 <TabsContent value="lost" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
-                    {lostAuctions.length > 0 ? (
-                      lostAuctions.map((auction, index) => <AuctionCard 
-                        key={`${activeTab}-${auction.id}`}
-                        auction={auction}
-                        index={index}
-                        tabPrefix={activeTab}
-                        user={user}
-                        onViewDetails={onViewDetails}
-                        onClaimSuccess={() => fetchAuctionHistory()}
-                        userProfile={userProfile}
-                        serverTime={serverTime}
-                      />)
-
+                  {lostAuctions.length > 0 ? (
+                    lostAuctions.map((auction, index) => <AuctionCard 
+                      key={`${activeTab}-${auction.id}`}
+                      auction={auction}
+                      index={index}
+                      tabPrefix={activeTab}
+                      user={user}
+                      onViewDetails={onViewDetails}
+                      onClaimSuccess={() => fetchAuctionHistory()}
+                      userProfile={userProfile}
+                    />)
                   ) : (
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.9 }}

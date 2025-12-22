@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Clock, Shield, Zap, Users } from 'lucide-react';
+import Snowfall from 'react-snowfall';
 
 interface FooterProps {
   onNavigate?: (page: string) => void;
@@ -104,131 +105,154 @@ export function Footer({ onNavigate }: FooterProps) {
         />
       </div>
 
-        <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 relative z-10">
-         {/* Features Grid */}
-         <motion.div 
-           className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12"
-           variants={containerVariants}
-           initial="hidden"
-           whileInView="visible"
-           viewport={{ once: true, margin: "-100px" }}
-         >
-           {features.map((feature, index) => (
-               <motion.div
-                 key={index}
-                 variants={itemVariants}
-                 whileHover={{ y: -8, scale: 1.02 }}
-                 className="group relative"
-               >
-                 <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
-                   <div className="relative z-10">
-                     <motion.div 
-                       className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30`}
-                       whileHover={{ rotate: 360, scale: 1.1 }}
-                       transition={{ duration: 0.6 }}
-                     >
-                       <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
-                     </motion.div>
-                     <h3 className="text-xs sm:text-sm md:text-base text-purple-800 font-semibold px-1 sm:px-2 mt-2">
-                       {feature.title}
-                     </h3>
-                     <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 px-1 sm:px-2 leading-relaxed">
-                       {feature.description}
-                     </p>
-                   </div>
-                 </div>
-               </motion.div>
-           ))}
-         </motion.div>
+      <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 relative z-10">
+        {/* Features Grid */}
+        <motion.div 
+          className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+        >
+          {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="group relative"
+              >
+                <div className="text-center space-y-2 sm:space-y-3 bg-white/60 backdrop-blur-sm rounded-xl p-3 sm:p-4 md:p-5 border border-purple-200/50 shadow-inner shadow-purple-500/10 h-full transition-all hover:shadow-lg hover:shadow-purple-500/10 relative overflow-hidden">
+                    <Snowfall 
+                      color="#8B5CF6"
+                      snowflakeCount={window.innerWidth < 768 ? 3 : 40}
+                      radius={[0.5, 2.0]}
+                      speed={[0.5, 1.5]}
+                      wind={[-0.5, 2.0]}
+                    />
+                  <div className="relative z-10">
+                    <motion.div 
+                      className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/30`}
+                      whileHover={{ rotate: 360, scale: 1.1 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+                    </motion.div>
+                    <h3 className="text-xs sm:text-sm md:text-base text-purple-800 font-semibold px-1 sm:px-2 mt-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-[10px] sm:text-xs md:text-sm text-purple-600 px-1 sm:px-2 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+          ))}
+        </motion.div>
 
-         {/* How it Works */}
-         <motion.div 
-           className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-purple-200/50 shadow-inner shadow-purple-500/10 relative overflow-hidden"
-           initial={{ opacity: 0, y: 30 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true }}
-           transition={{ duration: 0.6, delay: 0.3 }}
-         >
-           {/* Card shine effect */}
-           <motion.div
-             className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
-             initial={{ x: '-100%', y: '-100%' }}
-             animate={{ x: '100%', y: '100%' }}
-             transition={{ 
-               duration: 3,
-               repeat: Infinity,
-               repeatDelay: 5,
-               ease: "easeInOut"
-             }}
-           />
+        {/* How it Works */}
+        <motion.div 
+          className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 border border-purple-200/50 shadow-inner shadow-purple-500/10 relative overflow-hidden"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+            <Snowfall 
+              color="#8B5CF6"
+              snowflakeCount={window.innerWidth < 768 ? 3 : 60}
+              radius={[0.5, 2.5]}
+              speed={[0.5, 2.0]}
+              wind={[-0.5, 2.5]}
+            />
+          {/* Card shine effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
+            initial={{ x: '-100%', y: '-100%' }}
+            animate={{ x: '100%', y: '100%' }}
+            transition={{ 
+              duration: 3,
+              repeat: Infinity,
+              repeatDelay: 5,
+              ease: "easeInOut"
+            }}
+          />
 
-           <motion.h2 
-             className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 text-center"
-             initial={{ opacity: 0, y: -10 }}
-             whileInView={{ opacity: 1, y: 0 }}
-             viewport={{ once: true }}
-             transition={{ duration: 0.5, delay: 0.4 }}
-           >
-             How Dream60 Works
-           </motion.h2>
-           
-           <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 relative">
-             {steps.map((step, index) => (
-               <motion.div
-                 key={index}
-                 className="space-y-2 sm:space-y-3 group"
-                 initial={{ opacity: 0, x: -20 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 viewport={{ once: true }}
-                 transition={{ duration: 0.5, delay: 0.5 + index * 0.15 }}
-                 whileHover={{ x: 4 }}
-               >
-                 <motion.div 
-                   className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg shadow-lg shadow-purple-500/30"
-                   whileHover={{ scale: 1.1, rotate: 360 }}
-                   transition={{ duration: 0.6 }}
-                 >
-                   {step.number}
-                 </motion.div>
-                 <h3 className="text-sm sm:text-base md:text-lg text-purple-800 font-semibold">
-                   {step.title}
-                 </h3>
-                 <p className="text-xs sm:text-sm text-purple-600 leading-relaxed">
-                   {step.description}
-                 </p>
-               </motion.div>
-             ))}
-           </div>
-         </motion.div>
+          <motion.h2 
+            className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-800 to-purple-600 bg-clip-text text-transparent mb-4 sm:mb-6 md:mb-8 text-center"
+            initial={{ opacity: 0, y: -10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            How Dream60 Works
+          </motion.h2>
+          
+          <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 relative">
+            {steps.map((step, index) => (
+              <motion.div
+                key={index}
+                className="space-y-2 sm:space-y-3 group"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.5 + index * 0.15 }}
+                whileHover={{ x: 4 }}
+              >
+                <motion.div 
+                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-base md:text-lg shadow-lg shadow-purple-500/30"
+                  whileHover={{ scale: 1.1, rotate: 360 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  {step.number}
+                </motion.div>
+                <h3 className="text-sm sm:text-base md:text-lg text-purple-800 font-semibold">
+                  {step.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-purple-600 leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
-           {/* Links Section */}
-           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-12 border-t border-purple-200/50 pt-12 text-center md:text-left">
-             <div className="space-y-4">
-               <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
-               <ul className="space-y-2">
-                 <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Quick Guide</button></li>
-                 <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Winning Tips</button></li>
-                 <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">AI Assistant</button></li>
-               </ul>
-             </div>
-             <div className="space-y-4">
-               <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
-               <ul className="space-y-2">
-                 <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Support Center</button></li>
-                 <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Contact Us</button></li>
-                 <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Terms of Service</button></li>
-                 <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Privacy Policy</button></li>
-               </ul>
-             </div>
-             <div className="space-y-4">
-               <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
-               <ul className="space-y-2">
-                 <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">My Profile</button></li>
-                 <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Transactions</button></li>
-                 <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction History</button></li>
-               </ul>
-             </div>
-           </div>
+          {/* Links Section */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12 border-t border-purple-200/50 pt-12 text-center md:text-left">
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Product</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('game')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Live Auctions</button></li>
+                <li><button onClick={() => onNavigate?.('rules')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction Rules</button></li>
+                <li><button onClick={() => onNavigate?.('participation')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Participation</button></li>
+                <li><button onClick={() => onNavigate?.('leaderboard')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Leaderboard</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Guides</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('view-guide')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Quick Guide</button></li>
+                <li><button onClick={() => onNavigate?.('winning-tips')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Winning Tips</button></li>
+                <li><button onClick={() => onNavigate?.('support-chat')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">AI Assistant</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Support</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('support')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Support Center</button></li>
+                <li><button onClick={() => onNavigate?.('contact')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Contact Us</button></li>
+                <li><button onClick={() => onNavigate?.('terms')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Terms of Service</button></li>
+                <li><button onClick={() => onNavigate?.('privacy')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Privacy Policy</button></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-purple-800 font-bold text-sm uppercase tracking-wider">Account</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => onNavigate?.('profile')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">My Profile</button></li>
+                <li><button onClick={() => onNavigate?.('transactions')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Transactions</button></li>
+                <li><button onClick={() => onNavigate?.('history')} className="text-purple-600 hover:text-purple-800 text-sm transition-colors">Auction History</button></li>
+              </ul>
+            </div>
+          </div>
 
           {/* Bottom Section */}
           <motion.div 

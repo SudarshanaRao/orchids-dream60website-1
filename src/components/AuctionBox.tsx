@@ -277,8 +277,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     
     // ✅ CRITICAL FIX: Check if user hasn't paid entry fee FIRST
     // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
-    // UNLESS winners are announced, in which case everyone should see the results
-    if (!userHasPaidEntry && !winnersAnnounced) {
+    if (!userHasPaidEntry) {
       return 'upcoming';
     }
     
