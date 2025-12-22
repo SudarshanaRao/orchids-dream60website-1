@@ -318,148 +318,70 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   // Show loading state
   if (isLoadingUser) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-white via-purple-50/30 to-white relative overflow-hidden">
         
         <div className="flex items-center justify-center min-h-screen relative z-10 px-4">
           <motion.div
-            className="text-center space-y-6"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Animated Rings */}
-            <div className="relative w-32 h-32 mx-auto">
-              {/* Outer ring */}
+            {/* Minimalist Premium Loader */}
+            <div className="relative w-24 h-24 mx-auto">
+              {/* Spinning Ring */}
               <motion.div
-                className="absolute inset-0 rounded-full border-4 border-purple-200"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.3, 0.1, 0.3],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
+                className="absolute inset-0 rounded-full border-[3px] border-purple-100"
               />
-              
-              {/* Middle ring */}
               <motion.div
-                className="absolute inset-2 rounded-full border-4 border-purple-400"
-                animate={{
-                  scale: [1, 1.15, 1],
-                  opacity: [0.5, 0.2, 0.5],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.3,
-                }}
-              />
-              
-              {/* Inner spinning circle */}
-              <motion.div
-                className="absolute inset-4 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-full flex items-center justify-center shadow-2xl shadow-purple-500/50"
+                className="absolute inset-0 rounded-full border-[3px] border-t-purple-600 border-r-transparent border-b-transparent border-l-transparent"
                 animate={{ rotate: 360 }}
                 transition={{
-                  duration: 2,
+                  duration: 0.8,
                   repeat: Infinity,
                   ease: "linear",
                 }}
+              />
+              
+              {/* Inner Pulsing Core */}
+              <motion.div
+                className="absolute inset-4 bg-gradient-to-br from-purple-600 to-violet-700 rounded-full flex items-center justify-center shadow-lg"
+                animate={{
+                  scale: [0.95, 1.05, 0.95],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
               >
-                <User className="w-12 h-12 text-white" />
+                <User className="w-8 h-8 text-white" />
               </motion.div>
-
-              {/* Orbiting dots */}
-              {[0, 1, 2, 3].map((i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-3 h-3 bg-purple-600 rounded-full"
-                  style={{
-                    top: '50%',
-                    left: '50%',
-                    marginTop: '-6px',
-                    marginLeft: '-6px',
-                  }}
-                  animate={{
-                    x: [0, Math.cos((i * Math.PI) / 2) * 60, 0],
-                    y: [0, Math.sin((i * Math.PI) / 2) * 60, 0],
-                    scale: [1, 1.5, 1],
-                    opacity: [1, 0.5, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.2,
-                  }}
-                />
-              ))}
             </div>
 
-            {/* Loading text with gradient */}
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+            <div className="space-y-3">
+              <h2 className="text-xl font-bold text-purple-900 tracking-tight">
                 Loading Your Profile
               </h2>
-              <motion.p
-                className="text-purple-600 font-medium"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                Just a moment, we're preparing your account...
-              </motion.p>
-            </motion.div>
-
-            {/* Loading progress dots */}
-            <div className="flex items-center justify-center gap-2">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-2 h-2 bg-purple-600 rounded-full"
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.3, 1, 0.3],
-                  }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: i * 0.2,
-                  }}
-                />
-              ))}
+              <div className="flex items-center justify-center gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 h-1.5 bg-purple-600 rounded-full"
+                    animate={{
+                      scale: [1, 1.5, 1],
+                      opacity: [0.3, 1, 0.3],
+                    }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.15,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
-
-            {/* Shimmer effect bar */}
-            <motion.div
-              className="w-64 h-1 bg-purple-100 rounded-full overflow-hidden mx-auto"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              <motion.div
-                className="h-full bg-gradient-to-r from-purple-600 via-purple-700 to-purple-600 rounded-full"
-                animate={{
-                  x: ['-100%', '200%'],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-            </motion.div>
           </motion.div>
         </div>
       </div>

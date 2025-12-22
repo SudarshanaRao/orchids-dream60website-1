@@ -32,21 +32,22 @@ interface TransactionHistoryPageProps {
   onBack: () => void;
 }
 
-interface TransactionItem {
-  paymentType: 'ENTRY_FEE' | 'PRIZE_CLAIM' | string;
-  amount: number;
-  currency?: string;
-  status: string;
-  orderId?: string;
-  paymentId?: string;
-  auctionId?: string;
-  auctionName?: string | null;
-  timeSlot?: string | null;
-  createdAt?: string | number | Date;
-  updatedAt?: string | number | Date;
-  paidAt?: string | number | Date | null;
-  roundNumber?: number | null;
-  productName?: string | null;
+  interface TransactionItem {
+    id?: string;
+    paymentType: 'ENTRY_FEE' | 'PRIZE_CLAIM' | string;
+    amount: number;
+    currency?: string;
+    status: string;
+    orderId?: string;
+    paymentId?: string;
+    auctionId?: string;
+    auctionName?: string | null;
+    timeSlot?: string | null;
+    createdAt?: string | number | Date;
+    updatedAt?: string | number | Date;
+    paidAt?: string | number | Date | null;
+    roundNumber?: number | null;
+    productName?: string | null;
     productTimeSlot?: string | null;
     productValue?: number | null;
     prizeWorth?: number | null;
@@ -229,7 +230,13 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   const openDetails = (tx: TransactionItem) => {
     setSelectedTransaction(tx);
     sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(tx));
-    const orderId = tx.orderId || tx.paymentId;
+    const orderId = tx.orderId || tx.paymentId || tx.id;
+    
+    // Explicitly fetch fresh data when opening
+    if (orderId) {
+      fetchTransactionDetail(orderId);
+    }
+
     try {
       const path = orderId ? `/transactions/details?orderId=${encodeURIComponent(orderId)}` : '/transactions/details';
       window.history.pushState({}, '', path);

@@ -502,16 +502,17 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
           console.log('✅ Prize claim data received from verification:', response.data);
           
-          // ✅ Show Success Modal
-          setShowSuccessModal({
-            amount: auction.lastRoundBidAmount,
-            type: 'claim',
-            productName: auction.prize,
-            productWorth: auction.prizeValue,
-            auctionId: auction.hourlyAuctionId,
-            paidBy: currentUserName,
-            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay'
-          });
+            // ✅ Show Success Modal
+            setShowSuccessModal({
+              amount: auction.lastRoundBidAmount,
+              type: 'claim',
+              productName: auction.prize,
+              productWorth: auction.prizeValue,
+              auctionId: auction.hourlyAuctionId,
+              paidBy: currentUserName,
+              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay',
+              paymentId: response.data?.payment?.razorpayPaymentId || `CLAIM-${Date.now()}`
+            });
 
           // ✅ Update local state immediately - no page reload
           setAuction(prev => ({
@@ -539,14 +540,15 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
         (error) => {
           console.error('Prize claim payment failed:', error);
           
-          setShowFailureModal({
-            amount: auction.lastRoundBidAmount,
-            type: 'claim',
-            errorMessage: error || 'Failed to process prize claim payment',
-            productName: auction.prize,
-            auctionId: auction.hourlyAuctionId,
-            paidBy: currentUserName
-          });
+            setShowFailureModal({
+              amount: auction.lastRoundBidAmount,
+              type: 'claim',
+              errorMessage: error || 'Failed to process prize claim payment',
+              productName: auction.prize,
+              auctionId: auction.hourlyAuctionId,
+              paidBy: currentUserName,
+              paymentId: `FAILED-${Date.now()}`
+            });
 
           toast.error('Payment Failed', {
             description: error || 'Failed to process prize claim payment',
@@ -1544,6 +1546,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           auctionId={showSuccessModal.auctionId}
           paidBy={showSuccessModal.paidBy}
           paymentMethod={showSuccessModal.paymentMethod}
+          paymentId={showSuccessModal.paymentId}
           onBackToHome={() => setShowSuccessModal(null)}
           onClose={() => setShowSuccessModal(null)}
         />
@@ -1558,6 +1561,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           productName={showFailureModal.productName}
           auctionId={showFailureModal.auctionId}
           paidBy={showFailureModal.paidBy}
+          paymentId={showFailureModal.paymentId}
           onRetry={() => {
             setShowFailureModal(null);
             setShowClaimForm(true);

@@ -15,126 +15,130 @@ interface PaymentFailureProps {
   productWorth?: number;
   timeSlot?: string;
   paidBy?: string;
-  paymentMethod?: string;
-  onRetry: () => void;
-  onBackToHome: () => void;
-  onClose?: () => void;
-}
-
-export function PaymentFailure({ 
-  amount, 
-  type = 'entry',
-  errorMessage = 'Payment processing failed',
-  auctionId,
-  auctionNumber,
-  productName = 'Auction Participation',
-  productWorth,
-  timeSlot,
-  paidBy,
-  paymentMethod = 'UPI / Razorpay',
-  onRetry,
-  onBackToHome,
-  onClose
-}: PaymentFailureProps) {
-  const [countdown, setCountdown] = useState(5);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    if (countdown === 0) {
-      onBackToHome();
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 1));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [countdown, onBackToHome]);
-
-  const downloadReceipt = () => {
-    const doc = jsPDF ? new jsPDF() : null;
-    if (!doc) return;
-
-    const rose = [225, 29, 72]; 
-    const darkSlate = [30, 41, 59];
-    const gray = [107, 114, 128];
-    
-    // Header section with brand color
-    doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
-    doc.rect(0, 0, 210, 45, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(28);
-    doc.setFont('helvetica', 'bold');
-    doc.text('DREAM60 INDIA', 20, 30);
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
-
-    doc.setFontSize(18);
-    doc.text('FAILURE REPORT', 140, 30);
-    
-    // Info line
-    doc.setFillColor(254, 242, 242);
-    doc.rect(0, 45, 210, 15, 'F');
-    doc.setTextColor(rose[0], rose[1], rose[2]);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    const scenarios = {
-      entry: 'ENTRY FAILURE',
-      bid: 'BID FAILURE',
-      claim: 'PRIZE CLAIM FAILURE'
-    };
-    
-    doc.text(`Scenario: ${scenarios[type as keyof typeof scenarios] || 'PAYMENT FAILURE'}`, 20, 55);
-    doc.text(`Status: TRANSACTION UNSUCCESSFUL`, 140, 55);
-
-    // Main content
-    let curY = 80;
-    doc.setTextColor(31, 41, 55);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Transaction Attempt Details', 20, 72);
-    
-    doc.setDrawColor(229, 231, 235);
-    doc.line(20, 75, 190, 75);
-
-    const drawDetailRow = (label: string, value: string, isError = false) => {
-      doc.setFont('helvetica', 'normal');
+    paymentMethod?: string;
+    paymentId?: string;
+    onRetry: () => void;
+    onBackToHome: () => void;
+    onClose?: () => void;
+  }
+  
+  export function PaymentFailure({ 
+    amount, 
+    type = 'entry',
+    errorMessage = 'Payment processing failed',
+    auctionId,
+    auctionNumber,
+    productName = 'Auction Participation',
+    productWorth,
+    timeSlot,
+    paidBy,
+    paymentMethod = 'UPI / Razorpay',
+    paymentId,
+    onRetry,
+    onBackToHome,
+    onClose
+  }: PaymentFailureProps) {
+    const [countdown, setCountdown] = useState(5);
+    const [isMobile, setIsMobile] = useState(false);
+  
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+  
+    useEffect(() => {
+      if (countdown === 0) {
+        onBackToHome();
+        return;
+      }
+  
+      // Fast forward interval (600ms)
+      const interval = setInterval(() => {
+        setCountdown((prev) => Math.max(0, prev - 1));
+      }, 600);
+  
+      return () => clearInterval(interval);
+    }, [countdown, onBackToHome]);
+  
+    const downloadReceipt = () => {
+      const doc = jsPDF ? new jsPDF() : null;
+      if (!doc) return;
+  
+      const rose = [225, 29, 72]; 
+      const darkSlate = [30, 41, 59];
+      const gray = [107, 114, 128];
+      
+      // Header section with brand color
+      doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+      doc.rect(0, 0, 210, 45, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DREAM60 INDIA', 20, 30);
+      
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
+  
+      doc.setFontSize(18);
+      doc.text('FAILURE REPORT', 140, 30);
       
-      doc.setTextColor(gray[0], gray[1], gray[2]);
-      doc.text(label, 25, curY);
+      // Info line
+      doc.setFillColor(254, 242, 242);
+      doc.rect(0, 45, 210, 15, 'F');
+      doc.setTextColor(rose[0], rose[1], rose[2]);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      const scenarios = {
+        entry: 'ENTRY FAILURE',
+        bid: 'BID FAILURE',
+        claim: 'PRIZE CLAIM FAILURE'
+      };
       
+      doc.text(`Scenario: ${scenarios[type as keyof typeof scenarios] || 'PAYMENT FAILURE'}`, 20, 55);
+      doc.text(`Status: TRANSACTION UNSUCCESSFUL`, 140, 55);
+  
+      // Main content
+      let curY = 80;
       doc.setTextColor(31, 41, 55);
-      if (isError) doc.setTextColor(rose[0], rose[1], rose[2]);
-      doc.text(value || 'N/A', 100, curY);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Transaction Attempt Details', 20, 72);
       
-      doc.setDrawColor(243, 244, 246);
-      doc.line(20, curY + 4, 190, curY + 4);
-      curY += 12;
-    };
-
-    const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Payment' : 'Auction Bid';
-
-    drawDetailRow('Service Type', auctionType);
-    drawDetailRow('Customer Name', paidBy || 'Valued Player');
-    drawDetailRow('Product Name', productName);
-    drawDetailRow('Auction ID', auctionId || 'N/A');
-    if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
-    drawDetailRow('Amount Attempted', `INR ${amount.toLocaleString('en-IN')}`);
-    drawDetailRow('Payment Method', paymentMethod);
-    curY += 5;
-    drawDetailRow('ERROR MESSAGE', errorMessage.substring(0, 60), true);
+      doc.setDrawColor(229, 231, 235);
+      doc.line(20, 75, 190, 75);
+  
+      const drawDetailRow = (label: string, value: string, isError = false) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        
+        doc.setTextColor(gray[0], gray[1], gray[2]);
+        doc.text(label, 25, curY);
+        
+        doc.setTextColor(31, 41, 55);
+        if (isError) doc.setTextColor(rose[0], rose[1], rose[2]);
+        doc.text(value || 'N/A', 100, curY);
+        
+        doc.setDrawColor(243, 244, 246);
+        doc.line(20, curY + 4, 190, curY + 4);
+        curY += 12;
+      };
+  
+      const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Payment' : 'Auction Bid';
+  
+      drawDetailRow('Service Type', auctionType);
+      drawDetailRow('Customer Name', paidBy || 'Valued Player');
+      drawDetailRow('Product Name', productName);
+      drawDetailRow('Auction ID', auctionId || 'N/A');
+      if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
+      drawDetailRow('Amount Attempted', `INR ${amount.toLocaleString('en-IN')}`);
+      drawDetailRow('Payment Method', paymentMethod);
+      if (paymentId) drawDetailRow('Order ID/Payment ID', paymentId);
+      curY += 5;
+      drawDetailRow('ERROR MESSAGE', errorMessage.substring(0, 60), true);
 
     // Warning Stamp
     curY += 30;
