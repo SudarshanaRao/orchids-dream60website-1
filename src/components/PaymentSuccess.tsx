@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 
 interface PaymentSuccessProps {
   amount: number;
-  type: 'entry' | 'bid';
+  type: 'entry' | 'bid' | 'claim';
   boxNumber?: number;
   auctionId?: string;
   auctionNumber?: string | number;
@@ -61,83 +61,180 @@ export function PaymentSuccess({
     const doc = jsPDF ? new jsPDF() : null;
     if (!doc) return;
 
-    const primaryColor = [16, 185, 129]; // Emerald theme for success
-    const secondaryColor = [31, 41, 55]; // Gray-800
+    // Theme Colors based on type
+    const themes = {
+      entry: { primary: [16, 185, 129], bg: [240, 253, 244], label: 'ENTRY SUCCESS' },
+      bid: { primary: [59, 130, 246], bg: [239, 246, 255], label: 'BID SUCCESS' },
+      claim: { primary: [217, 119, 6], bg: [255, 251, 235], label: 'PRIZE CLAIM SUCCESS' }
+    };
     
-    // Header section
-    doc.setFillColor(243, 244, 246);
-    doc.rect(0, 0, 210, 40, 'F');
+    const theme = themes[type as keyof typeof themes] || themes.entry;
+    const darkViolet = [83, 49, 123];
+    const gray = [107, 114, 128];
     
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFontSize(24);
+    // Header section with brand color
+    doc.setFillColor(darkViolet[0], darkViolet[1], darkViolet[2]);
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
-    doc.text('DREAM60 INDIA', 20, 25);
+    doc.text('DREAM60 INDIA', 20, 30);
     
-    doc.setTextColor(107, 114, 128);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('OFFICIAL PAYMENT CONFIRMATION', 20, 32);
+    doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
 
-    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
     doc.setFontSize(18);
-    doc.text('Payment Receipt', 140, 25);
+    doc.text('OFFICIAL RECEIPT', 140, 30);
     
-    // Content Table
-    let curY = 60;
-    const tableX = 20;
-    const col1X = 25;
-    const col2X = 80;
-    const rowHeight = 12;
+    // Receipt info line
+    doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
+    doc.rect(0, 45, 210, 15, 'F');
+    doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Scenario: ${theme.label}`, 20, 55);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`, 100, 55);
+    doc.text(`ID: TXN-${Math.floor(Date.now() / 1000)}`, 160, 55);
 
+    // Main content
+    let curY = 80;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transaction Details', 20, 72);
+    
     doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.1);
+    doc.line(20, 75, 190, 75);
 
-    const drawRow = (label: string, value: string) => {
-      doc.setFillColor(255, 255, 255);
-      doc.rect(tableX, curY, 170, rowHeight, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(75, 85, 99);
-      doc.text(label + ':', col1X, curY + 8);
-      doc.setFont('helvetica', 'normal');
+    const drawDetailRow = (label: string, value: string, isTotal = false) => {
+      if (isTotal) {
+        doc.setFillColor(theme.bg[0], theme.bg[1], theme.bg[2]);
+        doc.rect(20, curY - 8, 170, 12, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+      }
+      
+      doc.setTextColor(gray[0], gray[1], gray[2]);
+      doc.text(label, 25, curY);
+      
       doc.setTextColor(31, 41, 55);
-      doc.text(value || 'N/A', col2X, curY + 8);
-      doc.line(tableX, curY + rowHeight, tableX + 170, curY + rowHeight);
-      curY += rowHeight;
+      if (isTotal) doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
+      doc.text(value || 'N/A', 100, curY);
+      
+      doc.setDrawColor(243, 244, 246);
+      doc.line(20, curY + 4, 190, curY + 4);
+      curY += 12;
     };
 
-    drawRow('Received from', paidBy || 'Valued User');
-    drawRow('Product Name', productName);
-    drawRow('Product Value', `INR ${productWorth?.toLocaleString('en-IN') || 'TBD'}`);
-    drawRow('Auction ID', auctionId || 'N/A');
-    drawRow('Auction Number', String(auctionNumber || 'N/A'));
-    drawRow('Time Slot', timeSlot || 'Active');
-    drawRow('Payment Method', paymentMethod);
-    drawRow('Amount Paid', `INR ${amount.toLocaleString('en-IN')}`);
-    drawRow('Date of Payment', new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }));
-    drawRow('Transaction ID', `TXN-${Math.floor(Date.now() / 1000)}`);
+    const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Fee' : 'Auction Bid';
+    const detailLabel = type === 'entry' ? 'Registration for' : 'Product Name';
 
-    // Status Message
-    curY += 20;
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    drawDetailRow('Service Type', auctionType);
+    drawDetailRow('Customer Name', paidBy || 'Valued Player');
+    drawDetailRow(detailLabel, productName);
+    drawDetailRow('Prize Worth', `INR ${productWorth?.toLocaleString('en-IN') || 'TBD'}`);
+    drawDetailRow('Auction ID', auctionId || 'N/A');
+    if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
+    drawDetailRow('Payment Method', paymentMethod);
+    curY += 5;
+    drawDetailRow('TOTAL AMOUNT PAID', `INR ${amount.toLocaleString('en-IN')}`, true);
+
+    // Authenticity Stamp
+    curY += 30;
+    doc.setDrawColor(theme.primary[0], theme.primary[1], theme.primary[2]);
+    doc.setLineWidth(0.5);
+    doc.rect(140, curY - 15, 45, 20);
+    doc.setTextColor(theme.primary[0], theme.primary[1], theme.primary[2]);
     doc.setFontSize(10);
-    doc.text('Thank you for your payment. This transaction has been successfully processed.', 20, curY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('VERIFIED', 152, curY - 5);
+    doc.setFontSize(7);
+    doc.text('OFFICIALLY SIGNED', 147, curY);
+
+    // Important Info
+    curY += 10;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Important Information:', 20, curY);
+    curY += 6;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    const notes = type === 'claim' ? [
+      '• This receipt confirms your official claim for the auction prize.',
+      '• Your Amazon Voucher will be sent to your registered email.',
+      '• Delivery usually takes 24-48 business hours.',
+      '• Please keep this receipt for future reference.'
+    ] : [
+      '• This receipt confirms your participation in the specified auction.',
+      '• Entry fees are non-refundable once the auction begins.',
+      '• If you win, you will be notified via email and in-app notifications.',
+      '• For any queries, please provide the Transaction ID mentioned above.'
+    ];
+    notes.forEach(note => {
+      doc.text(note, 20, curY);
+      curY += 5;
+    });
 
     // Footer
     doc.setFillColor(249, 250, 251);
-    doc.rect(0, 270, 210, 27, 'F');
-    doc.setTextColor(107, 114, 128);
+    doc.rect(0, 275, 210, 22, 'F');
+    doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFontSize(8);
-    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 280, { align: 'center' });
-    doc.text('This is a computer-generated receipt and does not require a physical signature.', 105, 285, { align: 'center' });
+    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 285, { align: 'center' });
+    doc.text('Computer Generated document. No signature required.', 105, 290, { align: 'center' });
     
-    doc.save(`Dream60_Receipt_${auctionId || Date.now()}.pdf`);
+    doc.save(`Dream60_${type}_Receipt_${Date.now()}.pdf`);
+  };
+
+  const getGradient = () => {
+    if (type === 'claim') return 'from-amber-400 to-orange-600';
+    if (type === 'bid') return 'from-blue-400 to-blue-600';
+    return 'from-green-400 to-emerald-600';
+  };
+
+  const getIconColor = () => {
+    if (type === 'claim') return 'text-orange-500';
+    if (type === 'bid') return 'text-blue-500';
+    return 'text-green-500';
+  };
+
+  const getSubTitle = () => {
+    if (type === 'claim') return 'Congratulations! Your prize has been claimed.';
+    if (type === 'entry') return 'You are now registered for this auction!';
+    return 'Your bid has been placed successfully!';
+  };
+
+  const getAmountColor = () => {
+    if (type === 'claim') return 'text-orange-600';
+    if (type === 'bid') return 'text-blue-600';
+    return 'text-emerald-600';
+  };
+
+  const getButtonColor = () => {
+    if (type === 'claim') return 'bg-orange-500 hover:bg-orange-600';
+    if (type === 'bid') return 'bg-blue-500 hover:bg-blue-600';
+    return 'bg-emerald-500 hover:bg-emerald-600';
+  };
+
+  const borderTheme = {
+    entry: 'border-emerald-100 text-emerald-600 hover:bg-emerald-50',
+    bid: 'border-blue-100 text-blue-600 hover:bg-blue-50',
+    claim: 'border-orange-100 text-orange-600 hover:bg-orange-50'
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
       <Snowfall 
-        color="#10B981"
+        color={type === 'claim' ? '#F59E0B' : type === 'bid' ? '#3B82F6' : '#10B981'}
         snowflakeCount={isMobile ? 10 : 40}
         radius={[0.8, 2.5]}
         speed={[0.6, 1.5]}
@@ -159,7 +256,7 @@ export function PaymentSuccess({
       exit={{ opacity: 0, scale: 0.9, y: 40 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
     >
-      <div className="bg-gradient-to-br from-green-400 to-emerald-600 p-8 flex flex-col items-center relative overflow-hidden">
+      <div className={`bg-gradient-to-br ${getGradient()} p-8 flex flex-col items-center relative overflow-hidden`}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
         
@@ -169,7 +266,11 @@ export function PaymentSuccess({
           animate={{ scale: 1 }}
           transition={{ type: "spring", delay: 0.2 }}
         >
-          <Check className="w-10 h-10 text-green-500" strokeWidth={4} />
+          {type === 'claim' ? (
+            <Trophy className={`w-10 h-10 ${getIconColor()}`} strokeWidth={3} />
+          ) : (
+            <Check className={`w-10 h-10 ${getIconColor()}`} strokeWidth={4} />
+          )}
         </motion.div>
         
         <motion.div
@@ -179,11 +280,13 @@ export function PaymentSuccess({
           className="mt-4 text-center"
         >
           <div className="bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-white text-[10px] font-bold uppercase tracking-widest mb-1 inline-block">
-            Success
+            {type === 'claim' ? 'Claim Processed' : 'Success'}
           </div>
-          <h2 className="text-white text-2xl font-bold tracking-tight">Payment Complete</h2>
-          <p className="text-white/80 text-xs font-medium mt-0.5">
-            {type === 'entry' ? 'You are now registered for this auction!' : 'Your bid has been placed successfully!'}
+          <h2 className="text-white text-2xl font-bold tracking-tight">
+            {type === 'claim' ? 'Congratulations!' : 'Payment Complete'}
+          </h2>
+          <p className="text-white/80 text-xs font-medium mt-0.5 max-w-[250px] mx-auto">
+            {getSubTitle()}
           </p>
         </motion.div>
       </div>
@@ -192,32 +295,36 @@ export function PaymentSuccess({
           <div className="space-y-4">
             <div className="text-center">
               <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">
-                Transaction Details
+                Transaction Summary
               </p>
               <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-500">Service</span>
-                  <span className="text-gray-900 font-bold">{type === 'entry' ? 'Auction Entry Fee' : 'Auction Bid'}</span>
+                  <span className="text-gray-900 font-bold">
+                    {type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Payment' : 'Auction Bid'}
+                  </span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500">Product</span>
+                  <span className="text-gray-500">Subject</span>
                   <span className="text-gray-900 font-semibold truncate max-w-[150px]">{productName}</span>
                 </div>
 
                 <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-gray-500">Paid By</span>
+                  <span className="text-gray-500">Player</span>
                   <span className="text-gray-900 font-medium">{paidBy || 'Member'}</span>
                 </div>
                 
                 <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100 italic">
-                  <span className="text-gray-400">Time Slot</span>
-                  <span className="text-gray-600 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
+                  <span className="text-gray-400">{type === 'claim' ? 'Prize Worth' : 'Time Slot'}</span>
+                  <span className="text-gray-600 font-medium">
+                    {type === 'claim' ? `₹${productWorth?.toLocaleString('en-IN')}` : (timeSlot || String(auctionNumber) || 'Active')}
+                  </span>
                 </div>
 
                 <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
                   <span className="text-gray-500 font-medium">Amount Paid</span>
-                  <span className="text-emerald-600 font-black flex items-center gap-0.5 text-lg">
+                  <span className={`${getAmountColor()} font-black flex items-center gap-0.5 text-lg`}>
                     <IndianRupee className="w-4 h-4" />
                     {amount.toLocaleString('en-IN')}
                   </span>
@@ -230,7 +337,7 @@ export function PaymentSuccess({
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   onClick={onBackToHome}
-                  className="h-11 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                  className={`h-11 ${getButtonColor()} text-white rounded-xl font-bold text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2`}
                 >
                   <Home className="w-4 h-4" />
                   Home
@@ -239,7 +346,7 @@ export function PaymentSuccess({
                 <Button
                   onClick={downloadReceipt}
                   variant="outline"
-                  className="h-11 border-2 border-emerald-100 text-emerald-600 hover:bg-emerald-50 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  className={`h-11 ${borderTheme[type as keyof typeof borderTheme] || borderTheme.entry} rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2`}
                 >
                   <Download className="w-4 h-4" />
                   Receipt
@@ -248,9 +355,9 @@ export function PaymentSuccess({
               
               <div className="flex flex-col items-center gap-1.5 pt-1">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-3 h-3 text-emerald-500" />
+                  <Clock className={`w-3 h-3 ${getAmountColor()}`} />
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Closing in <span className="text-emerald-500 text-sm font-black">{countdown}s</span>
+                    Auto-close in <span className={`${getAmountColor()} text-sm font-black`}>{countdown}s</span>
                   </span>
                 </div>
                 <div className="flex gap-1">
@@ -259,7 +366,7 @@ export function PaymentSuccess({
                       key={i} 
                       animate={{ 
                         width: i <= (5 - countdown + 1) ? 24 : 8,
-                        backgroundColor: i <= (5 - countdown + 1) ? '#10B981' : '#F3F4F6'
+                        backgroundColor: i <= (5 - countdown + 1) ? (type === 'claim' ? '#F59E0B' : type === 'bid' ? '#3B82F6' : '#10B981') : '#F3F4F6'
                       }}
                       className="h-1 rounded-full"
                     />

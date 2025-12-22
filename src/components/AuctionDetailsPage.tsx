@@ -81,6 +81,9 @@ interface AuctionDetailsData {
   }
 
 
+import { PaymentSuccess } from './PaymentSuccess';
+import { PaymentFailure } from './PaymentFailure';
+
 export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
   const [auction, setAuction] = useState(initialAuction);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,6 +91,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   const [timeLeft, setTimeLeft] = useState('');
   const [showClaimForm, setShowClaimForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // NEW: Payment status state
+  const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
+  const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
   
   const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
     round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
@@ -495,6 +502,17 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
           console.log('✅ Prize claim data received from verification:', response.data);
           
+          // ✅ Show Success Modal
+          setShowSuccessModal({
+            amount: auction.lastRoundBidAmount,
+            type: 'claim',
+            productName: auction.prize,
+            productWorth: auction.prizeValue,
+            auctionId: auction.hourlyAuctionId,
+            paidBy: currentUserName,
+            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay'
+          });
+
           // ✅ Update local state immediately - no page reload
           setAuction(prev => ({
             ...prev,
@@ -520,6 +538,16 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
         },
         (error) => {
           console.error('Prize claim payment failed:', error);
+          
+          setShowFailureModal({
+            amount: auction.lastRoundBidAmount,
+            type: 'claim',
+            errorMessage: error || 'Failed to process prize claim payment',
+            productName: auction.prize,
+            auctionId: auction.hourlyAuctionId,
+            paidBy: currentUserName
+          });
+
           toast.error('Payment Failed', {
             description: error || 'Failed to process prize claim payment',
           });
@@ -1505,6 +1533,39 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           </>
         )}
       </main>
+
+      {/* Payment Success Modal */}
+      {showSuccessModal && (
+        <PaymentSuccess
+          amount={showSuccessModal.amount}
+          type={showSuccessModal.type}
+          productName={showSuccessModal.productName}
+          productWorth={showSuccessModal.productWorth}
+          auctionId={showSuccessModal.auctionId}
+          paidBy={showSuccessModal.paidBy}
+          paymentMethod={showSuccessModal.paymentMethod}
+          onBackToHome={() => setShowSuccessModal(null)}
+          onClose={() => setShowSuccessModal(null)}
+        />
+      )}
+
+      {/* Payment Failure Modal */}
+      {showFailureModal && (
+        <PaymentFailure
+          amount={showFailureModal.amount}
+          type={showFailureModal.type}
+          errorMessage={showFailureModal.errorMessage}
+          productName={showFailureModal.productName}
+          auctionId={showFailureModal.auctionId}
+          paidBy={showFailureModal.paidBy}
+          onRetry={() => {
+            setShowFailureModal(null);
+            setShowClaimForm(true);
+          }}
+          onBackToHome={() => setShowFailureModal(null)}
+          onClose={() => setShowFailureModal(null)}
+        />
+      )}
     </div>
   );
 }

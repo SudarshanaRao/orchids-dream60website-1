@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 
 interface PaymentFailureProps {
   amount: number;
+  type?: 'entry' | 'bid' | 'claim';
   errorMessage?: string;
   auctionId?: string;
   auctionNumber?: string | number;
@@ -22,6 +23,7 @@ interface PaymentFailureProps {
 
 export function PaymentFailure({ 
   amount, 
+  type = 'entry',
   errorMessage = 'Payment processing failed',
   auctionId,
   auctionNumber,
@@ -61,73 +63,112 @@ export function PaymentFailure({
     const doc = jsPDF ? new jsPDF() : null;
     if (!doc) return;
 
-    const primaryColor = [239, 68, 68]; // Red theme for failure
-    const secondaryColor = [31, 41, 55]; // Gray-800
+    const rose = [225, 29, 72]; 
+    const darkSlate = [30, 41, 59];
+    const gray = [107, 114, 128];
     
-    // Header section
-    doc.setFillColor(254, 242, 242);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Header section with brand color
+    doc.setFillColor(darkSlate[0], darkSlate[1], darkSlate[2]);
+    doc.rect(0, 0, 210, 45, 'F');
     
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFontSize(24);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
-    doc.text('DREAM60 INDIA', 20, 25);
+    doc.text('DREAM60 INDIA', 20, 30);
     
-    doc.setTextColor(107, 114, 128);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('PAYMENT ATTEMPT REPORT', 20, 32);
+    doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
 
-    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
     doc.setFontSize(18);
-    doc.text('Failure Report', 140, 25);
+    doc.text('FAILURE REPORT', 140, 30);
     
-    // Content Table
-    let curY = 60;
-    const tableX = 20;
-    const col1X = 25;
-    const col2X = 80;
-    const rowHeight = 12;
+    // Info line
+    doc.setFillColor(254, 242, 242);
+    doc.rect(0, 45, 210, 15, 'F');
+    doc.setTextColor(rose[0], rose[1], rose[2]);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Scenario: ${type === 'claim' ? 'PRIZE CLAIM FAILURE' : 'PAYMENT FAILURE'}`, 20, 55);
+    doc.text(`Status: TRANSACTION UNSUCCESSFUL`, 140, 55);
 
+    // Main content
+    let curY = 80;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transaction Attempt Details', 20, 72);
+    
     doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.1);
+    doc.line(20, 75, 190, 75);
 
-    const drawRow = (label: string, value: string) => {
-      doc.setFillColor(255, 255, 255);
-      doc.rect(tableX, curY, 170, rowHeight, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(75, 85, 99);
-      doc.text(label + ':', col1X, curY + 8);
+    const drawDetailRow = (label: string, value: string, isError = false) => {
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      
+      doc.setTextColor(gray[0], gray[1], gray[2]);
+      doc.text(label, 25, curY);
+      
       doc.setTextColor(31, 41, 55);
-      doc.text(value || 'N/A', col2X, curY + 8);
-      doc.line(tableX, curY + rowHeight, tableX + 170, curY + rowHeight);
-      curY += rowHeight;
+      if (isError) doc.setTextColor(rose[0], rose[1], rose[2]);
+      doc.text(value || 'N/A', 100, curY);
+      
+      doc.setDrawColor(243, 244, 246);
+      doc.line(20, curY + 4, 190, curY + 4);
+      curY += 12;
     };
 
-    drawRow('Attempted by', paidBy || 'Valued User');
-    drawRow('Product Name', productName);
-    drawRow('Auction ID', auctionId || 'N/A');
-    drawRow('Time Slot', timeSlot || 'Active');
-    drawRow('Payment Method', paymentMethod);
-    drawRow('Amount Attempted', `INR ${amount.toLocaleString('en-IN')}`);
-    drawRow('Status', 'FAILED / DECLINED');
-    drawRow('Error Message', errorMessage.substring(0, 50));
-    drawRow('Date', new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }));
+    const auctionType = type === 'entry' ? 'Auction Entry Fee' : type === 'claim' ? 'Prize Claim Payment' : 'Auction Bid';
 
-    // Message
-    curY += 20;
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    drawDetailRow('Service Type', auctionType);
+    drawDetailRow('Customer Name', paidBy || 'Valued Player');
+    drawDetailRow('Product Name', productName);
+    drawDetailRow('Auction ID', auctionId || 'N/A');
+    if (type !== 'claim') drawDetailRow('Auction Time Slot', timeSlot || 'Active');
+    drawDetailRow('Amount Attempted', `INR ${amount.toLocaleString('en-IN')}`);
+    drawDetailRow('Payment Method', paymentMethod);
+    curY += 5;
+    drawDetailRow('ERROR MESSAGE', errorMessage.substring(0, 60), true);
+
+    // Warning Stamp
+    curY += 30;
+    doc.setDrawColor(rose[0], rose[1], rose[2]);
+    doc.setLineWidth(0.5);
+    doc.rect(140, curY - 15, 45, 20);
+    doc.setTextColor(rose[0], rose[1], rose[2]);
     doc.setFontSize(10);
-    doc.text('We encountered an issue while processing your payment. Please try again or contact support.', 20, curY);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FAILED', 155, curY - 5);
+    doc.setFontSize(7);
+    doc.text('UNSUCCESSFUL ATTEMPT', 142, curY);
+
+    // Action Steps
+    curY += 10;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Next Steps:', 20, curY);
+    curY += 6;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    const notes = [
+      '• Check your internet connection and try again.',
+      '• Ensure you have sufficient balance in your account.',
+      '• If money was deducted, it will be refunded within 5-7 business days.',
+      '• Contact support@dream60.com with above attempt details for help.'
+    ];
+    notes.forEach(note => {
+      doc.text(note, 20, curY);
+      curY += 5;
+    });
 
     // Footer
-    doc.setFillColor(254, 242, 242);
-    doc.rect(0, 270, 210, 27, 'F');
-    doc.setTextColor(107, 114, 128);
+    doc.setFillColor(249, 250, 251);
+    doc.rect(0, 275, 210, 22, 'F');
+    doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFontSize(8);
-    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 280, { align: 'center' });
+    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 285, { align: 'center' });
     
     doc.save(`Dream60_FailureReport_${Date.now()}.pdf`);
   };

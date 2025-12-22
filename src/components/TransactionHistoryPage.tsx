@@ -250,78 +250,122 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
   const downloadReceipt = (tx: TransactionItem) => {
     const doc = new jsPDF();
-    const primaryColor = tx.status?.toLowerCase() === 'failed' ? [239, 68, 68] : [16, 185, 129];
-    const secondaryColor = [31, 41, 55];
+    const isFailed = tx.status?.toLowerCase() === 'failed';
     
-    // Header section
-    doc.setFillColor(243, 244, 246);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Theme Colors
+    const emerald = [16, 185, 129]; 
+    const rose = [225, 29, 72];
+    const darkViolet = [83, 49, 123];
+    const darkSlate = [30, 41, 59];
+    const gray = [107, 114, 128];
     
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFontSize(24);
+    const primaryColor = isFailed ? rose : (tx.paymentType === 'PRIZE_CLAIM' ? [217, 119, 6] : emerald);
+    const headerBg = isFailed ? darkSlate : darkViolet;
+    
+    // Header section with brand color
+    doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
+    doc.rect(0, 0, 210, 45, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
     doc.setFont('helvetica', 'bold');
-    doc.text('DREAM60 INDIA', 20, 25);
+    doc.text('DREAM60 INDIA', 20, 30);
     
-    doc.setTextColor(107, 114, 128);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(tx.status?.toLowerCase() === 'failed' ? 'PAYMENT FAILURE REPORT' : 'OFFICIAL PAYMENT CONFIRMATION', 20, 32);
+    doc.text('PREMIUM AUCTION PLATFORM', 20, 38);
 
-    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
     doc.setFontSize(18);
-    doc.text('Payment Receipt', 140, 25);
+    doc.text(isFailed ? 'FAILURE REPORT' : 'OFFICIAL RECEIPT', 140, 30);
     
-    // Content Table
-    let curY = 60;
-    const tableX = 20;
-    const col1X = 25;
-    const col2X = 80;
-    const rowHeight = 12;
+    // Receipt info line
+    doc.setFillColor(249, 250, 251);
+    doc.rect(0, 45, 210, 15, 'F');
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Scenario: ${isFailed ? (tx.paymentType === 'PRIZE_CLAIM' ? 'PRIZE CLAIM FAILURE' : 'PAYMENT FAILURE') : (tx.paymentType === 'PRIZE_CLAIM' ? 'PRIZE CLAIM SUCCESS' : 'PAYMENT SUCCESS')}`, 20, 55);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont('helvetica', 'normal');
+    const displayDate = formatDateTime(tx.paidAt || tx.createdAt || new Date());
+    doc.text(`Date: ${displayDate}`, 100, 55);
+    doc.text(`Transaction ID: TXN-${Math.floor(Date.now() / 1000)}`, 160, 55);
 
+    // Main content
+    let curY = 80;
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(isFailed ? 'Transaction Attempt Details' : 'Transaction Summary', 20, 72);
+    
     doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.1);
+    doc.line(20, 75, 190, 75);
 
-    const drawRow = (label: string, value: string) => {
-      doc.setFillColor(255, 255, 255);
-      doc.rect(tableX, curY, 170, rowHeight, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(75, 85, 99);
-      doc.text(label + ':', col1X, curY + 8);
-      doc.setFont('helvetica', 'normal');
+    const drawDetailRow = (label: string, value: string, isImportant = false) => {
+      if (isImportant && !isFailed) {
+        doc.setFillColor(243, 244, 246);
+        doc.rect(20, curY - 8, 170, 12, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+      }
+      
+      doc.setTextColor(gray[0], gray[1], gray[2]);
+      doc.text(label, 25, curY);
+      
       doc.setTextColor(31, 41, 55);
-      doc.text(value || 'N/A', col2X, curY + 8);
-      doc.line(tableX, curY + rowHeight, tableX + 170, curY + rowHeight);
-      curY += rowHeight;
+      if (isImportant) doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text(value || 'N/A', 100, curY);
+      
+      doc.setDrawColor(243, 244, 246);
+      doc.line(20, curY + 4, 190, curY + 4);
+      curY += 12;
     };
 
-    drawRow('Customer Name', user.username);
-    drawRow('Product Name', tx.auctionName || tx.productName || 'Auction Participation');
-    drawRow('Service', paymentTypeLabel(tx.paymentType));
-    drawRow('Auction ID', tx.auctionId || 'N/A');
-    drawRow('Time Slot', tx.timeSlot || tx.productTimeSlot || 'Active');
-    drawRow('Payment Method', paymentMethodLabel(tx));
-    drawRow('Amount Paid', `INR ${tx.amount.toLocaleString('en-IN')}`);
-    drawRow('Status', tx.status?.toUpperCase() || 'PAID');
-    drawRow('Date', formatDateTime(tx.paidAt || tx.createdAt));
-    drawRow('Order ID', tx.orderId || 'N/A');
-    drawRow('Payment ID', tx.paymentId || 'N/A');
+    drawDetailRow('Service Type', paymentTypeLabel(tx.paymentType));
+    drawDetailRow('Customer Name', user.username);
+    drawDetailRow('Product Name', tx.auctionName || tx.productName || 'Auction Participation');
+    if (tx.productValue || tx.prizeWorth) {
+      drawDetailRow('Prize Worth', `INR ${(tx.productValue || tx.prizeWorth)?.toLocaleString('en-IN')}`);
+    }
+    drawDetailRow('Auction ID', tx.auctionId || 'N/A');
+    if (tx.timeSlot || tx.productTimeSlot) {
+      drawDetailRow('Auction Time Slot', tx.timeSlot || tx.productTimeSlot || '--');
+    }
+    drawDetailRow('Payment Method', paymentMethodLabel(tx));
+    drawDetailRow('Order ID', tx.orderId || '--');
+    drawDetailRow('Payment ID', tx.paymentId || '--');
+    curY += 5;
+    
+    if (isFailed) {
+      drawDetailRow('STATUS', tx.status?.toUpperCase() || 'FAILED', true);
+    } else {
+      drawDetailRow('TOTAL AMOUNT PAID', `INR ${tx.amount.toLocaleString('en-IN')}`, true);
+    }
 
-    // Status Message
-    curY += 20;
-    doc.setFont('helvetica', 'italic');
+    // Authenticity Stamp
+    curY += 30;
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setLineWidth(0.5);
+    doc.rect(140, curY - 15, 45, 20);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setFontSize(10);
-    doc.text(tx.status?.toLowerCase() === 'failed' ? 'This payment attempt was not successful.' : 'Thank you for your payment. This transaction has been successfully processed.', 20, curY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(isFailed ? 'FAILED' : 'VERIFIED', isFailed ? 155 : 152, curY - 5);
+    doc.setFontSize(7);
+    doc.text(isFailed ? 'UNSUCCESSFUL ATTEMPT' : 'OFFICIALLY SIGNED', isFailed ? 142 : 147, curY);
 
     // Footer
     doc.setFillColor(249, 250, 251);
-    doc.rect(0, 270, 210, 27, 'F');
-    doc.setTextColor(107, 114, 128);
+    doc.rect(0, 275, 210, 22, 'F');
+    doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFontSize(8);
-    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 280, { align: 'center' });
-    doc.text('This is a computer-generated receipt and does not require a physical signature.', 105, 285, { align: 'center' });
+    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 285, { align: 'center' });
+    doc.text('This is a computer-generated document and does not require a physical signature.', 105, 290, { align: 'center' });
     
-    doc.save(`Dream60_Receipt_${tx.orderId || Date.now()}.pdf`);
+    doc.save(`Dream60_${tx.paymentType}_Receipt_${Date.now()}.pdf`);
   };
 
   const renderTransactionList = (items: TransactionItem[], emptyLabel: string) => {

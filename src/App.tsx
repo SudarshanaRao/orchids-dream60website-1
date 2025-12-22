@@ -2327,114 +2327,91 @@ if (currentPage === 'support') {
               />
             </div>
 
-              <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                      {/* Current Auction Time Slot Banner */}
-                      {serverTime && liveAuctionData && (() => {
-                        const activeRound = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE');
-                        const activeRoundNum = activeRound ? activeRound.roundNumber : (liveAuctionData?.currentRound || 1);
-                        
-                        // Use TimeSlot from API as requested
-                        const timeSlot = liveAuctionData?.TimeSlot || "00:00";
-                        const [hours, minutes] = timeSlot.split(':').map(Number);
-                        const endHours = (hours + 1) % 24;
-                        const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                        const displayTime = `${timeSlot} to ${formattedEndTime}`;
-                        
-                        return (
-                            <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                                    <Snowfall 
-                                      color="rgba(255, 255, 255, 0.4)" 
-                                      snowflakeCount={isMobile ? 8 : 40} 
-                                      radius={[1.5, 3.5]} 
-                                      speed={[0.2, 0.6]} 
-                                      wind={[-0.2, 0.5]}
-                                      style={{ zIndex: 1 }}
-                                    />
+                <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+                        {/* Current Auction Time Slot Banner */}
+                        {serverTime && liveAuctionData && (() => {
+                          const activeRound = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE');
+                          const activeRoundNum = activeRound ? activeRound.roundNumber : (liveAuctionData?.currentRound || 1);
+                          
+                          // Use TimeSlot from API as requested
+                          const timeSlot = liveAuctionData?.TimeSlot || "00:00";
+                          const [hours, minutes] = timeSlot.split(':').map(Number);
+                          const endHours = (hours + 1) % 24;
+                          const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                          const displayTime = `${timeSlot} to ${formattedEndTime}`;
+                          
+                          return (
+                              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                                      <Snowfall 
+                                        color="rgba(255, 255, 255, 0.4)" 
+                                        snowflakeCount={isMobile ? 8 : 40} 
+                                        radius={[2.0, 5.0]} 
+                                        speed={[0.2, 0.6]} 
+                                        wind={[-0.2, 0.5]}
+                                        style={{ zIndex: 1 }}
+                                      />
 
 
-                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                              <div className="flex items-center gap-3">
-                                <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                                  <div>
-                                    <div className="text-sm sm:text-base opacity-90">Current Auction</div>
-                                    <div className="text-xl sm:text-2xl font-bold">
-                                    {displayTime}
+                              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                                    <div>
+                                      <div className="text-sm sm:text-base opacity-90">Current Auction</div>
+                                      <div className="text-xl sm:text-2xl font-bold">
+                                      {displayTime}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                                  <div className="text-xs sm:text-sm opacity-90">
+                                    {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
+                                  </div>
+                                  <div className="text-lg sm:text-xl font-bold">
+                                    {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
                                   </div>
                                 </div>
                               </div>
-                              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                                <div className="text-xs sm:text-sm opacity-90">
-                                  {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
-                                </div>
-                                <div className="text-lg sm:text-xl font-bold">
-                                  {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
-                                </div>
-                              </div>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()}
 
+                    {/* 6 Box System Container */}
+                    <div id="six-box-system-container" className="space-y-6 sm:space-y-10">
+                      <div data-whatsnew-target="prize-showcase-section">
+                        <PrizeShowcase
+                          currentPrize={currentAuction}
+                          isLoggedIn={!!currentUser}
+                          onLogin={handleShowLogin}
+                          serverTime={serverTime}
+                          liveAuctionData={liveAuctionData}
+                        isLoadingLiveAuction={isLoadingLiveAuction}
+                          onPayEntry={(_boxId, totalEntryFee, paymentData) => {
+                            if (!currentUser) return;
+                            
+                            console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
+                            
+                            // Extract payment method and UPI from paymentData if available
+                            const method = paymentData?.payment?.paymentMethod || 'UPI / Card (Razorpay)';
+                            const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
+                            
+                            // ✅ Update local state immediately for instant rendering without reload
+                            setCurrentAuction(prev => ({
+                              ...prev,
+                              userHasPaidEntry: true,
+                              boxes: prev.boxes.map(box => {
+                                if (box.type === 'entry') {
+                                  return { ...box, hasPaid: true, currentBid: (box as EntryBox).entryFee || 0, bidder: currentUser.username };
+                                }
+                                return box;
+                              })
+                            }));
 
-                  <div data-whatsnew-target="prize-showcase-section">
-                    <PrizeShowcase
-                      currentPrize={currentAuction}
-                      isLoggedIn={!!currentUser}
-                      onLogin={handleShowLogin}
-                      serverTime={serverTime}
-                      liveAuctionData={liveAuctionData}
-                    isLoadingLiveAuction={isLoadingLiveAuction}
-                      onPayEntry={(_boxId, totalEntryFee, paymentData) => {
-                        if (!currentUser) return;
-                        
-                        console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
-                        
-                        // Extract payment method and UPI from paymentData if available
-                        const method = paymentData?.payment?.paymentMethod || 'UPI / Card (Razorpay)';
-                        const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
-                        
-                        // ✅ Update local state immediately for instant rendering without reload
-                        setCurrentAuction(prev => ({
-                          ...prev,
-                          userHasPaidEntry: true,
-                          boxes: prev.boxes.map(box => {
-                            if (box.type === 'entry') {
-                              return { ...box, hasPaid: true, currentBid: (box as EntryBox).entryFee || 0, bidder: currentUser.username };
-                            }
-                            return box;
-                          })
-                        }));
-
-                        // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
-                        // This happens in the background while modal is showing
-                        setForceRefetchTrigger(prev => prev + 1);
-                      if (currentUser.id) {
-                        fetchAndSetUser(currentUser.id);
-                      }
-                      
-                      // Smooth scroll to auction boxes in background
-                      setTimeout(() => {
-                        const element = document.getElementById('auction-grid');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }, 100);
-
-                          setShowEntrySuccess({
-                            entryFee: totalEntryFee,
-                            boxNumber: 0,
-                            auctionId: currentAuction.id,
-                            auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                            productName: currentAuction.prizeName || 'Auction Prize',
-                            productWorth: currentAuction.prizeValue,
-                            timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                            paidBy: currentUser.username || currentUser.email,
-                            paymentMethod: upiId ? `${method} (${upiId})` : method
-                          });
-                        }}
-                        onPaymentFailure={(totalEntryFee, errorMessage) => {
-                          // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
-                          setForceRefetchTrigger(prev => prev + 1);
+                            // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
+                            // This happens in the background while modal is showing
+                            setForceRefetchTrigger(prev => prev + 1);
+                          if (currentUser.id) {
+                            fetchAndSetUser(currentUser.id);
+                          }
                           
                           // Smooth scroll to auction boxes in background
                           setTimeout(() => {
@@ -2443,52 +2420,78 @@ if (currentPage === 'support') {
                               element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }
                           }, 100);
-    
-                          setShowEntryFailure({
-                            entryFee: totalEntryFee,
-                            errorMessage,
-                            auctionId: currentAuction.id,
-                            auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                            productName: currentAuction.prizeName || 'Auction Prize',
-                            productWorth: currentAuction.prizeValue,
-                            timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                            paidBy: currentUser.username || currentUser.email,
-                            paymentMethod: 'UPI / Card (Razorpay)'
-                          });
 
-                    }}
-                    onUserParticipationChange={handleUserParticipationChange}
-                  />
-                </div>
+                              setShowEntrySuccess({
+                                entryFee: totalEntryFee,
+                                boxNumber: 0,
+                                auctionId: currentAuction.id,
+                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                paidBy: currentUser.username || currentUser.email,
+                                paymentMethod: upiId ? `${method} (${upiId})` : method
+                              });
+                            }}
+                            onPaymentFailure={(totalEntryFee, errorMessage) => {
+                              // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
+                              setForceRefetchTrigger(prev => prev + 1);
+                              
+                              // Smooth scroll to auction boxes in background
+                              setTimeout(() => {
+                                const element = document.getElementById('auction-grid');
+                                if (element) {
+                                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }
+                              }, 100);
+        
+                              setShowEntryFailure({
+                                entryFee: totalEntryFee,
+                                errorMessage,
+                                auctionId: currentAuction.id,
+                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                paidBy: currentUser.username || currentUser.email,
+                                paymentMethod: 'UPI / Card (Razorpay)'
+                              });
 
-              {currentUser && (
-              <WinnersAnnouncedBanner 
-                onBidNow={handleBidNowScroll}
-              />
-            )}
-
-            {currentUser ? (
-              <>
-                    <div ref={auctionGridRef} data-auction-grid id="auction-grid">
-                      {/* Auction Grid */}
-                      <AuctionGrid
-                    auction={currentAuction}
-                      onShowLeaderboard={handleShowLeaderboard}
-                      onBid={handlePlaceBid}
-                      serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                    />
+                        }}
+                        onUserParticipationChange={handleUserParticipationChange}
+                      />
                     </div>
-  
-                  </>
-                    ) : (
-                    <>
-                      {/* Guest View - Empty placeholder when not logged in */}
-                    </>
-                  )}
 
-                  <HowDream60Works />
+                  {currentUser && (
+                  <WinnersAnnouncedBanner 
+                    onBidNow={handleBidNowScroll}
+                  />
+                )}
 
-                      <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
+                {currentUser ? (
+                  <>
+                        <div ref={auctionGridRef} data-auction-grid id="auction-grid">
+                          {/* Auction Grid */}
+                          <AuctionGrid
+                        auction={currentAuction}
+                          onShowLeaderboard={handleShowLeaderboard}
+                          onBid={handlePlaceBid}
+                          serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                        />
+                        </div>
+      
+                      </>
+                        ) : (
+                        <>
+                          {/* Guest View - Empty placeholder when not logged in */}
+                        </>
+                      )}
+                    </div> {/* End of six-box-system-container */}
+
+                    <HowDream60Works />
+
+                        <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
+
                     
                       {/* ✅ NEW: "Why Join Dream60?" container relocated below schedule and visible only to guests */}
                       {!currentUser && (
