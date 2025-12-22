@@ -114,72 +114,73 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
         </div>
 
       {/* Main Content Area */}
-            <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
-              <div className="max-w-3xl space-y-4 sm:space-y-6 md:space-y-10 text-center">
-                {/* Christmas Special Badge */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 0.2 }}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C]/80 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
-                >
-                  <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
-                    Christmas Special
-                  </span>
-                </motion.div>
-  
-                  {/* Headline & Subheadline */}
-                  <div className="space-y-4 sm:space-y-6">
-                    <motion.div
-                      initial={{ opacity: 0, y: 40 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 1, delay: 0.4 }}
-                    >
-                      <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
-                          style={{ fontFamily: "'Playfair Display', serif" }}>
-                        Have a <br />
-                        <span className="text-yellow-400 italic relative inline-block">
-                          Merrylitious
-                          <motion.span 
-                            className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 1.2, duration: 1 }}
-                          />
-                        </span> <br />
-                        Christmas
-                      </h1>
-                    </motion.div>
-  
-                    <motion.p
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 1, delay: 0.6 }}
-                      className="text-base sm:text-lg md:text-xl text-gray-200/90 font-medium max-w-lg leading-relaxed select-none mx-auto"
-                    >
-                      Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
-                    </motion.p>
-                  </div>
-  
-                  {/* CTA Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 0.8 }}
-                    className="pt-2 sm:pt-4 flex justify-center max-w-lg mx-auto w-full"
-                  >
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={onJoinNow}
-                      className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/90 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
-                    >
-                    <span className="relative z-10">{user ? 'Start Winning' : 'Join Now'}</span>
-                    <ChevronRight className="w-5 h-5 relative z-10" />
-                  </motion.button>
-                </motion.div>
-            </div>
+      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
+        <div className="max-w-3xl space-y-4 sm:space-y-6 md:space-y-10 text-center">
+          {/* Christmas Special Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C]/80 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
+          >
+            <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+            <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
+              Christmas Special
+            </span>
+          </motion.div>
+
+          {/* Headline & Subheadline */}
+          <div className="space-y-4 sm:space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4 }}
+            >
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
+                  style={{ fontFamily: "'Playfair Display', serif" }}>
+                Have a <br />
+                <span className="text-yellow-400 italic relative inline-block">
+                  Merrylitious
+                  <motion.span 
+                    className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 1.2, duration: 1 }}
+                  />
+                </span> <br />
+                Christmas
+              </h1>
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="text-base sm:text-lg md:text-xl text-gray-200/90 font-medium max-w-lg leading-relaxed select-none mx-auto"
+            >
+              Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
+            </motion.p>
           </div>
+
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="pt-2 sm:pt-4 flex justify-center max-w-lg mx-auto w-full"
+          >
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onJoinNow}
+              className="relative flex items-center justify-center gap-3 bg-[#B71C1C]/90 text-white px-8 sm:px-12 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
+            >
+              <span className="relative z-10">{user ? 'Start Winning' : 'Join Now'}</span>
+              <ChevronRight className="w-5 h-5 relative z-10" />
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+
 
 
 

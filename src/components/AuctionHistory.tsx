@@ -11,6 +11,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
+import { LoadingProfile } from './LoadingProfile';
 
   interface AuctionHistoryProps {
     user: {
@@ -1269,77 +1270,17 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
 
 
   // Loading state
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-white relative overflow-hidden">
-          {/* Header with Logo - matching Support page style */}
-        <motion.header 
-          className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button
-                  onClick={onBack}
-                  variant="ghost"
-                  size="sm"
-                  className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Home
-                </Button>
-                <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
-                <div className="hidden sm:flex items-center space-x-2">
-                  <Trophy className="w-6 h-6 text-purple-600" />
-                  <h1 className="text-xl sm:text-2xl font-bold text-purple-800">Auction History</h1>
-                </div>
-              </div>
-              
-              {/* Logo */}
-              <div 
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={onBack}
-              >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
-                  <p className="text-[10px] text-purple-600">Live Auction Play</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.header>
-
-        {/* Mobile Title */}
-        <motion.div 
-          className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Trophy className="w-5 h-5 text-purple-600" />
-          <h1 className="text-xl font-bold text-purple-800">Auction History</h1>
-        </motion.div>
-
-        <main className="container mx-auto px-3 sm:px-4 py-6 relative z-10">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-4"
-              />
-              <p className="text-purple-700 font-semibold">Loading auction history...</p>
-            </div>
-          </div>
-        </main>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        <LoadingProfile 
+          message="Loading Auction History" 
+          subMessage="Fetching your activities" 
+        />
       </div>
     );
   }
+
 
   // Error state
   if (error) {

@@ -2528,11 +2528,12 @@ if (currentPage === 'support') {
                         </div>
                       )}
 
-                      <AuctionScheduleInfo />
+                        <AuctionScheduleInfo />
 
-                      <HowDream60Works />
+                  </main>
 
-                </main>
+                  <HowDream60Works />
+
 
 
             <style>{`

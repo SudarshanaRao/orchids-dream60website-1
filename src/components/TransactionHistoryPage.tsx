@@ -26,6 +26,7 @@ import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 import { SupportCenterHeader } from './SupportCenterHeader';
+import { LoadingProfile } from './LoadingProfile';
 
 interface TransactionHistoryPageProps {
   user: { id: string; username: string };
@@ -186,30 +187,41 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   }, [user.id]);
 
   const fetchTransactionDetail = async (orderId: string) => {
+    if (!orderId) return;
     setDetailLoading(true);
     try {
       const queryString = buildQueryString({ userId: user.id });
-      const response = await fetch(`${API_ENDPOINTS.user.transactionDetail}/${encodeURIComponent(orderId)}${queryString}`);
+      // Remove any leading/trailing slashes from orderId
+      const cleanOrderId = String(orderId).trim();
+      const response = await fetch(`${API_ENDPOINTS.user.transactionDetail}/${encodeURIComponent(cleanOrderId)}${queryString}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch transaction detail');
+        throw new Error(`Failed to fetch: ${response.status}`);
       }
+      
       const result = await response.json();
       if (result?.data) {
-        // Merge with existing data to ensure we don't lose any fields from the list
-        setSelectedTransaction(prev => ({
-          ...prev,
-          ...result.data
-        }));
-        sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify({
-          ...(selectedTransaction || {}),
-          ...result.data
-        }));
+        // Merge with existing data
+        setSelectedTransaction(prev => {
+          const base = prev && (prev.orderId === cleanOrderId || prev.paymentId === cleanOrderId || (prev as any)._id === cleanOrderId) ? prev : {};
+          return {
+            ...base,
+            ...result.data
+          };
+        });
+        
+        // Update session storage
+        sessionStorage.setItem(DETAIL_STORAGE_KEY, JSON.stringify(result.data));
+      } else {
+        throw new Error('No data in response');
       }
     } catch (error) {
       console.error('Error fetching transaction detail:', error);
-      // Only show error if we don't have basic data already
+      // fallback to whatever we have if it's already selected
       if (!selectedTransaction) {
-        toast.error('Could not load transaction details');
+        toast.error('Could not load transaction details', {
+          description: 'Try clicking the item again in the list.'
+        });
       }
     } finally {
       setDetailLoading(false);
@@ -395,16 +407,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
   const renderTransactionList = (items: TransactionItem[], emptyLabel: string) => {
     if (isLoading) {
-      return (
-        <div className="flex items-center justify-center py-6 text-purple-700">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            className="w-6 h-6 border-2 border-purple-200 border-t-purple-600 rounded-full mr-2"
-          />
-          Loading transactions...
-        </div>
-      );
+      return <LoadingProfile message="Loading Transactions" subMessage="Updating History" />;
     }
 
     if (!items || items.length === 0) {

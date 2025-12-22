@@ -54,7 +54,7 @@ export function PaymentFailure({
 
     const interval = setInterval(() => {
       setCountdown((prev) => Math.max(0, prev - 1));
-    }, 600);
+    }, 500);
 
     return () => clearInterval(interval);
   }, [countdown, onBackToHome]);

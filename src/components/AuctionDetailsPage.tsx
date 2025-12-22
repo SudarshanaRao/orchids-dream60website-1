@@ -9,6 +9,7 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
+import { LoadingProfile } from './LoadingProfile';
 
 const maskEmail = (email: string) => {
   if (!email) return '';
@@ -705,10 +706,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
             animate={{ opacity: 1 }}
             className="flex items-center justify-center py-12"
           >
-            <div className="text-center">
-              <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-              <p className="text-purple-700 font-semibold">Loading detailed auction information...</p>
-            </div>
+            <LoadingProfile 
+              message="Loading Auction Details" 
+              subMessage="Fetching performance data" 
+            />
           </motion.div>
         )}
 
