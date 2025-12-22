@@ -1003,7 +1003,7 @@ const getLiveHourlyAuction = async (req, res) => {
   try {
     const { userId } = req.query;
     
-    // Find live auction but project only what's needed to keep payload small
+    // Find live auction but project basic fields to keep payload small initially
     const liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
       .lean();
@@ -1016,11 +1016,16 @@ const getLiveHourlyAuction = async (req, res) => {
       });
     }
 
+    // ✅ OPTIMIZATION: Extract participants array away from the main object to avoid spreading it
+    const allParticipants = liveAuction.participants || [];
+    const participantsCount = allParticipants.length;
+    
+    // Remove participants from the main object before spreading
+    delete liveAuction.participants;
+
     // ✅ If userId provided, only include that user's participant data
     if (userId) {
-      const userParticipant = liveAuction.participants?.find(p => p.playerId === userId);
-      // We still need participants count
-      const participantsCount = liveAuction.participants?.length || 0;
+      const userParticipant = allParticipants.find(p => p.playerId === userId);
       
       // Clean up rounds data to remove all playersData except maybe the top ones
       const cleanedRounds = liveAuction.rounds?.map(round => {

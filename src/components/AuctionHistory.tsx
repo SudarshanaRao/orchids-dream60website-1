@@ -1721,13 +1721,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 transition={{ delay: 0.35, duration: 0.5 }}
               >
                 <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-gradient-to-br from-white/80 via-violet-50/50 to-fuchsia-50/60 shadow-xl">
-                    <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
-            />
+
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/10" />
                   <CardContent className="p-6 relative z-10">
                     <motion.div
@@ -1764,13 +1758,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     ? 'border-violet-200/60 bg-gradient-to-br from-white/80 via-violet-50/50 to-fuchsia-50/60'
                     : 'border-purple-200/60 bg-gradient-to-br from-white/80 to-purple-50/60'
                 }`}>
-                    <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 3 : 40} 
-              radius={[0.5, 2.0]} 
-              speed={[0.5, 1.5]}
-              wind={[-0.5, 2.0]}
-            />
+
                   <div className={`absolute inset-0 ${
                     netGain >= 0
                       ? 'bg-gradient-to-br from-violet-500/5 to-fuchsia-500/10'

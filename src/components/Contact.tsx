@@ -310,12 +310,7 @@ export function Contact({ onBack }: ContactProps) {
             <div className="space-y-6 relative z-10">
               {/* Company Information */}
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg relative overflow-hidden group">
-                 <Snowfall 
-                  snowflakeCount={4}
-                  radius={[0.5, 1.5]}
-                  speed={[0.5, 1.0]}
-                  style={{ opacity: 0.15 }}
-                />
+
                 <CardHeader className="relative z-10 font-medium">
                   <CardTitle className="text-purple-800 flex items-center space-x-2">
                     <Building2 className="w-6 h-6 text-purple-600" />
@@ -362,12 +357,7 @@ export function Contact({ onBack }: ContactProps) {
 
               {/* Response Times */}
               <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg relative overflow-hidden group">
-                <Snowfall 
-                  snowflakeCount={4}
-                  radius={[0.5, 1.5]}
-                  speed={[0.5, 1.0]}
-                  style={{ opacity: 0.15 }}
-                />
+
                 <CardHeader className="relative z-10 font-medium">
                   <CardTitle className="text-purple-800 flex items-center space-x-2">
                     <Zap className="w-6 h-6 text-purple-600" />

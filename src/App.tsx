@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Snowfall from 'react-snowfall';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from './components/Header';
@@ -1471,7 +1470,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
               winnersAnnounced: liveAuction.winnersAnnounced || false,
               userEntryFeeFromAPI: userEntryFeeFromAPI, // ✅ CRITICAL: Store user's entry fee from API
-              userHasPaidEntry: userHasPaidEntryFromAPI, // ✅ CRITICAL FIX: Update based on participants array
+                userHasPaidEntry: prev.userHasPaidEntry || userHasPaidEntryFromAPI, // ✅ FIX: Respect local state to prevent boxes from disappearing after payment
             };
           });
         } else {
