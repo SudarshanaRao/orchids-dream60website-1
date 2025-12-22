@@ -503,6 +503,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     boxNumber: number;
     auctionId?: string;
     auctionNumber?: string | number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
   } | null>(null);
 
   const [showEntryFailure, setShowEntryFailure] = useState<{
@@ -515,6 +519,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const [showBidSuccess, setShowBidSuccess] = useState<{
     amount: number;
     boxNumber: number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
   } | null>(null);
 
   const [selectedLeaderboard, setSelectedLeaderboard] = useState<{
