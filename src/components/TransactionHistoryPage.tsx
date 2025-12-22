@@ -54,6 +54,7 @@ interface TransactionItem {
 
 
 export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageProps) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [transactions, setTransactions] = useState<{
     entryFees: TransactionItem[];
     prizeClaims: TransactionItem[];

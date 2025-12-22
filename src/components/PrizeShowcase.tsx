@@ -79,8 +79,9 @@ interface PrizeShowcaseProps {
   isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
 }
 
-  export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
-    const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
+    export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true }: PrizeShowcaseProps) {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     // ✅ NEW: Track if this is the initial load
     const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
@@ -420,7 +421,7 @@ interface PrizeShowcaseProps {
           <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
             <Snowfall 
               color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 2 : 20}
+              snowflakeCount={isMobile ? 2 : 20}
               radius={[0.3, 1.2]}
               speed={[0.2, 0.6]}
               wind={[-0.2, 0.5]}
@@ -466,7 +467,7 @@ interface PrizeShowcaseProps {
         <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
             <Snowfall 
               color="#8B5CF6"
-              snowflakeCount={window.innerWidth < 768 ? 2 : 20}
+              snowflakeCount={isMobile ? 2 : 20}
               radius={[0.3, 1.2]}
               speed={[0.2, 0.6]}
               wind={[-0.2, 0.5]}

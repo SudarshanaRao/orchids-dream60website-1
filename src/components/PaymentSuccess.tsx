@@ -8,6 +8,8 @@ interface PaymentSuccessProps {
   amount: number;
   type: 'entry' | 'bid';
   boxNumber?: number;
+  auctionId?: string;
+  auctionNumber?: string | number;
   onBackToHome: () => void;
   onClose?: () => void;
 }
@@ -16,6 +18,8 @@ interface PaymentSuccessProps {
     amount, 
     type, 
     boxNumber, 
+    auctionId,
+    auctionNumber,
     onBackToHome,
     onClose
   }: PaymentSuccessProps) {
@@ -30,27 +34,26 @@ interface PaymentSuccessProps {
       }, []);
     
       useEffect(() => {
-        if (countdown === 0) {
+        // Fast redirect for SUCCESS - 5 ticks of 100ms = 500ms total
+        // Users can't see anything if it's truly 5ms
+        const timer = setTimeout(() => {
           onBackToHome();
-          // Attempt to close the window if it's a popup
-          try {
-            if (window.opener || window.history.length === 1) {
-              window.close();
-            }
-          } catch (e) {
-            console.log('Window close blocked by browser');
-          }
-          return;
-        }
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }, [onBackToHome]);
+    
+      useEffect(() => {
+        if (countdown === 0) return;
     
         const interval = setInterval(() => {
           setCountdown((prev) => Math.max(0, prev - 1));
-        }, 1000);
+        }, 100); // 100ms ticks
     
         return () => clearInterval(interval);
-      }, [countdown, onBackToHome]);
+      }, [countdown]);
 
-  
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
         <Snowfall 
@@ -76,55 +79,70 @@ interface PaymentSuccessProps {
           transition={{ type: "spring", damping: 25, stiffness: 200 }}
         >
           {/* Header Section with Gradient */}
-          <div className="bg-gradient-to-br from-green-400 to-emerald-600 p-10 flex flex-col items-center relative overflow-hidden">
+          <div className="bg-gradient-to-br from-green-400 to-emerald-600 p-8 flex flex-col items-center relative overflow-hidden">
             {/* Decorative background circles */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
             
             <motion.div 
-              className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg relative z-10"
+              className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg relative z-10"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", delay: 0.2 }}
             >
-              <Check className="w-12 h-12 text-green-500" strokeWidth={4} />
+              <Check className="w-10 h-10 text-green-500" strokeWidth={4} />
             </motion.div>
             
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mt-6 text-center"
+              className="mt-4 text-center"
             >
-              <div className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-2 inline-block">
+              <div className="bg-white/20 backdrop-blur-md px-3 py-0.5 rounded-full text-white text-[10px] font-bold uppercase tracking-widest mb-1 inline-block">
                 Awesome!
               </div>
-              <h2 className="text-white text-3xl font-bold tracking-tight">Congratulations.</h2>
-              <p className="text-white/80 text-sm font-medium mt-1">
+              <h2 className="text-white text-2xl font-bold tracking-tight">Congratulations.</h2>
+              <p className="text-white/80 text-xs font-medium mt-0.5">
                 {type === 'entry' ? 'Your order is accepted!' : 'Your bid is accepted!'}
               </p>
             </motion.div>
           </div>
 
-          <div className="p-8">
-            <div className="space-y-6">
+          <div className="p-6">
+            <div className="space-y-4">
               <div className="text-center">
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">
-                  {type === 'entry' ? 'Join Details' : 'Bid Details'}
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">
+                  Payment Successful
                 </p>
-                <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-500 text-sm">Amount Paid</span>
-                    <span className="text-gray-900 font-bold flex items-center gap-1 text-lg">
-                      <IndianRupee className="w-4 h-4" />
+                <div className="bg-gray-50 rounded-2xl p-4 border border-dashed border-gray-200 space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Transaction Type</span>
+                    <span className="text-gray-900 font-bold">{type === 'entry' ? 'Entry Fee' : 'Auction Bid'}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Amount Paid</span>
+                    <span className="text-green-600 font-bold flex items-center gap-1">
+                      <IndianRupee className="w-3.5 h-3.5" />
                       {amount.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  {boxNumber !== undefined && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-500 text-sm">Box Number</span>
-                      <span className="text-purple-600 font-bold bg-purple-50 px-3 py-1 rounded-lg text-sm">
-                        #{boxNumber === 0 ? 'AUTO' : boxNumber}
+
+                  {auctionId && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Auction ID</span>
+                      <span className="text-gray-900 font-mono text-[10px] bg-white px-2 py-0.5 border border-gray-100 rounded">
+                        {auctionId}
+                      </span>
+                    </div>
+                  )}
+
+                  {(auctionNumber || boxNumber !== undefined) && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Auction Number</span>
+                      <span className="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded text-xs">
+                        #{auctionNumber || (boxNumber === 0 ? 'AUTO' : boxNumber)}
                       </span>
                     </div>
                   )}
@@ -134,20 +152,20 @@ interface PaymentSuccessProps {
               <div className="space-y-3">
                 <Button
                   onClick={onBackToHome}
-                  className="w-full h-14 bg-green-500 hover:bg-green-600 text-white rounded-2xl font-bold text-lg transition-all shadow-lg shadow-green-100"
+                  className="w-full h-12 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-base transition-all shadow-lg"
                 >
-                  {type === 'entry' ? "Let's do again" : 'Back to Home'}
+                  Done
                 </Button>
                 
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    Redirecting to home in {countdown}s
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                    Closing in few milliseconds...
                   </span>
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
                       <div 
                         key={i} 
-                        className={`h-1 w-8 rounded-full transition-all duration-300 ${i < (5-countdown) ? 'bg-green-500' : 'bg-gray-100'}`} 
+                        className={`h-0.5 w-6 rounded-full transition-all duration-300 ${i < (5-countdown) ? 'bg-green-500' : 'bg-gray-100'}`} 
                       />
                     ))}
                   </div>

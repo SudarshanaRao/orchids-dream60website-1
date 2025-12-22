@@ -16,6 +16,7 @@ interface ContactProps {
 }
 
 export function Contact({ onBack }: ContactProps) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [formData, setFormData] = useState({
     name: '',
     email: '',

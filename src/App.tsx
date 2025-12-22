@@ -501,11 +501,15 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const [showEntrySuccess, setShowEntrySuccess] = useState<{
     entryFee: number;
     boxNumber: number;
+    auctionId?: string;
+    auctionNumber?: string | number;
   } | null>(null);
 
   const [showEntryFailure, setShowEntryFailure] = useState<{
     entryFee: number;
     errorMessage: string;
+    auctionId?: string;
+    auctionNumber?: string | number;
   } | null>(null);
 
   const [showBidSuccess, setShowBidSuccess] = useState<{
@@ -2401,27 +2405,31 @@ if (currentPage === 'support') {
                         }
                       }, 100);
 
-                      setShowEntrySuccess({
-                        entryFee: totalEntryFee,
-                        boxNumber: 0
-                      });
-                    }}
-                    onPaymentFailure={(totalEntryFee, errorMessage) => {
-                      // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
-                      setForceRefetchTrigger(prev => prev + 1);
-                      
-                      // Smooth scroll to auction boxes in background
-                      setTimeout(() => {
-                        const element = document.getElementById('auction-grid');
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                      }, 100);
-
-                      setShowEntryFailure({
-                        entryFee: totalEntryFee,
-                        errorMessage
-                      });
+                        setShowEntrySuccess({
+                          entryFee: totalEntryFee,
+                          boxNumber: 0,
+                          auctionId: currentAuction.id,
+                          auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour
+                        });
+                      }}
+                      onPaymentFailure={(totalEntryFee, errorMessage) => {
+                        // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
+                        setForceRefetchTrigger(prev => prev + 1);
+                        
+                        // Smooth scroll to auction boxes in background
+                        setTimeout(() => {
+                          const element = document.getElementById('auction-grid');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }, 100);
+  
+                        setShowEntryFailure({
+                          entryFee: totalEntryFee,
+                          errorMessage,
+                          auctionId: currentAuction.id,
+                          auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour
+                        });
                     }}
                     onUserParticipationChange={handleUserParticipationChange}
                   />
@@ -2521,29 +2529,33 @@ if (currentPage === 'support') {
 
           <AnimatePresence mode="sync">
               {/* Payment Success Modal */}
-              {showEntrySuccess && (
-                <PaymentSuccess
-                  amount={showEntrySuccess.entryFee}
-                  type="entry"
-                  boxNumber={showEntrySuccess.boxNumber}
-                  onBackToHome={handleEntrySuccess}
-                  onClose={() => setShowEntrySuccess(null)}
+                {showEntrySuccess && (
+                  <PaymentSuccess
+                    amount={showEntrySuccess.entryFee}
+                    type="entry"
+                    boxNumber={showEntrySuccess.boxNumber}
+                    auctionId={showEntrySuccess.auctionId}
+                    auctionNumber={showEntrySuccess.auctionNumber}
+                    onBackToHome={handleEntrySuccess}
+                    onClose={() => setShowEntrySuccess(null)}
+                  />
+                )}
+  
+              {/* Payment Failure Modal */}
+              {showEntryFailure && (
+                <PaymentFailure
+                  amount={showEntryFailure.entryFee}
+                  errorMessage={showEntryFailure.errorMessage}
+                  auctionId={showEntryFailure.auctionId}
+                  auctionNumber={showEntryFailure.auctionNumber}
+                  onRetry={handleRetryPayment}
+                  onBackToHome={() => {
+                    handleEntryFailure();
+                    setCurrentPage('game');
+                  }}
+                  onClose={() => setShowEntryFailure(null)}
                 />
               )}
-
-            {/* Payment Failure Modal */}
-            {showEntryFailure && (
-              <PaymentFailure
-                amount={showEntryFailure.entryFee}
-                errorMessage={showEntryFailure.errorMessage}
-                onRetry={handleRetryPayment}
-                onBackToHome={() => {
-                  handleEntryFailure();
-                  setCurrentPage('game');
-                }}
-                onClose={() => setShowEntryFailure(null)}
-              />
-            )}
 
             {/* Bid Success Modal */}
             {showBidSuccess && (
@@ -2551,6 +2563,8 @@ if (currentPage === 'support') {
                 amount={showBidSuccess.amount}
                 type="bid"
                 boxNumber={showBidSuccess.boxNumber}
+                auctionId={currentAuction.id}
+                auctionNumber={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
                 onBackToHome={() => {
                   setShowBidSuccess(null);
                   setCurrentPage('game');

@@ -11,6 +11,7 @@ interface RulesProps {
 }
 
 export function Rules({ onBack }: RulesProps) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       

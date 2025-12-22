@@ -16,6 +16,7 @@ interface SupportProps {
 }
 
 export function Support({ onBack, onNavigate }: SupportProps) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [searchQuery, setSearchQuery] = useState('');
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
