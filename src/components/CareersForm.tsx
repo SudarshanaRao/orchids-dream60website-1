@@ -132,30 +132,30 @@ export function CareersForm({ onBack }: CareersFormProps) {
             <p className="text-purple-600/70 font-medium">Help us build India's most exciting live auction platform.</p>
           </div>
 
-          <Card className="p-6 md:p-8 bg-white border-purple-100 shadow-2xl shadow-purple-500/5 rounded-[32px]">
+          <Card className="p-6 md:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <User className="w-4 h-4 text-purple-500" /> Full Name *
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Full Name *
                   </label>
                   <Input 
                     required
-                    placeholder="Enter your full name"
-                    className="rounded-xl border-purple-100 focus:border-purple-400 py-6"
+                    placeholder="John Doe"
+                    className="rounded-lg border-gray-300 focus:ring-purple-500 py-5"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-purple-500" /> Email Address *
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Email Address *
                   </label>
                   <Input 
                     required
                     type="email"
-                    placeholder="email@example.com"
-                    className="rounded-xl border-purple-100 focus:border-purple-400 py-6"
+                    placeholder="john@example.com"
+                    className="rounded-lg border-gray-300 focus:ring-purple-500 py-5"
                     value={formData.email}
                     onChange={e => setFormData({...formData, email: e.target.value})}
                   />
@@ -163,24 +163,24 @@ export function CareersForm({ onBack }: CareersFormProps) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-purple-500" /> Phone Number
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Phone Number
                   </label>
                   <Input 
                     placeholder="+91 00000 00000"
-                    className="rounded-xl border-purple-100 focus:border-purple-400 py-6"
+                    className="rounded-lg border-gray-300 focus:ring-purple-500 py-5"
                     value={formData.phone}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-purple-500" /> Select Role *
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Select Role *
                   </label>
                   <select 
                     required
-                    className="w-full h-12 rounded-xl border border-purple-100 bg-white px-3 text-sm focus:outline-none focus:border-purple-400"
+                    className="w-full h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     value={formData.role}
                     onChange={e => setFormData({...formData, role: e.target.value})}
                   >
@@ -193,12 +193,12 @@ export function CareersForm({ onBack }: CareersFormProps) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-purple-500" /> Years of Experience
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Years of Experience
                   </label>
                   <select 
-                    className="w-full h-12 rounded-xl border border-purple-100 bg-white px-3 text-sm focus:outline-none focus:border-purple-400"
+                    className="w-full h-11 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                     value={formData.experience}
                     onChange={e => setFormData({...formData, experience: e.target.value})}
                   >
@@ -209,26 +209,26 @@ export function CareersForm({ onBack }: CareersFormProps) {
                     <option value="5+">5+ Years</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                    <LinkIcon className="w-4 h-4 text-purple-500" /> Portfolio / LinkedIn URL
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Portfolio / LinkedIn URL
                   </label>
                   <Input 
                     placeholder="https://linkedin.com/in/..."
-                    className="rounded-xl border-purple-100 focus:border-purple-400 py-6"
+                    className="rounded-lg border-gray-300 focus:ring-purple-500 py-5"
                     value={formData.portfolio}
                     onChange={e => setFormData({...formData, portfolio: e.target.value})}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                  <Upload className="w-4 h-4 text-purple-500" /> Resume / CV (PDF) *
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">
+                  Resume / CV (PDF) *
                 </label>
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-purple-100 rounded-2xl p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-50/50 transition-all group"
+                  className="border border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:border-purple-500 hover:bg-purple-50/30 transition-all group"
                 >
                   <input 
                     type="file" 
@@ -237,23 +237,23 @@ export function CareersForm({ onBack }: CareersFormProps) {
                     accept=".pdf,.doc,.docx"
                     onChange={handleFileChange}
                   />
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <FileText className="w-6 h-6 text-purple-600" />
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-100 transition-colors">
+                    <FileText className="w-5 h-5 text-gray-500 group-hover:text-purple-600" />
                   </div>
-                  <p className="text-sm font-bold text-purple-900">
+                  <p className="text-sm font-medium text-gray-900">
                     {fileName || 'Click to upload your resume'}
                   </p>
-                  <p className="text-xs text-purple-500 mt-2 font-medium">Max file size: 5MB (PDF, DOC, DOCX)</p>
+                  <p className="text-[11px] text-gray-500 mt-1">Max 5MB (PDF, DOC, DOCX)</p>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                  <MessageCircleIcon className="w-4 h-4 text-purple-500" /> Why do you want to join Dream60?
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-700">
+                  Why do you want to join Dream60?
                 </label>
                 <Textarea 
-                  placeholder="Tell us a bit about yourself..."
-                  className="rounded-2xl border-purple-100 focus:border-purple-400 min-h-[120px] resize-none"
+                  placeholder="Tell us about yourself..."
+                  className="rounded-lg border-gray-300 focus:ring-purple-500 min-h-[100px] resize-none"
                   value={formData.message}
                   onChange={e => setFormData({...formData, message: e.target.value})}
                 />
@@ -262,24 +262,14 @@ export function CareersForm({ onBack }: CareersFormProps) {
               <Button 
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl py-8 font-black text-lg shadow-xl shadow-purple-500/20 hover:scale-[1.02] transition-all"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-6 font-semibold shadow-sm transition-all"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Processing Application...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Send className="w-5 h-5" />
-                    <span>Submit Application</span>
-                  </div>
-                )}
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </Button>
 
-              <div className="flex items-center justify-center gap-2 text-purple-500">
+              <div className="flex items-center justify-center gap-2 text-gray-400">
                 <AlertCircle className="w-4 h-4" />
-                <p className="text-[10px] font-bold uppercase tracking-widest">Your data is secure and will only be used for recruitment</p>
+                <p className="text-[11px] font-medium">Your data is secure and used only for recruitment</p>
               </div>
             </form>
           </Card>

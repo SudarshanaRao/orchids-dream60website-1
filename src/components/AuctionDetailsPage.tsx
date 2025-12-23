@@ -206,14 +206,29 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
 
       const result = await response.json();
 
-      if (result.success && result.data) {
-        setDetailedData(result.data);
-        
-        // ✅ Only log on initial load to reduce console spam
-        if (isInitialLoad) {
-          console.log('✅ Auction details loaded:', result.data);
+        if (result.success && result.data) {
+          setDetailedData(result.data);
+          
+          // ✅ SYNC: Update auction state with global claim info from detailedData
+          const hourlyAuction = result.data.hourlyAuction;
+          if (hourlyAuction && hourlyAuction.winners) {
+            const claimedWinner = hourlyAuction.winners.find((w: any) => w.isPrizeClaimed);
+            if (claimedWinner) {
+              setAuction(prev => ({
+                ...prev,
+                claimedBy: claimedWinner.playerUsername,
+                claimedByRank: claimedWinner.rank,
+                claimedAt: claimedWinner.prizeClaimedAt,
+                prizeClaimStatus: prev.finalRank === claimedWinner.rank ? 'CLAIMED' : prev.prizeClaimStatus
+              }));
+            }
+          }
+          
+          // ✅ Only log on initial load to reduce console spam
+          if (isInitialLoad) {
+            console.log('✅ Auction details loaded:', result.data);
+          }
         }
-      }
     } catch (error) {
       console.error('Error fetching detailed auction data:', error);
       // ✅ Only show error toast on initial load
@@ -1304,15 +1319,25 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                 </div>
 
                   <div className="space-y-3 sm:space-y-4">
-                    {detailedData.rounds.map((round: RoundDetails, index: number) => {
-                      const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1;
-                      const roundStatusLabel = isSkippedRound
-                        ? 'Not opened (winners announced in Round 1)'
-                        : (auction.winnersAnnounced && !round.userBid ? 'Winners Announced' : round.status);
-                      const qualifiedLabel = winnersAnnouncedEarly && round.roundNumber === 1 ? 'Winner' : 'Qualified';
-                      const nonParticipationText = isSkippedRound
-                        ? 'This round did not open because winners were announced in Round 1'
-                        : 'You did not participate in this round';
+                      {detailedData.rounds.map((round: RoundDetails, index: number) => {
+                        const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1;
+                        
+                        // ✅ FIX: Improved round status label logic
+                        let roundStatusLabel = round.status;
+                        if (isSkippedRound) {
+                          roundStatusLabel = 'Results Declared';
+                        } else if (auction.winnersAnnounced) {
+                          if (round.status.toLowerCase() === 'active' || round.status.toLowerCase() === 'pending') {
+                            roundStatusLabel = 'Results Declared';
+                          } else {
+                            roundStatusLabel = 'Completed';
+                          }
+                        }
+
+                        const qualifiedLabel = winnersAnnouncedEarly && round.roundNumber === 1 ? 'Winner' : 'Qualified';
+                        const nonParticipationText = isSkippedRound
+                          ? 'This round did not open because winners were announced in Round 1'
+                          : 'You did not participate in this round';
 
                       return (
                         <motion.div

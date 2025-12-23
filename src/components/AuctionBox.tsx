@@ -308,611 +308,183 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
   // ✅ CRITICAL: Extra safeguard - never allow clicking if explicitly not qualified or winners announced
   const canPlaceBid = isClickable && !(box.roundNumber && box.roundNumber > 1 && isUserQualified === false) && !winnersAnnounced;
 
-  // Background gradient based on status - All Purple/Violet
-  const getBackgroundGradient = () => {
-    if (status === 'completed') return 'from-purple-100/80 via-violet-100/60 to-purple-100/80';
-    if (status === 'winners-announced') return 'from-green-50/80 via-emerald-100/60 to-green-50/80';
-    if (status === 'upcoming' || status === 'locked') return 'from-purple-50/70 via-violet-50/50 to-purple-50/70';
-    if (status === 'not-qualified') return 'from-red-50/70 via-red-100/50 to-red-50/70';
-    if (status === 'paid') return 'from-purple-100/80 via-fuchsia-100/60 to-purple-100/80';
-    if (userBidAmount) return 'from-green-50/80 via-emerald-100/60 to-green-50/80';
-    if (isUserHighestBidder) return 'from-violet-100/80 via-purple-100/60 to-fuchsia-100/80';
-    return 'from-purple-50/80 via-violet-100/60 to-purple-50/80';
-  };
+    // Background gradient based on status - All Purple/Violet
+    const getBackgroundGradient = () => {
+      if (status === 'completed') return 'bg-gray-50';
+      if (status === 'winners-announced') return 'bg-emerald-50';
+      if (status === 'upcoming' || status === 'locked') return 'bg-gray-50/50';
+      if (status === 'not-qualified') return 'bg-red-50/50';
+      if (status === 'paid') return 'bg-purple-50';
+      if (userBidAmount) return 'bg-green-50';
+      if (isUserHighestBidder) return 'bg-violet-50';
+      return 'bg-white';
+    };
 
-  const getBorderColor = () => {
-    if (status === 'completed') return 'border-purple-400/50';
-    if (status === 'winners-announced') return 'border-green-400/60';
-    if (status === 'upcoming' || status === 'locked') return 'border-purple-300/40';
-    if (status === 'not-qualified') return 'border-red-300/50';
-    if (status === 'paid') return 'border-fuchsia-400/50';
-    if (userBidAmount) return 'border-green-400/50';
-    if (isUserHighestBidder) return 'border-violet-400/60';
-    return 'border-purple-300/50';
-  };
+    const getBorderColor = () => {
+      if (status === 'completed') return 'border-gray-200';
+      if (status === 'winners-announced') return 'border-emerald-200';
+      if (status === 'upcoming' || status === 'locked') return 'border-gray-200';
+      if (status === 'not-qualified') return 'border-red-200';
+      if (status === 'paid') return 'border-purple-200';
+      if (userBidAmount) return 'border-green-200';
+      if (isUserHighestBidder) return 'border-violet-300';
+      return 'border-gray-200';
+    };
 
-  const getShadowColor = () => {
-    if (status === 'completed') return 'shadow-purple-500/15';
-    if (status === 'winners-announced') return 'shadow-green-500/20';
-    if (status === 'upcoming' || status === 'locked') return 'shadow-purple-500/10';
-    if (status === 'not-qualified') return 'shadow-red-500/15';
-    if (status === 'paid') return 'shadow-fuchsia-500/15';
-    if (userBidAmount) return 'shadow-green-500/15';
-    if (isUserHighestBidder) return 'shadow-violet-500/20';
-    return 'shadow-purple-500/15';
-  };
+    const getShadowColor = () => {
+      return 'shadow-sm';
+    };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      whileHover={isClickable ? { scale: 1.02, transition: { duration: 0.2 } } : {}}
-      whileTap={isClickable ? { scale: 0.98 } : {}}
-      className="h-full w-full"
-      layout={false}
-    >
-      <Card 
-        className={`
-          relative overflow-hidden h-full w-full border-2 backdrop-blur-xl shadow-xl transition-all duration-500
-          bg-gradient-to-br ${getBackgroundGradient()} ${getBorderColor()} ${getShadowColor()}
-          ${isClickable ? 'cursor-pointer hover:shadow-2xl' : 'cursor-default'}
-        `}
-        onClick={isClickable ? onClick : undefined}
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+        whileHover={isClickable ? { y: -4, transition: { duration: 0.2 } } : {}}
+        className="h-full w-full"
+        layout={false}
       >
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Gradient Orb 1 - Purple/Violet/Green */}
-          <motion.div
-            className="absolute w-24 h-24 sm:w-32 sm:h-32 rounded-full blur-3xl opacity-20"
-            style={{
-              background: status === 'winners-announced'
-                ? 'radial-gradient(circle, #86EFAC, #34D399)'
-                : isUserHighestBidder 
-                ? 'radial-gradient(circle, #D8B4FE, #A78BFA)' 
-                : status === 'completed'
-                ? 'radial-gradient(circle, #C4B5FD, #8B5CF6)'
-                : status === 'locked' || status === 'upcoming'
-                ? 'radial-gradient(circle, #DDD6FE, #A78BFA)'
-                : 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
-              top: '-15%',
-              left: '-5%',
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              x: [0, 15, 0],
-              y: [0, -15, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          
-          {/* Gradient Orb 2 - Purple/Violet/Green */}
-          <motion.div
-            className="absolute w-28 h-28 sm:w-40 sm:h-40 rounded-full blur-3xl opacity-15"
-            style={{
-              background: status === 'winners-announced'
-                ? 'radial-gradient(circle, #34D399, #10B981)'
-                : isUserHighestBidder 
-                ? 'radial-gradient(circle, #A78BFA, #7C3AED)' 
-                : status === 'completed'
-                ? 'radial-gradient(circle, #A78BFA, #7C3AED)'
-                : status === 'locked' || status === 'upcoming'
-                ? 'radial-gradient(circle, #C4B5FD, #9333EA)'
-                : 'radial-gradient(circle, #A78BFA, #7C3AED)',
-              bottom: '-15%',
-              right: '-5%',
-            }}
-            animate={{
-              scale: [1, 1.3, 1],
-              x: [0, -10, 0],
-              y: [0, 10, 0],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1,
-            }}
-          />
-
-          {/* Shimmer Effect */}
-          {(status === 'open' || status === 'bidding') && (
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-              initial={{ x: '-100%' }}
-              animate={{ x: '200%' }}
-              transition={{ 
-                duration: 3,
-                repeat: Infinity,
-                repeatDelay: 2,
-                ease: "easeInOut"
-              }}
-            />
-          )}
-        </div>
-
-        <CardContent className="p-3 sm:p-4 md:p-5 relative z-10">
-          {/* Header with Title and Status */}
-          <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-base md:text-lg font-bold text-purple-900 truncate">
-              {getBoxTitle()}
-            </h3>
-            
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Info Icon - Only show for round boxes */}
-              {box.type === 'round' && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowRoundInfo(true);
-                  }}
-                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-100/50 hover:bg-purple-200/60 backdrop-blur-sm text-purple-700 flex items-center justify-center shadow-md transition-all"
-                  title="View round rules"
-                >
-                  <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
-                </motion.button>
-              )}
+        <Card 
+          className={`
+            relative overflow-hidden h-full w-full border-2 transition-all duration-300
+            ${getBackgroundGradient()} ${getBorderColor()} ${getShadowColor()}
+            ${isClickable ? 'cursor-pointer hover:border-purple-400 hover:shadow-md' : 'cursor-default'}
+            rounded-2xl
+          `}
+          onClick={isClickable ? onClick : undefined}
+        >
+          <CardContent className="p-4 sm:p-5 relative z-10">
+            {/* Header with Title and Status */}
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                {getBoxTitle()}
+              </h3>
               
-              <div className={`
-                flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border
-                ${status === 'completed' 
-                  ? 'bg-purple-100/80 text-purple-800 border-purple-300/50' 
-                  : status === 'winners-announced'
-                  ? 'bg-green-100/80 text-green-800 border-green-300/50'
-                  : status === 'upcoming' || status === 'locked'
-                  ? 'bg-purple-50/80 text-purple-700 border-purple-200/50'
-                  : status === 'paid'
-                  ? 'bg-fuchsia-100/80 text-fuchsia-800 border-fuchsia-300/50'
-                  : 'bg-purple-100/80 text-purple-800 border-purple-300/50'
-                }
-              `}>
-                {status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-                {status === 'winners-announced' && <Trophy className="w-3 h-3" />}
-                {status === 'upcoming' && <Lock className="w-3 h-3" />}
-                {status === 'locked' && <Lock className="w-3 h-3" />}
-                {status === 'open' && <Zap className="w-3 h-3" />}
-                {status === 'paid' && <CheckCircle2 className="w-3 h-3" />}
-                {status === 'bidding' && <TrendingUp className="w-3 h-3" />}
-                <span className="hidden xs:inline">
-                  {status === 'completed' 
-                    ? 'Completed' 
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Info Icon - Only show for round boxes */}
+                {box.type === 'round' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowRoundInfo(true);
+                    }}
+                    className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-all"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                
+                <div className={`
+                  flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider
+                  ${status === 'completed' 
+                    ? 'bg-gray-100 text-gray-600 border-gray-200' 
                     : status === 'winners-announced'
-                    ? 'Winners'
-                    : status === 'upcoming' 
-                    ? 'Locked' 
-                    : status === 'locked' 
-                    ? 'Locked' 
-                    : status === 'open' 
-                    ? 'Open' 
-                    : status === 'paid' 
-                    ? 'Paid' 
-                    : 'Active'
+                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                    : status === 'upcoming' || status === 'locked'
+                    ? 'bg-gray-50 text-gray-400 border-gray-100'
+                    : status === 'paid'
+                    ? 'bg-purple-100 text-purple-700 border-purple-200'
+                    : 'bg-blue-50 text-blue-700 border-blue-100'
                   }
-                </span>
+                `}>
+                  <span className="">
+                    {status === 'completed' 
+                      ? 'Completed' 
+                      : status === 'winners-announced'
+                      ? 'Winners'
+                      : status === 'upcoming' 
+                      ? 'Locked' 
+                      : status === 'locked' 
+                      ? 'Locked' 
+                      : status === 'open' 
+                      ? 'Open' 
+                      : status === 'paid' 
+                      ? 'Paid' 
+                      : 'Active'
+                    }
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Main Icon Area with Spinning Animation */}
-          <div className="flex flex-col items-center justify-center mb-3 sm:mb-4 py-2 sm:py-3 md:py-4">
-            <motion.div
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ 
-                delay: 0.2,
-                type: "spring",
-                stiffness: 200,
-                damping: 15
-              }}
-              className="relative mb-2 sm:mb-3"
-            >
-              <div className={`
-                w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl border-3 sm:border-4 border-white/60
-                ${status === 'completed'
-                  ? 'bg-gradient-to-br from-purple-500 via-purple-600 to-violet-700'
-                  : status === 'upcoming' || status === 'locked'
-                  ? 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'
-                  : status === 'paid'
-                  ? 'bg-gradient-to-br from-fuchsia-500 via-fuchsia-600 to-purple-700'
-                  : 'bg-gradient-to-br from-purple-600 via-purple-700 to-violet-800'
-                }
-              `}>
-                {status === 'upcoming' || status === 'locked' ? (
-                  <Lock className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
-                ) : box.type === 'entry' ? (
-                  <IndianRupee className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
-                ) : (
-                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
-                )}
-              </div>
+            {/* Main Icon Area */}
+            <div className="flex flex-col items-center justify-center mb-4">
+                <div className={`
+                  w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm border border-white/20 mb-3
+                  ${status === 'completed'
+                    ? 'bg-gray-400'
+                    : status === 'upcoming' || status === 'locked'
+                    ? 'bg-gray-200'
+                    : status === 'paid'
+                    ? 'bg-purple-500'
+                    : 'bg-purple-600'
+                  }
+                `}>
+                  {status === 'upcoming' || status === 'locked' ? (
+                    <Lock className="w-8 h-8 text-gray-400" />
+                  ) : box.type === 'entry' ? (
+                    <IndianRupee className="w-8 h-8 text-white" />
+                  ) : (
+                    <Target className="w-8 h-8 text-white" />
+                  )}
+                </div>
 
-              {/* Active Status Badge - Purple/Violet */}
-              {status === 'open' && (
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ 
-                    delay: 0.4,
-                    type: "spring",
-                    stiffness: 200
-                  }}
-                  className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2"
-                >
-                  <div className="w-7 h-7 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-400 to-violet-500 rounded-full flex items-center justify-center shadow-lg border-2 sm:border-3 border-white">
-                    <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  </div>
-                </motion.div>
+              {/* Timer Display */}
+              {timeUntilOpen && !winnersAnnounced && isUserQualified !== false && (
+                <div className="bg-gray-900 text-white px-3 py-1 rounded-lg text-xs font-mono font-bold shadow-sm">
+                  {timeUntilOpen}
+                </div>
               )}
-            </motion.div>
+            </div>
 
-            {/* Timer Display */}
-            {timeUntilOpen && !winnersAnnounced && isUserQualified !== false && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-              >
-                <div className="bg-purple-600 backdrop-blur-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg border-2 border-purple-300/60">
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-white">
-                    <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="font-mono font-semibold text-xs sm:text-sm">
-                      {timeUntilOpen}
-                    </span>
-                  </div>
+            {/* Information Section */}
+            <div className="space-y-2.5">
+              {status === 'winners-announced' ? (
+                <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                  <div className="text-[10px] text-emerald-700 font-bold mb-1 uppercase tracking-wide">Status</div>
+                  <p className="text-xs text-emerald-800 font-medium">Winners Announced Early</p>
                 </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Information Section */}
-          <div className="space-y-2 sm:space-y-2.5">
-            {status === 'winners-announced' ? (
-              <>
-                {/* Winners Announced Info - Green */}
-                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-green-800 text-xs font-semibold mb-2">
-                    <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span>Winners Announced</span>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-green-700 mb-2">
-                    <CheckCircle2 className="w-3 h-3 shrink-0" />
-                    <span className="truncate">
-                      Auction completed early (≤3 qualified)
-                    </span>
-                  </div>
-                  <div className="bg-white/60 rounded-lg p-2 mt-2 border border-green-200/50">
-                    <p className="text-[10px] text-green-800 leading-relaxed">
-                      This round was not played as final winners were determined in previous rounds.
-                    </p>
-                  </div>
+              ) : status === 'completed' ? (
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Closed at</div>
+                  <p className="text-xs text-gray-700 font-medium">{formatRoundTime(box.closesAt!)}</p>
                 </div>
-
-                {/* Prize Display for Winners Announced */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                    <div className="bg-white/60 rounded-lg p-2 border border-amber-200/50">
-                      <p className="text-[10px] text-amber-800 leading-relaxed">
-                        <strong>Note:</strong> Prize allocated to earlier round winners due to early completion.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Stats Info */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-gradient-to-br from-blue-50/90 to-cyan-50/90 backdrop-blur-sm rounded-lg p-2 border border-blue-200/60">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Users className="w-3 h-3 text-blue-600" />
-                      <span className="text-[10px] text-blue-700 font-medium">Qualifiers</span>
-                    </div>
-                    <p className="text-xs font-bold text-blue-900">Top 3 Players</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-violet-50/90 to-purple-50/90 backdrop-blur-sm rounded-lg p-2 border border-violet-200/60">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Zap className="w-3 h-3 text-violet-600" />
-                      <span className="text-[10px] text-violet-700 font-medium">Strategy</span>
-                    </div>
-                    <p className="text-xs font-bold text-violet-900">Unique & High</p>
-                  </div>
+              ) : status === 'upcoming' || status === 'locked' ? (
+                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                  <div className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wide">Opens at</div>
+                  <p className="text-xs text-gray-500 font-medium">{box.opensAt ? formatRoundTime(box.opensAt) : 'TBD'}</p>
                 </div>
-              </>
-            ) : status === 'completed' ? (
-              <>
-                {/* ✅ Completion Info with Round Time */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-purple-800 text-xs font-semibold mb-1 sm:mb-1.5">
-                    <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span>Round Completed</span>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700">
-                    <Clock className="w-3 h-3 shrink-0" />
-                    <span className="truncate">
-                      {getRoundTimeRange()}
-                    </span>
-                  </div>
+              ) : userBidAmount ? (
+                <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                  <div className="text-[10px] text-green-600 font-bold mb-1 uppercase tracking-wide">Your Bid</div>
+                  <p className="text-sm font-bold text-green-900">₹{userBidAmount.toLocaleString('en-IN')}</p>
                 </div>
-
-                {/* Prize Display for Completed Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
+              ) : (
+                <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                  <div className="text-[10px] text-purple-600 font-bold mb-1 uppercase tracking-wide">
+                    {box.type === 'entry' ? 'Entry Fee' : 'Min Bid'}
                   </div>
-                )}
-
-                {/* Winner Card - Purple/Violet */}
-                {box.highestBidFromAPI && box.highestBidFromAPI > 0 ? (
-                  <>
-                    <div className="bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-violet-300/60">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md shrink-0">
-                            <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-xs text-violet-700 font-medium">Highest Bid</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-0.5 text-violet-900 font-bold shrink-0 text-sm sm:text-base">
-                          <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span>{box.highestBidFromAPI.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {onShowLeaderboard && userHasPaidEntry && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onShowLeaderboard(box.roundNumber!);
-                        }}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 sm:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
-                      >
-                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>View Leaderboard</span>
-                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60 text-center">
-                    <div className="flex items-center justify-center gap-2 text-purple-600 text-xs sm:text-sm">
-                      <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>No bids placed</span>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : status === 'upcoming' ? (
-              <>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60 text-center">
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-purple-900 font-bold text-xs sm:text-sm">
-                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span>Pay Entry Fee to Unlock</span>
-                  </div>
+                  <p className="text-sm font-bold text-purple-900">
+                    ₹{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}
+                  </p>
                 </div>
-                {/* ✅ Round Time Display for Upcoming */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Scheduled Time</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
-                {/* Prize Display for Upcoming Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : status === 'locked' ? (
-              <>
-                {/* ✅ Round Time Display for Locked */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Opens at</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
-                {/* Prize Display for Locked Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : status === 'paid' ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-fuchsia-200/60 text-center">
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-fuchsia-800 font-bold text-xs sm:text-sm">
-                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Entry Fee Paid</span>
-                </div>
-              </div>
-            ) : status === 'not-qualified' ? (
-              <>
-                {/* Not Qualified Warning */}
-                <div className="bg-red-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-red-300/60 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <AlertCircle className="w-6 h-6 text-red-600" />
-                    <div className="text-xs sm:text-sm font-bold text-red-800">
-                      Not Qualified
-                    </div>
-                    <div className="text-xs text-red-700">
-                      You did not qualify from Round {(box.roundNumber || 1) - 1}. Only top 3 players can proceed.
-                    </div>
-                  </div>
-                </div>
-                {/* ✅ Round Time Display for Not Qualified */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Round Time</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : userBidAmount && box.opensAt && box.closesAt ? (
-              <>
-                {/* ✅ Round Timing Card with API times */}
-                {!winnersAnnounced && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Round</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
+              )}
 
-                {/* Prize Display for Round with User Bid */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Your Bid Card */}
-                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-green-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                      <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                      <span>Your Bid</span>
-                    </span>
-                    <span className="text-green-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                      <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{userBidAmount.toLocaleString('en-IN')}</span>
-                    </span>
-                  </div>
+              {canPlaceBid && (
+                <div className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-xs text-center transition-colors">
+                  {status === 'open' && box.type === 'entry' ? 'Pay Entry Fee' : 'Place Your Bid'}
                 </div>
-              </>
-            ) : (
-              <>
-                {/* Prize Display for Active Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
+              )}
 
-                {/* Main Price Card */}
-                <div className="bg-gradient-to-r from-purple-100/90 to-purple-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3.5 border border-purple-200/60">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-purple-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                      <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                      <span>{box.type === 'entry' ? 'Entry Fee' : 'Minimum Bid'}</span>
-                    </span>
-                    <span className="text-purple-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                      <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Call to Action Button - Purple/Violet Gradient */}
-            {/* ✅ Use canPlaceBid instead of isClickable for extra safety */}
-            {canPlaceBid && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                <div className="rounded-xl p-2.5 sm:p-3.5 text-center font-bold shadow-lg hover:shadow-xl cursor-pointer transition-all bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white">
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    {status === 'open' && box.type === 'round' && <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    {status === 'open' && box.type === 'entry' && <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    {status === 'bidding' && <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    <span className="text-xs sm:text-sm">
-                      {status === 'open' && box.type === 'entry' && 'Pay Entry Fee'}
-                      {status === 'open' && box.type === 'round' && 'Place Your Bid'}
-                      {status === 'bidding' && 'Place Bid'}
-                    </span>
-                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              {status === 'completed' && box.highestBidFromAPI && (
+                 <div className="bg-violet-50 rounded-xl p-3 border border-violet-100">
+                    <div className="text-[10px] text-violet-600 font-bold mb-1 uppercase tracking-wide">Winning Bid</div>
+                    <p className="text-sm font-bold text-violet-900">₹{box.highestBidFromAPI.toLocaleString('en-IN')}</p>
+                 </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Round Information Dialog */}
       {box.type === 'round' && (

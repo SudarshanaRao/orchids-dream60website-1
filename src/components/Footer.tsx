@@ -103,7 +103,7 @@ export function Footer({ onNavigate }: FooterProps) {
               <div className="flex items-center gap-3">
                   <div className="h-6 px-2 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded text-[10px] font-bold flex items-center gap-1">
                     <Shield className="w-3 h-3" />
-                    GOVT. REGISTERED
+                    VERIFIED PLATFORM
                   </div>
                 <div className="h-6 px-2 bg-purple-50 text-purple-600 border border-purple-100 rounded text-[10px] font-bold flex items-center gap-1">
                   <Zap className="w-3 h-3" />
