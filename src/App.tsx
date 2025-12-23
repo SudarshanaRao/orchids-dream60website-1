@@ -293,6 +293,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
     if (path === '/about') return 'about';
+    if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
     if (path === '/support') return 'support';
@@ -324,6 +325,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/about') setCurrentPage('about');
+      else if (path === '/careers') setCurrentPage('careers');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
       else if (path === '/support') setCurrentPage('support');

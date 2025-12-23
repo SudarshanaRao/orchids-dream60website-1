@@ -8,6 +8,8 @@ import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
 import { SupportCenterHeader } from './SupportCenterHeader';
 
+import { API_ENDPOINTS } from '@/lib/api-config';
+
 interface CareersFormProps {
   onBack: () => void;
 }
@@ -16,6 +18,7 @@ export function CareersForm({ onBack }: CareersFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>('');
 
   const [formData, setFormData] = useState({
@@ -42,25 +45,46 @@ export function CareersForm({ onBack }: CareersFormProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
       setFileName(e.target.files[0].name);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.role || !fileName) {
+    if (!formData.name || !formData.email || !formData.role || !file) {
       toast.error('Please fill in all required fields and upload your resume');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setIsSubmitted(true);
-      toast.success('Application submitted successfully!');
-    } catch (error) {
-      toast.error('Failed to submit application. Please try again.');
+      const data = new FormData();
+      data.append('name', formData.name);
+      data.append('email', formData.email);
+      data.append('phone', formData.phone);
+      data.append('role', formData.role);
+      data.append('experience', formData.experience);
+      data.append('portfolio', formData.portfolio);
+      data.append('message', formData.message);
+      data.append('resume', file);
+
+      const response = await fetch(API_ENDPOINTS.careers.apply, {
+        method: 'POST',
+        body: data,
+        // Don't set Content-Type header, fetch will set it correctly for FormData with boundary
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setIsSubmitted(true);
+        toast.success(result.message || 'Application submitted successfully!');
+      } else {
+        throw new Error(result.message || 'Failed to submit application');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit application. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

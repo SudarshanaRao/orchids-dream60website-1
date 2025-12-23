@@ -1,8 +1,23 @@
-import { motion } from 'motion/react';
-import { ArrowLeft, Users, Target, Rocket, Shield, Globe, Award, TrendingUp, Briefcase, Heart, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
-import { Button } from './ui/card';
+import { motion } from 'framer-motion';
+import { 
+  Users, 
+  Target, 
+  Rocket, 
+  Shield, 
+  Globe, 
+  Award, 
+  TrendingUp, 
+  Briefcase, 
+  Heart, 
+  Sparkles, 
+  CheckCircle2,
+  Zap,
+  Star,
+  Smartphone,
+  Trophy
+} from 'lucide-react';
 import { Card } from './ui/card';
-import Snowfall from 'react-snowfall';
+import { Button } from './ui/button';
 import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface AboutUsProps {
@@ -11,223 +26,212 @@ interface AboutUsProps {
 }
 
 export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
   const stats = [
-    { label: 'Active Users', value: '500K+', icon: <Users className="w-5 h-5" /> },
-    { label: 'Auctions Daily', value: '24+', icon: <Rocket className="w-5 h-5" /> },
-    { label: 'Prizes Won', value: '₹10Cr+', icon: <Award className="w-5 h-5" /> },
-    { label: 'Cities Covered', value: '100+', icon: <Globe className="w-5 h-5" /> },
+    { label: 'Active Users', value: '500K+', icon: <Users className="w-5 h-5" />, color: 'bg-blue-500' },
+    { label: 'Prizes Won', value: '₹10Cr+', icon: <Award className="w-5 h-5" />, color: 'bg-yellow-500' },
+    { label: 'Cities Covered', value: '100+', icon: <Globe className="w-5 h-5" />, color: 'bg-green-500' },
+    { label: 'Auctions Daily', value: '24+', icon: <Zap className="w-5 h-5" />, color: 'bg-purple-500' },
   ];
 
-  const values = [
+  const features = [
     {
-      title: 'Transparency',
-      description: 'Every auction is live, fair, and verified. We believe in building trust through total openness.',
+      title: 'Real-Time Thrill',
+      description: 'Experience the adrenaline of live 15-minute auction rounds with real-time updates and lightning-fast bidding.',
+      icon: <Zap className="w-6 h-6" />,
+      gradient: 'from-amber-400 to-orange-600'
+    },
+    {
+      title: 'Guaranteed Fairness',
+      description: 'Our platform uses verified algorithms to ensure every participant has an equal opportunity to win.',
       icon: <Shield className="w-6 h-6" />,
-      color: 'from-blue-500 to-indigo-600'
+      gradient: 'from-emerald-400 to-teal-600'
     },
     {
-      title: 'Innovation',
-      description: 'Revolutionizing the way India shops and plays with our unique 15-minute bidding rounds.',
-      icon: <Sparkles className="w-6 h-6" />,
-      color: 'from-purple-500 to-pink-600'
-    },
-    {
-      title: 'User-First',
-      description: 'Our platform is designed for everyone, from college students to professionals.',
-      icon: <Heart className="w-6 h-6" />,
-      color: 'from-red-500 to-orange-600'
+      title: 'Accessible Luxury',
+      description: 'Bringing premium products within reach of everyone through a low-barrier, high-reward auction model.',
+      icon: <Star className="w-6 h-6" />,
+      gradient: 'from-blue-400 to-indigo-600'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-[#FDFCFE] relative overflow-hidden pb-20">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-200/30 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-200/30 blur-[120px] rounded-full animate-pulse" />
-      </div>
-
+    <div className="min-h-screen bg-[#fafafa] pb-24">
       <SupportCenterHeader 
-        title="About Us" 
-        icon={<Users className="w-6 h-6" />} 
+        title="About Dream60" 
+        icon={<Trophy className="w-6 h-6 text-yellow-500" />} 
         onBack={onBack} 
+        backLabel="Back to Game"
       />
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
-          <section className="text-center mb-16 sm:mb-24">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-sm font-semibold mb-6">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Redefining Online Auctions
-              </span>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-purple-900 mb-6 leading-tight">
-                India's Most Exciting <br />
-                <span className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">
-                  Live Auction Platform
-                </span>
-              </h1>
-              <p className="text-lg text-purple-600/80 max-w-2xl mx-auto leading-relaxed">
-                Dream60 is not just an auction site; it's a revolutionary entertainment platform where skill meets opportunity, making luxury products accessible to everyone through transparent bidding.
-              </p>
-            </motion.div>
-          </section>
+      {/* Hero Section */}
+      <div className="relative pt-12 pb-20 px-4 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-full pointer-events-none">
+          <div className="absolute top-10 right-10 w-64 h-64 bg-purple-200/40 blur-3xl rounded-full" />
+          <div className="absolute bottom-10 left-10 w-64 h-64 bg-blue-200/40 blur-3xl rounded-full" />
+        </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-16 sm:mb-24">
-            {stats.map((stat, index) => (
+        <div className="container mx-auto max-w-6xl text-center relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-purple-100 text-purple-600 text-xs font-bold uppercase tracking-wider mb-8">
+              <Sparkles className="w-4 h-4" />
+              Revolutionizing Indian E-Commerce
+            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-[1.1]">
+              India's Favorite <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
+                Live Auction Hub
+              </span>
+            </h1>
+            <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
+              Dream60 is a cutting-edge entertainment and shopping platform designed to make luxury accessible. We blend the excitement of gaming with the rewards of e-commerce.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="container mx-auto max-w-6xl px-4">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 -mt-10 mb-24">
+          {stats.map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="p-6 bg-white border-none shadow-xl shadow-slate-200/60 rounded-3xl text-center group hover:-translate-y-1 transition-all">
+                <div className={`w-12 h-12 ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-lg shadow-${stat.color.split('-')[1]}-200`}>
+                  {stat.icon}
+                </div>
+                <div className="text-2xl md:text-3xl font-black text-slate-900 mb-1">{stat.value}</div>
+                <div className="text-sm text-slate-500 font-bold uppercase tracking-tight">{stat.label}</div>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Story Section */}
+        <div className="grid lg:grid-cols-2 gap-16 items-center mb-32">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <div className="space-y-4">
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900">Our Journey</h2>
+              <div className="w-20 h-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full" />
+            </div>
+            <p className="text-slate-600 text-lg leading-relaxed">
+              Founded with a vision to revolutionize online shopping in India, Dream60 introduced a unique auction model that rewards skill and timing. We've built a community of thousands who share the thrill of the win.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="p-6 bg-purple-50 rounded-2xl border border-purple-100">
+                <Target className="w-8 h-8 text-purple-600 mb-4" />
+                <h3 className="text-lg font-black text-slate-900 mb-2">Our Vision</h3>
+                <p className="text-slate-600 text-sm">To be India's #1 interactive commerce destination.</p>
+              </div>
+              <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                <Smartphone className="w-8 h-8 text-blue-600 mb-4" />
+                <h3 className="text-lg font-black text-slate-900 mb-2">Our Mission</h3>
+                <p className="text-slate-600 text-sm">Democratizing luxury through transparent tech.</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+              <img 
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800" 
+                alt="Our Team"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+              <div className="absolute bottom-8 left-8 right-8 p-6 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-white">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="font-black uppercase tracking-widest text-xs">Verified & Secure</span>
+                </div>
+                <p className="text-sm font-medium opacity-90">Building trust through 100% transparent live auction technology.</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Features Section */}
+        <div className="mb-32">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">Why India Chooses Dream60</h2>
+            <p className="text-slate-500 font-medium">The values that power our platform every single day.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, idx) => (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
               >
-                <Card className="p-6 bg-white/60 backdrop-blur-md border-purple-100 hover:border-purple-300 transition-all text-center shadow-xl shadow-purple-500/5 group relative overflow-hidden">
-                  <div className="relative z-10">
-                    <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-purple-600 group-hover:scale-110 transition-transform">
-                      {stat.icon}
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-bold text-purple-900 mb-1">{stat.value}</div>
-                    <div className="text-sm text-purple-600 font-medium">{stat.label}</div>
+                <Card className="p-8 h-full bg-white border-none shadow-xl shadow-slate-200/50 rounded-[2rem] hover:shadow-2xl transition-all group">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center text-white mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
+                    {feature.icon}
                   </div>
-                  <div className="absolute top-0 right-0 p-2 opacity-5 group-hover:opacity-10 transition-opacity">
-                    {stat.icon}
-                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mb-4">{feature.title}</h3>
+                  <p className="text-slate-600 leading-relaxed font-medium">{feature.description}</p>
                 </Card>
               </motion.div>
             ))}
           </div>
-
-          {/* Our Mission */}
-          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16 sm:mb-24">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl font-bold text-purple-900 mb-6">Our Vision & Mission</h2>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="mt-1 flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-                    <Target className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-800 mb-2">The Vision</h3>
-                    <p className="text-purple-600/80 leading-relaxed">
-                      To become India's primary destination for interactive commerce, where the thrill of winning meets the joy of shopping. We envision a platform where every Indian has a fair chance at owning their dream products.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-4">
-                  <div className="mt-1 flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-800 mb-2">The Mission</h3>
-                    <p className="text-purple-600/80 leading-relaxed">
-                      Our mission is to democratize high-value products through a transparent, engaging, and skill-based auction system that is accessible, secure, and incredibly fun.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl relative">
-                <img 
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800" 
-                  alt="Team Collaboration"
-                  className="object-cover w-full h-full"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 p-6 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 text-white">
-                  <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-400" />
-                    <span className="font-bold">Verified Platform</span>
-                  </div>
-                  <p className="text-sm text-white/90">Ensuring the highest standards of security and fairness for our users since 2024.</p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Core Values */}
-          <section className="mb-16 sm:mb-24">
-            <h2 className="text-3xl font-bold text-purple-900 mb-12 text-center">What Drives Us</h2>
-            <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-              {values.map((value, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card className="p-8 h-full bg-white border-purple-50 shadow-lg shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 transition-all group">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${value.color} flex items-center justify-center text-white mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
-                      {value.icon}
-                    </div>
-                    <h3 className="text-xl font-bold text-purple-800 mb-3">{value.title}</h3>
-                    <p className="text-purple-600/80 leading-relaxed">{value.description}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          {/* Careers CTA */}
-          <motion.section 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative rounded-[2rem] overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#53317B] to-[#8456BC]">
-              <Snowfall 
-                snowflakeCount={isMobile ? 20 : 50}
-                radius={[0.5, 2.0]}
-                speed={[0.1, 0.8]}
-                style={{ opacity: 0.2 }}
-              />
-            </div>
-            <div className="relative z-10 px-8 py-12 sm:py-20 text-center text-white">
-              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-8">
-                <Briefcase className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Build the Future of Auctions</h2>
-              <p className="text-lg text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed">
-                We're always looking for passionate people to join our mission. If you're excited about technology, e-commerce, and gaming, we want to hear from you!
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button 
-                  className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-white text-purple-700 hover:bg-purple-50 font-bold text-lg shadow-2xl shadow-black/20 transition-all transform hover:scale-105"
-                  onClick={() => {
-                    onNavigate?.('careers');
-                    window.history.pushState({}, '', '/careers');
-                  }}
-                >
-                  Join Our Team
-                  <Rocket className="w-5 h-5 ml-2 inline-block" />
-                </button>
-                <div className="flex items-center gap-3 text-white/70">
-                  <CheckCircle2 className="w-5 h-5 text-green-400" />
-                  <span className="font-medium">15+ Open Positions</span>
-                </div>
-              </div>
-            </div>
-          </motion.section>
         </div>
+
+        {/* Join Team CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative bg-slate-900 rounded-[3rem] p-12 md:p-20 overflow-hidden text-center"
+        >
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/20 blur-[100px] rounded-full -mr-48 -mt-48" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/20 blur-[100px] rounded-full -ml-48 -mb-48" />
+          
+          <div className="relative z-10 max-w-3xl mx-auto">
+            <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-8">
+              <Briefcase className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-6">Want to Build the Future?</h2>
+            <p className="text-slate-400 text-lg md:text-xl mb-10 leading-relaxed">
+              We're looking for dreamers, makers, and innovators to join our rapidly growing team. Come help us redefine commerce in India.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button 
+                onClick={() => {
+                  onNavigate?.('careers');
+                  window.history.pushState({}, '', '/careers');
+                  window.scrollTo(0, 0);
+                }}
+                className="w-full sm:w-auto px-10 py-7 bg-white text-slate-900 hover:bg-slate-100 font-black text-lg rounded-2xl transition-all shadow-xl shadow-white/5"
+              >
+                Explore Open Roles
+                <Rocket className="w-5 h-5 ml-2" />
+              </Button>
+              <div className="flex items-center gap-2 text-slate-500 text-sm font-bold uppercase tracking-widest">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                Hiring Now
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

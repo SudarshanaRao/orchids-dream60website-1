@@ -33,6 +33,7 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
+    "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "razorpay": "^2.9.6",
     "swagger-jsdoc": "^6.2.8",
