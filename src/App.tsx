@@ -16,6 +16,7 @@ import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
 import { AboutUs } from './components/AboutUs';
+import { CareersForm } from './components/CareersForm';
 import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
@@ -1543,7 +1544,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         'view-guide': '/view-guide',
         'winning-tips': '/winning-tips',
         'support-chat': '/support-chat',
-        'transactions': '/transactions'
+        'transactions': '/transactions',
+        'careers': '/careers'
       };
     
     const url = urlMap[page] || '/';
