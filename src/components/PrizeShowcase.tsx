@@ -1,7 +1,6 @@
 import { Gift, IndianRupee, Users, CreditCard, Sparkles, TrendingUp, Trophy, Clock, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
-import Snowfall from 'react-snowfall';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { parseAPITimestamp, getCurrentIST } from '../utils/timezone';
 import { API_ENDPOINTS } from '@/lib/api-config';
@@ -419,13 +418,6 @@ interface PrizeShowcaseProps {
 
           {/* Content container */}
           <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-4 sm:p-6 md:p-8 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
-            <Snowfall 
-              color="#8B5CF6"
-              snowflakeCount={isMobile ? 2 : 20}
-              radius={[0.8, 2.0]}
-              speed={[0.2, 0.6]}
-              wind={[-0.2, 0.5]}
-            />
             <div className="text-center py-12 sm:py-16 relative z-10">
               <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-purple-600" />
@@ -463,16 +455,9 @@ interface PrizeShowcaseProps {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50/80 via-white/90 to-purple-100/60 rounded-[24px]"></div>
         <div className="absolute inset-0 backdrop-blur-2xl bg-white/50 rounded-[24px]"></div>
 
-        {/* Content container */}
-        <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
-            <Snowfall 
-              color="#8B5CF6"
-              snowflakeCount={isMobile ? 2 : 20}
-              radius={[0.8, 2.0]}
-              speed={[0.2, 0.6]}
-              wind={[-0.2, 0.5]}
-            />
-          <div className="grid md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 items-stretch relative z-10">
+          {/* Content container */}
+          <div className="relative backdrop-blur-md bg-white/40 rounded-[24px] p-2 sm:p-3 md:p-4 border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
+            <div className="grid md:grid-cols-2 gap-3 sm:gap-4 md:gap-5 items-stretch relative z-10">
             {/* Left Content Section */}
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
               {/* Header with Icon */}

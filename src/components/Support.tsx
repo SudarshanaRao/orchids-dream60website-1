@@ -1,7 +1,6 @@
 import  { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, IndianRupee, Trophy, AlertCircle, Search, Send } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';

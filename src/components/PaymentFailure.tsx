@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { XCircle, Home, RefreshCw, AlertTriangle, Info, Clock, X, IndianRupee, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
-import Snowfall from 'react-snowfall';
 import jsPDF from 'jspdf';
 
 interface PaymentFailureProps {
@@ -185,14 +184,6 @@ export function PaymentFailure({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <Snowfall 
-        color="#EF4444"
-        snowflakeCount={isMobile ? 10 : 35}
-        radius={[0.8, 2.5]}
-        speed={[0.6, 1.2]}
-        style={{ zIndex: 101, position: 'fixed' }}
-      />
-
       <motion.div 
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
         initial={{ opacity: 0 }}

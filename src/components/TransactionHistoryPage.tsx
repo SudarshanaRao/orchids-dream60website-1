@@ -19,7 +19,6 @@ import {
   Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
-import Snowfall from 'react-snowfall';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -428,15 +427,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               onClick={() => openDetails(item)}
               role="button"
             >
-                      <Snowfall 
-                    color="#8B5CF6" 
-                    snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[1.5, 3.5]} 
-                    speed={[0.2, 0.6]}
-                    wind={[-0.2, 0.5]}
-                  />
-
-            <CardContent className="p-3 sm:p-4">
+              <CardContent className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div
@@ -670,9 +661,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-4 sm:mb-6"
           >
               <Card className="relative overflow-hidden border-2 border-purple-200/70 shadow-xl bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white" data-whatsnew-target="transactions-hero">
-                  <Snowfall color="#FFFFFF" snowflakeCount={window.innerWidth < 768 ? 8 : 40} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
-
-              <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">
                     <IndianRupee className="w-6 h-6" />
@@ -698,13 +687,6 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           className="mb-3 sm:mb-4"
         >
           <Card className={`relative overflow-hidden border-2 shadow-xl ${user.username?.toLowerCase() === 'dharsh650' ? 'bg-gradient-to-r from-purple-100 via-violet-50 to-white border-purple-200' : 'bg-white border-purple-100'}`}>
-            <Snowfall 
-              color="#8B5CF6" 
-              snowflakeCount={window.innerWidth < 768 ? 2 : 10} 
-              radius={[1.0, 3.0]} 
-              speed={[0.1, 0.4]}
-              style={{ opacity: 0.6 }}
-            />
             <CardContent className="p-4 flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-600 to-violet-700 flex items-center justify-center shadow-lg">
@@ -723,23 +705,15 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           </Card>
         </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-3 sm:mb-4"
-          >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
-                          <Snowfall 
-                    color="#8B5CF6" 
-                    snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[1.5, 3.5]} 
-                    speed={[0.2, 0.6]}
-                    wind={[-0.2, 0.5]}
-                  />
-
-                  <CardContent className="p-4 space-y-1">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-3 sm:mb-4"
+            >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                    <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
                       <BarChart3 className="w-4 h-4" />
                       <span>Transactions</span>
@@ -748,42 +722,26 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     <div className="text-[11px] text-purple-600">Entry {stats.entryCount} • Prize {stats.prizeCount}</div>
                   </CardContent>
                 </Card>
-                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
-                          <Snowfall 
-                    color="#8B5CF6" 
-                    snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[1.5, 3.5]} 
-                    speed={[0.2, 0.6]}
-                    wind={[-0.2, 0.5]}
-                  />
-
-                  <CardContent className="p-4 space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
-                      <IndianRupee className="w-4 h-4" />
-                      <span>Entry Fee Paid</span>
-                    </div>
-                    <div className="text-2xl font-bold text-purple-900">₹{stats.entryAmount.toLocaleString('en-IN')}</div>
-                    <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
-                  </CardContent>
-                </Card>
-                <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
-                          <Snowfall 
-                    color="#8B5CF6" 
-                    snowflakeCount={window.innerWidth < 768 ? 6 : 20} 
-                    radius={[1.5, 3.5]} 
-                    speed={[0.2, 0.6]}
-                    wind={[-0.2, 0.5]}
-                  />
-
-                  <CardContent className="p-4 space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
-                      <Target className="w-4 h-4" />
-                      <span>Prize Claim Paid</span>
-                    </div>
-                    <div className="text-2xl font-bold text-purple-900">₹{stats.prizeAmount.toLocaleString('en-IN')}</div>
-                    <div className="text-[11px] text-purple-600">{stats.prizeCount} payments</div>
-                  </CardContent>
-                </Card>
+                  <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                    <CardContent className="p-4 space-y-1">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                        <IndianRupee className="w-4 h-4" />
+                        <span>Entry Fee Paid</span>
+                      </div>
+                      <div className="text-2xl font-bold text-purple-900">₹{stats.entryAmount.toLocaleString('en-IN')}</div>
+                      <div className="text-[11px] text-purple-600">{stats.entryCount} payments</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="relative overflow-hidden border-2 border-purple-200/70 bg-white shadow-sm">
+                    <CardContent className="p-4 space-y-1">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-purple-700">
+                        <Target className="w-4 h-4" />
+                        <span>Prize Claim Paid</span>
+                      </div>
+                      <div className="text-2xl font-bold text-purple-900">₹{stats.prizeAmount.toLocaleString('en-IN')}</div>
+                      <div className="text-[11px] text-purple-600">{stats.prizeCount} payments</div>
+                    </CardContent>
+                  </Card>
                 <Card className="border-2 border-emerald-200/70 bg-white shadow-sm">
                   <CardContent className="p-4 space-y-1">
                     <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">

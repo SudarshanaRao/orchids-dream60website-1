@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Gift, Sparkles } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 
 interface AmazonVoucherModalProps {
   onClose: () => void;
@@ -30,21 +29,13 @@ export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalPro
       {show && (
           <>
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                  <Snowfall 
-                    color="#8B5CF6"
-                    snowflakeCount={window.innerWidth < 768 ? 2 : 15}
-                    radius={[0.3, 1.2]}
-                    speed={[0.2, 0.6]}
-                    wind={[-0.2, 0.5]}
-                    style={{ zIndex: 101, position: 'fixed' }}
-                  />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={handleClose}
-              />
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                  onClick={handleClose}
+                />
             
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}

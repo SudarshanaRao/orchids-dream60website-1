@@ -1,5 +1,4 @@
 import { ArrowLeft, Clock, Shield, Star, Play, CreditCard, TrendingUp, Gift } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { motion } from 'motion/react';
