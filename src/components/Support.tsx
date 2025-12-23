@@ -8,6 +8,7 @@ import { Textarea } from './ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../lib/api-config';
+import Snowfall from 'react-snowfall';
 
 interface SupportProps {
   onBack: () => void;

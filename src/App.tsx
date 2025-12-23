@@ -2164,7 +2164,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       );
     }
 
-    if (currentPage === 'about') {
+      if (currentPage === 'careers') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <CareersForm onBack={handleBackToGame} />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      if (currentPage === 'about') {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>

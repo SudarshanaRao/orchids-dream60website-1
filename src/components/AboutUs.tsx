@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Users, Target, Rocket, Shield, Globe, Award, TrendingUp, Briefcase, Heart, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from './ui/card';
 import { Card } from './ui/card';
 import Snowfall from 'react-snowfall';
+import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface AboutUsProps {
   onBack: () => void;
@@ -48,46 +49,11 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-200/30 blur-[120px] rounded-full animate-pulse" />
       </div>
 
-      {/* Header - Matching Support Style */}
-      <motion.header 
-        className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-purple-100/50"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-      >
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onBack}
-                className="rounded-xl hover:bg-purple-50 text-purple-600 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Users className="w-6 h-6 text-purple-600" />
-                <h1 className="text-xl sm:text-2xl font-bold text-purple-800">About Us</h1>
-              </div>
-            </div>
-            
-            {/* Logo */}
-            <div 
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={onBack}
-            >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
-                <p className="text-[10px] text-purple-600 font-medium">Live Auction Play</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <SupportCenterHeader 
+        title="About Us" 
+        icon={<Users className="w-6 h-6" />} 
+        onBack={onBack} 
+      />
 
       <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-6xl mx-auto">
@@ -188,7 +154,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
                 <div className="absolute bottom-6 left-6 right-6 p-6 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 text-white">
                   <div className="flex items-center gap-3 mb-2">
                     <CheckCircle2 className="w-5 h-5 text-green-400" />
-                    <span className="font-bold">ISO Certified Platform</span>
+                    <span className="font-bold">Verified Platform</span>
                   </div>
                   <p className="text-sm text-white/90">Ensuring the highest standards of security and fairness for our users since 2024.</p>
                 </div>
@@ -244,17 +210,16 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
                 We're always looking for passionate people to join our mission. If you're excited about technology, e-commerce, and gaming, we want to hear from you!
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button 
-                  size="lg"
-                  className="w-full sm:w-auto px-10 py-7 rounded-2xl bg-white text-purple-700 hover:bg-purple-50 font-bold text-lg shadow-2xl shadow-black/20 group"
+                <button 
+                  className="w-full sm:w-auto px-10 py-4 rounded-2xl bg-white text-purple-700 hover:bg-purple-50 font-bold text-lg shadow-2xl shadow-black/20 transition-all transform hover:scale-105"
                   onClick={() => {
                     onNavigate?.('careers');
                     window.history.pushState({}, '', '/careers');
                   }}
                 >
                   Join Our Team
-                  <Rocket className="w-5 h-5 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                </Button>
+                  <Rocket className="w-5 h-5 ml-2 inline-block" />
+                </button>
                 <div className="flex items-center gap-3 text-white/70">
                   <CheckCircle2 className="w-5 h-5 text-green-400" />
                   <span className="font-medium">15+ Open Positions</span>

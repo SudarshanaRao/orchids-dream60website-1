@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Briefcase, Upload, Send, CheckCircle2, AlertCircle, Clock, User, Mail, Phone, Link as LinkIcon, FileText } from 'lucide-react';
+import { Briefcase, Upload, Send, CheckCircle2, AlertCircle, Clock, User, Mail, Phone, Link as LinkIcon, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { toast } from 'sonner';
+import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface CareersFormProps {
   onBack: () => void;
@@ -93,43 +94,12 @@ export function CareersForm({ onBack }: CareersFormProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header - Replicating Support Style */}
-      <motion.header 
-        className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                onClick={onBack}
-                variant="ghost"
-                size="sm"
-                className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-              <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
-              <div className="hidden sm:flex items-center space-x-2">
-                <Briefcase className="w-6 h-6 text-purple-600" />
-                <h1 className="text-xl sm:text-2xl font-bold text-purple-800">Careers</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={onBack}>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <div className="hidden sm:block text-right">
-                <h2 className="text-lg font-bold text-purple-900 leading-none">Dream60</h2>
-                <p className="text-[10px] text-purple-500 font-bold uppercase tracking-widest mt-1">Join Our Team</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.header>
+      <SupportCenterHeader 
+        title="Careers" 
+        icon={<Briefcase className="w-6 h-6" />} 
+        onBack={onBack} 
+        backLabel="Back to Home"
+      />
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
