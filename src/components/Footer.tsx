@@ -15,27 +15,27 @@ export function Footer({ onNavigate }: FooterProps) {
       links: [
         { label: 'Live Auctions', action: 'game' },
         { label: 'Winners List', action: 'winners' },
-        { label: 'Auction Rules', action: 'rules' },
-        { label: 'Play Guide', action: 'participation' }
-      ]
-    },
-    {
-      title: 'Help & Support',
-      links: [
-        { label: 'Support Center', action: 'support' },
-        { label: 'Contact Us', action: 'contact' },
-        { label: 'How to Play', action: 'view-guide' },
-        { label: 'Winning Tips', action: 'winning-tips' }
-      ]
-    },
-    {
-      title: 'Company',
-      links: [
-        { label: 'About Us', action: 'support' },
-        { label: 'Terms of Use', action: 'terms' },
-        { label: 'Privacy Policy', action: 'privacy' }
-      ]
-    }
+          { label: 'Auction Rules', action: 'rules' },
+          { label: 'Play Guide', action: 'participation' }
+        ]
+      },
+      {
+        title: 'Help & Support',
+        links: [
+          { label: 'Support Center', action: 'support' },
+          { label: 'Contact Us', action: 'contact' },
+          { label: 'How to Play', action: 'view-guide' },
+          { label: 'Winning Tips', action: 'winning-tips' }
+        ]
+      },
+      {
+        title: 'Company',
+        links: [
+          { label: 'About Us', action: 'about' },
+          { label: 'Terms of Use', action: 'terms' },
+          { label: 'Privacy Policy', action: 'privacy' }
+        ]
+      }
   ];
 
   return (

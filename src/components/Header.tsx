@@ -447,7 +447,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                               size="sm"
                             >
                               <Shield className="w-4 h-4 mr-1.5" />
-                              Participation
+                              Play Guide
                             </Button>
                           </motion.div>
 

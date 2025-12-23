@@ -15,6 +15,7 @@ import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
+import { AboutUs } from './components/AboutUs';
 import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
@@ -290,6 +291,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/forgot-password') return 'forgot';
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
+    if (path === '/about') return 'about';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
     if (path === '/support') return 'support';
@@ -320,6 +322,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/forgot-password') setCurrentPage('forgot');
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
+      else if (path === '/about') setCurrentPage('about');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
       else if (path === '/support') setCurrentPage('support');
@@ -1521,13 +1524,13 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
     // ✅ Update browser URL to match the page
     const urlMap: { [key: string]: string } = {
-
         'game': '/',
         'login': '/login',
         'signup': '/signup',
         'forgot': '/forgot-password',
         'rules': '/rules',
         'participation': '/participation',
+        'about': '/about',
         'terms': '/terms',
         'privacy': '/privacy',
         'support': '/support',
@@ -2148,18 +2151,30 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'participation') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Participation onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'participation') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Participation onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
-  if (currentPage === 'terms') {
+    if (currentPage === 'about') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <AboutUs onNavigate={handleNavigate} />
+            <Footer onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'terms') {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
