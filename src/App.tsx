@@ -279,9 +279,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
   // Initialize currentPage based on URL path
   const [currentPage, setCurrentPage] = useState(() => {
-    const path = window.location.pathname;
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
 
-    if (path === '/admin' || path === '/admin/') {
+    if (path === '/admin') {
       const adminUserId = localStorage.getItem('admin_user_id');
       return adminUserId ? 'admin-dashboard' : 'admin-login';
     }
@@ -297,23 +297,22 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/profile') return 'profile';
     if (path === '/success-page') return 'success-preview';
     if (path === '/failure-page') return 'failure-preview';
-    if (path === '/history') return 'history';
-    if (path.startsWith('/history/')) return 'history';
-      if (path === '/leaderboard') return 'leaderboard';
-      if (path === '/view-guide') return 'view-guide';
-      if (path === '/winning-tips') return 'winning-tips';
-      if (path === '/support-chat') return 'support-chat';
-      if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+    if (path === '/history' || path.startsWith('/history/')) return 'history';
+    if (path === '/leaderboard') return 'leaderboard';
+    if (path === '/view-guide') return 'view-guide';
+    if (path === '/winning-tips') return 'winning-tips';
+    if (path === '/support-chat') return 'support-chat';
+    if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
 
-      return 'game';
+    return 'game';
   });
 
   // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname;
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
       
-      if (path === '/admin' || path === '/admin/') {
+      if (path === '/admin') {
         const adminUserId = localStorage.getItem('admin_user_id');
         setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
       } else if (path === '/login') setCurrentPage('login');
@@ -330,20 +329,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/failure-page') setCurrentPage('failure-preview');
       else if (path === '/history' || path.startsWith('/history/')) {
         setCurrentPage('history');
-        // ✅ If navigating back from details to history list, clear selected auction
         if (path === '/history') {
           setSelectedAuctionDetails(null);
         }
-} else if (path === '/leaderboard') setCurrentPage('leaderboard');
-        else if (path === '/view-guide') setCurrentPage('view-guide');
-        else if (path === '/winning-tips') setCurrentPage('winning-tips');
-          else if (path === '/support-chat') setCurrentPage('support-chat');
-          else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
-          else setCurrentPage('game');
+      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+      else if (path === '/view-guide') setCurrentPage('view-guide');
+      else if (path === '/winning-tips') setCurrentPage('winning-tips');
+      else if (path === '/support-chat') setCurrentPage('support-chat');
+      else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+      else setCurrentPage('game');
+    };
 
-      };
-
-      window.addEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 

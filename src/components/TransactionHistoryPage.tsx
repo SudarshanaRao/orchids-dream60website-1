@@ -775,7 +775,6 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
             className="mb-3 sm:mb-6"
           >
             <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-2xl bg-white/90 shadow-2xl">
-                <Snowfall color="#8B5CF6" snowflakeCount={isMobile ? 8 : 40} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full blur-3xl opacity-15"

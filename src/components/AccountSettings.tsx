@@ -913,13 +913,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 variants={cardVariants}
                 className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
               >
-                <Snowfall 
-                  color="#8B5CF6"
-                  snowflakeCount={window.innerWidth < 768 ? 3 : 20}
-                  radius={[0.5, 2.5]}
-                  speed={[0.5, 2.0]}
-                  wind={[-0.5, 2.5]}
-                />
               {/* Card shine effect */}
 
             <motion.div
