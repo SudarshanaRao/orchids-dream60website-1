@@ -110,7 +110,15 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         setIsVisible(true);
       }
     }
-  }, [liveAuction?.hourlyAuctionId]);
+    
+    // ✅ Track first appearance time for auto-hide
+    if (bannerType && liveAuction?.hourlyAuctionId) {
+      const appearanceKey = `banner_first_appeared_${liveAuction.hourlyAuctionId}`;
+      if (!localStorage.getItem(appearanceKey)) {
+        localStorage.setItem(appearanceKey, Date.now().toString());
+      }
+    }
+  }, [liveAuction?.hourlyAuctionId, bannerType]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -452,6 +460,17 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     const updateTimer = () => {
       const now = serverTime?.timestamp || Date.now();
       const FIFTEEN_MINS = 15 * 60 * 1000;
+
+      // ✅ Auto-hide banner 15 mins after it first appeared in this session
+      const appearanceKey = `banner_first_appeared_${liveAuction?.hourlyAuctionId}`;
+      const appearedAt = localStorage.getItem(appearanceKey);
+      if (appearedAt) {
+        const elapsed = now - parseInt(appearedAt);
+        if (elapsed > FIFTEEN_MINS) {
+          handleClose();
+          return;
+        }
+      }
 
       // ✅ General auto-hide logic for any banner after 15 mins since results
       const resultsTime = liveAuction.winnersAnnouncedAt 

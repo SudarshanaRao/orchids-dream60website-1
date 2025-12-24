@@ -433,7 +433,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                  </div>
               )}
 
-              {(status === 'completed' || status === 'winners-announced') && onShowLeaderboard && box.roundNumber && (
+              {status === 'completed' && onShowLeaderboard && box.roundNumber && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
