@@ -2469,11 +2469,13 @@ if (currentPage === 'support') {
                         <div ref={auctionGridRef} data-auction-grid id="auction-grid">
                           {/* Auction Grid */}
                           <AuctionGrid
-                        auction={currentAuction}
-                          onShowLeaderboard={handleShowLeaderboard}
-                          onBid={handlePlaceBid}
-                          serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                        />
+                            auction={currentAuction}
+                            user={currentUser}
+                            onShowLeaderboard={handleShowLeaderboard}
+                            onBid={handlePlaceBid}
+                            serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                            isJoinWindowOpen={currentAuction.currentRound === 1}
+                          />
                         </div>
       
                       </>

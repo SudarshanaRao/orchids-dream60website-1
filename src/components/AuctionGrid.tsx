@@ -167,10 +167,10 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                   <div
                     key={box.id}
                   >
-                  <AuctionBox
-                    box={box}
-                    onClick={() => handleBoxClick(box)}
-                    isUserHighestBidder={box.bidder === user.username}
+                    <AuctionBox
+                      box={box}
+                      onClick={() => handleBoxClick(box)}
+                      isUserHighestBidder={box.bidder === user?.username}
                     onShowLeaderboard={onShowLeaderboard}
                     userHasPaidEntry={auction.userHasPaidEntry}
                     userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
