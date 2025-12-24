@@ -1725,49 +1725,51 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     window.history.pushState({}, '', '/login');
   };
 
-    const handleEntrySuccess = () => {
-      if (!showEntrySuccess || !currentUser) return;
-  
-      toast.success('Entry Fee Paid!', {
-        description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-      });
-  
-      // ✅ FIX: Close modal and update state in one go to prevent shaking
-      setShowEntrySuccess(null);
-      
-      setCurrentAuction(prev => {
-        const now = new Date();
-        const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
-          if (b.type === 'entry') {
-            const entry = b as EntryBox;
-            return {
-              ...entry,
-              currentBid: entry.entryFee || 0,
-              bidder: currentUser.username,
-              hasPaid: true,
-            };
-          }
-          if (b.type === 'round') {
-            const roundBox = b as RoundBox;
-            const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
-            return { ...roundBox, isOpen: isNowOpen };
-          }
-          return b;
+      const handleEntrySuccess = () => {
+        if (!showEntrySuccess || !currentUser) return;
+    
+        toast.success('Entry Fee Paid!', {
+          description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+        });
+    
+        // ✅ Close modal and update state instantly to prevent shaking and perceived delay
+        setShowEntrySuccess(null);
+        
+        setCurrentAuction(prev => {
+          const now = serverTime ? new Date(serverTime.timestamp) : new Date();
+          const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
+            if (b.type === 'entry') {
+              const entry = b as EntryBox;
+              return {
+                ...entry,
+                currentBid: entry.entryFee || 0,
+                bidder: currentUser.username,
+                hasPaid: true,
+              };
+            }
+            if (b.type === 'round') {
+              const roundBox = b as RoundBox;
+              const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
+              return { ...roundBox, isOpen: isNowOpen };
+            }
+            return b;
+          });
+
+          return {
+            ...prev,
+            boxes: updatedBoxes,
+            userHasPaidEntry: true
+          };
         });
 
-        return {
-          ...prev,
-          boxes: updatedBoxes,
-          userHasPaidEntry: true
-        };
-      });
-
-      // ✅ Trigger refetch after a slight delay to allow the local state to settle
-      setTimeout(() => {
-        console.log('💳 Payment successful - triggering auction data refresh');
+        // ✅ Trigger refetch immediately to sync with server
+        console.log('💳 Payment successful - triggering immediate auction data refresh');
         setForceRefetchTrigger(prev => prev + 1);
-      }, 300);
-    };
+        
+        if (currentUser.id) {
+          fetchAndSetUser(currentUser.id);
+        }
+      };
 
   const handleEntryFailure = () => {
     setShowEntryFailure(null);

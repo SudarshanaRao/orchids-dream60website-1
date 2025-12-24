@@ -85,67 +85,55 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
     roundBoxesCount: roundBoxes.length
   });
 
-  return (
-    <>
-      <div className="space-y-6 sm:space-y-8">
-        {/* Prize Showcase Card */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative overflow-hidden"
-        >
-          {/* Animated Background */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <motion.div
-              className="absolute w-96 h-96 rounded-full blur-3xl opacity-20"
-              style={{
-                background: 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
-                top: '-30%',
-                right: '-20%',
-              }}
-              animate={{
-                scale: [1, 1.2, 1],
-                x: [0, 20, 0],
-                y: [0, -20, 0],
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-             <motion.div
-              className="absolute w-80 h-80 rounded-full blur-3xl opacity-15"
-              style={{
-                background: 'radial-gradient(circle, #A78BFA, #7C3AED)',
-                bottom: '-20%',
-                left: '-15%',
-              }}
-              animate={{
-                scale: [1, 1.3, 1],
-                x: [0, -15, 0],
-                y: [0, 15, 0],
-              }}
-              transition={{
-                duration: 12,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1,
-              }}
-            />
+    return (
+      <>
+        <div className="space-y-6 sm:space-y-8">
+          {/* Prize Showcase Card */}
+          <div className="relative overflow-hidden">
+            {/* Animated Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <motion.div
+                className="absolute w-96 h-96 rounded-full blur-3xl opacity-20"
+                style={{
+                  background: 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
+                  top: '-30%',
+                  right: '-20%',
+                }}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  x: [0, 20, 0],
+                  y: [0, -20, 0],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+               <motion.div
+                className="absolute w-80 h-80 rounded-full blur-3xl opacity-15"
+                style={{
+                  background: 'radial-gradient(circle, #A78BFA, #7C3AED)',
+                  bottom: '-20%',
+                  left: '-15%',
+                }}
+                animate={{
+                  scale: [1, 1.3, 1],
+                  x: [0, -15, 0],
+                  y: [0, 15, 0],
+                }}
+                transition={{
+                  duration: 12,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1,
+                }}
+              />
+            </div>
           </div>
-        </motion.div>
 
-        {/* Bidding Rounds Section - Only show if user has paid entry */}
-          {canShowBoxes && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-4 sm:space-y-5"
-              layout={false}
-            >
+          {/* Bidding Rounds Section - Always rendered to prevent layout shift */}
+          <div className="space-y-4 sm:space-y-5">
             {showGuestPreview && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -161,16 +149,16 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             )}
 
             <div 
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
-              >
-                {roundBoxes.map((box) => (
-                  <div
-                    key={box.id}
-                  >
-                    <AuctionBox
-                      box={box}
-                      onClick={() => handleBoxClick(box)}
-                      isUserHighestBidder={box.bidder === user?.username}
+              className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
+            >
+              {roundBoxes.map((box) => (
+                <div
+                  key={box.id}
+                >
+                  <AuctionBox
+                    box={box}
+                    onClick={() => handleBoxClick(box)}
+                    isUserHighestBidder={box.bidder === user?.username}
                     onShowLeaderboard={onShowLeaderboard}
                     userHasPaidEntry={auction.userHasPaidEntry}
                     userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
@@ -179,12 +167,11 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                     serverTime={serverTime}
                     hourlyAuctionId={auction.hourlyAuctionId} 
                   />
-                  </div>
-                ))}
-              </div>
-          </motion.div>
-        )}
-      </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
       {showBidModal && selectedBox && (
         <BidModal
