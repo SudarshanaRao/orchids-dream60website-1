@@ -428,6 +428,19 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     <p className="text-sm font-bold text-violet-900">₹{box.highestBidFromAPI.toLocaleString('en-IN')}</p>
                  </div>
               )}
+
+              {(status === 'completed' || status === 'winners-announced') && onShowLeaderboard && box.roundNumber && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShowLeaderboard(box.roundNumber!);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-purple-50 border-2 border-purple-100 text-purple-700 py-2.5 rounded-xl font-bold text-xs hover:bg-purple-100 hover:border-purple-200 transition-all shadow-sm"
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  View Leaderboard
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
