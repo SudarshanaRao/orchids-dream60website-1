@@ -225,16 +225,29 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
     // Check for 15-minute visibility limit since results announcement
     const resultsTime = auction.winnersAnnouncedAt 
-      ? (typeof auction.winnersAnnouncedAt === 'string' ? new Date(auction.winnersAnnouncedAt).getTime() : auction.winnersAnnouncedAt)
+      ? (typeof auction.winnersAnnouncedAt === 'string' ? new Date(auction.winnersAnnouncedAt).getTime() : Number(auction.winnersAnnouncedAt))
       : (auction.completedAt ? new Date(auction.completedAt).getTime() : null);
 
+    // ✅ CRITICAL FIX: Auto-hide ANY banner after 15 minutes since results announcement
+    // Exception: If user is a winner and their specific window hasn't ended + 15 mins grace
     if (resultsTime && (now - resultsTime) > FIFTEEN_MINS) {
-      // If it's a winner claim, we might want to keep it longer or follow the rank-based window
-      // But for ELIMINATED or round results, we hide after 15 mins.
-      // The user specifically said "winnerClaimBanner should only lasts for 15 mins from when the results announced"
-      // and gave the example of 12:15 to 12:30.
-      setBannerType(null);
-      return;
+      const isWinner = auction.winners?.some(w => w.playerId === userId) || auction.userHistoryRecord?.isWinner;
+      
+      // If NOT a winner, hide immediately after 15 mins of announcement
+      if (!isWinner) {
+        setBannerType(null);
+        return;
+      }
+      
+      // If is a winner, check their specific window
+      const userRank = auction.userHistoryRecord?.rank || auction.winners?.find(w => w.playerId === userId)?.rank || 1;
+      const userWindowEnd = resultsTime + (userRank * 15 * 60 * 1000);
+      
+      // Hide 15 minutes after their specific window ends
+      if (now > (userWindowEnd + FIFTEEN_MINS)) {
+        setBannerType(null);
+        return;
+      }
     }
 
     if (auction.winnersAnnounced && auction.winners) {
@@ -440,7 +453,29 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       const now = serverTime?.timestamp || Date.now();
       const FIFTEEN_MINS = 15 * 60 * 1000;
 
-      // Handle auto-hide for PRIZE_CLAIMED and CLAIM_EXPIRED
+      // ✅ General auto-hide logic for any banner after 15 mins since results
+      const resultsTime = liveAuction.winnersAnnouncedAt 
+        ? (typeof liveAuction.winnersAnnouncedAt === 'string' ? new Date(liveAuction.winnersAnnouncedAt).getTime() : Number(liveAuction.winnersAnnouncedAt))
+        : (liveAuction.completedAt ? new Date(liveAuction.completedAt).getTime() : null);
+
+      if (resultsTime && (now - resultsTime) > FIFTEEN_MINS) {
+        const isWinner = liveAuction.winners?.some(w => w.playerId === userId) || liveAuction.userHistoryRecord?.isWinner;
+        
+        if (!isWinner) {
+          setBannerType(null);
+          return;
+        }
+        
+        const userRank = liveAuction.userHistoryRecord?.rank || liveAuction.winners?.find(w => w.playerId === userId)?.rank || 1;
+        const userWindowEnd = resultsTime + (userRank * 15 * 60 * 1000);
+        
+        if (now > (userWindowEnd + FIFTEEN_MINS)) {
+          setBannerType(null);
+          return;
+        }
+      }
+
+      // Handle auto-hide for PRIZE_CLAIMED and CLAIM_EXPIRED (existing logic below)
       if (bannerType === 'PRIZE_CLAIMED') {
         const historyRecord = liveAuction.userHistoryRecord;
         const claimedWinner = liveAuction.winners?.find(w => w.isPrizeClaimed || w.prizeClaimStatus === 'CLAIMED');

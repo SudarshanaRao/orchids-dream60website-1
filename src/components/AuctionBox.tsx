@@ -231,8 +231,12 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
       return 'winners-announced';
     }
     
+    // Check if round has closed based on time
+    const now = serverTime ? new Date(serverTime.timestamp) : new Date();
+    const isClosedByTime = box.type === 'round' && box.closesAt && box.closesAt < now;
+
     // Show normal "Completed" status for rounds that were actually played (have bids)
-    if (box.status === 'completed') return 'completed';
+    if (box.status === 'completed' || isClosedByTime) return 'completed';
     
     // ✅ CRITICAL: Only show "not-qualified" if explicitly false (failed qualification)
     // If undefined (previous round not completed), show normal "locked" status instead
