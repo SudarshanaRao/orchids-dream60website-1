@@ -33,7 +33,7 @@ export function PaymentSuccess({
   onBackToHome,
   onClose
 }: PaymentSuccessProps) {
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -352,18 +352,18 @@ export function PaymentSuccess({
                     Auto-close in <span className={`${getAmountColor()} text-sm font-black`}>{countdown}s</span>
                   </span>
                 </div>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <motion.div 
-                      key={i} 
-                      animate={{ 
-                        width: i <= (5 - countdown + 1) ? 24 : 8,
-                        backgroundColor: i <= (5 - countdown + 1) ? (type === 'claim' ? '#F59E0B' : type === 'bid' ? '#3B82F6' : '#10B981') : '#F3F4F6'
-                      }}
-                      className="h-1 rounded-full"
-                    />
-                  ))}
-                </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map((i) => (
+                      <motion.div 
+                        key={i} 
+                        animate={{ 
+                          width: i <= (3 - countdown + 1) ? 24 : 8,
+                          backgroundColor: i <= (3 - countdown + 1) ? (type === 'claim' ? '#F59E0B' : type === 'bid' ? '#3B82F6' : '#10B981') : '#F3F4F6'
+                        }}
+                        className="h-1 rounded-full"
+                      />
+                    ))}
+                  </div>
               </div>
             </div>
 

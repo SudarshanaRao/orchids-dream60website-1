@@ -12,7 +12,7 @@ interface EntrySuccessModalProps {
 }
 
 export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: EntrySuccessModalProps) {
-  const [countdown, setCountdown] = useState(3);
+  const [countdown, setCountdown] = useState(2);
   const [showContinue, setShowContinue] = useState(false);
 
   useEffect(() => {
