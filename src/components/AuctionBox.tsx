@@ -387,19 +387,32 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
               )}
             </div>
 
-            {/* Information Section */}
-            <div className="space-y-2.5">
-              {status === 'winners-announced' ? (
-                <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-                  <div className="text-[10px] text-emerald-700 font-bold mb-1 uppercase tracking-wide">Status</div>
-                  <p className="text-xs text-emerald-800 font-medium">Winners Announced Early</p>
-                </div>
-              ) : status === 'completed' ? (
-                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                  <div className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Closed at</div>
-                  <p className="text-xs text-gray-700 font-medium">{formatRoundTime(box.closesAt!)}</p>
-                </div>
-              ) : status === 'upcoming' || status === 'locked' ? (
+              {/* Information Section */}
+              <div className="space-y-2.5">
+                {status === 'winners-announced' ? (
+                  <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                    <div className="text-[10px] text-emerald-700 font-bold mb-1 uppercase tracking-wide">Status</div>
+                    <p className="text-xs text-emerald-800 font-medium">Winners Announced Early</p>
+                  </div>
+                ) : status === 'completed' ? (
+                  <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                    <div className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Closed at</div>
+                    <p className="text-xs text-gray-700 font-medium">{formatRoundTime(box.closesAt!)}</p>
+                    
+                    {onShowLeaderboard && box.roundNumber && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onShowLeaderboard(box.roundNumber!);
+                        }}
+                        className="w-full mt-2 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-gray-200 text-gray-600 rounded-lg text-[10px] font-bold hover:bg-gray-50 transition-colors"
+                      >
+                        <Trophy className="w-3 h-3" />
+                        Leaderboard
+                      </button>
+                    )}
+                  </div>
+                ) : status === 'upcoming' || status === 'locked' ? (
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                   <div className="text-[10px] text-gray-400 font-bold mb-1 uppercase tracking-wide">Opens at</div>
                   <p className="text-xs text-gray-500 font-medium">{box.opensAt ? formatRoundTime(box.opensAt) : 'TBD'}</p>
@@ -424,30 +437,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 <div className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-xs text-center transition-colors">
                   {status === 'open' && box.type === 'entry' ? 'Pay Entry Fee' : 'Place Your Bid'}
                 </div>
-              )}
-
-              {status === 'completed' && box.highestBidFromAPI && (
-                 <div className="bg-violet-50 rounded-xl p-3 border border-violet-100">
-                    <div className="text-[10px] text-violet-600 font-bold mb-1 uppercase tracking-wide">Winning Bid</div>
-                    <p className="text-sm font-bold text-violet-900">₹{box.highestBidFromAPI.toLocaleString('en-IN')}</p>
-                 </div>
-              )}
-
-              {status === 'completed' && onShowLeaderboard && box.roundNumber && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onShowLeaderboard(box.roundNumber!);
-                  }}
-                  className="w-full flex items-center justify-center gap-2 bg-purple-50 border-2 border-purple-100 text-purple-700 py-2.5 rounded-xl font-bold text-xs hover:bg-purple-100 hover:border-purple-200 transition-all shadow-sm"
-                >
-                  <Trophy className="w-3.5 h-3.5" />
-                  View Leaderboard
-                </button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Round Information Dialog */}
       {box.type === 'round' && (
