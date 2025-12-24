@@ -335,7 +335,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     {status === 'completed' 
                       ? 'Completed' 
                       : status === 'winners-announced'
-                      ? 'Winners'
+                      ? 'WINNERS Announced'
                       : status === 'upcoming' 
                       ? 'Locked' 
                       : status === 'locked' 
@@ -344,7 +344,9 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       ? 'Open' 
                       : status === 'paid' 
                       ? 'Paid' 
-                      : 'Active'
+                      : winnersAnnounced 
+                        ? 'WINNERS Announced'
+                        : 'Active'
                     }
                   </span>
                 </div>
