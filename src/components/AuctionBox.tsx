@@ -66,29 +66,15 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
   };
 
   // ✅ Get formatted round time range (API times without conversion)
-  const getRoundTimeRange = () => {
-    if (!box.opensAt || !box.closesAt) return '';
-    
-    const startTime = formatRoundTime(box.opensAt);
-    const endTime = formatRoundTime(box.closesAt);
-    const timeRange = `${startTime} to ${endTime}`;
-    
-    // ✅ Log the complete conversion process from API to display
-    console.log(`📊 [AUCTION BOX - Round ${box.roundNumber}] Time Display (NO CONVERSION - STRICT IST):`, {
-      'Round Number': box.roundNumber,
-      'Raw opensAt ISO': box.opensAt.toISOString(),
-      'Raw closesAt ISO': box.closesAt.toISOString(),
-      'opensAt UTC Hours': box.opensAt.getUTCHours(),
-      'opensAt UTC Minutes': box.opensAt.getUTCMinutes(),
-      'closesAt UTC Hours': box.closesAt.getUTCHours(),
-      'closesAt UTC Minutes': box.closesAt.getUTCMinutes(),
-      'Formatted Start Time': startTime,
-      'Formatted End Time': endTime,
-      'Final Display': timeRange
-    });
-    
-    return timeRange;
-  };
+    const getRoundTimeRange = () => {
+      if (!box.opensAt || !box.closesAt) return '';
+      
+      const startTime = formatRoundTime(box.opensAt);
+      const endTime = formatRoundTime(box.closesAt);
+      const timeRange = `${startTime} to ${endTime}`;
+      
+      return timeRange;
+    };
 
   // Get round explanation for the round
   const getRoundExplanation = () => {
@@ -178,29 +164,18 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
   };
 
   // ✅ UPDATED: Detect when box data changes (new auction/round) and reset state
-  useEffect(() => {
-    // Create a unique identity including auction ID to detect new auctions
-    const newIdentity = `${hourlyAuctionId}-${box.roundNumber}-${box.opensAt?.getTime()}-${box.closesAt?.getTime()}-${box.currentBid}-${box.status}`;
-    
-    // If box identity changed, this is a new auction or round update
-    if (boxIdentity && newIdentity !== boxIdentity) {
-      console.log(`🔄 [AUCTION BOX - Round ${box.roundNumber}] New auction/round detected, resetting state`, {
-        'Previous Identity': boxIdentity,
-        'New Identity': newIdentity,
-        'Auction ID': hourlyAuctionId,
-        'Round Number': box.roundNumber,
-        'Opens At': box.opensAt?.toISOString(),
-        'Closes At': box.closesAt?.toISOString(),
-        'Current Bid': box.currentBid,
-        'Status': box.status
-      });
+    useEffect(() => {
+      // Create a unique identity including auction ID to detect new auctions
+      const newIdentity = `${hourlyAuctionId}-${box.roundNumber}-${box.opensAt?.getTime()}-${box.closesAt?.getTime()}-${box.currentBid}-${box.status}`;
       
-      // Reset timer state for the new auction/round
-      setTimeUntilOpen('');
-    }
-    
-    setBoxIdentity(newIdentity);
-  }, [hourlyAuctionId, box.roundNumber, box.opensAt, box.closesAt, box.currentBid, box.status]);
+      // If box identity changed, this is a new auction or round update
+      if (boxIdentity && newIdentity !== boxIdentity) {
+        // Reset timer state for the new auction/round
+        setTimeUntilOpen('');
+      }
+      
+      setBoxIdentity(newIdentity);
+    }, [hourlyAuctionId, box.roundNumber, box.opensAt, box.closesAt, box.currentBid, box.status]);
 
   useEffect(() => {
     if (box.type === 'round' && box.opensAt) {
@@ -208,52 +183,21 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
         // ✅ Use server time instead of local browser time
         const now = serverTime ? new Date(serverTime.timestamp) : new Date();
 
-        if (!box.isOpen && box.opensAt! > now) {
-          const distance = box.opensAt!.getTime() - now.getTime();
-          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-          
-          // ✅ Enhanced console logs - Countdown until round opens (UTC times)
-          console.log(`⏱️ [AUCTION BOX - Round ${box.roundNumber}] Countdown until round opens (UTC):`, {
-            'Round Number': box.roundNumber,
-            '📅 Opens At (UTC)': box.opensAt.toUTCString(),
-            '📅 Closes At (UTC)': box.closesAt?.toUTCString() || 'N/A',
-            '⏰ Opens At (Display)': formatRoundTime(box.opensAt),
-            '⏰ Closes At (Display)': box.closesAt ? formatRoundTime(box.closesAt) : 'N/A',
-            '⏰ Round Time Range': getRoundTimeRange(),
-            '🕐 Current Time (UTC)': now.toUTCString(),
-            '🕐 Current Time (Source)': serverTime ? 'Server Time' : 'Local Time',
-            '📊 Time Until Open (ms)': distance,
-            '📊 Time Until Open (minutes)': minutes,
-            '⏱️ Countdown Display': `${minutes}:${seconds.toString().padStart(2, '0')}`
-          });
-          
-          setTimeUntilOpen(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-        } else if (box.isOpen && box.closesAt && box.closesAt > now) {
-          const distance = box.closesAt.getTime() - now.getTime();
-          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-          
-          // ✅ Enhanced console logs - Active round countdown (UTC times)
-          console.log(`⏱️ [AUCTION BOX - Round ${box.roundNumber}] Active round - Time remaining (UTC):`, {
-            'Round Number': box.roundNumber,
-            '📅 Round Start (UTC)': box.opensAt!.toUTCString(),
-            '📅 Round End (UTC)': box.closesAt.toUTCString(),
-            '⏰ Round Start (Display)': formatRoundTime(box.opensAt!),
-            '⏰ Round End (Display)': formatRoundTime(box.closesAt),
-            '⏰ Round Time Range': getRoundTimeRange(),
-            '🕐 Current Time (UTC)': now.toUTCString(),
-            '🕐 Current Time (Source)': serverTime ? 'Server Time' : 'Local Time',
-            '📊 Time Remaining (ms)': distance,
-            '📊 Time Remaining (minutes)': minutes,
-            '⏱️ Countdown Display': `${minutes}:${seconds.toString().padStart(2, '0')}`,
-            '✅ Round Status': 'ACTIVE'
-          });
-          
-          setTimeUntilOpen(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-        } else {
-          setTimeUntilOpen('');
-        }
+          if (!box.isOpen && box.opensAt! > now) {
+            const distance = box.opensAt!.getTime() - now.getTime();
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            setTimeUntilOpen(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+          } else if (box.isOpen && box.closesAt && box.closesAt > now) {
+            const distance = box.closesAt.getTime() - now.getTime();
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            setTimeUntilOpen(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+          } else {
+            setTimeUntilOpen('');
+          }
       };
 
       updateTimer();

@@ -51,7 +51,7 @@ export function PaymentSuccess({
 
     const interval = setInterval(() => {
       setCountdown((prev) => Math.max(0, prev - 1));
-    }, 500);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [countdown, onBackToHome]);

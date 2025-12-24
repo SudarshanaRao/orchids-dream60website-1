@@ -1377,18 +1377,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                     const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
                     
                     // Calculate min bid: highest bid - (highest bid * cutoff percentage / 100)
-                    const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
-                    updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
-                    
-                    console.log(`✅ Round ${roundBox.roundNumber} minBid calculation:`, {
-                      'Previous Round': previousRoundNumber,
-                      'Highest Bid in Previous Round': `₹${highestBidInPreviousRound}`,
-                      'Cutoff Percentage': `${cutoffPercentage}%`,
-                      'Cutoff Amount': `₹${cutoffAmount}`,
-                      'Calculated MinBid': `₹${updatedBox.minBid}`,
-                      'Formula': `${highestBidInPreviousRound} - (${highestBidInPreviousRound} × ${cutoffPercentage}% = ${cutoffAmount}) = ${updatedBox.minBid}`
-                    });
-                  } else {
+                      const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
+                      updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
+                    } else {
                     // Fallback: If no previous round data, use entry fee
                     const entryBox = prev.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid);
                     const userEntryFee = entryBox ? (entryBox as EntryBox).entryFee : 10;
@@ -1400,34 +1391,14 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 // ✅ CRITICAL FIX: Do NOT convert API times - they're already in the correct format
                 // The backend sends times like "13:45:00.000Z" which should display as 1:45 PM (not converted)
                 if (roundData) {
-                  if (roundData.startedAt) {
-                    // Use the time directly without timezone conversion
-                    updatedBox.opensAt = new Date(roundData.startedAt);
-                    console.log(`🕐 [SCHEDULED TIME FIX] Round ${roundBox.roundNumber} opensAt:`, {
-                      'API Value': roundData.startedAt,
-                      'Date Object': updatedBox.opensAt,
-                      'Display Time': updatedBox.opensAt.toLocaleTimeString('en-US', { 
-                        timeZone: 'UTC',
-                        hour: 'numeric', 
-                        minute: '2-digit', 
-                        hour12: true 
-                      })
-                    });
-                  }
-                  if (roundData.completedAt) {
-                    // Use the time directly without timezone conversion
-                    updatedBox.closesAt = new Date(roundData.completedAt);
-                    console.log(`🕐 [SCHEDULED TIME FIX] Round ${roundBox.roundNumber} closesAt:`, {
-                      'API Value': roundData.completedAt,
-                      'Date Object': updatedBox.closesAt,
-                      'Display Time': updatedBox.closesAt.toLocaleTimeString('en-US', { 
-                        timeZone: 'UTC',
-                        hour: 'numeric', 
-                        minute: '2-digit', 
-                        hour12: true 
-                      })
-                    });
-                  } else if (roundData.startedAt) {
+                    if (roundData.startedAt) {
+                      // Use the time directly without timezone conversion
+                      updatedBox.opensAt = new Date(roundData.startedAt);
+                    }
+                    if (roundData.completedAt) {
+                      // Use the time directly without timezone conversion
+                      updatedBox.closesAt = new Date(roundData.completedAt);
+                    } else if (roundData.startedAt) {
                     // If not completed, calculate closesAt as opensAt + 15 minutes
                     const opensAt = new Date(roundData.startedAt);
                     updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
@@ -1460,15 +1431,13 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                   const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
                   const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
                   
-                  updatedBox = {
-                    ...updatedBox,
-                    currentBid: highestBidder.auctionPlacedAmount,
-                    bidder: highestBidder.playerUsername,
-                    highestBidFromAPI: highestBidFromAPI, // Store the rank 1 bid from API
-                  };
-                  
-                  console.log(`✅ Round ${roundBox.roundNumber} highest bid from API: ₹${highestBidFromAPI}`);
-                }
+                    updatedBox = {
+                      ...updatedBox,
+                      currentBid: highestBidder.auctionPlacedAmount,
+                      bidder: highestBidder.playerUsername,
+                      highestBidFromAPI: highestBidFromAPI, // Store the rank 1 bid from API
+                    };
+                  }
                 
                 return updatedBox;
               }
