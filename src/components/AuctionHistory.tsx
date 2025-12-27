@@ -669,51 +669,70 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
             </div>
 
             {/* Winner's Last Round Bid & Claim Section */}
-            {localAuction.isWinner && localAuction.lastRoundBidAmount !== undefined && localAuction.lastRoundBidAmount > 0 && (
-              <div onClick={(e) => e.stopPropagation()}>
-                {/* ✅ Green Banner - Prize Claimed (Check claimedBy and claimedByRank) */}
-                {localAuction.claimedBy && localAuction.claimedByRank && (
-                  <div className="p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[9px] sm:text-xs font-semibold text-green-900">
-                          {getRankEmoji(localAuction.claimedByRank)} Prize Claimed by {getRankSuffix(localAuction.claimedByRank)} Winner
-                        </p>
-                        <p className="text-[8px] sm:text-[10px] text-green-700">
-                          {localAuction.claimUpiId === userEmail 
-                            ? `Congratulations! You claimed this prize`
-                            : `Claimed by ${localAuction.claimedBy}`
-                          }
-                        </p>
-                        {localAuction.claimedAt && (
-  <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
-    Claimed on {
-      (() => {
-        const date = new Date(localAuction.claimedAt);
-        const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000)); 
-        return correctedDate.toLocaleString('en-IN', { 
-          month: 'short', 
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-          timeZone: 'Asia/Kolkata'
-        });
-      })()
-    }
-  </p>
-)}
-
-                      </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              {/* Not Qualified Message */}
+              {!localAuction.isWinner && localAuction.winnersAnnounced && (
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-lg mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
+                      <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] sm:text-xs font-bold text-red-900">
+                        You are not qualified, sorry!
+                      </p>
+                      <p className="text-[8px] sm:text-[10px] text-red-700">
+                        Try participating in the next auction to win exciting prizes.
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Prize claimed by current user */}
-                {localAuction.prizeClaimStatus === 'CLAIMED' && localAuction.claimUpiId === userEmail && !localAuction.claimedBy && (
+              {/* ✅ Green Banner - Prize Claimed (Check claimedBy and claimedByRank) - Show for everyone */}
+              {localAuction.claimedBy && localAuction.claimedByRank && (
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[9px] sm:text-xs font-semibold text-green-900">
+                        {getRankEmoji(localAuction.claimedByRank)} Prize Claimed by {getRankSuffix(localAuction.claimedByRank)} Winner
+                      </p>
+                      <p className="text-[8px] sm:text-[10px] text-green-700">
+                        {localAuction.claimUpiId === userEmail 
+                          ? `Congratulations! You claimed this prize`
+                          : `Claimed by ${localAuction.claimedBy}`
+                        }
+                      </p>
+                      {localAuction.claimedAt && (
+                        <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
+                          Claimed on {
+                            (() => {
+                              const date = new Date(localAuction.claimedAt);
+                              const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000)); 
+                              return correctedDate.toLocaleString('en-IN', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                                timeZone: 'Asia/Kolkata'
+                              });
+                            })()
+                          }
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {localAuction.isWinner && localAuction.lastRoundBidAmount !== undefined && localAuction.lastRoundBidAmount > 0 && (
+                <>
+                  {/* Prize claimed by current user */}
+                  {localAuction.prizeClaimStatus === 'CLAIMED' && localAuction.claimUpiId === userEmail && !localAuction.claimedBy && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">

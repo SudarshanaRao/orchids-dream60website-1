@@ -1274,11 +1274,11 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
             )}
 
             {/* Expired Status - no one claimed */}
-            {auction.prizeClaimStatus === 'EXPIRED' && !auction.claimedBy && (
+            {auction.prizeClaimStatus === 'EXPIRED' && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
+                className="mb-4 sm:mb-6 space-y-3"
               >
                 <Card className="border-2 border-red-300/70 bg-gradient-to-r from-red-50 to-rose-50 backdrop-blur-xl shadow-lg">
                   <CardContent className="p-4">
@@ -1297,6 +1297,42 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Show who claimed it if window expired */}
+                {auction.claimedBy && (
+                  <Card className="border-2 border-emerald-300/70 bg-gradient-to-r from-emerald-50 to-green-50 backdrop-blur-xl shadow-lg">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center">
+                          <Trophy className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-emerald-900">
+                            Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
+                          </p>
+                          <p className="text-xs text-emerald-700">
+                            Claimed by <span className="font-bold">{auction.claimedBy}</span>
+                          </p>
+                          {auction.claimedAt && (
+                            <p className="text-[10px] text-emerald-600 mt-1">
+                              Claimed on {(() => {
+                                const d = new Date(auction.claimedAt);
+                                const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
+                                return adjusted.toLocaleString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true
+                                });
+                              })()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </motion.div>
             )}
 
