@@ -100,7 +100,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
           <div className="space-y-4 sm:space-y-5">
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white/40 border border-dashed border-purple-200 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 opacity-60">
+                <div key={i} className="bg-white/40 border-2 border-dotted border-purple-300 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 opacity-60">
                   <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
                     <Lock className="w-5 h-5 text-purple-300" />
                   </div>

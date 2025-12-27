@@ -1475,10 +1475,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     
     // ✅ CRITICAL FIX: Poll every 5 seconds when round is active, 10 seconds otherwise
     // Use a stable check that doesn't depend on boxes array reference
-    const hasActiveRound = currentAuction.boxes.some(
-      box => box.type === 'round' && box.isOpen
-    );
-    const pollInterval = hasActiveRound ? 5000 : 10000;
+    const pollInterval = 3000; // ✅ Reduced to 3s for seamless refreshing without disturbances
     
     const interval = setInterval(fetchCurrentAuctionId, pollInterval);
     return () => clearInterval(interval);
