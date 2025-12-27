@@ -1000,11 +1000,85 @@ const updateHourlyAuctionStatus = async (req, res) => {
  */
 const getLiveHourlyAuction = async (req, res) => {
   try {
-    const liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
+    const { userId } = req.query;
+    
+    // 1. Find the currently LIVE auction
+    let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
       .lean();
     
-    if (!liveAuction) {
+    let bannerData = null;
+
+    if (userId) {
+      // Logic for WinnerClaimBanner
+      let auctionToConsider = liveAuction;
+      
+      // If no live auction, look for the most recently completed one within 15 mins
+      if (!auctionToConsider) {
+        const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+        auctionToConsider = await HourlyAuction.findOne({ 
+          Status: 'COMPLETED',
+          completedAt: { $gte: fifteenMinsAgo }
+        })
+        .sort({ completedAt: -1 })
+        .lean();
+      }
+
+      if (auctionToConsider) {
+        // Check if user participated in this auction
+        const userHistory = await AuctionHistory.findOne({
+          userId,
+          hourlyAuctionId: auctionToConsider.hourlyAuctionId
+        }).lean();
+
+        if (userHistory) {
+          // Results are announced every 15 mins (:00, :15, :30, :45)
+          // We calculate the announcement time based on the auction's rounds
+          const now = new Date();
+          const currentMinutes = now.getMinutes();
+          const lastMark = Math.floor(currentMinutes / 15) * 15;
+          const resultAnnouncedAt = new Date(now);
+          resultAnnouncedAt.setMinutes(lastMark, 0, 0);
+
+          let resultStatus = 'NOT_QUALIFIED';
+          let queuePosition = 0;
+
+          if (userHistory.isWinner) {
+            // Check cascading claim logic
+            const currentEligibleRank = auctionToConsider.currentEligibleRank || 1;
+            if (userHistory.finalRank === currentEligibleRank) {
+              resultStatus = 'WIN';
+            } else if (userHistory.finalRank > currentEligibleRank) {
+              resultStatus = 'WAITING';
+              queuePosition = userHistory.finalRank - currentEligibleRank;
+            }
+          } else {
+            // Check if user is still in the game for LIVE auction
+            if (auctionToConsider.Status === 'LIVE') {
+              const participant = auctionToConsider.participants?.find(p => p.playerId === userId);
+              if (participant && !participant.isEliminated) {
+                // Not announced yet for current round if they are still in
+                // But the banner should only show AFTER announcement
+                // So if they are qualified for the next round, they might see a "Qualified" message
+                // However, the requirement says 6 use cases, specifically WIN, NOT_QUALIFIED, WAITING
+                resultStatus = 'QUALIFIED'; // Internal status for qualified but not winner yet
+              }
+            }
+          }
+
+          bannerData = {
+            roundId: auctionToConsider.hourlyAuctionId,
+            auctionId: auctionToConsider.hourlyAuctionCode,
+            resultAnnouncedAt: resultAnnouncedAt.toISOString(),
+            userParticipated: true,
+            resultStatus: resultStatus,
+            queuePosition: queuePosition
+          };
+        }
+      }
+    }
+    
+    if (!liveAuction && !bannerData) {
       return res.status(404).json({
         success: false,
         message: 'No live hourly auction found',
@@ -1015,6 +1089,7 @@ const getLiveHourlyAuction = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: liveAuction,
+      bannerData: bannerData
     });
   } catch (error) {
     console.error('Error in getLiveHourlyAuction:', error);
