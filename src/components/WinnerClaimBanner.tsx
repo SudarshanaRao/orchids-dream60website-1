@@ -249,7 +249,8 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     }
 
     const participant = auction.participants?.find(p => p.playerId === userId);
-    const isParticipant = !!participant;
+    // ✅ FIX: Also check userHistoryRecord to ensure participants from history still see banners
+    const isParticipant = !!participant || !!auction.userHistoryRecord;
     const completedRounds = auction.rounds?.filter(r => r.status === 'COMPLETED') || [];
     const latestCompletedRound = completedRounds.length > 0 
       ? Math.max(...completedRounds.map(r => r.roundNumber)) 

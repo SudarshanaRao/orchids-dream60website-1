@@ -671,7 +671,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
             {/* Winner's Last Round Bid & Claim Section */}
             <div onClick={(e) => e.stopPropagation()}>
               {/* Not Qualified Message */}
-              {!localAuction.isWinner && localAuction.winnersAnnounced && (
+              {!localAuction.isWinner && localAuction.winnersAnnouncedAt && (
                 <div className="p-2 sm:p-3 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-lg mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
