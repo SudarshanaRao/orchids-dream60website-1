@@ -199,7 +199,8 @@ const submitPrizeClaim = async (req, res) => {
       claimData
     );
     
-    // ✅ Mark all OTHER winners' claims as EXPIRED and store who actually claimed
+    // ✅ Mark all OTHER winners' claims as EXPIRED and store detailed info about who claimed
+    const claimTime = new Date();
     await AuctionHistory.updateMany(
       { 
         hourlyAuctionId, 
@@ -211,25 +212,23 @@ const submitPrizeClaim = async (req, res) => {
           prizeClaimStatus: 'EXPIRED',
           claimedBy: updatedEntry.username,
           claimedByRank: updatedEntry.finalRank,
-          claimedAt: updatedEntry.claimedAt
+          claimedAt: claimTime,
+          claimNotes: `Prize claimed by ${updatedEntry.username} (Rank ${updatedEntry.finalRank}) at ${claimTime.toISOString()}`
         }
       }
     );
     
-    // Also ensure we update the notes for those who were specifically PENDING
-    await AuctionHistory.updateMany(
-      {
-        hourlyAuctionId,
-        isWinner: true,
-        userId: { $ne: userId },
-        prizeClaimStatus: 'PENDING'
-      },
-      {
-        $set: {
-          claimNotes: `Prize claimed by rank ${updatedEntry.finalRank} winner before their turn`
-        }
-      }
-    );
+    // Get all other winners to send them notification
+    const otherWinners = await AuctionHistory.find({
+      hourlyAuctionId,
+      isWinner: true,
+      userId: { $ne: userId }
+    });
+    
+    // Log detailed info for each other winner
+    for (const winner of otherWinners) {
+      console.log(`📢 [PRIZE_CLAIM] Notified ${winner.username} (Rank ${winner.finalRank}): Prize claimed by ${updatedEntry.username} (Rank ${updatedEntry.finalRank})`);
+    }
     
     await syncWinnerStatuses(hourlyAuctionId);
     

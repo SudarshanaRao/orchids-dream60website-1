@@ -111,19 +111,49 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       }
     }
     
-    // ✅ Track first appearance time for auto-hide
+    // ✅ Track first appearance time for auto-hide AND store banner data
     if (bannerType && liveAuction?.hourlyAuctionId) {
       const appearanceKey = `banner_first_appeared_${liveAuction.hourlyAuctionId}`;
+      const bannerDataKey = `winner_claim_banner_${liveAuction.hourlyAuctionId}`;
+      
       if (!localStorage.getItem(appearanceKey)) {
         localStorage.setItem(appearanceKey, Date.now().toString());
       }
+      
+      // Store banner data for persistence
+      const bannerStorageData = {
+        status: 'ACTIVE',
+        bannerType: bannerType,
+        message: bannerData.message,
+        rank: bannerData.rank,
+        hourlyAuctionId: liveAuction.hourlyAuctionId,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes from now
+      };
+      localStorage.setItem(bannerDataKey, JSON.stringify(bannerStorageData));
+      
+      console.log('📝 [WINNER_BANNER] Stored banner data:', bannerStorageData);
     }
-  }, [liveAuction?.hourlyAuctionId, bannerType]);
+  }, [liveAuction?.hourlyAuctionId, bannerType, bannerData.message, bannerData.rank]);
 
   const handleClose = () => {
     setIsVisible(false);
     if (liveAuction?.hourlyAuctionId) {
       localStorage.setItem(`closed_banner_${liveAuction.hourlyAuctionId}`, 'true');
+      
+      // Update stored banner data status
+      const bannerDataKey = `winner_claim_banner_${liveAuction.hourlyAuctionId}`;
+      const storedData = localStorage.getItem(bannerDataKey);
+      if (storedData) {
+        try {
+          const data = JSON.parse(storedData);
+          data.status = 'CLOSED';
+          data.closedAt = Date.now();
+          localStorage.setItem(bannerDataKey, JSON.stringify(data));
+        } catch (e) {
+          // ignore
+        }
+      }
     }
   };
 
