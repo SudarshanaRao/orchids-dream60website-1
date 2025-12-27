@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { Gift, Lock } from 'lucide-react';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';
 
@@ -81,9 +82,36 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
       roundBoxesCount: roundBoxes.length
     });
 
-    // Only render the auction grid when user has paid entry fee
+    // ✅ Enhanced Visibility: Show locked state instead of null to prevent layout shift
     if (!auction.userHasPaidEntry) {
-      return null;
+      return (
+        <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+          {/* Prize Showcase Placeholder */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/50 to-violet-50/50 border border-purple-100/50 p-6 sm:p-8 h-[180px] sm:h-[220px] flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+                <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+              </div>
+              <p className="text-sm font-medium text-purple-400">Complete Entry to Unlock Prize Details</p>
+            </div>
+          </div>
+
+          {/* Bidding Rounds Placeholder Grid */}
+          <div className="space-y-4 sm:space-y-5">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white/40 border border-dashed border-purple-200 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 opacity-60">
+                  <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-purple-300" />
+                  </div>
+                  <div className="h-4 w-24 bg-purple-50 rounded-full" />
+                  <div className="h-8 w-32 bg-purple-50 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
     }
 
       return (

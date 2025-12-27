@@ -2404,20 +2404,12 @@ if (currentPage === 'support') {
                               })
                             }));
 
-                            // ✅ NEW: Background refresh and smooth scroll to auctionBoxes
-                            // This happens in the background while modal is showing
+                            // ✅ Removed artificial scroll to prevent disturbance
+                            // Background refresh continues silently
                             setForceRefetchTrigger(prev => prev + 1);
-                          if (currentUser.id) {
-                            fetchAndSetUser(currentUser.id);
-                          }
-                          
-                          // Smooth scroll to auction boxes in background
-                          setTimeout(() => {
-                            const element = document.getElementById('auction-grid');
-                            if (element) {
-                              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            if (currentUser.id) {
+                              fetchAndSetUser(currentUser.id);
                             }
-                          }, 100);
 
                               setShowEntrySuccess({
                                 entryFee: totalEntryFee,

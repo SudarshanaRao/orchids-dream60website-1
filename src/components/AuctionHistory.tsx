@@ -76,6 +76,7 @@ interface AuctionHistoryItem {
     // Claimant information (who actually claimed the prize)
     claimedBy?: string;
     claimedByRank?: number;
+    claimNotes?: string;
     // ✅ NEW: Priority claim system fields
     claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
     currentEligibleRank?: number; // Which rank can currently claim
@@ -808,8 +809,8 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                   </div>
                 )}
 
-                {/* Claim window expired - no one claimed */}
-                {localAuction.prizeClaimStatus === 'EXPIRED' && !localAuction.claimedBy && (
+                {/* Claim window expired - show who claimed if available */}
+                {localAuction.prizeClaimStatus === 'EXPIRED' && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-red-50 to-rose-50 border border-red-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
@@ -819,12 +820,17 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                         <p className="text-[9px] sm:text-xs font-semibold text-red-900">
                           {getRankEmoji(localAuction.finalRank || 1)} Your Claim Window Expired
                         </p>
-                        <p className="text-[8px] sm:text-[10px] text-red-700">
-                          {localAuction.finalRank === 1 
+                        <p className="text-[8px] sm:text-[10px] text-red-700 font-medium mt-0.5">
+                          {localAuction.claimNotes || (localAuction.finalRank === 1 
                             ? '15-minute deadline passed. Prize may be offered to 2nd place winner.'
                             : '15-minute deadline passed. Prize not claimed.'
-                          }
+                          )}
                         </p>
+                        {localAuction.claimedBy && !localAuction.claimNotes && (
+                          <p className="text-[8px] sm:text-[9px] text-red-600 mt-1 italic bg-white/40 p-1 rounded border border-red-100">
+                            Prize was claimed by Rank {localAuction.claimedByRank || 'N/A'} ({localAuction.claimedBy})
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1217,6 +1223,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             prizeAmountWon: auction.prizeAmountWon,
             claimedBy: auction.claimedBy,
             claimedByRank: auction.claimedByRank,
+            claimNotes: auction.claimNotes,
             // ✅ NEW: Priority claim system fields - converted to UTC timestamps
               claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
               winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
