@@ -1028,12 +1028,11 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                     )}
                   </div>
                 )}
-              </>
-            )}
-          </div>
-        )}
+                </>
+              )}
+            </div>
 
-        {/* Footer */}
+          {/* Footer */}
             <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-1.5 sm:pt-2 border-t border-purple-100" onClick={() => onViewDetails(localAuction)}>
               <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm text-purple-600">
                 <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
