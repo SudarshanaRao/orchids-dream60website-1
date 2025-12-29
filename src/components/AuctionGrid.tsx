@@ -82,45 +82,26 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
       roundBoxesCount: roundBoxes.length
     });
 
-      // ✅ Enhanced Visibility: Show unified locked state instead of multiple placeholders
-      if (!auction.userHasPaidEntry) {
-        return (
-          <div className="space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-700">
-            {/* Prize Showcase Locked Card */}
-            <div className="relative overflow-hidden rounded-3xl bg-white/40 border-2 border-dashed border-purple-200 p-8 sm:p-12 min-h-[300px] flex flex-col items-center justify-center text-center space-y-6 backdrop-blur-sm shadow-inner">
-              <motion.div 
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-20 h-20 bg-purple-100 rounded-3xl flex items-center justify-center shadow-lg"
-              >
-                <Lock className="w-10 h-10 text-purple-500 animate-pulse" />
-              </motion.div>
-              
-              <div className="space-y-2">
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">
-                  Auction Grid Locked
-                </h3>
-                <p className="text-gray-500 font-medium max-w-xs mx-auto">
-                  Please pay the entry fee to unlock the bidding boxes and prize details.
-                </p>
-              </div>
-
-              {/* Fake blurred grid in background */}
-              <div className="absolute inset-0 -z-10 grid grid-cols-2 gap-4 opacity-10 blur-md scale-110">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-purple-200 rounded-2xl" />
-                ))}
+  return (
+    <div className="relative">
+      <motion.div 
+        layout
+        className="space-y-6 sm:space-y-8"
+        initial={false}
+      >
+        {/* Prize Showcase Card */}
+        <div className="relative overflow-hidden">
+          {!auction.userHasPaidEntry ? (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/50 to-violet-50/50 border border-purple-100/50 p-6 sm:p-8 h-[180px] sm:h-[220px] flex items-center justify-center animate-in fade-in duration-500">
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+                  <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+                </div>
+                <p className="text-sm font-medium text-purple-400">Complete Entry to Unlock Prize Details</p>
               </div>
             </div>
-          </div>
-        );
-      }
-
-      return (
-        <>
-          <div className="space-y-6 sm:space-y-8">
-            {/* Prize Showcase Card */}
-            <div className="relative overflow-hidden">
+          ) : (
+            <div className="relative overflow-hidden animate-in zoom-in-95 duration-500">
               {/* Animated Background */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
@@ -141,7 +122,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                     ease: "easeInOut",
                   }}
                 />
-                 <motion.div
+                <motion.div
                   className="absolute w-80 h-80 rounded-full blur-3xl opacity-15"
                   style={{
                     background: 'radial-gradient(circle, #A78BFA, #7C3AED)',
@@ -162,33 +143,62 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                 />
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Bidding Rounds Section - Only rendered when user has paid entry fee */}
-            <div className="space-y-4 sm:space-y-5">
-              <div 
-                className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6"
-              >
-                {roundBoxes.map((box) => (
-                  <div
-                    key={box.id}
-                  >
-                    <AuctionBox
-                      box={box}
-                      onClick={() => handleBoxClick(box)}
-                      isUserHighestBidder={box.bidder === user?.username}
-                      onShowLeaderboard={onShowLeaderboard}
-                      userHasPaidEntry={auction.userHasPaidEntry}
-                      userBidAmount={box.roundNumber ? auction.userBidsPerRound?.[box.roundNumber] : undefined}
-                      isUserQualified={box.roundNumber ? auction.userQualificationPerRound?.[box.roundNumber] : undefined}
-                      winnersAnnounced={auction.winnersAnnounced}
-                      serverTime={serverTime}
-                      hourlyAuctionId={auction.hourlyAuctionId} 
-                    />
-                  </div>
-                ))}
+        {/* Bidding Rounds Section */}
+        <div className="space-y-4 sm:space-y-5 relative">
+          {!auction.userHasPaidEntry && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/10 backdrop-blur-[2px] rounded-3xl border border-purple-100/20">
+              <div className="text-center bg-white/90 p-8 rounded-3xl shadow-2xl border border-purple-100 max-w-sm mx-auto transform -translate-y-4">
+                <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200">
+                  <Lock className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Bidding Grid Locked</h3>
+                <p className="text-gray-500 text-sm mb-6">You need to pay the entry fee to unlock the bidding rounds and start participating.</p>
+                <div className="inline-flex items-center gap-2 text-purple-600 font-bold text-sm uppercase tracking-wider">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                  </span>
+                  Pay Entry Fee Above
+                </div>
               </div>
             </div>
+          )}
+
+          <div 
+            className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${!auction.userHasPaidEntry ? 'opacity-30 blur-[4px] grayscale' : 'opacity-100 blur-0 grayscale-0'}`}
+          >
+            {(auction.userHasPaidEntry ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
+              <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
+                {typeof item === 'number' ? (
+                  <div className="bg-white/40 border-2 border-dotted border-purple-300 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4">
+                    <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                      <Lock className="w-5 h-5 text-purple-300" />
+                    </div>
+                    <div className="h-4 w-24 bg-purple-50 rounded-full" />
+                    <div className="h-8 w-32 bg-purple-50 rounded-lg" />
+                  </div>
+                ) : (
+                  <AuctionBox
+                    box={item}
+                    onClick={() => handleBoxClick(item)}
+                    isUserHighestBidder={item.bidder === user?.username}
+                    onShowLeaderboard={onShowLeaderboard}
+                    userHasPaidEntry={auction.userHasPaidEntry}
+                    userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
+                    isUserQualified={item.roundNumber ? auction.userQualificationPerRound?.[item.roundNumber] : undefined}
+                    winnersAnnounced={auction.winnersAnnounced}
+                    serverTime={serverTime}
+                    hourlyAuctionId={auction.hourlyAuctionId} 
+                  />
+                )}
+              </div>
+            ))}
           </div>
+        </div>
+      </motion.div>
 
       {showBidModal && selectedBox && (
         <BidModal
@@ -217,6 +227,6 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
           userEntryFee={auction.userEntryFee}
         />
       )}
-    </>
+    </div>
   );
 }

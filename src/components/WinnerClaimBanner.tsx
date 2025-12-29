@@ -42,24 +42,24 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
           );
 
-            const latestAuction = sortedData[0];
-            const now = serverTime?.timestamp || Date.now();
-            const completedAtTime = new Date(latestAuction.completedAt).getTime();
-            const fifteenMinsInMs = 15 * 60 * 1000;
-            const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
+          const latestAuction = sortedData[0];
+          const now = serverTime?.timestamp || Date.now();
+          const completedAtTime = new Date(latestAuction.completedAt).getTime();
+          const fifteenMinsInMs = 15 * 60 * 1000;
+          const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
 
             if (isWithin15Mins) {
               let status: BannerType = 'NOT_QUALIFIED';
               
-              // Handle Rank 1, 2, 3 as potential winners/waiting
-              if (latestAuction.finalRank && [1, 2, 3].includes(latestAuction.finalRank)) {
+              // Determine rank for display
+              const rank = latestAuction.finalRank || (latestAuction.eliminatedInRound ? `ELIMINATED R${latestAuction.eliminatedInRound}` : 'N/A');
+              
+              if ([1, 2, 3].includes(latestAuction.finalRank)) {
                 const isEligibleToClaim = 
                   latestAuction.finalRank === latestAuction.currentEligibleRank || 
                   (latestAuction.claimNotes && latestAuction.claimNotes.toLowerCase().includes(`rank ${latestAuction.finalRank} is now eligible to claim`));
 
                 status = isEligibleToClaim ? 'WIN' : 'WAITING';
-              } else if (latestAuction.isWinner) {
-                status = 'WIN';
               }
 
               const deadline = completedAtTime + fifteenMinsInMs;
@@ -71,7 +71,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                   ...latestAuction,
                   resultStatus: status,
                   resultAnnouncedAt: latestAuction.completedAt,
-                  queuePosition: latestAuction.finalRank || 'N/A',
+                  queuePosition: rank,
                   deadline: deadline
                 });
                 setIsVisible(true);
@@ -79,9 +79,9 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                 setIsVisible(false);
               }
             } else {
-              setIsVisible(false);
-              setBannerType(null);
-            }
+            setIsVisible(false);
+            setBannerType(null);
+          }
         }
       }
     } catch (error) {
@@ -136,7 +136,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         return {
           gradient: 'from-emerald-600 via-green-500 to-teal-600',
           icon: <Trophy className="w-5 h-5 text-white" />,
-          message: `🎉 CONGRATULATIONS! YOU WON THE "${bannerData.auctionName.toUpperCase()}" ROUND! CLAIM YOUR PRIZE NOW BEFORE IT EXPIRES!`,
+          message: `🎉 CONGRATULATIONS! YOU WON THE "${bannerData.auctionName.toUpperCase()}" ROUND! CLAIM YOUR PRIZE NOW BEFORE IT EXPIRES IN THE NEXT ROUND!`,
           buttonText: "CLAIM NOW",
           navigateTo: "history"
         };
@@ -144,16 +144,16 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         return {
           gradient: 'from-blue-700 via-indigo-600 to-violet-700',
           icon: <Clock className="w-5 h-5 text-white" />,
-          message: `⏳ YOU ARE IN THE WAITING LIST FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. CHECK STATUS IN HISTORY!`,
+          message: `⏳ YOU ARE IN THE WAITING LIST FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. STAY TUNED AS RANKS AHEAD MAY EXPIRE!`,
           buttonText: "CHECK STATUS",
           navigateTo: "history"
         };
       case 'NOT_QUALIFIED':
         return {
-          gradient: 'from-slate-700 via-gray-600 to-zinc-700',
+          gradient: 'from-slate-800 via-zinc-700 to-gray-800',
           icon: <X className="w-5 h-5 text-white" />,
-          message: `📢 RESULTS ANNOUNCED FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. BETTER LUCK NEXT TIME!`,
-          buttonText: "VIEW LEADERBOARD",
+          message: `📢 RESULTS ANNOUNCED FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK: ${bannerData.queuePosition}. UNFORTUNATELY, YOU DID NOT QUALIFY FOR THE TOP 3 THIS TIME. BETTER LUCK IN THE NEXT ROUND!`,
+          buttonText: "VIEW DETAILS",
           navigateTo: "history"
         };
       default:
