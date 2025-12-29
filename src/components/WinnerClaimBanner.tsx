@@ -25,32 +25,60 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBannerStatus = useCallback(async () => {
-    if (!userId) {
+    // Fallback to localStorage if userId prop is missing
+    const effectiveUserId = userId || localStorage.getItem('user_id');
+    
+    if (!effectiveUserId) {
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(`${API_ENDPOINTS.scheduler.liveAuction}?userId=${userId}`);
+      const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.bannerData) {
-          const data = result.bannerData;
-          
-          // Check 15-minute window
-          const announcedAt = new Date(data.resultAnnouncedAt).getTime();
-          const now = serverTime?.timestamp || Date.now();
-          const FIFTEEN_MINS = 15 * 60 * 1000;
+        if (result.success && result.data && Array.isArray(result.data)) {
+          // Sort by completedAt desc to find the most recent one
+          const sortedData = [...result.data].sort((a, b) => 
+            new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+          );
 
-          if (now - announcedAt <= FIFTEEN_MINS) {
-            // Check if user manually closed this specific banner
-            const closedKey = `closed_banner_${data.roundId}_${data.resultAnnouncedAt}`;
-            if (localStorage.getItem(closedKey) !== 'true') {
-              setBannerType(data.resultStatus);
-              setBannerData(data);
-              setIsVisible(true);
+          // Find the most recent pending claim with rank 1, 2, or 3
+          const pendingAuction = sortedData.find((item: any) => 
+            item.prizeClaimStatus === 'PENDING' && 
+            [1, 2, 3].includes(item.finalRank)
+          );
+
+          if (pendingAuction) {
+            const data = pendingAuction;
+            
+            // Map the result status
+            const status = data.finalRank === 1 ? 'WIN' : 'WAITING';
+            
+            // Check if within deadline
+            const deadline = data.claimDeadline ? new Date(data.claimDeadline).getTime() : 
+                           (new Date(data.completedAt).getTime() + 15 * 60 * 1000);
+            const now = serverTime?.timestamp || Date.now();
+
+            if (now < deadline) {
+              // Check if user manually closed this specific banner
+              const closedKey = `closed_banner_${data._id}_${data.completedAt}`;
+              if (localStorage.getItem(closedKey) !== 'true') {
+                setBannerType(status);
+                setBannerData({
+                  ...data,
+                  resultStatus: status,
+                  resultAnnouncedAt: data.completedAt,
+                  queuePosition: data.finalRank,
+                  deadline: deadline
+                });
+                setIsVisible(true);
+              } else {
+                setIsVisible(false);
+              }
             } else {
               setIsVisible(false);
+              setBannerType(null);
             }
           } else {
             setIsVisible(false);
@@ -79,8 +107,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
     const updateTimer = () => {
       const now = serverTime.timestamp || Date.now();
-      const announcedAt = new Date(bannerData.resultAnnouncedAt).getTime();
-      const expiresAt = announcedAt + (15 * 60 * 1000);
+      const expiresAt = bannerData.deadline;
       const diff = expiresAt - now;
 
       if (diff <= 0) {
@@ -101,7 +128,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const handleClose = () => {
     setIsVisible(false);
     if (bannerData) {
-      const closedKey = `closed_banner_${bannerData.roundId}_${bannerData.resultAnnouncedAt}`;
+      const closedKey = `closed_banner_${bannerData._id}_${bannerData.completedAt}`;
       localStorage.setItem(closedKey, 'true');
     }
   };
@@ -114,25 +141,16 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         return {
           gradient: 'from-emerald-500 via-green-500 to-teal-500',
           icon: <Trophy className="w-5 h-5 text-white animate-bounce" />,
-          message: "🎉 Congratulations! You won this round.",
+          message: `🎉 Congratulations! You won the "${bannerData.auctionName}" round.`,
           subMessage: "Claim your prize now!",
           buttonText: "CLAIM NOW",
-          navigateTo: "history"
-        };
-      case 'NOT_QUALIFIED':
-        return {
-          gradient: 'from-gray-700 via-gray-600 to-gray-800',
-          icon: <XCircle className="w-5 h-5 text-white" />,
-          message: "You are not qualified. Better luck next time.",
-          subMessage: "Results announced! Check details.",
-          buttonText: "VIEW HISTORY",
           navigateTo: "history"
         };
       case 'WAITING':
         return {
           gradient: 'from-blue-600 via-indigo-500 to-violet-500',
           icon: <Clock className="w-5 h-5 text-white animate-spin-slow" />,
-          message: `⏳ You are in the waiting list. Your queue number is #${bannerData.queuePosition}.`,
+          message: `⏳ You are in the waiting list for "${bannerData.auctionName}". Rank #${bannerData.queuePosition}.`,
           subMessage: "Kindly check the details in history.",
           buttonText: "CHECK STATUS",
           navigateTo: "history"
