@@ -34,7 +34,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchBannerStatus = useCallback(async (isInitial = false) => {
+  const fetchBannerStatus = useCallback(async () => {
     const effectiveUserId = userId || localStorage.getItem('user_id');
     
     if (!effectiveUserId) {
@@ -44,7 +44,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
     // ✅ Try to load from cache first for "ASAP" rendering
     const cachedData = localStorage.getItem(`banner_cache_${effectiveUserId}`);
-    if (cachedData && isInitial) {
+    if (cachedData && isLoading) {
       try {
         const parsed = JSON.parse(cachedData);
         if (Date.now() - parsed.timestamp < 60000) { // 1 minute cache
@@ -67,11 +67,13 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           );
 
           const latestAuction = sortedData[0];
-          const now = Date.now(); // Use local time for interval logic, offset handled if needed
+          const now = serverTime?.timestamp || Date.now();
           const completedAtTime = new Date(latestAuction.completedAt).getTime();
           
+          // Slot durations as requested: 15m for 2nd, 30m for 3rd (cumulative)
+          // This implies 15m slots for each rank
           const SLOT_DURATION = 15 * 60 * 1000;
-          const totalBannerVisibility = 45 * 60 * 1000;
+          const totalBannerVisibility = 45 * 60 * 1000; // Show for 45 minutes total
           const isWithinBannerTime = (now - completedAtTime) < totalBannerVisibility;
 
           if (isWithinBannerTime) {
@@ -81,12 +83,14 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             const claimNotes = latestAuction.claimNotes || '';
             const isWinner = latestAuction.isWinner;
 
+            // 1. Keyword Check (Priority)
             if (claimNotes.toLowerCase().includes('successfully') || latestAuction.claimedAt) {
               status = 'CLAIMED';
             } 
             else if (claimNotes.toLowerCase().includes('expired') || claimNotes.toLowerCase().includes('forfeited')) {
               status = 'EXPIRED';
             }
+            // 2. Winner Status Check
             else if (isWinner && [1, 2, 3].includes(rank)) {
               if (rank === currentEligibleRank) {
                 status = 'WIN';
@@ -99,6 +103,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
               status = 'NOT_QUALIFIED';
             }
 
+            // 3. Deadline Calculation
             let deadline = completedAtTime + (currentEligibleRank * SLOT_DURATION);
             let timerLabel = "EXPIRES IN";
 
@@ -128,6 +133,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
               setBannerData(newBannerData);
               setIsVisible(true);
 
+              // ✅ Cache the result
               localStorage.setItem(`banner_cache_${effectiveUserId}`, JSON.stringify({
                 type: status,
                 data: newBannerData,
@@ -148,11 +154,11 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, serverTime, isLoading]);
 
   useEffect(() => {
-    fetchBannerStatus(true);
-    const interval = setInterval(() => fetchBannerStatus(false), 30000);
+    fetchBannerStatus();
+    const interval = setInterval(fetchBannerStatus, 30000);
     return () => clearInterval(interval);
   }, [fetchBannerStatus]);
 

@@ -103,7 +103,68 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
         className="space-y-6 sm:space-y-8"
         initial={false}
       >
-
+        {/* Prize Showcase Card */}
+        <div className="relative overflow-hidden">
+          {!auction.userHasPaidEntry || isUnlocking ? (
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/50 to-violet-50/50 border border-purple-100/50 p-6 sm:p-8 h-[180px] sm:h-[220px] flex items-center justify-center animate-in fade-in duration-500">
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+                  {isUnlocking ? (
+                    <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                  ) : (
+                    <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+                  )}
+                </div>
+                <p className="text-sm font-medium text-purple-400">
+                  {isUnlocking ? "Unlocking Prize Details..." : "Complete Entry to Unlock Prize Details"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="relative overflow-hidden animate-in zoom-in-95 duration-500">
+              {/* Animated Background */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                  className="absolute w-96 h-96 rounded-full blur-3xl opacity-20"
+                  style={{
+                    background: 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
+                    top: '-30%',
+                    right: '-20%',
+                  }}
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    x: [0, 20, 0],
+                    y: [0, -20, 0],
+                  }}
+                  transition={{
+                    duration: 10,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                <motion.div
+                  className="absolute w-80 h-80 rounded-full blur-3xl opacity-15"
+                  style={{
+                    background: 'radial-gradient(circle, #A78BFA, #7C3AED)',
+                    bottom: '-20%',
+                    left: '-15%',
+                  }}
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    x: [0, -15, 0],
+                    y: [0, 15, 0],
+                  }}
+                  transition={{
+                    duration: 12,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
             {/* Bidding Rounds Section */}
             <div className="space-y-4 sm:space-y-5 relative p-1 group">
