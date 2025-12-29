@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   MessageSquare, 
@@ -7,10 +7,11 @@ import {
   Send, 
   ArrowLeft,
   CheckCircle2,
-  Bug
+  Bug,
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface TesterFeedbackProps {
   user?: {
@@ -28,6 +29,33 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
   const [email, setEmail] = useState(user?.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+      setScreenshot(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,18 +68,19 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
     setIsSubmitting(true);
 
     try {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('type', feedbackType);
+      formData.append('message', message);
+      if (user?.id) formData.append('userId', user.id);
+      if (screenshot) {
+        formData.append('screenshot', screenshot);
+      }
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/feedback`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          type: feedbackType,
-          message,
-          userId: user?.id
-        }),
+        body: formData,
       });
 
       const data = await response.json();
@@ -60,6 +89,7 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
         setIsSuccess(true);
         toast.success('Feedback submitted successfully!');
         setMessage('');
+        removeScreenshot();
       } else {
         toast.error(data.message || 'Failed to submit feedback');
       }
@@ -190,22 +220,72 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
                 </div>
               </div>
 
-              {/* Message */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
-                  Message
-                </label>
-                <textarea
-                  required
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={`Describe your ${feedbackType} in detail...`}
-                  rows={5}
-                  className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-purple-500 focus:bg-white transition-all outline-none font-bold text-slate-700 resize-none"
-                />
-              </div>
+                {/* Message */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    Message
+                  </label>
+                  <textarea
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={`Describe your ${feedbackType} in detail...`}
+                    rows={5}
+                    className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-purple-500 focus:bg-white transition-all outline-none font-bold text-slate-700 resize-none"
+                  />
+                </div>
 
-              <button
+                {/* Screenshot/Media Upload */}
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    Attach Reference (Optional)
+                  </label>
+                  
+                  <div className="flex flex-wrap gap-4">
+                    {!screenshotPreview ? (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-3 px-6 py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-purple-300 hover:text-purple-500 hover:bg-purple-50 transition-all group"
+                      >
+                        <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span className="font-bold text-sm">Add Screenshot</span>
+                      </button>
+                    ) : (
+                      <div className="relative group">
+                        <div className="w-32 h-32 rounded-2xl overflow-hidden border-2 border-purple-200 shadow-lg">
+                          <img 
+                            src={screenshotPreview} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={removeScreenshot}
+                          className="absolute -top-2 -right-2 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none rounded-2xl">
+                          <span className="text-white text-[10px] font-black uppercase">Click X to remove</span>
+                        </div>
+                      </div>
+                    )}
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium px-1">
+                    Maximum file size: 5MB. Supports JPG, PNG, WEBP.
+                  </p>
+                </div>
+
+                <button
                 disabled={isSubmitting}
                 type="submit"
                 className="w-full py-5 bg-purple-600 text-white rounded-2xl font-black text-lg hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-xl shadow-purple-500/20"

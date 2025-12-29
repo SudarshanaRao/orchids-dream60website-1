@@ -1,6 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const { submitFeedback } = require('../controllers/feedbackController');
+
+// Configure multer for memory storage
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
 
 /**
  * @swagger
@@ -11,7 +20,7 @@ const { submitFeedback } = require('../controllers/feedbackController');
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -29,6 +38,9 @@ const { submitFeedback } = require('../controllers/feedbackController');
  *                 type: string
  *               userId:
  *                 type: string
+ *               screenshot:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Feedback submitted successfully
@@ -37,6 +49,6 @@ const { submitFeedback } = require('../controllers/feedbackController');
  *       500:
  *         description: Server error
  */
-router.post('/', submitFeedback);
+router.post('/', upload.single('screenshot'), submitFeedback);
 
 module.exports = router;

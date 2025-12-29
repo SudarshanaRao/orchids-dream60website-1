@@ -409,7 +409,7 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
     }
 
     const transporter = createTransporter();
-    const { username, auctionName, prizeAmount, claimDeadline, upiId } = details;
+    const { username, auctionName, prizeAmount, claimDeadline, email: userEmail, paymentAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     const termsUrl = `${primaryClientUrl}/terms`;
 
@@ -421,6 +421,12 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
         <div class="highlight-value">₹${prizeAmount.toLocaleString('en-IN')}</div>
         <div class="highlight-sub">${auctionName}</div>
       </div>
+      ${paymentAmount ? `
+      <div class="panel" style="border-color: #FBBF24;">
+        <p class="text" style="margin: 0; color: #FBBF24; font-weight: 700;">Action Required: Payment Pending</p>
+        <p class="text" style="margin: 5px 0 0; font-size: 14px;">To claim your prize, you need to pay a processing fee of <strong>₹${paymentAmount.toLocaleString('en-IN')}</strong>.</p>
+      </div>
+      ` : ''}
       <div class="warning-box">
         <div class="label">⏰ Claim Deadline</div>
         <div class="value">${new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
@@ -428,10 +434,10 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
       <div class="grid">
         <div class="stat"><div class="label">Auction</div><div class="value">${auctionName}</div></div>
         <div class="stat"><div class="label">Prize</div><div class="value">₹${prizeAmount.toLocaleString('en-IN')}</div></div>
-        ${upiId ? `<div class="stat"><div class="label">UPI ID</div><div class="value">${upiId}</div></div>` : ''}
+        ${userEmail ? `<div class="stat"><div class="label">Email Id</div><div class="value">${userEmail}</div></div>` : ''}
       </div>
-      ${!upiId ? '<div class="warning-box"><div class="label">Action Required</div><div class="value">Add your UPI ID in your dashboard to receive the prize.</div></div>' : '<div class="success-box"><div class="label">Payment Info</div><div class="value">Prize will be transferred to your UPI ID within 24-48 hours.</div></div>'}
-      <a href="${primaryClientUrl}/history" class="cta" target="_blank" rel="noopener">${!upiId ? 'Claim Prize Now' : 'View Dashboard'}</a>
+      ${!userEmail ? '<div class="warning-box"><div class="label">Action Required</div><div class="value">Add your Email Id in your dashboard to receive the prize.</div></div>' : '<div class="success-box"><div class="label">Payment Info</div><div class="value">Prize will be processed to your Email Id within 24-48 hours.</div></div>'}
+      <a href="${primaryClientUrl}/history" class="cta" target="_blank" rel="noopener">${!userEmail ? 'Claim Prize Now' : 'View Dashboard'}</a>
       <p class="text" style="margin-top:20px; font-size: 13px;">If you don't claim within the deadline, the prize moves to the next eligible participant.</p>
     `;
 
@@ -440,7 +446,7 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
       to: email,
       subject: 'Dream60 Prize Confirmation',
       html: buildEmailTemplate({ primaryClientUrl, title: 'Prize confirmation', subtitle: 'You are Rank #1', bodyHtml, termsUrl }),
-      text: `Hi ${username}, you won ₹${prizeAmount.toLocaleString('en-IN')} in ${auctionName}. Claim by ${new Date(claimDeadline).toLocaleString('en-IN')}. ${!upiId ? 'Add your UPI ID in your dashboard.' : 'Prize will be sent to ' + upiId + ' within 24-48 hours.'} Dashboard: ${primaryClientUrl}/dashboard. Terms: ${termsUrl}`,
+      text: `Hi ${username}, you won ₹${prizeAmount.toLocaleString('en-IN')} in ${auctionName}. ${paymentAmount ? 'Payment required: ₹' + paymentAmount.toLocaleString('en-IN') + '. ' : ''}Claim by ${new Date(claimDeadline).toLocaleString('en-IN')}. ${!userEmail ? 'Add your Email Id in your dashboard.' : 'Prize will be sent to ' + userEmail + ' within 24-48 hours.'} Dashboard: ${primaryClientUrl}/dashboard. Terms: ${termsUrl}`,
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -680,9 +686,10 @@ const sendSupportReceiptEmail = async (email, details) => {
  * @param {string|Array<string>} recipients - Email address(es)
  * @param {string} subject - Email subject
  * @param {string} body - Email body (HTML)
+ * @param {Array<Object>} attachments - Optional email attachments
  * @returns {Promise<Object>} - Email send result
  */
-const sendCustomEmail = async (recipients, subject, body) => {
+const sendCustomEmail = async (recipients, subject, body, attachments = []) => {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('⚠️ Email credentials not configured. Skipping email send.');
@@ -700,6 +707,7 @@ const sendCustomEmail = async (recipients, subject, body) => {
       subject: subject,
       html: body,
       text: body.replace(/<[^>]*>/g, ''), // Strip HTML tags for plain text version
+      attachments: attachments,
     };
 
     const info = await transporter.sendMail(mailOptions);
