@@ -42,8 +42,23 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       return;
     }
 
+    // ✅ Try to load from cache first for "ASAP" rendering
+    const cachedData = localStorage.getItem(`banner_cache_${effectiveUserId}`);
+    if (cachedData && isLoading) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (Date.now() - parsed.timestamp < 60000) { // 1 minute cache
+          setBannerType(parsed.type);
+          setBannerData(parsed.data);
+          setIsVisible(true);
+          setIsLoading(false);
+        }
+      } catch (e) {}
+    }
+
     try {
-      const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}`);
+      // ✅ Use limit=5 for faster API response
+      const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}&limit=5`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
@@ -82,8 +97,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
               } else if (rank > currentEligibleRank) {
                 status = 'WAITING';
               } else {
-                // If their rank is less than current and not claimed/expired in notes, 
-                // it's likely they missed their window
                 status = 'EXPIRED';
               }
             } else {
@@ -95,11 +108,9 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             let timerLabel = "EXPIRES IN";
 
             if (status === 'WAITING') {
-              // Time until their rank starts
               deadline = completedAtTime + ((rank - 1) * SLOT_DURATION);
               timerLabel = "STARTS IN";
             } else if (status === 'CLAIMED' || status === 'EXPIRED' || status === 'NOT_QUALIFIED') {
-              // End of the entire 45m window
               deadline = completedAtTime + totalBannerVisibility;
               timerLabel = "BANNER ENDS";
             }
@@ -107,8 +118,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
             
             if (localStorage.getItem(closedKey) !== 'true') {
-              setBannerType(status);
-              setBannerData({
+              const newBannerData = {
                 ...latestAuction,
                 resultStatus: status,
                 resultAnnouncedAt: latestAuction.completedAt,
@@ -117,14 +127,25 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                 timerLabel: timerLabel,
                 claimedByRank: latestAuction.claimedByRank,
                 claimNotes: claimNotes
-              });
+              };
+
+              setBannerType(status);
+              setBannerData(newBannerData);
               setIsVisible(true);
+
+              // ✅ Cache the result
+              localStorage.setItem(`banner_cache_${effectiveUserId}`, JSON.stringify({
+                type: status,
+                data: newBannerData,
+                timestamp: Date.now()
+              }));
             } else {
               setIsVisible(false);
             }
           } else {
             setIsVisible(false);
             setBannerType(null);
+            localStorage.removeItem(`banner_cache_${effectiveUserId}`);
           }
         }
       }
@@ -133,7 +154,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     } finally {
       setIsLoading(false);
     }
-  }, [userId, serverTime]);
+  }, [userId, serverTime, isLoading]);
 
   useEffect(() => {
     fetchBannerStatus();

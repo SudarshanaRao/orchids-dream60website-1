@@ -1583,7 +1583,7 @@ const markAuctionWinners = async (req, res) => {
  */
 const getUserAuctionHistory = async (req, res) => {
   try {
-    const { userId } = req.query;
+    const { userId, limit } = req.query;
     
     if (!userId) {
       return res.status(400).json({
@@ -1596,15 +1596,35 @@ const getUserAuctionHistory = async (req, res) => {
     await AuctionHistory.processClaimQueues();
     
     // Get user's history
-    const history = await AuctionHistory.getUserHistory(userId);
+    let history = await AuctionHistory.getUserHistory(userId);
     
+    // Apply limit if provided
+    if (limit) {
+      const limitNum = parseInt(limit);
+      if (!isNaN(limitNum)) {
+        history = history.slice(0, limitNum);
+      }
+    }
+
     // Get user's statistics
     const stats = await AuctionHistory.getUserStats(userId);
     
+    // ✅ OPTIMIZED: Fetch all relevant HourlyAuctions in ONE batch query (Fixes N+1 issue)
+    const auctionIds = [...new Set(history.map(entry => entry.hourlyAuctionId))];
+    const auctions = await HourlyAuction.find({ 
+      hourlyAuctionId: { $in: auctionIds } 
+    }).select({
+      hourlyAuctionId: 1,
+      winners: 1,
+      Status: 1
+    }).lean();
+
+    const auctionMap = new Map(auctions.map(a => [a.hourlyAuctionId, a]));
+
     // ✅ UPDATED: Calculate correct totalAmountSpent for each auction entry
     // Logic: If won AND claimed, totalSpent = entryFee + lastRoundBidAmount
     //        Otherwise, totalSpent = entryFee only
-    const enrichedHistory = await Promise.all(history.map(async (entry) => {
+    const enrichedHistory = history.map((entry) => {
       // Calculate correct totalSpent for this auction
       let calculatedTotalSpent = entry.entryFeePaid || 0;
       
@@ -1615,7 +1635,7 @@ const getUserAuctionHistory = async (req, res) => {
       
       // ✅ NEW: Check if the auction is "Settled" (completely closed)
       let isSettled = false;
-      const auction = await HourlyAuction.findOne({ hourlyAuctionId: entry.hourlyAuctionId }).lean();
+      const auction = auctionMap.get(entry.hourlyAuctionId);
       if (auction) {
         if (auction.winners && auction.winners.length > 0) {
           const hasClaimed = auction.winners.some(w => w.prizeClaimStatus === 'CLAIMED');
@@ -1637,7 +1657,7 @@ const getUserAuctionHistory = async (req, res) => {
         claimWindowStartedAt: entry.claimWindowStartedAt || null,
         ranksOffered: entry.ranksOffered || [],
       };
-    }));
+    });
     
     return res.status(200).json({
       success: true,
