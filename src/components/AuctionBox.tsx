@@ -435,14 +435,14 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
           )}
         </div>
 
-        <CardContent className="p-3 sm:p-4 md:p-5 relative z-10">
+        <CardContent className="p-2.5 sm:p-4 md:p-5 relative z-10">
           {/* Header with Title and Status */}
-          <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-            <h3 className="text-sm sm:text-base md:text-lg font-bold text-purple-900 truncate">
+          <div className="flex items-center justify-between gap-1.5 mb-2 sm:mb-4">
+            <h3 className="text-xs sm:text-base md:text-lg font-bold text-purple-900 truncate">
               {getBoxTitle()}
             </h3>
             
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               {/* Info Icon - Only show for round boxes */}
               {box.type === 'round' && (
                 <motion.button
@@ -452,15 +452,15 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     e.stopPropagation();
                     setShowRoundInfo(true);
                   }}
-                  className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-100/50 hover:bg-purple-200/60 backdrop-blur-sm text-purple-700 flex items-center justify-center shadow-md transition-all"
+                  className="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-purple-100/50 hover:bg-purple-200/60 backdrop-blur-sm text-purple-700 flex items-center justify-center shadow-md transition-all"
                   title="View round rules"
                 >
-                  <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+                  <Info className="w-3 h-3 sm:w-4 sm:h-4 stroke-[2.5]" />
                 </motion.button>
               )}
               
               <div className={`
-                flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border
+                flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold backdrop-blur-sm border
                 ${status === 'completed' 
                   ? 'bg-purple-100/80 text-purple-800 border-purple-300/50' 
                   : status === 'winners-announced'
@@ -472,13 +472,13 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                   : 'bg-purple-100/80 text-purple-800 border-purple-300/50'
                 }
               `}>
-                {status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-                {status === 'winners-announced' && <Trophy className="w-3 h-3" />}
-                {status === 'upcoming' && <Lock className="w-3 h-3" />}
-                {status === 'locked' && <Lock className="w-3 h-3" />}
-                {status === 'open' && <Zap className="w-3 h-3" />}
-                {status === 'paid' && <CheckCircle2 className="w-3 h-3" />}
-                {status === 'bidding' && <TrendingUp className="w-3 h-3" />}
+                {status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                {status === 'winners-announced' && <Trophy className="w-2.5 h-2.5" />}
+                {status === 'upcoming' && <Lock className="w-2.5 h-2.5" />}
+                {status === 'locked' && <Lock className="w-2.5 h-2.5" />}
+                {status === 'open' && <Zap className="w-2.5 h-2.5" />}
+                {status === 'paid' && <CheckCircle2 className="w-2.5 h-2.5" />}
+                {status === 'bidding' && <TrendingUp className="w-2.5 h-2.5" />}
                 <span className="hidden xs:inline">
                   {status === 'completed' 
                     ? 'Completed' 
@@ -500,7 +500,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
           </div>
 
           {/* Main Icon Area with Spinning Animation */}
-          <div className="flex flex-col items-center justify-center mb-3 sm:mb-4 py-2 sm:py-3 md:py-4">
+          <div className="flex flex-col items-center justify-center mb-2 sm:mb-4 py-1.5 sm:py-3 md:py-4">
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -510,10 +510,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 stiffness: 200,
                 damping: 15
               }}
-              className="relative mb-2 sm:mb-3"
+              className="relative mb-1.5 sm:mb-3"
             >
               <div className={`
-                w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl border-3 sm:border-4 border-white/60
+                w-12 h-12 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg sm:rounded-2xl flex items-center justify-center shadow-lg border-2 sm:border-4 border-white/60
                 ${status === 'completed'
                   ? 'bg-gradient-to-br from-purple-500 via-purple-600 to-violet-700'
                   : status === 'upcoming' || status === 'locked'
@@ -524,11 +524,11 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 }
               `}>
                 {status === 'upcoming' || status === 'locked' ? (
-                  <Lock className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+                  <Lock className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
                 ) : box.type === 'entry' ? (
-                  <IndianRupee className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+                  <IndianRupee className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
                 ) : (
-                  <Target className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
+                  <Target className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
                 )}
               </div>
 
@@ -542,10 +542,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     type: "spring",
                     stiffness: 200
                   }}
-                  className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2"
+                  className="absolute -bottom-0.5 -right-0.5 sm:-bottom-2 sm:-right-2"
                 >
-                  <div className="w-7 h-7 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-400 to-violet-500 rounded-full flex items-center justify-center shadow-lg border-2 sm:border-3 border-white">
-                    <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <div className="w-5 h-5 sm:w-9 sm:h-9 bg-gradient-to-br from-purple-400 to-violet-500 rounded-full flex items-center justify-center shadow-lg border sm:border-3 border-white">
+                    <Zap className="w-3 h-3 sm:w-5 sm:h-5 text-white" />
                   </div>
                 </motion.div>
               )}
@@ -558,10 +558,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5, type: "spring" }}
               >
-                <div className="bg-purple-600 backdrop-blur-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg border-2 border-purple-300/60">
+                <div className="bg-purple-600 backdrop-blur-sm px-2.5 sm:px-4 py-0.5 sm:py-1.5 rounded-full shadow-lg border sm:border-2 border-purple-300/60">
                   <div className="flex items-center gap-1 sm:gap-1.5 text-white">
-                    <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="font-mono font-semibold text-xs sm:text-sm">
+                    <Timer className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                    <span className="font-mono font-semibold text-[10px] sm:text-sm">
                       {timeUntilOpen}
                     </span>
                   </div>
@@ -571,78 +571,54 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
           </div>
 
           {/* Information Section */}
-          <div className="space-y-2 sm:space-y-2.5">
+          <div className="space-y-1.5 sm:space-y-2.5">
             {status === 'winners-announced' ? (
               <>
                 {/* Winners Announced Info - Green */}
-                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-green-800 text-xs font-semibold mb-2">
-                    <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
+                  <div className="flex items-center gap-1 sm:gap-2 text-green-800 text-[10px] sm:text-xs font-semibold mb-1 sm:mb-2">
+                    <Trophy className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0" />
                     <span>Winners Announced</span>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-green-700 mb-2">
-                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] text-green-700 mb-1 sm:mb-2">
+                    <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate">
-                      Auction completed early (≤3 qualified)
+                      Completed early
                     </span>
                   </div>
-                  <div className="bg-white/60 rounded-lg p-2 mt-2 border border-green-200/50">
-                    <p className="text-[10px] text-green-800 leading-relaxed">
-                      This round was not played as final winners were determined in previous rounds.
+                  <div className="bg-white/60 rounded-lg p-1.5 sm:p-2 mt-1 sm:mt-2 border border-green-200/50">
+                    <p className="text-[9px] sm:text-[10px] text-green-800 leading-tight">
+                      Auction determined in previous rounds.
                     </p>
                   </div>
                 </div>
 
                 {/* Prize Display for Winners Announced */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-2">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
-                    <div className="bg-white/60 rounded-lg p-2 border border-amber-200/50">
-                      <p className="text-[10px] text-amber-800 leading-relaxed">
-                        <strong>Note:</strong> Prize allocated to earlier round winners due to early completion.
-                      </p>
-                    </div>
                   </div>
                 )}
-
-                {/* Quick Stats Info */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-gradient-to-br from-blue-50/90 to-cyan-50/90 backdrop-blur-sm rounded-lg p-2 border border-blue-200/60">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Users className="w-3 h-3 text-blue-600" />
-                      <span className="text-[10px] text-blue-700 font-medium">Qualifiers</span>
-                    </div>
-                    <p className="text-xs font-bold text-blue-900">Top 3 Players</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-violet-50/90 to-purple-50/90 backdrop-blur-sm rounded-lg p-2 border border-violet-200/60">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Zap className="w-3 h-3 text-violet-600" />
-                      <span className="text-[10px] text-violet-700 font-medium">Strategy</span>
-                    </div>
-                    <p className="text-xs font-bold text-violet-900">Unique & High</p>
-                  </div>
-                </div>
               </>
             ) : status === 'completed' ? (
               <>
                 {/* ✅ Completion Info with Round Time */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-purple-800 text-xs font-semibold mb-1 sm:mb-1.5">
-                    <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span>Round Completed</span>
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+                  <div className="flex items-center gap-1 sm:gap-2 text-purple-800 text-[10px] font-semibold mb-0.5 sm:mb-1.5">
+                    <Trophy className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0" />
+                    <span>Completed</span>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700">
-                    <Clock className="w-3 h-3 shrink-0" />
+                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] text-purple-700">
+                    <Clock className="w-2.5 h-2.5 shrink-0" />
                     <span className="truncate">
                       {getRoundTimeRange()}
                     </span>
@@ -651,14 +627,14 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
                 {/* Prize Display for Completed Round */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
@@ -668,18 +644,18 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 {/* Winner Card - Purple/Violet */}
                 {box.highestBidFromAPI && box.highestBidFromAPI > 0 ? (
                   <>
-                    <div className="bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-violet-300/60">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md shrink-0">
-                            <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                    <div className="bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-violet-300/60">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-md shrink-0">
+                            <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                           </div>
                           <div className="min-w-0">
-                            <div className="text-xs text-violet-700 font-medium">Highest Bid</div>
+                            <div className="text-[10px] text-violet-700 font-medium truncate">Top Bid</div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5 text-violet-900 font-bold shrink-0 text-sm sm:text-base">
-                          <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <div className="flex items-center gap-0.5 text-violet-900 font-bold shrink-0 text-xs sm:text-base">
+                          <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4" />
                           <span>{box.highestBidFromAPI.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
@@ -691,53 +667,41 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                           e.stopPropagation();
                           onShowLeaderboard(box.roundNumber!);
                         }}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2.5 sm:py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 text-sm"
+                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 text-xs"
                       >
-                        <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span>View Leaderboard</span>
-                        <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>Leaderboard</span>
+                        <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     )}
                   </>
                 ) : (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60 text-center">
-                    <div className="flex items-center justify-center gap-2 text-purple-600 text-xs sm:text-sm">
-                      <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>No bids placed</span>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-purple-200/60 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-purple-600 text-[10px] sm:text-sm">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>No bids</span>
                     </div>
                   </div>
                 )}
               </>
             ) : status === 'upcoming' ? (
               <>
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60 text-center">
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-purple-900 font-bold text-xs sm:text-sm">
-                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span>Pay Entry Fee to Unlock</span>
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-purple-200/60 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-purple-900 font-bold text-[10px] sm:text-sm">
+                    <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>Pay Fee to Unlock</span>
                   </div>
                 </div>
-                {/* ✅ Round Time Display for Upcoming */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Scheduled Time</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
                 {/* Prize Display for Upcoming Round */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
@@ -748,26 +712,26 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
               <>
                 {/* ✅ Round Time Display for Locked */}
                 {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Opens at</span>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+                    <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
+                      <Clock className="w-2.5 h-2.5 shrink-0" />
+                      <span className="font-medium">Opens</span>
                     </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
+                    <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
                       {getRoundTimeRange()}
                     </div>
                   </div>
                 )}
                 {/* Prize Display for Locked Round */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
@@ -775,96 +739,68 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 )}
               </>
             ) : status === 'paid' ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-fuchsia-200/60 text-center">
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-fuchsia-800 font-bold text-xs sm:text-sm">
-                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span>Entry Fee Paid</span>
+              <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-fuchsia-200/60 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-fuchsia-800 font-bold text-[10px] sm:text-sm">
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Fee Paid</span>
                 </div>
               </div>
             ) : status === 'not-qualified' ? (
               <>
                 {/* Not Qualified Warning */}
-                <div className="bg-red-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-red-300/60 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <AlertCircle className="w-6 h-6 text-red-600" />
-                    <div className="text-xs sm:text-sm font-bold text-red-800">
+                <div className="bg-red-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-red-300/60 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <div className="text-[10px] sm:text-sm font-bold text-red-800">
                       Not Qualified
-                    </div>
-                    <div className="text-xs text-red-700">
-                      You did not qualify from Round {(box.roundNumber || 1) - 1}. Only top 3 players can proceed.
                     </div>
                   </div>
                 </div>
-                {/* ✅ Round Time Display for Not Qualified */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Round Time</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
-                  </div>
-                )}
               </>
             ) : userBidAmount && box.opensAt && box.closesAt ? (
               <>
-                {/* ✅ Round Timing Card with API times */}
-                {!winnersAnnounced && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 sm:gap-1.5 text-xs text-purple-700 mb-1">
-                      <Clock className="w-3 h-3 shrink-0" />
-                      <span className="font-medium">Round</span>
-                    </div>
-                    <div className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
-                    </div>
+                {/* Your Bid Card */}
+                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-green-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                      <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                      <span>Your Bid</span>
+                    </span>
+                    <span className="text-green-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                      <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                      <span>{userBidAmount.toLocaleString('en-IN')}</span>
+                    </span>
                   </div>
-                )}
-
-                {/* Prize Display for Round with User Bid */}
+                </div>
+                
+                {/* Prize Display */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
                   </div>
                 )}
-
-                {/* Your Bid Card */}
-                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-green-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                      <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                      <span>Your Bid</span>
-                    </span>
-                    <span className="text-green-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                      <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{userBidAmount.toLocaleString('en-IN')}</span>
-                    </span>
-                  </div>
-                </div>
               </>
             ) : (
               <>
                 {/* Prize Display for Active Round */}
                 {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-amber-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Round Prize</span>
+                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span>Prize</span>
                       </span>
-                      <span className="text-amber-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                         <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
                       </span>
                     </div>
@@ -872,14 +808,14 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 )}
 
                 {/* Main Price Card */}
-                <div className="bg-gradient-to-r from-purple-100/90 to-purple-50/90 backdrop-blur-sm rounded-xl p-2.5 sm:p-3.5 border border-purple-200/60">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-purple-700 font-semibold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                      <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                      <span>{box.type === 'entry' ? 'Entry Fee' : 'Minimum Bid'}</span>
+                <div className="bg-gradient-to-r from-purple-100/90 to-purple-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-purple-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                      <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                      <span>{box.type === 'entry' ? 'Fee' : 'Min Bid'}</span>
                     </span>
-                    <span className="text-purple-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
-                      <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-purple-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                      <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                       <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
                     </span>
                   </div>
@@ -888,24 +824,23 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
             )}
 
             {/* Call to Action Button - Purple/Violet Gradient */}
-            {/* ✅ Use canPlaceBid instead of isClickable for extra safety */}
             {canPlaceBid && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <div className="rounded-xl p-2.5 sm:p-3.5 text-center font-bold shadow-lg hover:shadow-xl cursor-pointer transition-all bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white">
-                  <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                    {status === 'open' && box.type === 'round' && <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    {status === 'open' && box.type === 'entry' && <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    {status === 'bidding' && <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-                    <span className="text-xs sm:text-sm">
+                <div className="rounded-lg sm:rounded-xl p-2 sm:p-3 text-center font-bold shadow-md hover:shadow-lg cursor-pointer transition-all bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white">
+                  <div className="flex items-center justify-center gap-1.5">
+                    {status === 'open' && box.type === 'round' && <Zap className="w-3 h-3 sm:w-4 sm:h-4" />}
+                    {status === 'open' && box.type === 'entry' && <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4" />}
+                    {status === 'bidding' && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />}
+                    <span className="text-[10px] sm:text-sm">
                       {status === 'open' && box.type === 'entry' && 'Pay Entry Fee'}
-                      {status === 'open' && box.type === 'round' && 'Place Your Bid'}
-                      {status === 'bidding' && 'Place Bid'}
+                      {status === 'open' && box.type === 'round' && 'Place Bid'}
+                      {status === 'bidding' && 'Bid Now'}
                     </span>
-                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                   </div>
                 </div>
               </motion.div>

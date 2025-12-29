@@ -104,25 +104,25 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
         initial={false}
       >
         {/* Bidding Rounds Section */}
-            <div className="space-y-4 sm:space-y-5 relative p-0.5 sm:p-1 group">
+            <div className={`space-y-4 sm:space-y-5 relative p-0.5 sm:p-1 group ${!auction.userHasPaidEntry && !isUnlocking ? 'max-h-[420px] sm:max-h-none overflow-hidden' : ''}`}>
               {!auction.userHasPaidEntry && !isUnlocking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-purple-300/50 bg-white/60 backdrop-blur-[2px] transition-all duration-500 overflow-hidden px-4">
-                  <div className="flex flex-col items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center shadow-sm">
-                      <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
+                  <div className="flex flex-col items-center gap-2.5 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center shadow-sm">
+                      <Lock className="w-5 h-5 sm:w-8 sm:h-8 text-purple-600" />
                     </div>
                     
-                    <div className="text-center space-y-1 sm:space-y-2">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
+                    <div className="text-center space-y-0.5 sm:space-y-2">
+                      <h3 className="text-base sm:text-xl font-bold text-gray-900 tracking-tight">
                         Bidding Rounds Locked
                       </h3>
-                      <p className="text-gray-600 text-xs sm:text-sm font-medium">
+                      <p className="text-gray-500 text-[10px] sm:text-sm font-medium">
                         Complete your entry to unlock these rounds
                       </p>
                     </div>
 
-                      <div className="mt-1 sm:mt-2 px-3 sm:px-4 py-1 sm:py-1.5 bg-purple-50 rounded-full border border-purple-100">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-purple-600 uppercase tracking-widest">
+                      <div className="mt-0.5 sm:mt-2 px-2.5 sm:px-4 py-0.5 sm:py-1.5 bg-purple-50 rounded-full border border-purple-100">
+                        <span className="text-[8px] sm:text-[10px] font-bold text-purple-600 uppercase tracking-widest">
                           Entry fee Required
                         </span>
                       </div>
@@ -137,7 +137,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             {( (auction.userHasPaidEntry && !isUnlocking) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
                 {(typeof item === 'number' || isUnlocking) ? (
-                  <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
+                  <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[240px] xs:h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
                     {/* Active Loader Animation */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-50/10 via-white/5 to-purple-50/10 animate-pulse" />
                     
