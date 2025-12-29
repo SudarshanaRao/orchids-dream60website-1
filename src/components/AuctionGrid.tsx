@@ -146,26 +146,25 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
           )}
         </div>
 
-        {/* Bidding Rounds Section */}
-        <div className="space-y-4 sm:space-y-5 relative">
-          {!auction.userHasPaidEntry && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/10 backdrop-blur-[2px] rounded-3xl border border-purple-100/20">
-              <div className="text-center bg-white/90 p-8 rounded-3xl shadow-2xl border border-purple-100 max-w-sm mx-auto transform -translate-y-4">
-                <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-200">
-                  <Lock className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Bidding Grid Locked</h3>
-                <p className="text-gray-500 text-sm mb-6">You need to pay the entry fee to unlock the bidding rounds and start participating.</p>
-                <div className="inline-flex items-center gap-2 text-purple-600 font-bold text-sm uppercase tracking-wider">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-                  </span>
-                  Pay Entry Fee Above
+          {/* Bidding Rounds Section */}
+          <div className="space-y-4 sm:space-y-5 relative p-1">
+            {!auction.userHasPaidEntry && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/5 backdrop-blur-[1px] rounded-[2rem] border-4 border-dotted border-purple-400/30">
+                <div className="flex flex-col items-center gap-4 animate-pulse">
+                  <div className="w-20 h-20 bg-purple-100/50 rounded-full flex items-center justify-center border-2 border-purple-200/50">
+                    <Lock className="w-10 h-10 text-purple-400" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-4xl sm:text-6xl font-black text-purple-900/10 tracking-[0.2em] uppercase select-none">
+                      LOCKED
+                    </h3>
+                    <p className="text-purple-600 font-bold text-xs sm:text-sm uppercase tracking-widest mt-2 animate-bounce">
+                      Pay Entry Fee to Unlock Grid
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           <div 
             className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${!auction.userHasPaidEntry ? 'opacity-30 blur-[4px] grayscale' : 'opacity-100 blur-0 grayscale-0'}`}

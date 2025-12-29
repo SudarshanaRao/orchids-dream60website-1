@@ -37,7 +37,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-          // Get the absolute latest auction entry
           const sortedData = [...result.data].sort((a, b) => 
             new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
           );
@@ -51,7 +50,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             if (isWithin15Mins) {
               let status: BannerType = 'NOT_QUALIFIED';
               
-              // Determine rank for display
               const rank = latestAuction.finalRank || (latestAuction.eliminatedInRound ? `ELIMINATED R${latestAuction.eliminatedInRound}` : 'N/A');
               
               if ([1, 2, 3].includes(latestAuction.finalRank)) {
@@ -170,32 +168,36 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         <Snowfall color="white" snowflakeCount={isMobile ? 5 : 20} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
         
         {/* Marquee Container */}
-        <div className="flex-1 overflow-hidden h-full flex items-center relative">
+        <div className="flex-1 overflow-hidden h-full flex items-center relative group">
           <div className="flex items-center gap-4 whitespace-nowrap animate-marquee px-4">
-            {/* Repeated text for seamless loop */}
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 mr-12">
-                <div className="flex items-center gap-2">
-                  {config.icon}
-                  <span className="text-sm sm:text-base font-black text-white tracking-tighter uppercase italic">
+            {/* Repeated text for seamless loop - using 8 copies for absolute continuity */}
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center gap-6 mr-12 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
+                    {config.icon}
+                  </div>
+                  <span className="text-sm sm:text-[15px] font-black text-white tracking-tight uppercase italic drop-shadow-sm">
                     {config.message}
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm">
-                  <Timer className="w-4 h-4 text-yellow-300" />
-                  <span className="text-xs font-bold text-white tabular-nums">
+                <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
+                  <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
+                  <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
                     EXPIRES IN: {timeLeft}
                   </span>
                 </div>
 
                 <button
                   onClick={() => onNavigate(config.navigateTo)}
-                  className="flex items-center gap-1 px-4 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20"
                 >
                   {config.buttonText}
-                  <ChevronRight className="w-3 h-3" />
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
+                
+                <div className="h-4 w-[2px] bg-white/30 rounded-full" />
               </div>
             ))}
           </div>
@@ -212,10 +214,10 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       <style>{`
         @keyframes marquee {
           0% { transform: translateX(0); }
-          100% { transform: translateX(-25%); }
+          100% { transform: translateX(-12.5%); }
         }
         .animate-marquee {
-          animation: marquee 30s linear infinite;
+          animation: marquee 60s linear infinite;
         }
         .animate-marquee:hover {
           animation-play-state: paused;
