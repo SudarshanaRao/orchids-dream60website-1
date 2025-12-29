@@ -158,6 +158,8 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
   useEffect(() => {
     fetchBannerStatus();
+    const interval = setInterval(fetchBannerStatus, 30000);
+    return () => clearInterval(interval);
   }, [fetchBannerStatus]);
 
   useEffect(() => {

@@ -180,6 +180,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
   useEffect(() => {
     fetchTransactions(true);
+    const interval = setInterval(() => fetchTransactions(false), 10000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 

@@ -231,6 +231,8 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
     };
 
     fetchAuctionSchedule();
+    const refreshInterval = setInterval(fetchAuctionSchedule, 60000);
+    return () => clearInterval(refreshInterval);
   }, [currentHour, hasLoadedOnce]);
 
   const filteredAuctions = scheduleData.filter(auction => {
