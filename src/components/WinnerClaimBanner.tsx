@@ -46,12 +46,11 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           const now = serverTime?.timestamp || Date.now();
           const completedAtTime = new Date(latestAuction.completedAt).getTime();
           
-          // Logic for durations: Rank 1 (15m), Rank 2 (15m), Rank 3 (15m) -> Total 45m
-          // User requested: Rank 2 waiting = 15m, Rank 3 waiting = 30m, Rank 3 expires = 30m?
-          // We'll use 15m slots for each rank to resolve the contradiction.
+          // Slot durations as requested: 15m for 2nd, 30m for 3rd (cumulative)
+          // This implies 15m slots for each rank
           const SLOT_DURATION = 15 * 60 * 1000;
-          const totalDuration = SLOT_DURATION * 3; // 45 minutes
-          const isWithinBannerTime = (now - completedAtTime) < totalDuration;
+          const totalBannerVisibility = 45 * 60 * 1000; // Show for 45 minutes total
+          const isWithinBannerTime = (now - completedAtTime) < totalBannerVisibility;
 
           if (isWithinBannerTime) {
             let status: BannerType = 'NOT_QUALIFIED';
@@ -60,43 +59,40 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             const claimNotes = latestAuction.claimNotes || '';
             const isWinner = latestAuction.isWinner;
 
-            // Check if prize already claimed by ANYONE
-            if (latestAuction.claimedAt || (claimNotes.toLowerCase().includes('successfully') && !claimNotes.toLowerCase().includes('forfeited'))) {
+            // 1. Keyword Check (Priority)
+            if (claimNotes.toLowerCase().includes('successfully') || latestAuction.claimedAt) {
               status = 'CLAIMED';
             } 
-            // Check if deadline expired for this user specifically or generally
             else if (claimNotes.toLowerCase().includes('expired') || claimNotes.toLowerCase().includes('forfeited')) {
               status = 'EXPIRED';
             }
-            // Check winner status
+            // 2. Winner Status Check
             else if (isWinner && [1, 2, 3].includes(rank)) {
               if (rank === currentEligibleRank) {
                 status = 'WIN';
               } else if (rank > currentEligibleRank) {
                 status = 'WAITING';
               } else {
-                // If their rank is less than current, it means they already missed it
+                // If their rank is less than current and not claimed/expired in notes, 
+                // it's likely they missed their window
                 status = 'EXPIRED';
               }
             } else {
               status = 'NOT_QUALIFIED';
             }
 
-            // Calculate deadline based on rank
-            // Rank 1: completedAt + 15m
-            // Rank 2: completedAt + 30m
-            // Rank 3: completedAt + 45m
-            let deadline = completedAtTime + (rank * SLOT_DURATION);
-            
-            // If it's the current eligible rank, show their specific remaining time
-            if (rank === currentEligibleRank) {
-              deadline = completedAtTime + (currentEligibleRank * SLOT_DURATION);
-            } else if (rank > currentEligibleRank) {
-              // If waiting, show time until their turn starts
+            // 3. Deadline Calculation
+            let deadline = completedAtTime + (currentEligibleRank * SLOT_DURATION);
+            let timerLabel = "EXPIRES IN";
+
+            if (status === 'WAITING') {
+              // Time until their rank starts
               deadline = completedAtTime + ((rank - 1) * SLOT_DURATION);
-            } else {
-              // If already passed, just show banner end time
-              deadline = completedAtTime + totalDuration;
+              timerLabel = "STARTS IN";
+            } else if (status === 'CLAIMED' || status === 'EXPIRED' || status === 'NOT_QUALIFIED') {
+              // End of the entire 45m window
+              deadline = completedAtTime + totalBannerVisibility;
+              timerLabel = "BANNER ENDS";
             }
 
             const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
@@ -109,6 +105,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                 resultAnnouncedAt: latestAuction.completedAt,
                 queuePosition: rank || (latestAuction.eliminatedInRound ? `Eliminated R${latestAuction.eliminatedInRound}` : 'N/A'),
                 deadline: deadline,
+                timerLabel: timerLabel,
                 claimedByRank: latestAuction.claimedByRank,
                 claimNotes: claimNotes
               });
@@ -244,12 +241,12 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                   </span>
                 </div>
                 
-                <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
-                  <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
-                    {config.timerLabel}: {timeLeft}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
+                    <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
+                    <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
+                      {bannerData.timerLabel || config.timerLabel}: {timeLeft}
+                    </span>
+                  </div>
 
                 <button
                   onClick={() => onNavigate(config.navigateTo)}

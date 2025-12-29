@@ -149,108 +149,32 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             {/* Bidding Rounds Section */}
             <div className="space-y-4 sm:space-y-5 relative p-1 group">
               {!auction.userHasPaidEntry && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] border-[6px] border-dotted border-purple-500/40 bg-gradient-to-br from-purple-900/10 via-transparent to-purple-900/10 backdrop-blur-[3px] transition-all duration-700 overflow-hidden group-hover:border-purple-500/60 shadow-[0_0_50px_-12px_rgba(168,85,247,0.2)]">
-                  {/* Enhanced Watermark Grid */}
-                  <div className="absolute inset-0 grid grid-cols-2 sm:grid-cols-4 grid-rows-3 gap-8 p-8 pointer-events-none opacity-[0.03] select-none">
-                    {[...Array(12)].map((_, i) => (
-                      <div key={i} className="flex items-center justify-center rotate-[-25deg] scale-150">
-                        <span className="text-4xl font-black tracking-tighter uppercase whitespace-nowrap">
-                          LOCKED
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Dynamic Light Rays */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <motion.div
-                      animate={{
-                        x: ['-100%', '100%'],
-                        opacity: [0, 0.3, 0],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-400/20 to-transparent skew-x-12"
-                    />
-                  </div>
-                  
-                  <div className="relative flex flex-col items-center gap-8">
-                    <motion.div 
-                      initial={{ scale: 1 }}
-                      animate={{ 
-                        scale: [1, 1.15, 1],
-                        rotate: [0, 5, -5, 0],
-                      }}
-                      transition={{ 
-                        scale: { duration: 4, repeat: Infinity, ease: "easeInOut" },
-                        rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" }
-                      }}
-                      className="relative w-28 h-28 sm:w-32 sm:h-32"
-                    >
-                      {/* Outer Glow Ring */}
-                      <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-2xl animate-pulse" />
-                      
-                      {/* Glass Container */}
-                      <div className="absolute inset-0 bg-white/10 rounded-full flex items-center justify-center border-2 border-white/30 backdrop-blur-xl shadow-[0_8px_32px_rgba(168,85,247,0.2)]">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-violet-600 rounded-full flex items-center justify-center shadow-lg transform transition-transform group-hover:scale-110 duration-500">
-                          <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
-                        </div>
-                      </div>
-
-                      {/* Floating Orbs */}
-                      <motion.div 
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        className="absolute -top-2 -right-2 w-4 h-4 bg-purple-400 rounded-full blur-sm"
-                      />
-                      <motion.div 
-                        animate={{ y: [0, 10, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, delay: 0.5 }}
-                        className="absolute -bottom-2 -left-2 w-6 h-6 bg-violet-400 rounded-full blur-sm"
-                      />
-                    </motion.div>
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-purple-300/50 bg-white/60 backdrop-blur-[2px] transition-all duration-500 overflow-hidden">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center shadow-sm">
+                      <Lock className="w-8 h-8 text-purple-600" />
+                    </div>
                     
-                    <div className="text-center space-y-4">
-                      <div className="relative inline-block">
-                        <h3 className="text-6xl sm:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-purple-900/20 to-purple-900/5 tracking-tighter uppercase select-none transition-all duration-1000 group-hover:from-purple-900/30 group-hover:to-purple-900/10">
-                          LOCKED
-                        </h3>
-                        {/* Shimmer Effect on Text */}
-                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                          <motion.div
-                            animate={{ x: ['-100%', '200%'] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
-                            className="w-1/2 h-full bg-white/10 skew-x-12 blur-md"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-center gap-4">
-                        <div className="h-[1px] w-12 sm:w-20 bg-gradient-to-r from-transparent to-purple-400/30" />
-                        <span className="text-purple-600/60 font-black text-[10px] sm:text-xs uppercase tracking-[0.5em] whitespace-nowrap">
-                          Premium Access
-                        </span>
-                        <div className="h-[1px] w-12 sm:w-20 bg-gradient-to-l from-transparent to-purple-400/30" />
-                      </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-xl font-bold text-gray-900 tracking-tight">
+                        Bidding Rounds Locked
+                      </h3>
+                      <p className="text-gray-600 text-sm font-medium">
+                        Complete your entry to unlock these rounds
+                      </p>
+                    </div>
 
-                      <motion.p 
-                        initial={{ opacity: 0.4 }}
-                        animate={{ opacity: [0.4, 0.8, 0.4] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className="text-purple-700 font-bold text-sm sm:text-base tracking-wide"
-                      >
-                        Pay entry fee to unlock bidding
-                      </motion.p>
+                    <div className="mt-2 px-4 py-1.5 bg-purple-50 rounded-full border border-purple-100">
+                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
+                        Premium Access Required
+                      </span>
                     </div>
                   </div>
                 </div>
               )}
 
             <div 
-              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-1000 ${!auction.userHasPaidEntry ? 'opacity-30 blur-[8px] grayscale scale-[0.99] pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
+              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${!auction.userHasPaidEntry ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
             >
             {(auction.userHasPaidEntry ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
