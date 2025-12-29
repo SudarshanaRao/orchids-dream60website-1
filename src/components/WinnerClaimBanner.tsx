@@ -42,12 +42,12 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           );
 
           const latestAuction = sortedData[0];
-          const now = serverTime?.timestamp || Date.now();
-          const completedAtTime = new Date(latestAuction.completedAt).getTime();
-          const fifteenMinsInMs = 15 * 60 * 1000;
-          const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
+            const now = serverTime?.timestamp || Date.now();
+            const completedAtTime = new Date(latestAuction.completedAt).getTime();
+            const thirtyMinsInMs = 30 * 60 * 1000;
+            const isWithin30Mins = (now - completedAtTime) < thirtyMinsInMs;
 
-            if (isWithin15Mins) {
+            if (isWithin30Mins) {
               let status: BannerType = 'NOT_QUALIFIED';
               
               const rank = latestAuction.finalRank || (latestAuction.eliminatedInRound ? `ELIMINATED R${latestAuction.eliminatedInRound}` : 'N/A');
@@ -60,7 +60,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                 status = isEligibleToClaim ? 'WIN' : 'WAITING';
               }
 
-              const deadline = completedAtTime + fifteenMinsInMs;
+              const deadline = completedAtTime + thirtyMinsInMs;
               const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
               
               if (localStorage.getItem(closedKey) !== 'true') {

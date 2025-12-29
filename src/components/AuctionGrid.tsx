@@ -146,29 +146,41 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
           )}
         </div>
 
-          {/* Bidding Rounds Section */}
-          <div className="space-y-4 sm:space-y-5 relative p-1">
-            {!auction.userHasPaidEntry && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/5 backdrop-blur-[1px] rounded-[2rem] border-4 border-dotted border-purple-400/30">
-                <div className="flex flex-col items-center gap-4 animate-pulse">
-                  <div className="w-20 h-20 bg-purple-100/50 rounded-full flex items-center justify-center border-2 border-purple-200/50">
-                    <Lock className="w-10 h-10 text-purple-400" />
+            {/* Bidding Rounds Section */}
+            <div className="space-y-4 sm:space-y-5 relative p-1 group">
+              {!auction.userHasPaidEntry && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-[2.5rem] border-[6px] border-dotted border-purple-500/40 bg-white/5 backdrop-blur-[2px] transition-all duration-500 overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                    <span className="text-[12vw] font-black text-purple-900/[0.03] tracking-tighter uppercase select-none transform -rotate-12 whitespace-nowrap">
+                      LOCKED • LOCKED • LOCKED • LOCKED
+                    </span>
                   </div>
-                  <div className="text-center">
-                    <h3 className="text-4xl sm:text-6xl font-black text-purple-900/10 tracking-[0.2em] uppercase select-none">
-                      LOCKED
-                    </h3>
-                    <p className="text-purple-600 font-bold text-xs sm:text-sm uppercase tracking-widest mt-2 animate-bounce">
-                      Pay Entry Fee to Unlock Grid
-                    </p>
+                  
+                  <div className="relative flex flex-col items-center gap-6">
+                    <motion.div 
+                      animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      className="w-24 h-24 bg-purple-100/50 rounded-full flex items-center justify-center border-4 border-purple-200/50 shadow-2xl backdrop-blur-md"
+                    >
+                      <Lock className="w-12 h-12 text-purple-500/70" />
+                    </motion.div>
+                    
+                    <div className="text-center space-y-2">
+                      <h3 className="text-5xl sm:text-7xl font-black text-purple-900/20 tracking-widest uppercase select-none transition-all duration-1000 animate-pulse">
+                        LOCKED
+                      </h3>
+                      <div className="h-[2px] w-32 bg-gradient-to-r from-transparent via-purple-400/50 to-transparent mx-auto" />
+                      <p className="text-purple-600/60 font-black text-xs sm:text-sm uppercase tracking-[0.3em] mt-4">
+                        Pay Entry Fee to Access
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-          <div 
-            className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${!auction.userHasPaidEntry ? 'opacity-30 blur-[4px] grayscale' : 'opacity-100 blur-0 grayscale-0'}`}
-          >
+            <div 
+              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-1000 ${!auction.userHasPaidEntry ? 'opacity-20 blur-[6px] grayscale scale-[0.98]' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
+            >
             {(auction.userHasPaidEntry ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
                 {typeof item === 'number' ? (
