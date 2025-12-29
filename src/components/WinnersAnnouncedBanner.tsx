@@ -138,8 +138,7 @@ export function WinnersAnnouncedBanner({
     };
 
     fetchRecentWinners();
-    const interval = setInterval(fetchRecentWinners, 30000);
-    return () => clearInterval(interval);
+    // Polling removed to honor user request for "call it just once"
   }, []);
 
   const shouldShowBanner = () => {

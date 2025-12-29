@@ -370,17 +370,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setServerTime(getCurrentServerTime());
     }, 1000);
 
-    // Optionally refresh server time every 30 seconds to correct drift
-    const syncInterval = setInterval(async () => {
-      const time = await fetchServerTime();
-      if (time) {
-        setServerTime(time);
-      }
-    }, 30000); // 30 seconds
+    // Initial sync already handled in initializeServerTime
+    // Periodic sync removed to honor user request for "call it just once"
 
     return () => {
       clearInterval(interval);
-      clearInterval(syncInterval);
     };
   }, []);
 
@@ -1505,12 +1499,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
     fetchCurrentAuctionId();
     
-    // ✅ CRITICAL FIX: Poll every 5 seconds when round is active, 10 seconds otherwise
-    // Use a stable check that doesn't depend on boxes array reference
-    const pollInterval = 3000; // ✅ Reduced to 3s for seamless refreshing without disturbances
-    
-    const interval = setInterval(fetchCurrentAuctionId, pollInterval);
-    return () => clearInterval(interval);
+    // Polling removed to honor user request for "call it just once"
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
   const handleNavigate = (page: string, data?: any) => {
