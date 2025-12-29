@@ -82,37 +82,39 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
       roundBoxesCount: roundBoxes.length
     });
 
-    // ✅ Enhanced Visibility: Show locked state instead of null to prevent layout shift
-    if (!auction.userHasPaidEntry) {
-      return (
-        <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-          {/* Prize Showcase Placeholder */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/50 to-violet-50/50 border border-purple-100/50 p-6 sm:p-8 h-[180px] sm:h-[220px] flex items-center justify-center">
-            <div className="text-center space-y-3">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+      // ✅ Enhanced Visibility: Show unified locked state instead of multiple placeholders
+      if (!auction.userHasPaidEntry) {
+        return (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-700">
+            {/* Prize Showcase Locked Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-white/40 border-2 border-dashed border-purple-200 p-8 sm:p-12 min-h-[300px] flex flex-col items-center justify-center text-center space-y-6 backdrop-blur-sm shadow-inner">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-20 h-20 bg-purple-100 rounded-3xl flex items-center justify-center shadow-lg"
+              >
+                <Lock className="w-10 h-10 text-purple-500 animate-pulse" />
+              </motion.div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">
+                  Auction Grid Locked
+                </h3>
+                <p className="text-gray-500 font-medium max-w-xs mx-auto">
+                  Please pay the entry fee to unlock the bidding boxes and prize details.
+                </p>
               </div>
-              <p className="text-sm font-medium text-purple-400">Complete Entry to Unlock Prize Details</p>
-            </div>
-          </div>
 
-          {/* Bidding Rounds Placeholder Grid */}
-          <div className="space-y-4 sm:space-y-5">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white/40 border-2 border-dotted border-purple-300 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 opacity-60">
-                  <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-purple-300" />
-                  </div>
-                  <div className="h-4 w-24 bg-purple-50 rounded-full" />
-                  <div className="h-8 w-32 bg-purple-50 rounded-lg" />
-                </div>
-              ))}
+              {/* Fake blurred grid in background */}
+              <div className="absolute inset-0 -z-10 grid grid-cols-2 gap-4 opacity-10 blur-md scale-110">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-purple-200 rounded-2xl" />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      );
-    }
+        );
+      }
 
       return (
         <>

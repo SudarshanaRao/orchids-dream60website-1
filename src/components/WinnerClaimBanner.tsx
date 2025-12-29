@@ -42,43 +42,46 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
           );
 
-          const latestAuction = sortedData[0];
-          const now = serverTime?.timestamp || Date.now();
-          const completedAtTime = new Date(latestAuction.completedAt).getTime();
-          const fifteenMinsInMs = 15 * 60 * 1000;
-          const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
+            const latestAuction = sortedData[0];
+            const now = serverTime?.timestamp || Date.now();
+            const completedAtTime = new Date(latestAuction.completedAt).getTime();
+            const fifteenMinsInMs = 15 * 60 * 1000;
+            const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
 
-          if (isWithin15Mins) {
-            let status: BannerType = 'NOT_QUALIFIED';
-            
-            if ([1, 2, 3].includes(latestAuction.finalRank)) {
-              const isEligibleToClaim = 
-                latestAuction.finalRank === latestAuction.currentEligibleRank || 
-                (latestAuction.claimNotes && latestAuction.claimNotes.toLowerCase().includes(`rank ${latestAuction.finalRank} is now eligible to claim`));
+            if (isWithin15Mins) {
+              let status: BannerType = 'NOT_QUALIFIED';
+              
+              // Handle Rank 1, 2, 3 as potential winners/waiting
+              if (latestAuction.finalRank && [1, 2, 3].includes(latestAuction.finalRank)) {
+                const isEligibleToClaim = 
+                  latestAuction.finalRank === latestAuction.currentEligibleRank || 
+                  (latestAuction.claimNotes && latestAuction.claimNotes.toLowerCase().includes(`rank ${latestAuction.finalRank} is now eligible to claim`));
 
-              status = isEligibleToClaim ? 'WIN' : 'WAITING';
-            }
+                status = isEligibleToClaim ? 'WIN' : 'WAITING';
+              } else if (latestAuction.isWinner) {
+                status = 'WIN';
+              }
 
-            const deadline = completedAtTime + fifteenMinsInMs;
-            const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
-            
-            if (localStorage.getItem(closedKey) !== 'true') {
-              setBannerType(status);
-              setBannerData({
-                ...latestAuction,
-                resultStatus: status,
-                resultAnnouncedAt: latestAuction.completedAt,
-                queuePosition: latestAuction.finalRank,
-                deadline: deadline
-              });
-              setIsVisible(true);
+              const deadline = completedAtTime + fifteenMinsInMs;
+              const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
+              
+              if (localStorage.getItem(closedKey) !== 'true') {
+                setBannerType(status);
+                setBannerData({
+                  ...latestAuction,
+                  resultStatus: status,
+                  resultAnnouncedAt: latestAuction.completedAt,
+                  queuePosition: latestAuction.finalRank || 'N/A',
+                  deadline: deadline
+                });
+                setIsVisible(true);
+              } else {
+                setIsVisible(false);
+              }
             } else {
               setIsVisible(false);
+              setBannerType(null);
             }
-          } else {
-            setIsVisible(false);
-            setBannerType(null);
-          }
         }
       }
     } catch (error) {
