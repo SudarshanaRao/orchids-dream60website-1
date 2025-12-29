@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Snowfall from 'react-snowfall';
-import { Trophy, Clock, Sparkles, X, Gift, ChevronRight, AlertTriangle, XCircle, Award, Timer } from 'lucide-react';
+import { Trophy, Clock, X, ChevronRight, Timer } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface WinnerClaimBannerProps {
@@ -25,7 +25,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchBannerStatus = useCallback(async () => {
-    // Fallback to localStorage if userId prop is missing
     const effectiveUserId = userId || localStorage.getItem('user_id');
     
     if (!effectiveUserId) {
@@ -38,31 +37,33 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data)) {
-          // Sort by completedAt desc to find the most recent one
           const sortedData = [...result.data].sort((a, b) => 
             new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
           );
 
-          // Find the most recent pending claim with rank 1, 2, or 3
-          const pendingAuction = sortedData.find((item: any) => 
+          const relevantAuction = sortedData.find((item: any) => 
             item.prizeClaimStatus === 'PENDING' && 
             [1, 2, 3].includes(item.finalRank)
           );
 
-          if (pendingAuction) {
-            const data = pendingAuction;
+          if (relevantAuction) {
+            const data = relevantAuction;
+            let status: BannerType = 'WAITING';
             
-            // Map the result status
-            const status = data.finalRank === 1 ? 'WIN' : 'WAITING';
+            const isEligibleToClaim = 
+              data.finalRank === data.currentEligibleRank || 
+              (data.claimNotes && data.claimNotes.toLowerCase().includes(`rank ${data.finalRank} is now eligible to claim`));
+
+            if (isEligibleToClaim) {
+              status = 'WIN';
+            }
             
-            // Check if within deadline
             const deadline = data.claimDeadline ? new Date(data.claimDeadline).getTime() : 
                            (new Date(data.completedAt).getTime() + 15 * 60 * 1000);
             const now = serverTime?.timestamp || Date.now();
 
             if (now < deadline) {
-              // Check if user manually closed this specific banner
-              const closedKey = `closed_banner_${data._id}_${data.completedAt}`;
+              const closedKey = `closed_banner_${data._id}_${data.completedAt}_${status}`;
               if (localStorage.getItem(closedKey) !== 'true') {
                 setBannerType(status);
                 setBannerData({
@@ -84,9 +85,6 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             setIsVisible(false);
             setBannerType(null);
           }
-        } else {
-          setIsVisible(false);
-          setBannerType(null);
         }
       }
     } catch (error) {
@@ -128,7 +126,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const handleClose = () => {
     setIsVisible(false);
     if (bannerData) {
-      const closedKey = `closed_banner_${bannerData._id}_${bannerData.completedAt}`;
+      const closedKey = `closed_banner_${bannerData._id}_${bannerData.completedAt}_${bannerType}`;
       localStorage.setItem(closedKey, 'true');
     }
   };
