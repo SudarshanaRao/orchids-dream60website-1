@@ -152,7 +152,8 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
   useEffect(() => {
     fetchBannerStatus(true);
-    // Polling removed to honor user request for "call it just once"
+    const interval = setInterval(() => fetchBannerStatus(false), 30000);
+    return () => clearInterval(interval);
   }, [fetchBannerStatus]);
 
   useEffect(() => {

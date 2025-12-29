@@ -138,7 +138,8 @@ export function WinnersAnnouncedBanner({
     };
 
     fetchRecentWinners();
-    // Polling removed to honor user request for "call it just once"
+    const interval = setInterval(fetchRecentWinners, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const shouldShowBanner = () => {

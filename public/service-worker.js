@@ -23,11 +23,11 @@ const pendingRequests = new Map();
 const requestThrottleCache = new Map();
 
 const API_THROTTLE_CONFIG = {
-  'user-auction-history': 300000, // 5 minutes
-  'live-auction': 60000,        // 1 minute
-  'daily-auction': 600000,      // 10 minutes
-  'server-time': 300000,        // 5 minutes
-  'leaderboard': 600000,        // 10 minutes
+  'user-auction-history': 5000,
+  'live-auction': 3000,
+  'daily-auction': 10000,
+  'server-time': 2000,
+  'leaderboard': 10000,
 };
 
 const getThrottleKey = (url) => {
