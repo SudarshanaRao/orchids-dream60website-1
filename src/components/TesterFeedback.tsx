@@ -204,25 +204,25 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
                     Your Name
                   </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-purple-500 focus:bg-white transition-all outline-none font-bold text-slate-700"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-purple-500 focus:bg-white transition-all outline-none font-bold text-slate-700"
-                  />
+                    <input
+                      type="text"
+                      value={name}
+                      readOnly
+                      placeholder="Enter your name"
+                      className="w-full px-5 py-4 bg-slate-100 border-2 border-slate-200 rounded-2xl cursor-not-allowed outline-none font-bold text-slate-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      readOnly
+                      placeholder="Enter your email"
+                      className="w-full px-5 py-4 bg-slate-100 border-2 border-slate-200 rounded-2xl cursor-not-allowed outline-none font-bold text-slate-500"
+                    />
                 </div>
               </div>
 
