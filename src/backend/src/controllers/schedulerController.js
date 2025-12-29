@@ -1002,10 +1002,26 @@ const getLiveHourlyAuction = async (req, res) => {
 try {
 const { userId } = req.query;
 
-// 1. Find the currently LIVE auction
-let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
-.sort({ startedAt: -1 })
-.lean();
+    // 1. Find the currently LIVE auction with projection for speed
+    let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
+      .sort({ startedAt: -1 })
+      .select({
+        hourlyAuctionId: 1,
+        hourlyAuctionCode: 1,
+        auctionName: 1,
+        prizeValue: 1,
+        Status: 1,
+        currentRound: 1,
+        totalParticipants: 1,
+        totalBids: 1,
+        rounds: 1,
+        participants: 1,
+        winnersAnnounced: 1,
+        roundConfig: 1,
+        productName: 1,
+        productValue: 1
+      })
+      .lean();
 
 let bannerData = null;
 

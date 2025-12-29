@@ -200,21 +200,17 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             {( (auction.userHasPaidEntry && !isUnlocking) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
                 {(typeof item === 'number' || isUnlocking) ? (
-                  <div className="bg-white/40 border-2 border-dotted border-purple-300 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4">
-                    <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                      {isUnlocking ? (
-                        <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
-                      ) : (
-                        <Lock className="w-5 h-5 text-purple-300" />
-                      )}
+                  <div className="bg-white/40 border-2 border-dashed border-purple-400/50 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] animate-pulse">
+                    <div className="w-12 h-12 bg-purple-100/50 rounded-xl flex items-center justify-center border border-purple-200/50">
+                      <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
                     </div>
-                    <div className="h-4 w-24 bg-purple-50 rounded-full" />
-                    <div className="h-8 w-32 bg-purple-50 rounded-lg" />
-                    {isUnlocking && (
-                      <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest animate-pulse">
-                        Synchronizing...
-                      </p>
-                    )}
+                    <div className="space-y-2 text-center">
+                      <div className="h-4 w-24 bg-purple-200/30 rounded-full mx-auto" />
+                      <div className="h-8 w-32 bg-purple-200/30 rounded-lg mx-auto" />
+                    </div>
+                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
+                      Synchronizing...
+                    </p>
                   </div>
                 ) : (
                   <AuctionBox

@@ -1751,55 +1751,36 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     window.history.pushState({}, '', '/login');
   };
 
-      const handleEntrySuccess = () => {
-        if (!showEntrySuccess || !currentUser) return;
-    
-        toast.success('Entry Fee Paid!', {
-          description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-        });
-    
-        // ✅ Close modal and update state instantly to prevent shaking and perceived delay
-        setShowEntrySuccess(null);
-        
-        setCurrentAuction(prev => {
-          const now = serverTime ? new Date(serverTime.timestamp) : new Date();
-          const updatedBoxes: AnyBox[] = prev.boxes.map((b) => {
-            if (b.type === 'entry') {
-              const entry = b as EntryBox;
-              return {
-                ...entry,
-                currentBid: entry.entryFee || 0,
-                bidder: currentUser.username,
-                hasPaid: true,
-              };
-            }
-            if (b.type === 'round') {
-              const roundBox = b as RoundBox;
-              const isNowOpen = now >= roundBox.opensAt && now < roundBox.closesAt;
-              return { ...roundBox, isOpen: isNowOpen };
-            }
-            return b;
+        const handleEntrySuccess = () => {
+          if (!showEntrySuccess || !currentUser) return;
+      
+          toast.success('Entry Fee Paid!', {
+            description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
           });
-
-          return {
+      
+          // ✅ Close modal and update state instantly
+          setShowEntrySuccess(null);
+          
+          setCurrentAuction(prev => ({
             ...prev,
-            boxes: updatedBoxes,
-            userHasPaidEntry: true
-          };
-        });
-
-        // ✅ NEW: Sticky optimistic payment state update
-        setRecentPaymentSuccess(true);
-        recentPaymentTimestamp.current = Date.now();
-
-        // ✅ Trigger refetch immediately to sync with server
-        console.log('💳 Payment successful - triggering immediate auction data refresh');
-        setForceRefetchTrigger(prev => prev + 1);
-        
-        if (currentUser.id) {
-          fetchAndSetUser(currentUser.id);
-        }
-      };
+            userHasPaidEntry: true,
+            // Clear boxes to force AuctionGrid into its loading/isUnlocking state properly
+            boxes: prev.boxes.map(b => b.type === 'entry' ? { ...b, hasPaid: true } : b)
+          }));
+  
+          // ✅ NEW: Sticky optimistic payment state update
+          setRecentPaymentSuccess(true);
+          recentPaymentTimestamp.current = Date.now();
+  
+          // ✅ Trigger refetch immediately to sync with server
+          console.log('💳 Payment successful - triggering immediate auction data refresh');
+          setForceRefetchTrigger(prev => prev + 1);
+          
+          // Refresh user profile stats too
+          if (currentUser.id) {
+            fetchAndSetUser(currentUser.id);
+          }
+        };
 
   const handleEntryFailure = () => {
     setShowEntryFailure(null);
