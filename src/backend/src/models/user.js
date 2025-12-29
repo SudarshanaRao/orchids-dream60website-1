@@ -78,11 +78,13 @@ const userSchema = new mongoose.Schema(
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
 
-    // counts & monetary values
     totalAuctions: { type: Number, default: 0 },
     totalWins: { type: Number, default: 0 },
+    totalLosses: { type: Number, default: 0 },
     totalAmountSpent: { type: Number, default: 0 },
     totalAmountWon: { type: Number, default: 0 },
+    winRate: { type: Number, default: 0 },
+    netGain: { type: Number, default: 0 },
 
     userType: {
       type: String,

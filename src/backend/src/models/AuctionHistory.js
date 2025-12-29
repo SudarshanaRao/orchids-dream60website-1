@@ -291,6 +291,9 @@ auctionHistorySchema.index({ isWinner: 1, finalRank: 1 });
 // Index for prize claim status
 auctionHistorySchema.index({ prizeClaimStatus: 1, claimDeadline: 1 });
 
+// ✅ NEW: Index for user stats aggregation performance
+auctionHistorySchema.index({ userId: 1, auctionStatus: 1 });
+
 /**
  * Static method: Create auction history entry when user joins
  */

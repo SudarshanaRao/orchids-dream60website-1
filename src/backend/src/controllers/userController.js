@@ -58,19 +58,23 @@ const syncUserStats = async (userId) => {
       return null;
     }
 
-    // Update User model with aggregated stats
-    const updatedUser = await User.findOneAndUpdate(
-      { user_id: userId },
-      {
-        $set: {
-          totalAuctions: stats.totalAuctions || 0,
-          totalWins: stats.totalWins || 0,
-          totalAmountSpent: stats.totalSpent || 0,
-          totalAmountWon: stats.totalWon || 0,
-        }
-      },
-      { new: true }
-    );
+      // Update User model with aggregated stats
+      const updatedUser = await User.findOneAndUpdate(
+        { user_id: userId },
+        {
+          $set: {
+            totalAuctions: stats.totalAuctions || 0,
+            totalWins: stats.totalWins || 0,
+            totalLosses: stats.totalLosses || 0,
+            totalAmountSpent: stats.totalSpent || 0,
+            totalAmountWon: stats.totalWon || 0,
+            winRate: stats.winRate || 0,
+            netGain: stats.netGain || 0,
+          }
+        },
+        { new: true }
+      );
+
 
     if (updatedUser) {
       console.log(`✅ [SYNC_USER_STATS] Updated user stats:`, {
@@ -173,28 +177,18 @@ const getMe = async (req, res) => {
     const user = await userRepo.getUserById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // ✅ Fetch complete auction statistics from AuctionHistory
-    let stats = {
-      totalAuctions: 0,
-      totalWins: 0,
-      totalLosses: 0,
-      totalSpent: 0,
-      totalWon: 0,
-      winRate: 0,
-      netGain: 0,
+    // ✅ NEW: Use pre-calculated stats from User model instead of expensive aggregation
+    const stats = {
+      totalAuctions: user.totalAuctions || 0,
+      totalWins: user.totalWins || 0,
+      totalLosses: user.totalLosses || 0,
+      totalSpent: user.totalAmountSpent || 0,
+      totalWon: user.totalAmountWon || 0,
+      winRate: user.winRate || 0,
+      netGain: user.netGain || 0,
     };
 
-    try {
-      const auctionStats = await AuctionHistory.getUserStats(userId);
-      if (auctionStats) {
-        stats = auctionStats;
-      }
-    } catch (statsError) {
-      console.error('Error fetching auction stats:', statsError);
-      // Continue with default values if stats fetch fails
-    }
-
-    // ✅ Combine user data with complete auction stats
+    // ✅ Combine user data with pre-calculated auction stats
     const userData = {
       ...sanitizeUser(user),
       stats,
@@ -221,28 +215,18 @@ const getProfile = async (req, res) => {
     const user = await userRepo.getUserById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    // ✅ Fetch complete auction statistics from AuctionHistory
-    let stats = {
-      totalAuctions: 0,
-      totalWins: 0,
-      totalLosses: 0,
-      totalSpent: 0,
-      totalWon: 0,
-      winRate: 0,
-      netGain: 0,
+    // ✅ NEW: Use pre-calculated stats from User model instead of expensive aggregation
+    const stats = {
+      totalAuctions: user.totalAuctions || 0,
+      totalWins: user.totalWins || 0,
+      totalLosses: user.totalLosses || 0,
+      totalSpent: user.totalAmountSpent || 0,
+      totalWon: user.totalAmountWon || 0,
+      winRate: user.winRate || 0,
+      netGain: user.netGain || 0,
     };
 
-    try {
-      const auctionStats = await AuctionHistory.getUserStats(userId);
-      if (auctionStats) {
-        stats = auctionStats;
-      }
-    } catch (statsError) {
-      console.error('Error fetching auction stats:', statsError);
-      // Continue with default values if stats fetch fails
-    }
-
-    // ✅ Combine user profile with complete auction stats
+    // ✅ Combine user profile with pre-calculated auction stats
     const profileData = {
       ...sanitizeUser(user),
       stats,

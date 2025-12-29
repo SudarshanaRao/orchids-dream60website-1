@@ -164,11 +164,12 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                       </p>
                     </div>
 
-                    <div className="mt-2 px-4 py-1.5 bg-purple-50 rounded-full border border-purple-100">
-                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
-                        Premium Access Required
-                      </span>
-                    </div>
+                      <div className="mt-2 px-4 py-1.5 bg-purple-50 rounded-full border border-purple-100">
+                        <span className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
+                          Entry fee Required
+                        </span>
+                      </div>
+
                   </div>
                 </div>
               )}

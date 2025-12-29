@@ -1207,23 +1207,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }, [serverTime]); // ✅ Add serverTime as dependency
 
   // Fetch current hourly auction ID when user is logged in and has paid entry
-  useEffect(() => {
-    const fetchCurrentAuctionId = async () => {
-      // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
-      // This ensures fresh data is loaded and no stale bids from previous users are shown
-      if (!currentUser?.id) return;
-      
-      // Only fetch if user has paid entry OR just logged in
-      if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
-      
-      // ✅ Reset justLoggedIn flag after triggering refetch
-      if (justLoggedIn) {
-        console.log('🔄 User just logged in - forcing immediate auction data refresh');
-        setJustLoggedIn(false);
-      }
-      
-      // ✅ NEW: Set loading state at the start
-      setIsLoadingLiveAuction(true);
+    useEffect(() => {
+      const fetchCurrentAuctionId = async (showLoading = false) => {
+        // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
+        // This ensures fresh data is loaded and no stale bids from previous users are shown
+        if (!currentUser?.id) return;
+        
+        // Only fetch if user has paid entry OR just logged in
+        if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
+        
+        // ✅ Reset justLoggedIn flag after triggering refetch
+        if (justLoggedIn) {
+          console.log('🔄 User just logged in - forcing immediate auction data refresh');
+          setJustLoggedIn(false);
+        }
+        
+        // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
+        if (showLoading) {
+          setIsLoadingLiveAuction(true);
+        }
+
       
       try {
         const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
