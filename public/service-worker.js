@@ -34,6 +34,14 @@ const getThrottleKey = (url) => {
   for (const [pattern, _] of Object.entries(API_THROTTLE_CONFIG)) {
     if (url.includes(pattern)) {
       const urlObj = new URL(url);
+      
+      // For auction history, normalize the key to ignore 'limit' or other non-essential params
+      // but keep 'userId' as it's critical
+      if (pattern === 'user-auction-history') {
+        const userId = urlObj.searchParams.get('userId');
+        return `${pattern}_user_${userId || 'guest'}`;
+      }
+      
       return `${pattern}_${urlObj.search}`;
     }
   }
