@@ -739,6 +739,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
   // ✅ NEW: Daily auction stats for the "Why Join Dream60?" section
   const [dailyStats, setDailyStats] = useState({ totalAuctions: 6, totalPrizeValue: 350000 });
+  // ✅ NEW: Sticky optimistic payment state
+  const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
+  const recentPaymentTimestamp = useRef<number>(0);
 
   // Tutorial steps for What's New (5 steps)
   const whatsNewSteps: TutorialStep[] = [
@@ -1336,9 +1339,31 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             });
           }
           
-          // Update local state with user's existing bids, qualification status, current bid leaders, highest bid from API, winnersAnnounced flag, AND user's entry fee
-          setCurrentAuction(prev => {
-            const updatedBoxes = prev.boxes.map(box => {
+            // ✅ NEW: Sticky optimistic payment logic
+            let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+            
+            // If the API says not paid, but we have a recent local payment success, force it to true
+            if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+              const now = Date.now();
+              // Check if we are still within the 15-second grace period
+              if (now - recentPaymentTimestamp.current < 15000) {
+                console.log('🛡️ [OPTIMISTIC UI] Forcing userHasPaidEntry to true (Grace period active)');
+                finalUserHasPaidEntry = true;
+              } else {
+                // Grace period expired, stop forcing
+                console.log('🛡️ [OPTIMISTIC UI] Grace period expired');
+                setRecentPaymentSuccess(false);
+              }
+            } else if (userHasPaidEntryFromAPI && recentPaymentSuccess) {
+              // API has caught up, we can clear the recent success flag
+              console.log('🛡️ [OPTIMISTIC UI] API has confirmed payment, clearing flag');
+              setRecentPaymentSuccess(false);
+            }
+
+            // Update local state with user's existing bids, qualification status, current bid leaders, highest bid from API, winnersAnnounced flag, AND user's entry fee
+            setCurrentAuction(prev => {
+              const updatedBoxes = prev.boxes.map(box => {
+
               if (box.type === 'round') {
                 const roundBox = box as RoundBox;
                 const roundData = liveAuction.rounds?.find(
@@ -1455,10 +1480,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
               userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
               winnersAnnounced: liveAuction.winnersAnnounced || false,
-              userEntryFeeFromAPI: userEntryFeeFromAPI, // ✅ CRITICAL: Store user's entry fee from API
-              userHasPaidEntry: userHasPaidEntryFromAPI, // ✅ CRITICAL FIX: Update based on participants array
-            };
-          });
+                userEntryFeeFromAPI: userEntryFeeFromAPI, // ✅ CRITICAL: Store user's entry fee from API
+                userHasPaidEntry: finalUserHasPaidEntry, // ✅ CRITICAL FIX: Update based on participants array + optimistic state
+              };
+            });
+
         } else {
           console.log('⚠️ No live auction found in response');
           setLiveAuctionData(null);
@@ -1758,6 +1784,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             userHasPaidEntry: true
           };
         });
+
+        // ✅ NEW: Sticky optimistic payment state update
+        setRecentPaymentSuccess(true);
+        recentPaymentTimestamp.current = Date.now();
 
         // ✅ Trigger refetch immediately to sync with server
         console.log('💳 Payment successful - triggering immediate auction data refresh');

@@ -1,6 +1,6 @@
 import { Gift, IndianRupee, Users, CreditCard, Sparkles, TrendingUp, Trophy, Clock, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { parseAPITimestamp, getCurrentIST } from '../utils/timezone';
 import { API_ENDPOINTS } from '@/lib/api-config';
@@ -99,8 +99,12 @@ interface PrizeShowcaseProps {
     // ✅ NEW: Track current auction ID to detect auction changes
     const [currentAuctionId, setCurrentAuctionId] = useState<string | null>(null);
     // ✅ NEW: Internal live auction fetch state
-      const [apiLiveAuction, setApiLiveAuction] = useState<any | null>(null);
-      const [apiLiveLoading, setApiLiveLoading] = useState<boolean>(true);
+    const [apiLiveAuction, setApiLiveAuction] = useState<any | null>(null);
+    const [apiLiveLoading, setApiLiveLoading] = useState<boolean>(true);
+    // ✅ NEW: Sticky optimistic payment state
+    const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
+    const recentPaymentTimestamp = useRef<number>(0);
+
   
     // ✅ Add safety check for currentPrize
     if (!currentPrize || !currentPrize.boxes) {
@@ -255,17 +259,32 @@ interface PrizeShowcaseProps {
     setParticipants(participantsList);
     setParticipantsCount(participantsList.length);
 
-    const userId = localStorage.getItem('user_id');
-    if (userId) {
-      const userInParticipants = participantsList.some(
-        (p: Participant) => p.playerId === userId
-      );
-      setIsUserParticipating(userInParticipants);
-      
-      if (onUserParticipationChange) {
-        onUserParticipationChange(userInParticipants);
+      const userId = localStorage.getItem('user_id');
+      if (userId) {
+        let userInParticipants = participantsList.some(
+          (p: Participant) => p.playerId === userId
+        );
+
+        // ✅ NEW: Sticky optimistic payment logic
+        if (!userInParticipants && recentPaymentSuccess) {
+          const now = Date.now();
+          if (now - recentPaymentTimestamp.current < 15000) {
+            console.log('🛡️ [PRIZE SHOWCASE OPTIMISTIC] Forcing isUserParticipating to true');
+            userInParticipants = true;
+          } else {
+            setRecentPaymentSuccess(false);
+          }
+        } else if (userInParticipants && recentPaymentSuccess) {
+          setRecentPaymentSuccess(false);
+        }
+
+        setIsUserParticipating(userInParticipants);
+        
+        if (onUserParticipationChange) {
+          onUserParticipationChange(userInParticipants);
+        }
       }
-    }
+
 
     const liveAuction: AuctionConfig = {
       auctionNumber: a.auctionNumber,
@@ -372,14 +391,20 @@ interface PrizeShowcaseProps {
         email: userEmail,
         contact: userMobile,
       },
-        (response) => {
-          // Payment success - update local state
-          console.log('Payment verified successfully:', response);
-          setIsUserParticipating(true);
-          
-          // Notify parent to refetch auction data
-          onPayEntry?.(0, totalEntryFee, response.data);
-        },
+          (response) => {
+            // Payment success - update local state
+            console.log('Payment verified successfully:', response);
+            
+            // ✅ NEW: Sticky optimistic payment state update
+            setRecentPaymentSuccess(true);
+            recentPaymentTimestamp.current = Date.now();
+            
+            setIsUserParticipating(true);
+            
+            // Notify parent to refetch auction data
+            onPayEntry?.(0, totalEntryFee, response.data);
+          },
+
       (error) => {
         // Payment failure
         console.error('Payment failed:', error);
