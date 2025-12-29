@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Snowfall from 'react-snowfall';
-import { Trophy, Clock, X, ChevronRight, Timer } from 'lucide-react';
+import { Trophy, Clock, X, ChevronRight, Timer, Gift } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface WinnerClaimBannerProps {

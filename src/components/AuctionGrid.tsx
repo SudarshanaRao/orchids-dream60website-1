@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Gift, Lock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Gift, Lock, Loader2 } from 'lucide-react';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';
 
@@ -47,6 +47,19 @@ interface AuctionGridProps {
 export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTime, isJoinWindowOpen }: AuctionGridProps) {
   const [selectedBox, setSelectedBox] = useState<Box | null>(null);
   const [showBidModal, setShowBidModal] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const prevPaidStatus = useRef(auction?.userHasPaidEntry);
+
+  useEffect(() => {
+    if (auction?.userHasPaidEntry && !prevPaidStatus.current) {
+      setIsUnlocking(true);
+      const timer = setTimeout(() => {
+        setIsUnlocking(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    prevPaidStatus.current = auction?.userHasPaidEntry;
+  }, [auction?.userHasPaidEntry]);
 
   // ✅ Add null safety check for auction and boxes
   if (!auction || !auction.boxes) {
@@ -79,6 +92,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
 
     console.log('🎯 [AUCTION GRID] Visibility check:', {
       userHasPaidEntry: auction.userHasPaidEntry,
+      isUnlocking,
       roundBoxesCount: roundBoxes.length
     });
 
@@ -91,13 +105,19 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
       >
         {/* Prize Showcase Card */}
         <div className="relative overflow-hidden">
-          {!auction.userHasPaidEntry ? (
+          {!auction.userHasPaidEntry || isUnlocking ? (
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50/50 to-violet-50/50 border border-purple-100/50 p-6 sm:p-8 h-[180px] sm:h-[220px] flex items-center justify-center animate-in fade-in duration-500">
               <div className="text-center space-y-3">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                  <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+                  {isUnlocking ? (
+                    <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                  ) : (
+                    <Gift className="w-6 h-6 text-purple-400 opacity-50" />
+                  )}
                 </div>
-                <p className="text-sm font-medium text-purple-400">Complete Entry to Unlock Prize Details</p>
+                <p className="text-sm font-medium text-purple-400">
+                  {isUnlocking ? "Unlocking Prize Details..." : "Complete Entry to Unlock Prize Details"}
+                </p>
               </div>
             </div>
           ) : (
@@ -148,7 +168,7 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
 
             {/* Bidding Rounds Section */}
             <div className="space-y-4 sm:space-y-5 relative p-1 group">
-              {!auction.userHasPaidEntry && (
+              {!auction.userHasPaidEntry && !isUnlocking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-purple-300/50 bg-white/60 backdrop-blur-[2px] transition-all duration-500 overflow-hidden">
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center shadow-sm">
@@ -175,17 +195,26 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
               )}
 
             <div 
-              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${!auction.userHasPaidEntry ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
+              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${(!auction.userHasPaidEntry && !isUnlocking) ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
             >
-            {(auction.userHasPaidEntry ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
+            {( (auction.userHasPaidEntry && !isUnlocking) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
-                {typeof item === 'number' ? (
+                {(typeof item === 'number' || isUnlocking) ? (
                   <div className="bg-white/40 border-2 border-dotted border-purple-300 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4">
                     <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                      <Lock className="w-5 h-5 text-purple-300" />
+                      {isUnlocking ? (
+                        <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                      ) : (
+                        <Lock className="w-5 h-5 text-purple-300" />
+                      )}
                     </div>
                     <div className="h-4 w-24 bg-purple-50 rounded-full" />
                     <div className="h-8 w-32 bg-purple-50 rounded-lg" />
+                    {isUnlocking && (
+                      <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest animate-pulse">
+                        Synchronizing...
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <AuctionBox

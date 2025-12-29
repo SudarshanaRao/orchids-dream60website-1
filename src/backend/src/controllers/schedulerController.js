@@ -999,140 +999,141 @@ const updateHourlyAuctionStatus = async (req, res) => {
  * Returns only one hourly auction with status LIVE
  */
 const getLiveHourlyAuction = async (req, res) => {
-  try {
-    const { userId } = req.query;
-    
-    // 1. Find the currently LIVE auction
-    let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
-      .sort({ startedAt: -1 })
-      .lean();
-    
-    let bannerData = null;
+try {
+const { userId } = req.query;
 
-    if (userId) {
-      // ✅ PRIORITY CLAIM BANNER LOGIC
-      // We need to check both the LIVE auction (for round results) 
-      // AND recently COMPLETED auctions (for final results/prizes)
-      
-      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
-      const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+// 1. Find the currently LIVE auction
+let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
+.sort({ startedAt: -1 })
+.lean();
 
-      // Find all relevant auctions (Live + Completed in last 30 mins)
-      const relevantAuctions = await HourlyAuction.find({
-        $or: [
-          { Status: 'LIVE' },
-          { Status: 'COMPLETED', completedAt: { $gte: thirtyMinsAgo } }
-        ]
-      }).sort({ completedAt: -1, startedAt: -1 }).lean();
+let bannerData = null;
 
-      for (const auction of relevantAuctions) {
-        // Check if user participated
-        const userHistory = await AuctionHistory.findOne({
-          userId,
-          hourlyAuctionId: auction.hourlyAuctionId
-        }).lean();
+if (userId) {
+// ✅ OPTIMIZED BANNER LOGIC
+const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
 
-        if (userHistory) {
-          // Calculate when the "Result" for this banner was announced
-          // For completed auctions, it's the completedAt time
-          // For live auctions, it's the last round's completedAt time
-          let announcedAt = auction.completedAt || null;
-          
-          if (auction.Status === 'LIVE') {
-            const lastCompletedRound = [...(auction.rounds || [])]
-              .filter(r => r.status === 'COMPLETED')
-              .sort((a, b) => b.roundNumber - a.roundNumber)[0];
-            
-            if (lastCompletedRound) {
-              announcedAt = lastCompletedRound.completedAt;
-            } else {
-              // If no round completed yet, nothing to announce
-              continue; 
-            }
-          }
+// Fetch relevant auctions with minimal fields
+const relevantAuctions = await HourlyAuction.find({
+$or: [
+{ Status: 'LIVE' },
+{ Status: 'COMPLETED', completedAt: { $gte: thirtyMinsAgo } }
+]
+}, {
+hourlyAuctionId: 1,
+hourlyAuctionCode: 1,
+Status: 1,
+completedAt: 1,
+rounds: 1,
+participants: 1,
+currentEligibleRank: 1
+}).sort({ completedAt: -1, startedAt: -1 }).lean();
 
-          if (!announcedAt) continue;
+if (relevantAuctions.length > 0) {
+const auctionIds = relevantAuctions.map(a => a.hourlyAuctionId);
 
-          // Check if we are within the 15-minute visibility window from announcement
-          const now = new Date();
-          const announcedTime = new Date(announcedAt).getTime();
-          const diffMs = now.getTime() - announcedTime;
+// Fetch all user histories for these auctions in ONE query
+const userHistories = await AuctionHistory.find({
+userId,
+hourlyAuctionId: { $in: auctionIds }
+}, {
+hourlyAuctionId: 1,
+isWinner: 1,
+finalRank: 1,
+prizeClaimStatus: 1
+}).lean();
 
-          if (diffMs < 0 || diffMs > 15 * 60 * 1000) {
-            continue; // Outside 15-min window
-          }
+const historyMap = new Map(userHistories.map(h => [h.hourlyAuctionId, h]));
 
-          let resultStatus = 'NOT_QUALIFIED';
-          let queuePosition = 0;
+for (const auction of relevantAuctions) {
+const userHistory = historyMap.get(auction.hourlyAuctionId);
+if (!userHistory) continue;
 
-          if (userHistory.isWinner) {
-            // Priority Claim Logic
-            const currentEligibleRank = auction.currentEligibleRank || 1;
-            if (userHistory.finalRank === currentEligibleRank) {
-              resultStatus = 'WIN';
-            } else if (userHistory.finalRank > currentEligibleRank) {
-              resultStatus = 'WAITING';
-              queuePosition = userHistory.finalRank - currentEligibleRank;
-            }
-          } else {
-            // Round qualification logic for LIVE auctions
-            if (auction.Status === 'LIVE') {
-              const participant = auction.participants?.find(p => p.playerId === userId);
-              if (participant && !participant.isEliminated) {
-                resultStatus = 'QUALIFIED';
-              }
-            }
-          }
+let announcedAt = auction.completedAt || null;
+if (auction.Status === 'LIVE') {
+const lastCompletedRound = (auction.rounds || [])
+.filter(r => r.status === 'COMPLETED')
+.sort((a, b) => b.roundNumber - a.roundNumber)[0];
 
-          // If we found a "High Priority" status (WIN or WAITING), we stop here
-          if (resultStatus === 'WIN' || resultStatus === 'WAITING') {
-            bannerData = {
-              roundId: auction.hourlyAuctionId,
-              auctionId: auction.hourlyAuctionCode,
-              resultAnnouncedAt: announcedAt.toISOString(),
-              userParticipated: true,
-              resultStatus: resultStatus,
-              queuePosition: queuePosition
-            };
-            break; 
-          }
+if (lastCompletedRound) {
+announcedAt = lastCompletedRound.completedAt;
+} else {
+continue; 
+}
+}
 
-          // If it's NOT_QUALIFIED, we store it but keep looking for a potential WIN in other relevant auctions
-          if (!bannerData || (bannerData.resultStatus === 'QUALIFIED' && resultStatus === 'NOT_QUALIFIED')) {
-            bannerData = {
-              roundId: auction.hourlyAuctionId,
-              auctionId: auction.hourlyAuctionCode,
-              resultAnnouncedAt: announcedAt.toISOString(),
-              userParticipated: true,
-              resultStatus: resultStatus,
-              queuePosition: queuePosition
-            };
-          }
-        }
-      }
-    }
-    
-    if (!liveAuction && !bannerData) {
-      return res.status(404).json({
-        success: false,
-        message: 'No live hourly auction found',
-        data: null,
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      data: liveAuction,
-      bannerData: bannerData
-    });
-  } catch (error) {
-    console.error('Error in getLiveHourlyAuction:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message,
-    });
-  }
+if (!announcedAt) continue;
+
+const announcedTime = new Date(announcedAt).getTime();
+const diffMs = Date.now() - announcedTime;
+
+if (diffMs < 0 || diffMs > 15 * 60 * 1000) continue;
+
+let resultStatus = 'NOT_QUALIFIED';
+let queuePosition = 0;
+
+if (userHistory.isWinner) {
+const currentEligibleRank = auction.currentEligibleRank || 1;
+if (userHistory.finalRank === currentEligibleRank) {
+resultStatus = 'WIN';
+} else if (userHistory.finalRank > currentEligibleRank) {
+resultStatus = 'WAITING';
+queuePosition = userHistory.finalRank - currentEligibleRank;
+}
+} else if (auction.Status === 'LIVE') {
+const participant = auction.participants?.find(p => p.playerId === userId);
+if (participant && !participant.isEliminated) {
+resultStatus = 'QUALIFIED';
+}
+}
+
+if (resultStatus === 'WIN' || resultStatus === 'WAITING') {
+bannerData = {
+roundId: auction.hourlyAuctionId,
+auctionId: auction.hourlyAuctionCode,
+resultAnnouncedAt: announcedAt.toISOString(),
+userParticipated: true,
+resultStatus: resultStatus,
+queuePosition: queuePosition
+};
+break; 
+}
+
+if (!bannerData || (bannerData.resultStatus === 'QUALIFIED' && resultStatus === 'NOT_QUALIFIED')) {
+bannerData = {
+roundId: auction.hourlyAuctionId,
+auctionId: auction.hourlyAuctionCode,
+resultAnnouncedAt: announcedAt.toISOString(),
+userParticipated: true,
+resultStatus: resultStatus,
+queuePosition: queuePosition
+};
+}
+}
+}
+}
+
+if (!liveAuction && !bannerData) {
+return res.status(404).json({
+success: false,
+message: 'No live hourly auction found',
+data: null,
+});
+}
+
+return res.status(200).json({
+success: true,
+data: liveAuction,
+bannerData: bannerData
+});
+} catch (error) {
+console.error('Error in getLiveHourlyAuction:', error);
+return res.status(500).json({
+success: false,
+message: 'Internal server error',
+error: error.message,
+});
+}
 };
 
 /**
