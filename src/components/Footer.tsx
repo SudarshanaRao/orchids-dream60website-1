@@ -25,7 +25,8 @@ export function Footer({ onNavigate }: FooterProps) {
           { label: 'Support Center', action: 'support' },
           { label: 'Contact Us', action: 'contact' },
           { label: 'How to Play', action: 'view-guide' },
-          { label: 'Winning Tips', action: 'winning-tips' }
+          { label: 'Winning Tips', action: 'winning-tips' },
+          { label: 'Tester Feedback', action: 'tester-feedback' }
         ]
       },
       {

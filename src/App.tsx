@@ -32,6 +32,7 @@ import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
 import { ViewGuide } from './components/ViewGuide';
 import { WinningTips } from './components/WinningTips';
 import { SupportChatPage } from './components/SupportChatPage';
+import { TesterFeedback } from './components/TesterFeedback';
 import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
@@ -306,6 +307,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/view-guide') return 'view-guide';
     if (path === '/winning-tips') return 'winning-tips';
     if (path === '/support-chat') return 'support-chat';
+    if (path === '/tester-feedback') return 'tester-feedback';
     if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
 
     return 'game';
@@ -342,6 +344,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/view-guide') setCurrentPage('view-guide');
       else if (path === '/winning-tips') setCurrentPage('winning-tips');
       else if (path === '/support-chat') setCurrentPage('support-chat');
+      else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
       else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
       else setCurrentPage('game');
     };
@@ -1539,9 +1542,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         'admin-login': '/admin',
         'admin-dashboard': '/admin',
         'view-guide': '/view-guide',
-        'winning-tips': '/winning-tips',
-        'support-chat': '/support-chat',
-        'transactions': '/transactions',
+          'winning-tips': '/winning-tips',
+          'support-chat': '/support-chat',
+          'tester-feedback': '/tester-feedback',
+          'transactions': '/transactions',
+
         'careers': '/careers'
       };
     
@@ -2240,6 +2245,20 @@ if (currentPage === 'support') {
         </QueryClientProvider>
       );
     }
+
+      if (currentPage === 'tester-feedback') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <TesterFeedback 
+                user={currentUser} 
+                onBack={handleBackToGame} 
+              />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
 
       if (currentPage === 'transactions' && currentUser) {
         return (
