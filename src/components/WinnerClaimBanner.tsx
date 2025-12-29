@@ -13,7 +13,8 @@ type BannerType =
   | 'WIN' 
   | 'WAITING' 
   | 'NOT_QUALIFIED' 
-  | 'QUALIFIED'
+  | 'CLAIMED'
+  | 'EXPIRED'
   | null;
 
 export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClaimBannerProps) {
@@ -42,41 +43,80 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
           );
 
           const latestAuction = sortedData[0];
-            const now = serverTime?.timestamp || Date.now();
-            const completedAtTime = new Date(latestAuction.completedAt).getTime();
-            const thirtyMinsInMs = 30 * 60 * 1000;
-            const isWithin30Mins = (now - completedAtTime) < thirtyMinsInMs;
+          const now = serverTime?.timestamp || Date.now();
+          const completedAtTime = new Date(latestAuction.completedAt).getTime();
+          
+          // Logic for durations: Rank 1 (15m), Rank 2 (15m), Rank 3 (15m) -> Total 45m
+          // User requested: Rank 2 waiting = 15m, Rank 3 waiting = 30m, Rank 3 expires = 30m?
+          // We'll use 15m slots for each rank to resolve the contradiction.
+          const SLOT_DURATION = 15 * 60 * 1000;
+          const totalDuration = SLOT_DURATION * 3; // 45 minutes
+          const isWithinBannerTime = (now - completedAtTime) < totalDuration;
 
-            if (isWithin30Mins) {
-              let status: BannerType = 'NOT_QUALIFIED';
-              
-              const rank = latestAuction.finalRank || (latestAuction.eliminatedInRound ? `ELIMINATED R${latestAuction.eliminatedInRound}` : 'N/A');
-              
-              if ([1, 2, 3].includes(latestAuction.finalRank)) {
-                const isEligibleToClaim = 
-                  latestAuction.finalRank === latestAuction.currentEligibleRank || 
-                  (latestAuction.claimNotes && latestAuction.claimNotes.toLowerCase().includes(`rank ${latestAuction.finalRank} is now eligible to claim`));
+          if (isWithinBannerTime) {
+            let status: BannerType = 'NOT_QUALIFIED';
+            const rank = latestAuction.finalRank;
+            const currentEligibleRank = latestAuction.currentEligibleRank || 1;
+            const claimNotes = latestAuction.claimNotes || '';
+            const isWinner = latestAuction.isWinner;
 
-                status = isEligibleToClaim ? 'WIN' : 'WAITING';
-              }
-
-              const deadline = completedAtTime + thirtyMinsInMs;
-              const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
-              
-              if (localStorage.getItem(closedKey) !== 'true') {
-                setBannerType(status);
-                setBannerData({
-                  ...latestAuction,
-                  resultStatus: status,
-                  resultAnnouncedAt: latestAuction.completedAt,
-                  queuePosition: rank,
-                  deadline: deadline
-                });
-                setIsVisible(true);
+            // Check if prize already claimed by ANYONE
+            if (latestAuction.claimedAt || (claimNotes.toLowerCase().includes('successfully') && !claimNotes.toLowerCase().includes('forfeited'))) {
+              status = 'CLAIMED';
+            } 
+            // Check if deadline expired for this user specifically or generally
+            else if (claimNotes.toLowerCase().includes('expired') || claimNotes.toLowerCase().includes('forfeited')) {
+              status = 'EXPIRED';
+            }
+            // Check winner status
+            else if (isWinner && [1, 2, 3].includes(rank)) {
+              if (rank === currentEligibleRank) {
+                status = 'WIN';
+              } else if (rank > currentEligibleRank) {
+                status = 'WAITING';
               } else {
-                setIsVisible(false);
+                // If their rank is less than current, it means they already missed it
+                status = 'EXPIRED';
               }
             } else {
+              status = 'NOT_QUALIFIED';
+            }
+
+            // Calculate deadline based on rank
+            // Rank 1: completedAt + 15m
+            // Rank 2: completedAt + 30m
+            // Rank 3: completedAt + 45m
+            let deadline = completedAtTime + (rank * SLOT_DURATION);
+            
+            // If it's the current eligible rank, show their specific remaining time
+            if (rank === currentEligibleRank) {
+              deadline = completedAtTime + (currentEligibleRank * SLOT_DURATION);
+            } else if (rank > currentEligibleRank) {
+              // If waiting, show time until their turn starts
+              deadline = completedAtTime + ((rank - 1) * SLOT_DURATION);
+            } else {
+              // If already passed, just show banner end time
+              deadline = completedAtTime + totalDuration;
+            }
+
+            const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
+            
+            if (localStorage.getItem(closedKey) !== 'true') {
+              setBannerType(status);
+              setBannerData({
+                ...latestAuction,
+                resultStatus: status,
+                resultAnnouncedAt: latestAuction.completedAt,
+                queuePosition: rank || (latestAuction.eliminatedInRound ? `Eliminated R${latestAuction.eliminatedInRound}` : 'N/A'),
+                deadline: deadline,
+                claimedByRank: latestAuction.claimedByRank,
+                claimNotes: claimNotes
+              });
+              setIsVisible(true);
+            } else {
+              setIsVisible(false);
+            }
+          } else {
             setIsVisible(false);
             setBannerType(null);
           }
@@ -134,25 +174,47 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         return {
           gradient: 'from-emerald-600 via-green-500 to-teal-600',
           icon: <Trophy className="w-5 h-5 text-white" />,
-          message: `🎉 CONGRATULATIONS! YOU WON THE "${bannerData.auctionName.toUpperCase()}" ROUND! CLAIM YOUR PRIZE NOW BEFORE IT EXPIRES IN THE NEXT ROUND!`,
+          message: `🎉 CONGRATULATIONS! YOU ARE CURRENTLY ELIGIBLE TO CLAIM THE "${bannerData.auctionName.toUpperCase()}" PRIZE! CLAIM IT NOW!`,
           buttonText: "CLAIM NOW",
-          navigateTo: "history"
+          navigateTo: "history",
+          timerLabel: "EXPIRES IN"
         };
       case 'WAITING':
         return {
           gradient: 'from-blue-700 via-indigo-600 to-violet-700',
           icon: <Clock className="w-5 h-5 text-white" />,
-          message: `⏳ YOU ARE IN THE WAITING LIST FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. STAY TUNED AS RANKS AHEAD MAY EXPIRE!`,
+          message: `⏳ YOU ARE IN THE WAITING LIST FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.finalRank}. CURRENTLY RANK #${bannerData.currentEligibleRank} IS CLAIMING.`,
           buttonText: "CHECK STATUS",
-          navigateTo: "history"
+          navigateTo: "history",
+          timerLabel: "STARTS IN"
+        };
+      case 'CLAIMED':
+        const claimedBy = bannerData.claimedByRank ? `RANK #${bannerData.claimedByRank}` : 'ANOTHER WINNER';
+        return {
+          gradient: 'from-purple-800 via-violet-700 to-indigo-800',
+          icon: <Gift className="w-5 h-5 text-white" />,
+          message: `🎁 THE PRIZE FOR "${bannerData.auctionName.toUpperCase()}" HAS BEEN CLAIMED BY ${claimedBy}. ${bannerData.claimNotes || ''}`,
+          buttonText: "VIEW DETAILS",
+          navigateTo: "history",
+          timerLabel: "BANNER ENDS"
+        };
+      case 'EXPIRED':
+        return {
+          gradient: 'from-red-800 via-rose-700 to-orange-800',
+          icon: <Timer className="w-5 h-5 text-white" />,
+          message: `⚠️ THE CLAIM PERIOD FOR "${bannerData.auctionName.toUpperCase()}" HAS EXPIRED OR BEEN FORFEITED. ${bannerData.claimNotes || ''}`,
+          buttonText: "VIEW HISTORY",
+          navigateTo: "history",
+          timerLabel: "BANNER ENDS"
         };
       case 'NOT_QUALIFIED':
         return {
           gradient: 'from-slate-800 via-zinc-700 to-gray-800',
           icon: <X className="w-5 h-5 text-white" />,
-          message: `📢 RESULTS ANNOUNCED FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK: ${bannerData.queuePosition}. UNFORTUNATELY, YOU DID NOT QUALIFY FOR THE TOP 3 THIS TIME. BETTER LUCK IN THE NEXT ROUND!`,
+          message: `📢 "${bannerData.auctionName.toUpperCase()}" RESULTS: YOU RANKED #${bannerData.finalRank || bannerData.queuePosition}. BETTER LUCK NEXT TIME!`,
           buttonText: "VIEW DETAILS",
-          navigateTo: "history"
+          navigateTo: "history",
+          timerLabel: "EXPIRES IN"
         };
       default:
         return null;
@@ -185,7 +247,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
                   <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
                   <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
-                    EXPIRES IN: {timeLeft}
+                    {config.timerLabel}: {timeLeft}
                   </span>
                 </div>
 
