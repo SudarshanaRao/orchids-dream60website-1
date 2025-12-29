@@ -36,50 +36,44 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
       const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}`);
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data && Array.isArray(result.data)) {
+        if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+          // Get the absolute latest auction entry
           const sortedData = [...result.data].sort((a, b) => 
             new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
           );
 
-          const relevantAuction = sortedData.find((item: any) => 
-            item.prizeClaimStatus === 'PENDING' && 
-            [1, 2, 3].includes(item.finalRank)
-          );
+          const latestAuction = sortedData[0];
+          const now = serverTime?.timestamp || Date.now();
+          const completedAtTime = new Date(latestAuction.completedAt).getTime();
+          const fifteenMinsInMs = 15 * 60 * 1000;
+          const isWithin15Mins = (now - completedAtTime) < fifteenMinsInMs;
 
-          if (relevantAuction) {
-            const data = relevantAuction;
-            let status: BannerType = 'WAITING';
+          if (isWithin15Mins) {
+            let status: BannerType = 'NOT_QUALIFIED';
             
-            const isEligibleToClaim = 
-              data.finalRank === data.currentEligibleRank || 
-              (data.claimNotes && data.claimNotes.toLowerCase().includes(`rank ${data.finalRank} is now eligible to claim`));
+            if ([1, 2, 3].includes(latestAuction.finalRank)) {
+              const isEligibleToClaim = 
+                latestAuction.finalRank === latestAuction.currentEligibleRank || 
+                (latestAuction.claimNotes && latestAuction.claimNotes.toLowerCase().includes(`rank ${latestAuction.finalRank} is now eligible to claim`));
 
-            if (isEligibleToClaim) {
-              status = 'WIN';
+              status = isEligibleToClaim ? 'WIN' : 'WAITING';
             }
-            
-            const deadline = data.claimDeadline ? new Date(data.claimDeadline).getTime() : 
-                           (new Date(data.completedAt).getTime() + 15 * 60 * 1000);
-            const now = serverTime?.timestamp || Date.now();
 
-            if (now < deadline) {
-              const closedKey = `closed_banner_${data._id}_${data.completedAt}_${status}`;
-              if (localStorage.getItem(closedKey) !== 'true') {
-                setBannerType(status);
-                setBannerData({
-                  ...data,
-                  resultStatus: status,
-                  resultAnnouncedAt: data.completedAt,
-                  queuePosition: data.finalRank,
-                  deadline: deadline
-                });
-                setIsVisible(true);
-              } else {
-                setIsVisible(false);
-              }
+            const deadline = completedAtTime + fifteenMinsInMs;
+            const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
+            
+            if (localStorage.getItem(closedKey) !== 'true') {
+              setBannerType(status);
+              setBannerData({
+                ...latestAuction,
+                resultStatus: status,
+                resultAnnouncedAt: latestAuction.completedAt,
+                queuePosition: latestAuction.finalRank,
+                deadline: deadline
+              });
+              setIsVisible(true);
             } else {
               setIsVisible(false);
-              setBannerType(null);
             }
           } else {
             setIsVisible(false);
@@ -137,20 +131,26 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     switch (bannerType) {
       case 'WIN':
         return {
-          gradient: 'from-emerald-500 via-green-500 to-teal-500',
-          icon: <Trophy className="w-5 h-5 text-white animate-bounce" />,
-          message: `🎉 Congratulations! You won the "${bannerData.auctionName}" round.`,
-          subMessage: "Claim your prize now!",
+          gradient: 'from-emerald-600 via-green-500 to-teal-600',
+          icon: <Trophy className="w-5 h-5 text-white" />,
+          message: `🎉 CONGRATULATIONS! YOU WON THE "${bannerData.auctionName.toUpperCase()}" ROUND! CLAIM YOUR PRIZE NOW BEFORE IT EXPIRES!`,
           buttonText: "CLAIM NOW",
           navigateTo: "history"
         };
       case 'WAITING':
         return {
-          gradient: 'from-blue-600 via-indigo-500 to-violet-500',
-          icon: <Clock className="w-5 h-5 text-white animate-spin-slow" />,
-          message: `⏳ You are in the waiting list for "${bannerData.auctionName}". Rank #${bannerData.queuePosition}.`,
-          subMessage: "Kindly check the details in history.",
+          gradient: 'from-blue-700 via-indigo-600 to-violet-700',
+          icon: <Clock className="w-5 h-5 text-white" />,
+          message: `⏳ YOU ARE IN THE WAITING LIST FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. CHECK STATUS IN HISTORY!`,
           buttonText: "CHECK STATUS",
+          navigateTo: "history"
+        };
+      case 'NOT_QUALIFIED':
+        return {
+          gradient: 'from-slate-700 via-gray-600 to-zinc-700',
+          icon: <X className="w-5 h-5 text-white" />,
+          message: `📢 RESULTS ANNOUNCED FOR "${bannerData.auctionName.toUpperCase()}". YOUR RANK IS #${bannerData.queuePosition}. BETTER LUCK NEXT TIME!`,
+          buttonText: "VIEW LEADERBOARD",
           navigateTo: "history"
         };
       default:
@@ -162,54 +162,60 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   if (!config) return null;
 
   return (
-    <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-lg border-b border-white/10">
-      <div className={`relative py-3 bg-gradient-to-r ${config.gradient}`}>
-        <Snowfall color="white" snowflakeCount={isMobile ? 2 : 15} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
-        <button
-          onClick={handleClose}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors z-10"
-        >
-          <X className="w-4 h-4 text-white" />
-        </button>
+    <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
+      <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
+        <Snowfall color="white" snowflakeCount={isMobile ? 5 : 20} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
+        
+        {/* Marquee Container */}
+        <div className="flex-1 overflow-hidden h-full flex items-center relative">
+          <div className="flex items-center gap-4 whitespace-nowrap animate-marquee px-4">
+            {/* Repeated text for seamless loop */}
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 mr-12">
+                <div className="flex items-center gap-2">
+                  {config.icon}
+                  <span className="text-sm sm:text-base font-black text-white tracking-tighter uppercase italic">
+                    {config.message}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2 bg-black/30 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm">
+                  <Timer className="w-4 h-4 text-yellow-300" />
+                  <span className="text-xs font-bold text-white tabular-nums">
+                    EXPIRES IN: {timeLeft}
+                  </span>
+                </div>
 
-        <div className="flex items-center justify-center gap-4 px-8 text-center sm:text-left flex-wrap sm:flex-nowrap">
-          <div className="flex items-center gap-3">
-            {config.icon}
-            <div className="flex flex-col">
-              <span className="text-sm sm:text-base font-bold text-white tracking-wide">
-                {config.message}
-              </span>
-              <span className="text-xs text-white/80">
-                {config.subMessage}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full border border-white/30 backdrop-blur-sm">
-              <Timer className="w-4 h-4 text-yellow-300 animate-pulse" />
-              <span className="text-xs sm:text-sm font-bold text-white">
-                Expires in: {timeLeft}
-              </span>
-            </div>
-
-            <button
-              onClick={() => onNavigate(config.navigateTo)}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-lg"
-            >
-              {config.buttonText}
-              <ChevronRight className="w-4 h-4" />
-            </button>
+                <button
+                  onClick={() => onNavigate(config.navigateTo)}
+                  className="flex items-center gap-1 px-4 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                >
+                  {config.buttonText}
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
+
+        <button
+          onClick={handleClose}
+          className="relative z-10 px-4 h-full flex items-center bg-black/10 hover:bg-black/20 transition-colors border-l border-white/10"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
       </div>
+
       <style>{`
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-25%); }
         }
-        .animate-spin-slow {
-          animation: spin-slow 3s linear infinite;
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
+        }
+        .animate-marquee:hover {
+          animation-play-state: paused;
         }
       `}</style>
     </div>
