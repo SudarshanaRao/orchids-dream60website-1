@@ -1,4 +1,4 @@
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 const CACHE_NAME = `dream60-v${VERSION}`;
 const STATIC_CACHE = `dream60-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
@@ -17,6 +17,36 @@ const CACHE_EXPIRATION = {
   api: 5 * 60 * 1000,
   images: 7 * 24 * 60 * 60 * 1000,
   static: 30 * 24 * 60 * 60 * 1000
+};
+
+const pendingRequests = new Map();
+const requestThrottleCache = new Map();
+
+const API_THROTTLE_CONFIG = {
+  'user-auction-history': 5000,
+  'live-auction': 3000,
+  'daily-auction': 10000,
+  'server-time': 2000,
+  'leaderboard': 10000,
+};
+
+const getThrottleKey = (url) => {
+  for (const [pattern, _] of Object.entries(API_THROTTLE_CONFIG)) {
+    if (url.includes(pattern)) {
+      const urlObj = new URL(url);
+      return `${pattern}_${urlObj.search}`;
+    }
+  }
+  return null;
+};
+
+const getThrottleTime = (url) => {
+  for (const [pattern, time] of Object.entries(API_THROTTLE_CONFIG)) {
+    if (url.includes(pattern)) {
+      return time;
+    }
+  }
+  return 0;
 };
 
 self.addEventListener('install', (event) => {
@@ -150,6 +180,50 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isApiRequest(request.url)) {
+    const throttleKey = getThrottleKey(request.url);
+    const throttleTime = getThrottleTime(request.url);
+    
+    if (throttleKey && throttleTime > 0) {
+      const cached = requestThrottleCache.get(throttleKey);
+      if (cached && (Date.now() - cached.timestamp) < throttleTime) {
+        event.respondWith(cached.response.clone());
+        return;
+      }
+      
+      if (pendingRequests.has(throttleKey)) {
+        event.respondWith(
+          pendingRequests.get(throttleKey).then(response => response.clone())
+        );
+        return;
+      }
+      
+      const fetchPromise = networkFirst(request, API_CACHE, 5000)
+        .then((response) => {
+          if (response && response.ok) {
+            requestThrottleCache.set(throttleKey, {
+              response: response.clone(),
+              timestamp: Date.now()
+            });
+          }
+          pendingRequests.delete(throttleKey);
+          return response;
+        })
+        .catch((error) => {
+          pendingRequests.delete(throttleKey);
+          return new Response(
+            JSON.stringify({ error: 'Offline', message: 'Please check your connection' }),
+            { 
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
+        });
+      
+      pendingRequests.set(throttleKey, fetchPromise);
+      event.respondWith(fetchPromise.then(response => response.clone()));
+      return;
+    }
+    
     event.respondWith(
       networkFirst(request, API_CACHE, 5000)
         .catch(() => {
