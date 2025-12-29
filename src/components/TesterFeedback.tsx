@@ -9,9 +9,11 @@ import {
   CheckCircle2,
   Bug,
   Image as ImageIcon,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SupportCenterHeader } from './SupportCenterHeader';
 
 interface TesterFeedbackProps {
   user?: {
@@ -110,44 +112,49 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-purple-500/5 p-8 text-center"
-        >
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">Thank You!</h2>
-          <p className="text-slate-600 mb-8">
-            Your feedback has been received. We appreciate your help in making Dream60 better!
-          </p>
-          <button
-            onClick={onBack}
-            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <SupportCenterHeader 
+          title="Tester Feedback"
+          icon={<Bug className="w-6 h-6" />}
+          onBack={onBack}
+          backLabel="Back to Home"
+        />
+        <div className="flex-1 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-purple-500/5 p-8 text-center"
           >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-        </motion.div>
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Thank You!</h2>
+            <p className="text-slate-600 mb-8">
+              Your feedback has been received. We appreciate your help in making Dream60 better!
+            </p>
+            <button
+              onClick={onBack}
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Dashboard
+            </button>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-20 pb-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          onClick={onBack}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold mb-8 group transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          Back
-        </motion.button>
+    <div className="min-h-screen bg-slate-50 pb-12">
+      <SupportCenterHeader 
+        title="Tester Feedback"
+        icon={<Bug className="w-6 h-6" />}
+        onBack={onBack}
+        backLabel="Back to Home"
+      />
 
+      <div className="max-w-2xl mx-auto px-4 mt-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -156,7 +163,6 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
           <div className="p-8 md:p-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
               <div>
-                <h1 className="text-3xl font-black text-slate-900 mb-2">Tester Feedback</h1>
                 <p className="text-slate-500 font-medium">Help us improve Dream60 v2.0</p>
               </div>
               <div className="flex -space-x-2">
