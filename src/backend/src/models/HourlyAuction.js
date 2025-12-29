@@ -266,13 +266,30 @@ const hourlyAuctionSchema = new mongoose.Schema(
       default: 0,
     },
     
-    totalPrizePool: {
-      type: Number,
-      default: 0,
-    },
-    
-    // Winner information (primary winner - rank 1)
-    winnerId: {
+      totalPrizePool: {
+        type: Number,
+        default: 0,
+      },
+      
+      // ========== PRIORITY CLAIM SYSTEM (NEW) ==========
+
+      // Which rank (1, 2, or 3) is currently eligible to claim
+      // This starts at 1, then moves to 2 if rank 1 doesn't claim, then to 3
+      currentEligibleRank: {
+        type: Number,
+        default: 1,
+        min: 1,
+        max: 3,
+      },
+
+      // When the current rank's 15-minute claim window started
+      claimWindowStartedAt: {
+        type: Date,
+        default: null,
+      },
+
+      // Winner information (primary winner - rank 1)
+      winnerId: {
       type: String,
       default: null,
     },

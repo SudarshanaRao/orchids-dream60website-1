@@ -1019,9 +1019,6 @@ const getLiveHourlyAuction = async (req, res) => {
           participants: 1,
           winnersAnnounced: 1,
           roundConfig: 1,
-          productName: 1,
-          productValue: 1,
-          currentEligibleRank: 1,
           completedAt: 1,
           TimeSlot: 1,
           imageUrl: 1,
@@ -1030,7 +1027,20 @@ const getLiveHourlyAuction = async (req, res) => {
           maxEntryFee: 1,
           auctionDate: 1,
           roundCount: 1,
-          maxDiscount: 1
+          maxDiscount: 1,
+          FeeSplits: 1,
+          winners: 1,
+          totalPrizePool: 1,
+          winnerId: 1,
+          winnerUsername: 1,
+          winningBid: 1,
+          startedAt: 1,
+          dailyAuctionId: 1,
+          masterId: 1,
+          auctionNumber: 1,
+          auctionId: 1,
+          currentEligibleRank: 1,
+          claimWindowStartedAt: 1
         })
       .lean();
 
