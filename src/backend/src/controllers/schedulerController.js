@@ -1006,24 +1006,32 @@ const getLiveHourlyAuction = async (req, res) => {
     // Use lean() for faster read-only access
     let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
-      .select({
-        hourlyAuctionId: 1,
-        hourlyAuctionCode: 1,
-        auctionName: 1,
-        prizeValue: 1,
-        Status: 1,
-        currentRound: 1,
-        totalParticipants: 1,
-        totalBids: 1,
-        rounds: 1,
-        participants: 1,
-        winnersAnnounced: 1,
-        roundConfig: 1,
-        productName: 1,
-        productValue: 1,
-        currentEligibleRank: 1,
-        completedAt: 1
-      })
+        .select({
+          hourlyAuctionId: 1,
+          hourlyAuctionCode: 1,
+          auctionName: 1,
+          prizeValue: 1,
+          Status: 1,
+          currentRound: 1,
+          totalParticipants: 1,
+          totalBids: 1,
+          rounds: 1,
+          participants: 1,
+          winnersAnnounced: 1,
+          roundConfig: 1,
+          productName: 1,
+          productValue: 1,
+          currentEligibleRank: 1,
+          completedAt: 1,
+          TimeSlot: 1,
+          imageUrl: 1,
+          EntryFee: 1,
+          minEntryFee: 1,
+          maxEntryFee: 1,
+          auctionDate: 1,
+          roundCount: 1,
+          maxDiscount: 1
+        })
       .lean();
 
     let bannerData = null;

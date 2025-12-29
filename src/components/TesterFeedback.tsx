@@ -221,7 +221,7 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
               </button>
             </form>
           </div>
-        </div>
+        </motion.div>
         
         <p className="text-center text-slate-400 font-medium mt-8 text-sm px-8">
           Your feedback will be sent directly to our development team at <span className="text-purple-500 font-bold">dream60.official@gmail.com</span>
