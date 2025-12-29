@@ -999,10 +999,11 @@ const updateHourlyAuctionStatus = async (req, res) => {
  * Returns only one hourly auction with status LIVE
  */
 const getLiveHourlyAuction = async (req, res) => {
-try {
-const { userId } = req.query;
+  try {
+    const { userId } = req.query;
 
     // 1. Find the currently LIVE auction with projection for speed
+    // Use lean() for faster read-only access
     let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
       .select({
@@ -1019,137 +1020,153 @@ const { userId } = req.query;
         winnersAnnounced: 1,
         roundConfig: 1,
         productName: 1,
-        productValue: 1
+        productValue: 1,
+        currentEligibleRank: 1,
+        completedAt: 1
       })
       .lean();
 
-let bannerData = null;
+    let bannerData = null;
 
-if (userId) {
-// ✅ OPTIMIZED BANNER LOGIC
-const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    if (userId) {
+      // ✅ OPTIMIZED BANNER LOGIC: Only check if user actually participated recently
+      const fortyFiveMinsAgo = new Date(Date.now() - 45 * 60 * 1000);
 
-// Fetch relevant auctions with minimal fields
-const relevantAuctions = await HourlyAuction.find({
-$or: [
-{ Status: 'LIVE' },
-{ Status: 'COMPLETED', completedAt: { $gte: thirtyMinsAgo } }
-]
-}, {
-hourlyAuctionId: 1,
-hourlyAuctionCode: 1,
-Status: 1,
-completedAt: 1,
-rounds: 1,
-participants: 1,
-currentEligibleRank: 1
-}).sort({ completedAt: -1, startedAt: -1 }).lean();
+      // Fetch relevant auctions (Live or recently Completed) in one batch
+      const relevantAuctions = await HourlyAuction.find({
+        $or: [
+          { Status: 'LIVE' },
+          { Status: 'COMPLETED', completedAt: { $gte: fortyFiveMinsAgo } }
+        ]
+      })
+      .select({
+        hourlyAuctionId: 1,
+        hourlyAuctionCode: 1,
+        auctionName: 1,
+        Status: 1,
+        completedAt: 1,
+        rounds: 1,
+        participants: 1,
+        currentEligibleRank: 1
+      })
+      .sort({ completedAt: -1, startedAt: -1 })
+      .lean();
 
-if (relevantAuctions.length > 0) {
-const auctionIds = relevantAuctions.map(a => a.hourlyAuctionId);
+      if (relevantAuctions.length > 0) {
+        const auctionIds = relevantAuctions.map(a => a.hourlyAuctionId);
 
-// Fetch all user histories for these auctions in ONE query
-const userHistories = await AuctionHistory.find({
-userId,
-hourlyAuctionId: { $in: auctionIds }
-}, {
-hourlyAuctionId: 1,
-isWinner: 1,
-finalRank: 1,
-prizeClaimStatus: 1
-}).lean();
+        // Fetch user histories for these auctions in ONE query
+        const userHistories = await AuctionHistory.find({
+          userId,
+          hourlyAuctionId: { $in: auctionIds }
+        })
+        .select({
+          hourlyAuctionId: 1,
+          isWinner: 1,
+          finalRank: 1,
+          prizeClaimStatus: 1,
+          completedAt: 1
+        })
+        .lean();
 
-const historyMap = new Map(userHistories.map(h => [h.hourlyAuctionId, h]));
+        if (userHistories.length > 0) {
+          const historyMap = new Map(userHistories.map(h => [h.hourlyAuctionId, h]));
 
-for (const auction of relevantAuctions) {
-const userHistory = historyMap.get(auction.hourlyAuctionId);
-if (!userHistory) continue;
+          for (const auction of relevantAuctions) {
+            const userHistory = historyMap.get(auction.hourlyAuctionId);
+            if (!userHistory) continue;
 
-let announcedAt = auction.completedAt || null;
-if (auction.Status === 'LIVE') {
-const lastCompletedRound = (auction.rounds || [])
-.filter(r => r.status === 'COMPLETED')
-.sort((a, b) => b.roundNumber - a.roundNumber)[0];
+            let announcedAt = auction.completedAt || userHistory.completedAt;
+            
+            // If auction is LIVE, check for recently completed rounds
+            if (auction.Status === 'LIVE') {
+              const lastCompletedRound = (auction.rounds || [])
+                .filter(r => r.status === 'COMPLETED')
+                .sort((a, b) => b.roundNumber - a.roundNumber)[0];
 
-if (lastCompletedRound) {
-announcedAt = lastCompletedRound.completedAt;
-} else {
-continue; 
-}
-}
+              if (lastCompletedRound) {
+                announcedAt = lastCompletedRound.completedAt;
+              }
+            }
 
-if (!announcedAt) continue;
+            if (!announcedAt) continue;
 
-const announcedTime = new Date(announcedAt).getTime();
-const diffMs = Date.now() - announcedTime;
+            const announcedTime = new Date(announcedAt).getTime();
+            const diffMs = Date.now() - announcedTime;
 
-if (diffMs < 0 || diffMs > 15 * 60 * 1000) continue;
+            // Only show banner for 45 minutes after result
+            if (diffMs < 0 || diffMs > 45 * 60 * 1000) continue;
 
-let resultStatus = 'NOT_QUALIFIED';
-let queuePosition = 0;
+            let resultStatus = 'NOT_QUALIFIED';
+            let queuePosition = 0;
 
-if (userHistory.isWinner) {
-const currentEligibleRank = auction.currentEligibleRank || 1;
-if (userHistory.finalRank === currentEligibleRank) {
-resultStatus = 'WIN';
-} else if (userHistory.finalRank > currentEligibleRank) {
-resultStatus = 'WAITING';
-queuePosition = userHistory.finalRank - currentEligibleRank;
-}
-} else if (auction.Status === 'LIVE') {
-const participant = auction.participants?.find(p => p.playerId === userId);
-if (participant && !participant.isEliminated) {
-resultStatus = 'QUALIFIED';
-}
-}
+            if (userHistory.isWinner) {
+              const currentEligibleRank = auction.currentEligibleRank || 1;
+              if (userHistory.finalRank === currentEligibleRank) {
+                resultStatus = 'WIN';
+              } else if (userHistory.finalRank > currentEligibleRank) {
+                resultStatus = 'WAITING';
+                queuePosition = userHistory.finalRank - currentEligibleRank;
+              }
+            } else if (auction.Status === 'LIVE') {
+              const participant = auction.participants?.find(p => p.playerId === userId);
+              if (participant && !participant.isEliminated) {
+                resultStatus = 'QUALIFIED';
+              }
+            }
 
-if (resultStatus === 'WIN' || resultStatus === 'WAITING') {
-bannerData = {
-roundId: auction.hourlyAuctionId,
-auctionId: auction.hourlyAuctionCode,
-resultAnnouncedAt: announcedAt.toISOString(),
-userParticipated: true,
-resultStatus: resultStatus,
-queuePosition: queuePosition
-};
-break; 
-}
+            // Prioritize WIN/WAITING statuses
+            if (resultStatus === 'WIN' || resultStatus === 'WAITING') {
+              bannerData = {
+                roundId: auction.hourlyAuctionId,
+                auctionId: auction.hourlyAuctionCode,
+                auctionName: auction.auctionName,
+                resultAnnouncedAt: announcedAt,
+                userParticipated: true,
+                resultStatus: resultStatus,
+                queuePosition: queuePosition
+              };
+              break; 
+            }
 
-if (!bannerData || (bannerData.resultStatus === 'QUALIFIED' && resultStatus === 'NOT_QUALIFIED')) {
-bannerData = {
-roundId: auction.hourlyAuctionId,
-auctionId: auction.hourlyAuctionCode,
-resultAnnouncedAt: announcedAt.toISOString(),
-userParticipated: true,
-resultStatus: resultStatus,
-queuePosition: queuePosition
-};
-}
-}
-}
-}
+            // Fallback to QUALIFIED/NOT_QUALIFIED if nothing else found
+            if (!bannerData) {
+              bannerData = {
+                roundId: auction.hourlyAuctionId,
+                auctionId: auction.hourlyAuctionCode,
+                auctionName: auction.auctionName,
+                resultAnnouncedAt: announcedAt,
+                userParticipated: true,
+                resultStatus: resultStatus,
+                queuePosition: queuePosition
+              };
+            }
+          }
+        }
+      }
+    }
 
-if (!liveAuction && !bannerData) {
-return res.status(404).json({
-success: false,
-message: 'No live hourly auction found',
-data: null,
-});
-}
+    if (!liveAuction && !bannerData) {
+      return res.status(404).json({
+        success: false,
+        message: 'No live hourly auction found',
+        data: null,
+      });
+    }
 
-return res.status(200).json({
-success: true,
-data: liveAuction,
-bannerData: bannerData
-});
-} catch (error) {
-console.error('Error in getLiveHourlyAuction:', error);
-return res.status(500).json({
-success: false,
-message: 'Internal server error',
-error: error.message,
-});
-}
+    return res.status(200).json({
+      success: true,
+      data: liveAuction,
+      bannerData: bannerData
+    });
+  } catch (error) {
+    console.error('Error in getLiveHourlyAuction:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
 };
 
 /**

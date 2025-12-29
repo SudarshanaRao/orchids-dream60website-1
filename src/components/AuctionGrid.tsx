@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Gift, Lock, Loader2 } from 'lucide-react';
+import { Gift, Lock, Loader2, Sparkles } from 'lucide-react';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';
 
@@ -200,17 +200,25 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             {( (auction.userHasPaidEntry && !isUnlocking) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
                 {(typeof item === 'number' || isUnlocking) ? (
-                  <div className="bg-white/40 border-2 border-dashed border-purple-400/50 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] animate-pulse">
-                    <div className="w-12 h-12 bg-purple-100/50 rounded-xl flex items-center justify-center border border-purple-200/50">
-                      <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+                  <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
+                    {/* Active Loader Animation */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-50/10 via-white/5 to-purple-50/10 animate-pulse" />
+                    
+                    <div className="relative z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md border border-purple-100">
+                      <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
                     </div>
-                    <div className="space-y-2 text-center">
-                      <div className="h-4 w-24 bg-purple-200/30 rounded-full mx-auto" />
-                      <div className="h-8 w-32 bg-purple-200/30 rounded-lg mx-auto" />
+                    
+                    <div className="relative z-10 space-y-2 text-center">
+                      <div className="h-4 w-24 bg-purple-100/50 rounded-full mx-auto" />
+                      <div className="h-8 w-32 bg-purple-100/50 rounded-lg mx-auto" />
                     </div>
-                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">
-                      Synchronizing...
-                    </p>
+                    
+                    <div className="relative z-10 px-4 py-1.5 bg-purple-50/80 rounded-full border border-purple-100">
+                      <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 animate-bounce" />
+                        Synchronizing...
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <AuctionBox

@@ -1764,8 +1764,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           setCurrentAuction(prev => ({
             ...prev,
             userHasPaidEntry: true,
-            // Clear boxes to force AuctionGrid into its loading/isUnlocking state properly
-            boxes: prev.boxes.map(b => b.type === 'entry' ? { ...b, hasPaid: true } : b)
+            // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
+            boxes: prev.boxes.map(b => 
+              b.type === 'entry' 
+                ? { ...b, hasPaid: true } 
+                : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
+            )
           }));
   
           // ✅ NEW: Sticky optimistic payment state update
