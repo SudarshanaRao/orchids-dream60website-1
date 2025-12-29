@@ -353,36 +353,27 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // ✅ Fetch server time ONCE on mount, then use local offset
-  useEffect(() => {
-    const initializeServerTime = async () => {
-      const time = await fetchServerTime();
-      if (time) {
-        setServerTime(time);
-      }
-    };
+    // ✅ Fetch server time ONCE on mount, then use local offset
+    useEffect(() => {
+      const initializeServerTime = async () => {
+        const time = await fetchServerTime();
+        if (time) {
+          setServerTime(time);
+        }
+      };
 
-    // Initial fetch to calculate offset
-    initializeServerTime();
+      // Initial fetch to calculate offset
+      initializeServerTime();
 
-    // Update local state every second using calculated offset (no API call)
-    const interval = setInterval(() => {
-      setServerTime(getCurrentServerTime());
-    }, 1000);
+      // Update local state every second using calculated offset (no API call)
+      const interval = setInterval(() => {
+        setServerTime(getCurrentServerTime());
+      }, 1000);
 
-    // Optionally refresh server time every 30 seconds to correct drift
-    const syncInterval = setInterval(async () => {
-      const time = await fetchServerTime();
-      if (time) {
-        setServerTime(time);
-      }
-    }, 30000); // 30 seconds
-
-    return () => {
-      clearInterval(interval);
-      clearInterval(syncInterval);
-    };
-  }, []);
+      return () => {
+        clearInterval(interval);
+      };
+    }, []);
 
   const [currentUser, setCurrentUser] = useState<{
     id: string;
@@ -1504,13 +1495,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     };
 
     fetchCurrentAuctionId();
-    
-    // ✅ CRITICAL FIX: Poll every 5 seconds when round is active, 10 seconds otherwise
-    // Use a stable check that doesn't depend on boxes array reference
-    const pollInterval = 3000; // ✅ Reduced to 3s for seamless refreshing without disturbances
-    
-    const interval = setInterval(fetchCurrentAuctionId, pollInterval);
-    return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
   const handleNavigate = (page: string, data?: any) => {

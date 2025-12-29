@@ -138,8 +138,6 @@ export function WinnersAnnouncedBanner({
     };
 
     fetchRecentWinners();
-    const interval = setInterval(fetchRecentWinners, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const shouldShowBanner = () => {

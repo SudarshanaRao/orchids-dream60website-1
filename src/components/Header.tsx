@@ -102,8 +102,6 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
       };
 
       fetchUserStats();
-      const interval = setInterval(fetchUserStats, 60000);
-      return () => clearInterval(interval);
     }, [user?.id, user?.totalWins, user?.totalLosses]);
 
     useEffect(() => {
@@ -149,11 +147,8 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
         }
       };
 
-      checkNewHistory();
-      // Poll every 30 seconds
-      const interval = setInterval(checkNewHistory, 30000);
-      return () => clearInterval(interval);
-    }, [user?.id]);
+        checkNewHistory();
+      }, [user?.id]);
 
     // Mark history as viewed when navigating to history page
     const handleNavigateToHistory = () => {
