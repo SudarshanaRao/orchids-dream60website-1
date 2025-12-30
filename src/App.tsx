@@ -375,7 +375,37 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     };
   }, []);
 
-  const [currentUser, setCurrentUser] = useState<{
+    // ✅ NEW: Hourly auto-refresh logic (12:00, 1:00, 2:00, etc.)
+    useEffect(() => {
+      let refreshTimeout: ReturnType<typeof setTimeout>;
+
+      const scheduleHourlyRefresh = () => {
+        const now = Date.now() + serverTimeOffset;
+        const date = new Date(now);
+        
+        // Calculate milliseconds until the next full hour
+        const minutes = date.getUTCMinutes();
+        const seconds = date.getUTCSeconds();
+        const milliseconds = date.getUTCMilliseconds();
+        
+        const msUntilNextHour = ((60 - minutes) * 60 * 1000) - (seconds * 1000) - milliseconds;
+        
+        console.log(`⏰ Hourly refresh scheduled in ${Math.round(msUntilNextHour / 1000 / 60)} minutes`);
+
+        refreshTimeout = setTimeout(() => {
+          console.log('⏰ Hourly mark reached - Reloading page for consistency');
+          window.location.reload();
+        }, msUntilNextHour);
+      };
+
+      scheduleHourlyRefresh();
+
+      return () => {
+        if (refreshTimeout) clearTimeout(refreshTimeout);
+      };
+    }, []);
+
+    const [currentUser, setCurrentUser] = useState<{
     id: string;
     username: string;
     mobile?: string;

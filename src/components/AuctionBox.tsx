@@ -277,20 +277,21 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
           return 'upcoming';
         }
 
-        // ✅ 1. Show normal "Completed" status for rounds that were actually played/finished
+        // ✅ 1. If winners were announced (auction over), show winners-announced status for boxes that were never finished
+        // This ensures Round 2, 3 show "Winners Announced" if auction ended in Round 1
+        if (winnersAnnounced && (box.status !== 'completed' || !box.highestBidFromAPI || box.highestBidFromAPI === 0)) {
+          return 'winners-announced';
+        }
+
+        // ✅ 2. Show normal "Completed" status for rounds that were actually played/finished
         // This ensures previous rounds still show their Leaderboard buttons even if auction is over
         if (box.status === 'completed') return 'completed';
         
-        // ✅ 2. If winners were announced (auction over), show winners-announced status for remaining round boxes
-        if (winnersAnnounced) {
-          return 'winners-announced';
+        // ✅ 3. Only show "not-qualified" if explicitly false AND user actually participated
+        // This prevents showing "Eliminated" to users who never joined the auction
+        if (userHasPaidEntry && box.roundNumber && box.roundNumber > 1 && isUserQualified === false) {
+          return 'not-qualified';
         }
-      
-      // ✅ 3. Only show "not-qualified" if explicitly false (failed qualification)
-      // This now includes global elimination logic from AuctionGrid
-      if (box.roundNumber && box.roundNumber > 1 && isUserQualified === false) {
-        return 'not-qualified';
-      }
     
     // If user has paid, show actual status based on time
     if (!box.isOpen) return 'locked';
@@ -301,7 +302,8 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     const status = getBoxStatus();
 
     // ✅ Reusable duration display - Show for all rounds if winners are not yet announced
-    const durationDisplay = box.opensAt && box.closesAt && 
+    // Hide when timer is active to avoid "two duration containers"
+    const durationDisplay = box.opensAt && box.closesAt && !timeUntilOpen &&
       (status === 'completed' || (!winnersAnnounced && status !== 'winners-announced' && status !== 'not-qualified')) && (
       <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
         <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
