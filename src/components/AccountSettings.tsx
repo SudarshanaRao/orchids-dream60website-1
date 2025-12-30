@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock, XCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -59,7 +59,8 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       totalLosses: 0,
       totalClaimed: 0,
       totalSpent: 0,
-      totalWon: 0
+      totalWon: 0,
+      netGain: 0
     });
 
     const [showSuccess, setShowSuccess] = useState(false);
@@ -138,15 +139,16 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               setWinNotifications(userData.preferences.winNotifications ?? false);
             }
 
-            // Update stats
-            const userStats = userData.stats || {};
-            setStats({
-              totalWins: userStats.totalWins ?? 0,
-              totalLosses: userStats.totalLosses ?? 0,
-              totalClaimed: userStats.totalClaimed ?? 0,
-              totalSpent: userStats.totalSpent ?? 0,
-              totalWon: userStats.totalWon ?? 0
-            });
+              // Update stats
+              const userStats = userData.stats || {};
+              setStats({
+                totalWins: userStats.totalWins ?? 0,
+                totalLosses: userStats.totalLosses ?? 0,
+                totalClaimed: userStats.totalClaimed ?? 0,
+                totalSpent: userStats.totalSpent ?? 0,
+                totalWon: userStats.totalWon ?? 0,
+                netGain: userStats.netGain ?? 0
+              });
           } else {
           throw new Error('Invalid response format');
         }
@@ -672,16 +674,24 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 </div>
               </div>
               
-              <div className="px-4 sm:px-6 pb-6 grid grid-cols-2 gap-4">
-                <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
-                  <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Total Spent</div>
-                  <div className="text-lg font-bold text-purple-900">₹{stats.totalSpent.toLocaleString()}</div>
+                <div className="px-4 sm:px-6 pb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
+                    <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Total Spent</div>
+                    <div className="text-lg font-bold text-purple-900">₹{stats.totalSpent.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
+                    <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Prizes Worth</div>
+                    <div className="text-lg font-bold text-purple-900">₹{stats.totalWon.toLocaleString()}</div>
+                  </div>
+                  <div className={`bg-white/40 p-3 rounded-xl border ${stats.netGain >= 0 ? 'border-green-100' : 'border-red-100'}`}>
+                    <div className={`text-[10px] font-bold ${stats.netGain >= 0 ? 'text-green-500' : 'text-red-500'} uppercase mb-1`}>
+                      {stats.netGain >= 0 ? 'Net Profit' : 'Net Loss'}
+                    </div>
+                    <div className={`text-lg font-bold ${stats.netGain >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      ₹{Math.abs(stats.netGain).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
-                  <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Prizes Worth</div>
-                  <div className="text-lg font-bold text-purple-900">₹{stats.totalWon.toLocaleString()}</div>
-                </div>
-              </div>
             </motion.div>
 
           {/* Notifications Section */}

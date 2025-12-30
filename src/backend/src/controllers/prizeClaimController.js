@@ -2,6 +2,7 @@
 const AuctionHistory = require('../models/AuctionHistory');
 const HourlyAuction = require('../models/HourlyAuction');
 const DailyAuction = require('../models/DailyAuction');
+const { syncUserStats } = require('./userController');
 
 /**
  * Submit prize claim with UPI ID and payment details
@@ -75,6 +76,9 @@ const submitPrizeClaim = async (req, res) => {
       await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
       await AuctionHistory.syncClaimStatus(hourlyAuctionId);
       
+      // Trigger sync for current user (they lost the chance)
+      await syncUserStats(userId);
+      
       return res.status(400).json({
         success: false,
         message: 'Prize claim deadline has expired. Next winner can now claim.',
@@ -127,12 +131,16 @@ const submitPrizeClaim = async (req, res) => {
       userId: { $ne: userId }
     });
     
-    // Log detailed info for each other winner
+    // Log detailed info for each other winner and sync their stats
     for (const winner of otherWinners) {
       console.log(`📢 [PRIZE_CLAIM] Notified ${winner.username} (Rank ${winner.finalRank}): Prize claimed by ${updatedEntry.username} (Rank ${updatedEntry.finalRank})`);
+      await syncUserStats(winner.userId);
     }
     
     await AuctionHistory.syncClaimStatus(hourlyAuctionId);
+    
+    // Sync stats for the actual claimer
+    await syncUserStats(userId);
     
     console.log(`✅ [PRIZE_CLAIM] Prize claimed successfully by ${updatedEntry.username} (${getRankSuffix(updatedEntry.finalRank)} place)`);
     console.log(`     💰 Final round bid amount: ₹${updatedEntry.lastRoundBidAmount || 0}`);
@@ -200,6 +208,9 @@ const cancelPrizeClaim = async (req, res) => {
     await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'CANCELLED' });
     await AuctionHistory.syncClaimStatus(hourlyAuctionId);
 
+    // Sync stats for the user who cancelled
+    await syncUserStats(userId);
+
     return res.status(200).json({
       success: true,
       message: 'Prize claim cancelled. Next winner can now claim.',
@@ -254,6 +265,9 @@ const getPrizeClaimStatus = async (req, res) => {
       // ✅ IMMEDIATE: Advance queue to next winner
       await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
       await AuctionHistory.syncClaimStatus(hourlyAuctionId);
+
+      // Sync stats for the user whose claim expired
+      await syncUserStats(userId);
     }
     
     return res.status(200).json({
