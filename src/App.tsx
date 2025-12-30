@@ -406,26 +406,66 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }, []);
 
     const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    username: string;
-    mobile?: string;
-    email?: string;
-    isDeleted: boolean;
-    totalAuctions: number;
-    totalWins: number;
-    totalAmountSpent: number;
-    totalAmountWon: number;
-    userType: string;
-    userCode: string;
-    preferences: {
-      emailNotifications: boolean;
-      smsNotifications: boolean;
-      bidAlerts: boolean;
-      winNotifications: boolean;
-    };
-    createdAt: string;
-    updatedAt: string;
-  } | null>(null);
+      id: string;
+      username: string;
+      mobile?: string;
+      email?: string;
+      isDeleted: boolean;
+      totalAuctions: number;
+      totalWins: number;
+      totalAmountSpent: number;
+      totalAmountWon: number;
+      userType: string;
+      userCode: string;
+      preferences: {
+        emailNotifications: boolean;
+        smsNotifications: boolean;
+        bidAlerts: boolean;
+        winNotifications: boolean;
+      };
+      createdAt: string;
+      updatedAt: string;
+    } | null>(() => {
+      // ✅ Restore session immediately from localStorage for instant UI on refresh
+      try {
+        const userId = localStorage.getItem("user_id");
+        const username = localStorage.getItem("username");
+        const email = localStorage.getItem("email");
+
+        if (!userId || !username) return null;
+
+        const storedWins = parseInt(localStorage.getItem("totalWins") || "0", 10);
+        const storedLosses = parseInt(localStorage.getItem("totalLosses") || "0", 10);
+        const storedSpent = parseFloat(localStorage.getItem("totalAmountSpent") || "0");
+        const storedWon = parseFloat(localStorage.getItem("totalAmountWon") || "0");
+
+        console.log('✅ Instant session restoration for:', username);
+        
+        return {
+          id: userId,
+          username: username,
+          email: email || '',
+          isDeleted: false,
+          totalAuctions: storedWins + storedLosses,
+          totalWins: storedWins,
+          totalAmountSpent: storedSpent,
+          totalAmountWon: storedWon,
+          userType: 'PLAYER',
+          userCode: '',
+          preferences: {
+            emailNotifications: true,
+            smsNotifications: true,
+            bidAlerts: true,
+            winNotifications: true,
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      } catch (e) {
+        console.error('Error restoring session in initializer:', e);
+        return null;
+      }
+    });
 
   // ✅ Helper function to map API user data to local state
   const mapUserData = (userData: any) => {
@@ -562,9 +602,32 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   // Generate random entry fees between ₹1000-₹3500
   const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
 
-  // ✅ Only initialize currentAuction after server time is loaded
-  const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
-    const entryFee1 = generateRandomEntryFee();
+    // ✅ Only initialize currentAuction after server time is loaded
+    const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
+      // ✅ Try to restore from localStorage for instant display on refresh
+      const cached = localStorage.getItem('cached_current_auction');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          // Convert date strings back to Date objects
+          if (parsed.startTime) parsed.startTime = new Date(parsed.startTime);
+          if (parsed.endTime) parsed.endTime = new Date(parsed.endTime);
+          if (Array.isArray(parsed.boxes)) {
+            parsed.boxes = parsed.boxes.map((box: any) => ({
+              ...box,
+              opensAt: box.opensAt ? new Date(box.opensAt) : undefined,
+              closesAt: box.closesAt ? new Date(box.closesAt) : undefined,
+            }));
+          }
+          console.log('📦 Restored auction state from cache:', parsed.id);
+          return parsed;
+        } catch (e) {
+          console.error('Error parsing cached auction:', e);
+        }
+      }
+
+      const entryFee1 = generateRandomEntryFee();
+
     const entryFee2 = generateRandomEntryFee();
     const auctionHour = serverTime?.hour || 9; // Default to 9 UTC (14:30 IST)
     const today = serverTime ? new Date(serverTime.timestamp) : new Date();
@@ -742,7 +805,19 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }
   }, [serverTime]); // Run when server time first loads
 
-  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
+    // ✅ NEW: Persist currentAuction state to localStorage for faster restoration on refresh
+    useEffect(() => {
+      if (currentAuction && currentAuction.id !== 'auction-loading' && currentAuction.title !== 'Loading...') {
+        try {
+          localStorage.setItem('cached_current_auction', JSON.stringify(currentAuction));
+        } catch (e) {
+          console.error('Error saving auction state:', e);
+        }
+      }
+    }, [currentAuction]);
+
+    const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
+
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   // ✅ NEW: Track previous round to detect round changes
   const [previousRound, setPreviousRound] = useState<number>(1);
