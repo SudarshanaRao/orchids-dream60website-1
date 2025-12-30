@@ -1515,71 +1515,107 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     </motion.div>
                 </div>
 
-                {/* Financial Stats - Side by Side */}
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Total Claimed */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className="relative overflow-hidden"
-                  >
-                    <div className="bg-gradient-to-br from-emerald-100/80 via-emerald-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-emerald-200/60 shadow-lg relative overflow-hidden">
-                      <div className="flex items-center gap-1 mb-1 relative z-10">
-                        <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
-                          <CheckCircle className="w-3 h-3 text-white" />
+                  {/* Financial Stats - 2x2 Grid */}
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    {/* Total Claimed */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4, duration: 0.5 }}
+                      className="relative overflow-hidden"
+                    >
+                      <div className="bg-gradient-to-br from-emerald-100/80 via-emerald-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-emerald-200/60 shadow-lg relative overflow-hidden h-full">
+                        <div className="flex items-center gap-1.5 mb-1 relative z-10">
+                          <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
+                            <CheckCircle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <div className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Claimed</div>
                         </div>
-                        <div className="text-[9px] text-emerald-700 font-semibold">Claimed</div>
+                        <div className="flex items-center justify-center py-1">
+                          <span className="text-xl font-black text-emerald-900">{claimedAuctions.length}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-center">
-                        <span className="text-sm font-bold text-emerald-900">{claimedAuctions.length}</span>
-                      </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
 
-                  {/* Total Invested */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.45, duration: 0.5 }}
-                    className="relative overflow-hidden"
-                  >
-                    <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-purple-200/60 shadow-lg relative overflow-hidden">
-                            
-                      <div className="flex items-center gap-1 mb-1 relative z-10">
-                        <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-md">
-                          <TrendingDown className="w-3 h-3 text-white" />
+                    {/* Total Invested */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.45, duration: 0.5 }}
+                      className="relative overflow-hidden"
+                    >
+                      <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-purple-200/60 shadow-lg relative overflow-hidden h-full">
+                              
+                        <div className="flex items-center gap-1.5 mb-1 relative z-10">
+                          <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-md">
+                            <TrendingDown className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <div className="text-[10px] text-purple-700 font-bold uppercase tracking-tight">Spent</div>
                         </div>
-                        <div className="text-[9px] text-purple-700 font-semibold">Spent</div>
+                        <div className="flex items-center justify-center gap-0.5 py-1">
+                          <IndianRupee className="w-4 h-4 text-purple-900 font-black" />
+                          <span className="text-xl font-black text-purple-900 truncate">{totalSpent.toLocaleString('en-IN')}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <IndianRupee className="w-3 h-3 text-purple-900 font-bold" />
-                        <span className="text-sm font-bold text-purple-900 truncate">{totalSpent.toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  </motion.div>
+                    </motion.div>
 
-                  {/* Total Won */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, duration: 0.5 }}
-                    className="relative overflow-hidden"
-                  >
-                    <div className="bg-gradient-to-br from-violet-100/80 via-fuchsia-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-violet-200/60 shadow-lg">
-                      <div className="flex items-center gap-1 mb-1">
-                        <div className="w-5 h-5 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-md">
-                          <TrendingUp className="w-3 h-3 text-white" />
+                    {/* Total Won */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5, duration: 0.5 }}
+                      className="relative overflow-hidden"
+                    >
+                      <div className="bg-gradient-to-br from-violet-100/80 via-fuchsia-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2.5 border-2 border-violet-200/60 shadow-lg h-full">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className="w-6 h-6 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-md">
+                            <TrendingUp className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <div className="text-[10px] text-violet-700 font-bold uppercase tracking-tight">Won</div>
                         </div>
-                        <div className="text-[9px] text-violet-700 font-semibold">Won</div>
+                        <div className="flex items-center justify-center gap-0.5 py-1">
+                          <IndianRupee className="w-4 h-4 text-violet-900 font-black" />
+                          <span className="text-xl font-black text-violet-900 truncate">{totalWon.toLocaleString('en-IN')}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-center gap-0.5">
-                        <IndianRupee className="w-3 h-3 text-violet-900 font-bold" />
-                        <span className="text-sm font-bold text-violet-900 truncate">{totalWon.toLocaleString('en-IN')}</span>
+                    </motion.div>
+
+                    {/* Net Profit/Loss */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.55, duration: 0.5 }}
+                      className="relative overflow-hidden"
+                    >
+                      <div className={`bg-gradient-to-br backdrop-blur-xl rounded-2xl p-2.5 border-2 shadow-lg h-full ${
+                        netGain >= 0 
+                          ? 'from-blue-100/80 via-cyan-50/60 to-white/40 border-blue-200/60' 
+                          : 'from-orange-100/80 via-red-50/60 to-white/40 border-orange-200/60'
+                      }`}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shadow-md ${
+                            netGain >= 0 ? 'bg-gradient-to-br from-blue-500 to-cyan-600' : 'bg-gradient-to-br from-orange-500 to-red-600'
+                          }`}>
+                            <Sparkles className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <div className={`text-[10px] font-bold uppercase tracking-tight ${
+                            netGain >= 0 ? 'text-blue-700' : 'text-orange-700'
+                          }`}>
+                            {netGain >= 0 ? 'Profit' : 'Loss'}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-0.5 py-1">
+                          <span className={`text-base font-black ${netGain >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
+                            {netGain >= 0 ? '+' : '-'}
+                          </span>
+                          <IndianRupee className={`w-4 h-4 font-black ${netGain >= 0 ? 'text-blue-900' : 'text-orange-900'}`} />
+                          <span className={`text-xl font-black truncate ${netGain >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
+                            {Math.abs(netGain).toLocaleString('en-IN')}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </div>
+                    </motion.div>
+                  </div>
             </CardContent>
           </Card>
 
