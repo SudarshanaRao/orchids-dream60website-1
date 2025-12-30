@@ -124,10 +124,10 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
           </linearGradient>
         </defs>
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
-        <span className="text-[10px] sm:text-xs text-purple-600">Win Rate</span>
-      </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
+          <span className="text-[10px] sm:text-xs text-purple-600 font-semibold uppercase tracking-wider">Success</span>
+        </div>
     </div>
   );
 };
@@ -1085,10 +1085,17 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
     netGain: 0,
   });
   
-  // ✅ Computed values from stats and history
-  const wonAuctions = history.filter(a => a.status === 'won');
-  const lostAuctions = history.filter(a => a.status === 'lost');
-  const { winRate, totalSpent, totalWon, netGain } = stats;
+    // ✅ Computed values from stats and history
+    const wonAuctions = history.filter(a => a.status === 'won');
+    const lostAuctions = history.filter(a => a.status === 'lost');
+    const claimedAuctions = history.filter(a => a.prizeClaimStatus === 'CLAIMED');
+    
+    // ✅ Calculate success rate based on claims as requested
+    const successRate = history.length > 0 
+      ? Math.round((claimedAuctions.length / history.length) * 100) 
+      : 0;
+      
+    const { totalSpent, totalWon, netGain } = stats;
   
     const formatDateTime = (value?: string | number | Date) => {
       if (!value) return '--';
@@ -1494,65 +1501,85 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             <CardContent className="p-4 relative z-10">
               {/* Circular Win Rate - Centered */}
               <div className="flex justify-center mb-4">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ 
-                    delay: 0.3,
-                    type: "spring",
-                    stiffness: 200,
-                    damping: 15
-                  }}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ 
+                      delay: 0.3,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15
+                    }}
+                    >
+                      <CircularProgress percentage={successRate} size={100} strokeWidth={8} id="win-rate-mobile" />
+                    </motion.div>
+                </div>
+
+                {/* Financial Stats - Side by Side */}
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Total Claimed */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="relative overflow-hidden"
                   >
-                    <CircularProgress percentage={winRate} size={100} strokeWidth={8} id="win-rate-mobile" />
+                    <div className="bg-gradient-to-br from-emerald-100/80 via-emerald-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-emerald-200/60 shadow-lg relative overflow-hidden">
+                      <div className="flex items-center gap-1 mb-1 relative z-10">
+                        <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-lg flex items-center justify-center shadow-md">
+                          <CheckCircle className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="text-[9px] text-emerald-700 font-semibold">Claimed</div>
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <span className="text-sm font-bold text-emerald-900">{claimedAuctions.length}</span>
+                      </div>
+                    </div>
                   </motion.div>
-              </div>
 
-              {/* Financial Stats - Side by Side */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Total Invested */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                  className="relative overflow-hidden"
-                >
-                  <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-3 border-2 border-purple-200/60 shadow-lg relative overflow-hidden">
-                          
-                    <div className="flex items-center gap-1.5 mb-2 relative z-10">
-                      <div className="w-7 h-7 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center shadow-md">
-                        <TrendingDown className="w-4 h-4 text-white" />
+                  {/* Total Invested */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.45, duration: 0.5 }}
+                    className="relative overflow-hidden"
+                  >
+                    <div className="bg-gradient-to-br from-purple-100/80 via-purple-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-purple-200/60 shadow-lg relative overflow-hidden">
+                            
+                      <div className="flex items-center gap-1 mb-1 relative z-10">
+                        <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-md">
+                          <TrendingDown className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="text-[9px] text-purple-700 font-semibold">Spent</div>
                       </div>
-                      <div className="text-[10px] text-purple-700 font-semibold">Invested</div>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <IndianRupee className="w-3 h-3 text-purple-900 font-bold" />
+                        <span className="text-sm font-bold text-purple-900 truncate">{totalSpent.toLocaleString('en-IN')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <IndianRupee className="w-4 h-4 text-purple-900 font-bold" />
-                      <span className="text-lg font-bold text-purple-900 truncate">{totalSpent.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
 
-                {/* Total Won */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                  className="relative overflow-hidden"
-                >
-                  <div className="bg-gradient-to-br from-violet-100/80 via-fuchsia-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-3 border-2 border-violet-200/60 shadow-lg">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="w-7 h-7 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md">
-                        <TrendingUp className="w-4 h-4 text-white" />
+                  {/* Total Won */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="relative overflow-hidden"
+                  >
+                    <div className="bg-gradient-to-br from-violet-100/80 via-fuchsia-50/60 to-white/40 backdrop-blur-xl rounded-2xl p-2 border-2 border-violet-200/60 shadow-lg">
+                      <div className="flex items-center gap-1 mb-1">
+                        <div className="w-5 h-5 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-md">
+                          <TrendingUp className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="text-[9px] text-violet-700 font-semibold">Won</div>
                       </div>
-                      <div className="text-[10px] text-violet-700 font-semibold">Won</div>
+                      <div className="flex items-center justify-center gap-0.5">
+                        <IndianRupee className="w-3 h-3 text-violet-900 font-bold" />
+                        <span className="text-sm font-bold text-violet-900 truncate">{totalWon.toLocaleString('en-IN')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <IndianRupee className="w-4 h-4 text-violet-900 font-bold" />
-                      <span className="text-lg font-bold text-violet-900 truncate">{totalWon.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+                  </motion.div>
+                </div>
             </CardContent>
           </Card>
 
@@ -1599,7 +1626,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                     }}
                       className="mb-6"
                     >
-                      <CircularProgress percentage={winRate} size={140} strokeWidth={10} id="win-rate-desktop" />
+                      <CircularProgress percentage={successRate} size={140} strokeWidth={10} id="win-rate-desktop" />
                     </motion.div>
                   
                   <div className="text-center space-y-2">
@@ -1607,10 +1634,14 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                       <Award className="w-5 h-5 text-purple-600" />
                       <h3 className="text-lg font-bold text-purple-900">Success Rate</h3>
                     </div>
-                    <p className="text-sm text-purple-600">Your winning percentage</p>
+                    <p className="text-sm text-purple-600">Calculated based on prizes claimed</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 w-full mt-6 pt-6 border-t border-purple-200/50">
+                  <div className="grid grid-cols-3 gap-3 w-full mt-6 pt-6 border-t border-purple-200/50">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-emerald-600">{claimedAuctions.length}</div>
+                      <div className="text-xs text-purple-600 mt-1">Claimed</div>
+                    </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-violet-900">{wonAuctions.length}</div>
                       <div className="text-xs text-purple-600 mt-1">Wins</div>
