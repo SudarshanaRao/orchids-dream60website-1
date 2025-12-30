@@ -149,6 +149,14 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     totalParticipants: { type: Number, default: 0 },
     currentRound: { type: Number, default: 1, min: 1 },
     totalBids: { type: Number, default: 0 },
+
+    // ✅ NEW: Top-level prize claim info for easy access (synced from HourlyAuction)
+    prizeClaimedBy: { type: String, default: null },
+    prizeClaimStatus: {
+      type: String,
+      enum: ['PENDING', 'CLAIMED', 'EXPIRED', 'CANCELLED'],
+      default: 'PENDING',
+    },
   },
   { _id: false }
 );

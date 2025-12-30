@@ -409,9 +409,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       isDeleted: userData.isDeleted || false,
       // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
       totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
-      totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
-      totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
-      totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
+        totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
+        totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
+        totalClaimed: userData.stats?.totalClaimed ?? userData.totalClaimed ?? 0,
+        totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
       totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
       userType: userData.userType || 'PLAYER',
       userCode: userData.userCode || '',

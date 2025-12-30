@@ -4,21 +4,22 @@ import { Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowL
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
-interface HeaderProps {
-  user?: {
-    id?: string;
-    username: string;
-    totalWins: number;
-    totalLosses: number;
-    totalAuctions: number;
-  } | null;
-  onNavigate?: (page: string) => void;
-  onLogin?: () => void;
-  onLogout?: () => void;
-  onStartTutorial?: () => void;
-  mobileMenuOpen?: boolean;
-  setMobileMenuOpen?: (open: boolean) => void;
-}
+    interface HeaderProps {
+      user?: {
+        id?: string;
+        username: string;
+        totalWins: number;
+        totalLosses: number;
+        totalClaimed?: number;
+        totalAuctions: number;
+      } | null;
+      onNavigate?: (page: string) => void;
+      onLogin?: () => void;
+      onLogout?: () => void;
+      onStartTutorial?: () => void;
+      mobileMenuOpen?: boolean;
+      setMobileMenuOpen?: (open: boolean) => void;
+    }
 
 export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, mobileMenuOpen: externalMobileMenuOpen, setMobileMenuOpen: externalSetMobileMenuOpen }: HeaderProps) {
   const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
@@ -48,72 +49,90 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
       return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
-    const handleInstallClick = async () => {
-      if (!deferredPrompt) return;
-
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        setShowInstallButton(false);
-      }
-      
-      setDeferredPrompt(null);
-    };
-
-      const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number }>(() => ({
-      totalWins: user?.totalWins ?? 0,
-      totalLosses: user?.totalLosses ?? 0,
-    }));
-    const [showStatsDot, setShowStatsDot] = useState(false);
-
-    // Fetch user stats from backend API
-    useEffect(() => {
-      const fetchUserStats = async () => {
-        const userId = user?.id || localStorage.getItem('user_id');
-        if (!userId) return;
-
-        try {
-          const queryString = buildQueryString({ userId });
-          const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
-          if (!response.ok) return;
-
-          const result = await response.json();
-          const stats = result.stats || result.data?.stats || {};
-
-          const newWins = stats.totalWins ?? user?.totalWins ?? 0;
-          const newLosses = stats.totalLosses ?? user?.totalLosses ?? 0;
-
-          // Check if stats changed from what we last SAW
-          const lastSeenStatsStr = localStorage.getItem(`last_seen_stats_${userId}`);
-          const lastSeenStats = lastSeenStatsStr ? JSON.parse(lastSeenStatsStr) : { totalWins: newWins, totalLosses: newLosses };
-          
-          if (newWins !== lastSeenStats.totalWins || newLosses !== lastSeenStats.totalLosses) {
-            setShowStatsDot(true);
+      const handleInstallClick = async () => {
+        if (!deferredPrompt) {
+          // Check if on iOS
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+          if (isIOS) {
+            alert('To install this app on your iPhone/iPad: Tap the "Share" button in Safari and then "Add to Home Screen".');
+          } else {
+            // Check if already in standalone mode
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+              alert('App is already installed!');
+            } else {
+              alert('To install: Open your browser menu (usually three dots or an arrow) and select "Install" or "Add to Home Screen".');
+            }
           }
-
-          setUserStats({
-            totalWins: newWins,
-            totalLosses: newLosses,
-          });
-        } catch (error) {
-          console.error('Error fetching user stats:', error);
+          return;
         }
+  
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          setShowInstallButton(false);
+        }
+        
+        setDeferredPrompt(null);
       };
 
-      fetchUserStats();
-      const interval = setInterval(fetchUserStats, 60000);
-      return () => clearInterval(interval);
-    }, [user?.id, user?.totalWins, user?.totalLosses]);
-
-    useEffect(() => {
-      if (user?.totalWins !== undefined || user?.totalLosses !== undefined) {
-        setUserStats({
-          totalWins: user?.totalWins ?? 0,
-          totalLosses: user?.totalLosses ?? 0,
-        });
-      }
-    }, [user?.totalWins, user?.totalLosses]);
+      const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number; totalClaimed: number }>(() => ({
+        totalWins: user?.totalWins ?? 0,
+        totalLosses: user?.totalLosses ?? 0,
+        totalClaimed: user?.totalClaimed ?? 0,
+      }));
+      const [showStatsDot, setShowStatsDot] = useState(false);
+  
+      // Fetch user stats from backend API
+      useEffect(() => {
+        const fetchUserStats = async () => {
+          const userId = user?.id || localStorage.getItem('user_id');
+          if (!userId) return;
+  
+          try {
+            const queryString = buildQueryString({ userId });
+            const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryString}`);
+            if (!response.ok) return;
+  
+            const result = await response.json();
+            const stats = result.stats || result.data?.stats || {};
+  
+            const newWins = stats.totalWins ?? user?.totalWins ?? 0;
+            const newLosses = stats.totalLosses ?? user?.totalLosses ?? 0;
+            const newClaimed = stats.totalClaimed ?? user?.totalClaimed ?? 0;
+  
+            // Check if stats changed from what we last SAW
+            const lastSeenStatsStr = localStorage.getItem(`last_seen_stats_${userId}`);
+            const lastSeenStats = lastSeenStatsStr ? JSON.parse(lastSeenStatsStr) : { totalWins: newWins, totalLosses: newLosses, totalClaimed: newClaimed };
+            
+            if (newWins !== lastSeenStats.totalWins || newLosses !== lastSeenStats.totalLosses || newClaimed !== (lastSeenStats.totalClaimed ?? 0)) {
+              setShowStatsDot(true);
+            }
+  
+            setUserStats({
+              totalWins: newWins,
+              totalLosses: newLosses,
+              totalClaimed: newClaimed,
+            });
+          } catch (error) {
+            console.error('Error fetching user stats:', error);
+          }
+        };
+  
+        fetchUserStats();
+        const interval = setInterval(fetchUserStats, 60000);
+        return () => clearInterval(interval);
+      }, [user?.id, user?.totalWins, user?.totalLosses, user?.totalClaimed]);
+  
+      useEffect(() => {
+        if (user?.totalWins !== undefined || user?.totalLosses !== undefined || user?.totalClaimed !== undefined) {
+          setUserStats({
+            totalWins: user?.totalWins ?? 0,
+            totalLosses: user?.totalLosses ?? 0,
+            totalClaimed: user?.totalClaimed ?? 0,
+          });
+        }
+      }, [user?.totalWins, user?.totalLosses, user?.totalClaimed]);
 
     // Check for new auction history entries
     useEffect(() => {
@@ -365,31 +384,44 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                       </span>
                     )}
-                    <motion.div
-                      className="flex items-center space-x-2"
-                      whileHover={{ x: 2 }}
-                    >
                       <motion.div
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.6 }}
+                        className="flex items-center space-x-2"
+                        whileHover={{ x: 2 }}
                       >
-                        <Trophy className="w-4 h-4 text-green-600" />
+                        <motion.div
+                          whileHover={{ rotate: 360 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <Trophy className="w-4 h-4 text-green-600" />
+                        </motion.div>
+                        <span className="text-sm font-medium text-green-700">{userStats.totalWins} Wins</span>
                       </motion.div>
-                      <span className="text-sm font-medium text-green-700">{userStats.totalWins} Wins</span>
-                    </motion.div>
-                    <div className="w-px h-5 bg-purple-300"></div>
-                    <motion.div
-                      className="flex items-center space-x-2"
-                      whileHover={{ x: 2 }}
-                    >
+                      <div className="w-px h-5 bg-purple-300"></div>
                       <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        className="flex items-center space-x-2"
+                        whileHover={{ x: 2 }}
                       >
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        >
+                          <History className="w-4 h-4 text-purple-600" />
+                        </motion.div>
+                        <span className="text-sm font-medium text-purple-700">{userStats.totalClaimed} Claimed</span>
                       </motion.div>
-                      <span className="text-sm font-medium text-red-600">{userStats.totalLosses ?? 0} Losses</span>
-                    </motion.div>
+                      <div className="w-px h-5 bg-purple-300"></div>
+                      <motion.div
+                        className="flex items-center space-x-2"
+                        whileHover={{ x: 2 }}
+                      >
+                        <motion.div
+                          animate={{ rotate: [0, 10, -10, 0] }}
+                          transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        >
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        </motion.div>
+                        <span className="text-sm font-medium text-red-600">{userStats.totalLosses ?? 0} Losses</span>
+                      </motion.div>
                   </motion.button>
 
                   {/* Navigation Links */}
@@ -690,15 +722,19 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       </div>
                         <div className="flex-1">
                           <p className="text-white font-semibold">{user.username}</p>
-                            <div className="flex items-center space-x-3 text-xs text-purple-200 relative">
-                              <span className="flex items-center">
-                                <Trophy className="w-3 h-3 mr-1" />
-                                {userStats.totalWins} Wins
-                              </span>
-                              <span className="flex items-center">
-                                <XCircle className="w-3 h-3 mr-1" />
-                                {userStats.totalLosses ?? 0} Losses
-                              </span>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-purple-200 relative">
+                                <span className="flex items-center">
+                                  <Trophy className="w-3 h-3 mr-1" />
+                                  {userStats.totalWins} Wins
+                                </span>
+                                <span className="flex items-center">
+                                  <History className="w-3 h-3 mr-1" />
+                                  {userStats.totalClaimed} Claimed
+                                </span>
+                                <span className="flex items-center">
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  {userStats.totalLosses ?? 0} Losses
+                                </span>
                               {showStatsDot && (
                                 <span className="absolute -top-1 -right-1 flex h-2 w-2">
                                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>

@@ -299,12 +299,24 @@ const hourlyAuctionSchema = new mongoose.Schema(
       default: null,
     },
     
-    winningBid: {
-      type: Number,
-      default: null,
-    },
-    
-    // Timestamps for auction lifecycle
+      winningBid: {
+        type: Number,
+        default: null,
+      },
+      
+      // ✅ NEW: Top-level prize claim info for easy access
+      prizeClaimedBy: {
+        type: String,
+        default: null,
+      },
+
+      prizeClaimStatus: {
+        type: String,
+        enum: ['PENDING', 'CLAIMED', 'EXPIRED', 'CANCELLED'],
+        default: 'PENDING',
+      },
+      
+      // Timestamps for auction lifecycle
     startedAt: {
       type: Date,
       default: null,

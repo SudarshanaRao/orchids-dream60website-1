@@ -49,12 +49,20 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const [emailAlerts, setEmailAlerts] = useState(false);
-  const [smsAlerts, setSmsAlerts] = useState(false);
-  const [bidAlerts, setBidAlerts] = useState(false);
-  const [winNotifications, setWinNotifications] = useState(false);
+    const [emailAlerts, setEmailAlerts] = useState(false);
+    const [smsAlerts, setSmsAlerts] = useState(false);
+    const [bidAlerts, setBidAlerts] = useState(false);
+    const [winNotifications, setWinNotifications] = useState(false);
+    
+    const [stats, setStats] = useState({
+      totalWins: 0,
+      totalLosses: 0,
+      totalClaimed: 0,
+      totalSpent: 0,
+      totalWon: 0
+    });
 
-  const [showSuccess, setShowSuccess] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   // const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -122,14 +130,24 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           setEmail(userData.email || '');
           setPhone(formatIndianMobile(userData.mobile || userData.phone || ''));
 
-          // Update preferences
-          if (userData.preferences) {
-            setEmailAlerts(userData.preferences.emailNotifications ?? false);
-            setSmsAlerts(userData.preferences.smsNotifications ?? false);
-            setBidAlerts(userData.preferences.bidAlerts ?? false);
-            setWinNotifications(userData.preferences.winNotifications ?? false);
-          }
-        } else {
+            // Update preferences
+            if (userData.preferences) {
+              setEmailAlerts(userData.preferences.emailNotifications ?? false);
+              setSmsAlerts(userData.preferences.smsNotifications ?? false);
+              setBidAlerts(userData.preferences.bidAlerts ?? false);
+              setWinNotifications(userData.preferences.winNotifications ?? false);
+            }
+
+            // Update stats
+            const userStats = userData.stats || {};
+            setStats({
+              totalWins: userStats.totalWins ?? 0,
+              totalLosses: userStats.totalLosses ?? 0,
+              totalClaimed: userStats.totalClaimed ?? 0,
+              totalSpent: userStats.totalSpent ?? 0,
+              totalWon: userStats.totalWon ?? 0
+            });
+          } else {
           throw new Error('Invalid response format');
         }
       } catch (error) {
@@ -608,8 +626,63 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                   </Button>
                 </motion.div>
               </div> */}
-            </form>
-          </motion.div>
+              </form>
+            </motion.div>
+
+            {/* Statistics Section */}
+            <motion.div
+              custom={0.5}
+              initial="hidden"
+              animate="visible"
+              variants={cardVariants}
+              className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+            >
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-purple-200/50 bg-gradient-to-r from-purple-50/80 to-purple-100/80 backdrop-blur-sm relative">
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-purple-700" />
+                  </motion.div>
+                  <h2 className="text-base sm:text-lg font-semibold text-purple-900">Auction Statistics</h2>
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Wins */}
+                <div className="bg-green-50/50 p-4 rounded-2xl border border-green-100 flex flex-col items-center justify-center text-center">
+                  <Trophy className="w-6 h-6 text-green-600 mb-2" />
+                  <div className="text-2xl font-bold text-green-700">{stats.totalWins}</div>
+                  <div className="text-xs font-semibold text-green-600 uppercase tracking-wider">Total Wins</div>
+                </div>
+
+                {/* Claimed */}
+                <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 flex flex-col items-center justify-center text-center">
+                  <History className="w-6 h-6 text-purple-600 mb-2" />
+                  <div className="text-2xl font-bold text-purple-700">{stats.totalClaimed}</div>
+                  <div className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Prizes Claimed</div>
+                </div>
+
+                {/* Losses */}
+                <div className="bg-red-50/50 p-4 rounded-2xl border border-red-100 flex flex-col items-center justify-center text-center">
+                  <XCircle className="w-6 h-6 text-red-500 mb-2" />
+                  <div className="text-2xl font-bold text-red-600">{stats.totalLosses}</div>
+                  <div className="text-xs font-semibold text-red-600 uppercase tracking-wider">Total Losses</div>
+                </div>
+              </div>
+              
+              <div className="px-4 sm:px-6 pb-6 grid grid-cols-2 gap-4">
+                <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
+                  <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Total Spent</div>
+                  <div className="text-lg font-bold text-purple-900">₹{stats.totalSpent.toLocaleString()}</div>
+                </div>
+                <div className="bg-white/40 p-3 rounded-xl border border-purple-100">
+                  <div className="text-[10px] font-bold text-purple-400 uppercase mb-1">Prizes Worth</div>
+                  <div className="text-lg font-bold text-purple-900">₹{stats.totalWon.toLocaleString()}</div>
+                </div>
+              </div>
+            </motion.div>
 
           {/* Notifications Section */}
               <motion.div

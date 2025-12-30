@@ -28,21 +28,21 @@ export function TutorialOverlay({ steps, tutorialId, onComplete, returnTo, start
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
-    useEffect(() => {
-      const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`) === 'true';
-      
-      // Auto-start ONLY if forceShow or startToken is provided
-      // Parents should handle the logic of when to trigger it for new users
-      const shouldStart = Boolean(forceShow || startToken);
-
-      if (shouldStart && steps.length > 0) {
-        setCurrentStep(0);
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tutorialId, startToken, forceShow, steps.length]);
+      useEffect(() => {
+        const completed = localStorage.getItem(`tutorial_completed_${tutorialId}`) === 'true';
+        
+        // Auto-start ONLY if (forceShow OR startToken is provided) AND NOT already completed
+        // Parents should handle the logic of when to trigger it for new users
+        const shouldStart = forceShow || (Boolean(startToken) && !completed);
+  
+        if (shouldStart && steps.length > 0) {
+          setCurrentStep(0);
+          setIsVisible(true);
+        } else {
+          setIsVisible(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [tutorialId, startToken, forceShow, steps.length]);
 
 
   useEffect(() => {

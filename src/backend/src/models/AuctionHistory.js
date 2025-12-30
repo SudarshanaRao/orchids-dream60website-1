@@ -690,48 +690,52 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
             }
           },
           // CRITICAL: Only sum prize amounts for CLAIMED prizes
-          totalWon: {
-            $sum: {
-              $cond: [
-                { $and: [
-                  { $eq: ['$isWinner', true] },
-                  { $eq: ['$prizeClaimStatus', 'CLAIMED'] }
-                ]},
-                '$prizeAmountWon',
-                0
-              ]
-            }
+            totalWon: {
+              $sum: {
+                $cond: [
+                  { $and: [
+                    { $eq: ['$isWinner', true] },
+                    { $eq: ['$prizeClaimStatus', 'CLAIMED'] }
+                  ]},
+                  '$prizeAmountWon',
+                  0
+                ]
+              }
+            },
+            totalClaimed: {
+              $sum: { $cond: [{ $eq: ['$prizeClaimStatus', 'CLAIMED'] }, 1, 0] }
+            },
           },
         },
-      },
-    ]);
-
-    if (stats.length === 0) {
-      return {
-        totalAuctions: 0,
-        totalWins: 0,
-        totalLosses: 0,
-        totalSpent: 0,
-        totalWon: 0,
-        winRate: 0,
-        netGain: 0,
-      };
-    }
-
-    const result = stats[0];
-    // totalSpent = entry fees of all auctions + final round bids only for won+claimed auctions
-    result.totalSpent = (result.totalEntryFees || 0) + (result.totalFinalRoundBidsForClaimedWins || 0);
-    result.winRate = result.totalAuctions > 0 
-      ? Math.round((result.totalWins / result.totalAuctions) * 100) 
-      : 0;
-    result.netGain = result.totalWon - result.totalSpent;
-
-    // Clean up intermediate fields
-    delete result._id;
-    delete result.totalEntryFees;
-    delete result.totalFinalRoundBidsForClaimedWins;
-
-    return result;
+      ]);
+  
+      if (stats.length === 0) {
+        return {
+          totalAuctions: 0,
+          totalWins: 0,
+          totalLosses: 0,
+          totalSpent: 0,
+          totalWon: 0,
+          totalClaimed: 0,
+          winRate: 0,
+          netGain: 0,
+        };
+      }
+  
+      const result = stats[0];
+      // totalSpent = entry fees of all auctions + final round bids only for won+claimed auctions
+      result.totalSpent = (result.totalEntryFees || 0) + (result.totalFinalRoundBidsForClaimedWins || 0);
+      result.winRate = result.totalAuctions > 0 
+        ? Math.round((result.totalWins / result.totalAuctions) * 100) 
+        : 0;
+      result.netGain = result.totalWon - result.totalSpent;
+  
+      // Clean up intermediate fields
+      delete result._id;
+      delete result.totalEntryFees;
+      delete result.totalFinalRoundBidsForClaimedWins;
+  
+      return result;
   } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error getting user stats:`, error);
     throw error;
@@ -779,7 +783,18 @@ auctionHistorySchema.statics.syncClaimStatus = async function(hourlyAuctionId, w
         hourlyAuction.winnerId = actualClaimer.playerId;
         hourlyAuction.winnerUsername = actualClaimer.playerUsername;
         hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
+        
+        // Populate NEW top-level fields
+        hourlyAuction.prizeClaimedBy = actualClaimer.playerUsername;
+        hourlyAuction.prizeClaimStatus = actualClaimer.prizeClaimStatus;
+        
         console.log(`🏆 [SYNC_CLAIM] Updated HourlyAuction root winner to actual claimer: ${actualClaimer.playerUsername} (Rank ${actualClaimer.rank})`);
+      } else {
+        // Fallback to rank 1's status if no one has claimed yet
+        const rank1 = byRank[1];
+        if (rank1) {
+          hourlyAuction.prizeClaimStatus = rank1.prizeClaimStatus;
+        }
       }
 
       hourlyAuction.markModified('winners');
@@ -793,20 +808,35 @@ auctionHistorySchema.statics.syncClaimStatus = async function(hourlyAuctionId, w
         c => c.TimeSlot === hourlyAuction.TimeSlot && c.auctionNumber === hourlyAuction.auctionNumber
       );
       
-      if (configIndex !== -1 && dailyAuction.dailyAuctionConfig[configIndex].topWinners) {
-        dailyAuction.dailyAuctionConfig[configIndex].topWinners = dailyAuction.dailyAuctionConfig[configIndex].topWinners.map(tw => {
-          const hist = byRank[tw.rank];
-          if (hist) {
-            tw.prizeClaimStatus = hist.prizeClaimStatus;
-            tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-            tw.prizeClaimedAt = hist.claimedAt || null;
-            tw.prizeClaimedBy = hist.claimedBy || hist.username || null;
-            tw.claimNotes = hist.claimNotes || null;
+      if (configIndex !== -1) {
+        const config = dailyAuction.dailyAuctionConfig[configIndex];
+        
+        if (config.topWinners) {
+          config.topWinners = config.topWinners.map(tw => {
+            const hist = byRank[tw.rank];
+            if (hist) {
+              tw.prizeClaimStatus = hist.prizeClaimStatus;
+              tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
+              tw.prizeClaimedAt = hist.claimedAt || null;
+              tw.prizeClaimedBy = hist.claimedBy || hist.username || null;
+              tw.claimNotes = hist.claimNotes || null;
+
+              if (tw.isPrizeClaimed) {
+                config.prizeClaimedBy = tw.prizeClaimedBy;
+                config.prizeClaimStatus = tw.prizeClaimStatus;
+              }
+            }
+            return tw;
+          });
+          
+          // Fallback for top-level claim status
+          if (config.prizeClaimStatus !== 'CLAIMED' && byRank[1]) {
+            config.prizeClaimStatus = byRank[1].prizeClaimStatus;
           }
-          return tw;
-        });
-        dailyAuction.markModified('dailyAuctionConfig');
-        await dailyAuction.save();
+          
+          dailyAuction.markModified('dailyAuctionConfig');
+          await dailyAuction.save();
+        }
       }
     }
   } catch (error) {
