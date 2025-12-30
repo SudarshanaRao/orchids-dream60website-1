@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const AuctionHistory = require('../models/AuctionHistory');
 const RazorpayPayment = require('../models/RazorpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
@@ -766,14 +767,19 @@ router.get('/transactions/:id', async (req, res) => {
       });
     }
 
-    const payment = await RazorpayPayment.findOne({
+    const query = {
       userId,
       $or: [
         { razorpayOrderId: id },
         { razorpayPaymentId: id },
-        { _id: id },
       ],
-    }).lean();
+    };
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      query.$or.push({ _id: id });
+    }
+
+    const payment = await RazorpayPayment.findOne(query).lean();
 
     if (!payment) {
       return res.status(404).json({
