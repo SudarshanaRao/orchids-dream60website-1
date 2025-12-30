@@ -715,20 +715,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 </>
                 ) : status === 'locked' ? (
                   <>
-                    {/* ✅ Round Time Display for Locked */}
-                    {!winnersAnnounced && box.opensAt && box.closesAt && (
-                      <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                        <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
-                          <Clock className="w-2.5 h-2.5 shrink-0" />
-                          <span className="font-medium">Duration</span>
-                        </div>
-                        <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
-                          {getRoundTimeRange()}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Prize Display for Locked Round */}
+                    {/* Prize Display for Locked Round */}
                   {box.type === 'round' && box.prizeAmount && (
                     <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
                       <div className="flex items-center justify-between gap-1.5">
