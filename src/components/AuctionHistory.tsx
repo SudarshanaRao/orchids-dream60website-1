@@ -715,9 +715,9 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                               return correctedDate.toLocaleString('en-IN', { 
                                 month: 'short', 
                                 day: 'numeric',
-                                hour: 'numeric',
+                                hour: '2-digit',
                                 minute: '2-digit',
-                                hour12: true,
+                                hour12: false,
                                 timeZone: 'Asia/Kolkata'
                               });
                             })()
@@ -774,9 +774,9 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
         return adjusted.toLocaleString('en-IN', {
           month: 'short',
           day: 'numeric',
-          hour: 'numeric',
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: true,
+          hour12: false,
           timeZone: 'Asia/Kolkata'
         });
       })()
@@ -813,9 +813,9 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
         return adjusted.toLocaleString('en-IN', {
           month: 'short',
           day: 'numeric',
-          hour: 'numeric',
+          hour: '2-digit',
           minute: '2-digit',
-          hour12: true,
+          hour12: false,
           timeZone: 'Asia/Kolkata'
         });
       })()
@@ -1090,18 +1090,18 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   const lostAuctions = history.filter(a => a.status === 'lost');
   const { winRate, totalSpent, totalWon, netGain } = stats;
   
-  const formatDateTime = (value?: string | number | Date) => {
-    if (!value) return '--';
-    const date = new Date(value);
-    return date.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
+    const formatDateTime = (value?: string | number | Date) => {
+      if (!value) return '--';
+      const date = new Date(value);
+      return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    };
   
   // ✅ NEW: Fetch user profile once on mount
   useEffect(() => {
@@ -1216,14 +1216,14 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             myRank: auction.finalRank || 0,
             auctionStartTime: auction.TimeSlot || '',
             auctionEndTime: auction.completedAt 
-    ? new Date(new Date(auction.completedAt).getTime() - (5 * 60 + 30) * 60 * 1000)
-        .toLocaleTimeString('en-IN', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true,
-          timeZone: 'Asia/Kolkata'
-        })
-    : '',
+      ? new Date(new Date(auction.completedAt).getTime() - (5 * 60 + 30) * 60 * 1000)
+          .toLocaleTimeString('en-IN', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false,
+            timeZone: 'Asia/Kolkata'
+          })
+      : '',
             boxes: [],
             entryFeePaid: auction.entryFeePaid,
             totalAmountBid: auction.totalAmountBid,

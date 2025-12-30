@@ -177,7 +177,7 @@ const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: 
     'opensAt (ISO)': opensAt.toISOString(),
     'closesAt (UTC)': closesAt.toUTCString(),
     'closesAt (ISO)': closesAt.toISOString(),
-    'Display Time': `${opensAt.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })} to ${closesAt.toLocaleTimeString('en-US', { timeZone: 'UTC', hour: 'numeric', minute: '2-digit', hour12: true })}`
+      'Display Time': `${opensAt.toLocaleTimeString('en-IN', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hour12: false })} to ${closesAt.toLocaleTimeString('en-IN', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hour12: false })}`
   });
 
   return { opensAt, closesAt };

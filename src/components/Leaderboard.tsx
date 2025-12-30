@@ -45,9 +45,9 @@ interface LeaderboardEntry {
     const formatRoundTime = (date: Date) => {
       return date.toLocaleTimeString('en-IN', { 
         timeZone: 'UTC', // ✅ Use UTC to prevent conversion - 12:00 UTC displays as 12:00 pm
-        hour: 'numeric',
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true
+        hour12: false
       });
     };
 
@@ -642,12 +642,12 @@ interface LeaderboardEntry {
       // Time
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(107, 114, 128);
-      const time = entry.timestamp.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
+        const time = entry.timestamp.toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        });
       doc.text(time, 165, yPos + 6);
       
       yPos += 8;
@@ -1044,14 +1044,14 @@ interface LeaderboardEntry {
                                           </div>
                                         )}
                                       </div>
-                                      <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium mt-0.5">
-                                        <Clock className="w-3 h-3" />
-                                        {entry.timestamp.toLocaleTimeString('en-US', {
-                                          hour: 'numeric',
-                                          minute: '2-digit',
-                                          hour12: true
-                                        })}
-                                      </div>
+                                        <div className="flex items-center gap-1.5 text-xs text-purple-600 font-medium mt-0.5">
+                                          <Clock className="w-3 h-3" />
+                                          {entry.timestamp.toLocaleTimeString('en-IN', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: false
+                                          })}
+                                        </div>
                                     </div>
                                   
                                     {/* Bid Badge */}
@@ -1155,15 +1155,15 @@ interface LeaderboardEntry {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-1 text-xs text-purple-600">
-                                  <Clock className="w-3 h-3" />
-                                  {entry.timestamp.toLocaleTimeString('en-US', {
-                                    hour: 'numeric',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: true
-                                  })}
-                                </div>
+                                  <div className="flex items-center gap-1 text-xs text-purple-600">
+                                    <Clock className="w-3 h-3" />
+                                    {entry.timestamp.toLocaleTimeString('en-IN', {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      second: '2-digit',
+                                      hour12: false
+                                    })}
+                                  </div>
                               </div>
 
                               {/* Bid Amount */}

@@ -53,17 +53,13 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
   const [boxIdentity, setBoxIdentity] = useState<string>('');
 
   // ✅ Helper function to format round times WITHOUT timezone conversion (display API times as-is)
-  const formatRoundTime = (date: Date) => {
-    // Extract UTC hours and minutes directly (API sends IST times, stored as UTC to prevent conversion)
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes();
-    
-    // Convert to 12-hour format
-    const hour12 = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
-    const period = hours >= 12 ? 'pm' : 'am';
-    
-    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
-  };
+    const formatRoundTime = (date: Date) => {
+      // Extract UTC hours and minutes directly (API sends IST times, stored as UTC to prevent conversion)
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
 
   // ✅ Get formatted round time range (API times without conversion)
   const getRoundTimeRange = () => {

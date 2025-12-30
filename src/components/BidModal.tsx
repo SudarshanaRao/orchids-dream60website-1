@@ -348,11 +348,11 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
                       <div className="text-xs sm:text-sm font-bold text-purple-700 uppercase tracking-wide mb-2">
                         Round Timing
                       </div>
-                      <div className="text-lg sm:text-xl font-black text-purple-900">
-                        {box.opensAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} 
-                        {' to '}
-                        {box.closesAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                      </div>
+                        <div className="text-lg sm:text-xl font-black text-purple-900">
+                          {box.opensAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })} 
+                          {' to '}
+                          {box.closesAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </div>
                     </div>
 
                     {/* Your Bid */}

@@ -37,9 +37,9 @@ export function parseAPITimestamp(apiTimestamp: string): Date {
     'UTC String': utcDate.toUTCString(),
     'ISO String': utcDate.toISOString(),
     'Display Time (No Conversion)': utcDate.toLocaleTimeString('en-IN', { 
-      hour: 'numeric',
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true,
+      hour12: false,
       timeZone: 'UTC' // ✅ Use UTC to prevent automatic conversion
     })
   });
@@ -56,11 +56,11 @@ export function parseAPITimestamp(apiTimestamp: string): Date {
 export function formatIST(date: Date, format: 'time' | 'date' | 'datetime' = 'time'): string {
   const options: Intl.DateTimeFormatOptions = {
     timeZone: 'UTC', // ✅ Use UTC to prevent conversion
-    hour12: true,
+    hour12: false,
   };
 
   if (format === 'time') {
-    options.hour = 'numeric';
+    options.hour = '2-digit';
     options.minute = '2-digit';
   } else if (format === 'date') {
     options.year = 'numeric';
@@ -70,7 +70,7 @@ export function formatIST(date: Date, format: 'time' | 'date' | 'datetime' = 'ti
     options.year = 'numeric';
     options.month = 'short';
     options.day = 'numeric';
-    options.hour = 'numeric';
+    options.hour = '2-digit';
     options.minute = '2-digit';
   }
 
