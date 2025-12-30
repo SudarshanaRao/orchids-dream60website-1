@@ -131,16 +131,18 @@ const getCurrentRoundByTime = (serverTime: ServerTime | null) => {
   
   const minutes = serverTime.minute;
 
-  if (minutes < 15) return 1;
-  if (minutes < 30) return 2;
-  if (minutes < 45) return 3;
-  return 4;
+  if (minutes < 10) return 1;
+  if (minutes < 20) return 2;
+  if (minutes < 30) return 3;
+  if (minutes < 40) return 4;
+  if (minutes < 50) return 5;
+  return 6;
 };
 
 const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: ServerTime | null) => {
   // ✅ Create Date objects in UTC timezone (not local timezone)
-  const startMinutes = (roundNumber - 1) * 15;
-  const endMinutes = roundNumber * 15;
+  const startMinutes = (roundNumber - 1) * 10;
+  const endMinutes = roundNumber * 10;
 
   // Use server timestamp to create dates
   const baseTimestamp = serverTime ? serverTime.timestamp : Date.now();
@@ -370,17 +372,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       setServerTime(getCurrentServerTime());
     }, 1000);
 
-    // Optionally refresh server time every 30 seconds to correct drift
-    const syncInterval = setInterval(async () => {
-      const time = await fetchServerTime();
-      if (time) {
-        setServerTime(time);
-      }
-    }, 30000); // 30 seconds
-
     return () => {
       clearInterval(interval);
-      clearInterval(syncInterval);
     };
   }, []);
 
@@ -562,9 +555,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
-    const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
-      const startMinutes = (roundNum - 1) * 15;
-      const endMinutes = roundNum * 15;
+    const roundBoxes: RoundBox[] = [1, 2, 3, 4, 5, 6].map((roundNum) => {
+      const startMinutes = (roundNum - 1) * 10;
+      const endMinutes = roundNum * 10;
       
       const opensAt = new Date(Date.UTC(
         today.getUTCFullYear(),
@@ -669,7 +662,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         0
       );
 
-      const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
+      const roundBoxes: RoundBox[] = [1, 2, 3, 4, 5, 6].map((roundNum) => {
         const { opensAt, closesAt } = getRoundBoxTimes(currentHour, roundNum, serverTime);
         return {
           id: roundNum + 2,
@@ -766,16 +759,16 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       action: () => handleNavigate('game'),
       mobileAction: () => setMobileMenuOpen(true),
     },
-      {
-        id: 'auction-schedule',
-        title: 'Daily Auction Schedule',
-        description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
-        targetElement: '[data-whatsnew-target="auction-schedule"]',
-        position: 'top',
-        scrollBlock: 'start', // Start in the middle of the screen (custom logic in TutorialOverlay)
-        action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
-        mobileAction: () => setMobileMenuOpen(false),
-      },
+        {
+          id: 'auction-schedule',
+          title: 'Daily Auction Schedule',
+          description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 6 bidding rounds of 10 minutes each.',
+          targetElement: '[data-whatsnew-target="auction-schedule"]',
+          position: 'top',
+          scrollBlock: 'start', // Start in the middle of the screen (custom logic in TutorialOverlay)
+          action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
+          mobileAction: () => setMobileMenuOpen(false),
+        },
 
     {
       id: 'support',
@@ -858,15 +851,15 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       const seconds = date.getUTCSeconds();
       const milliseconds = date.getUTCMilliseconds();
       
-      // Calculate minutes until next 15-min mark (00, 15, 30, 45)
+      // Calculate minutes until next 10-min mark (00, 10, 20, 30, 40, 50)
       // This aligns with IST boundaries as well (IST = UTC + 5:30)
-      const nextMarkMinutes = (Math.floor(minutes / 15) + 1) * 15;
+      const nextMarkMinutes = (Math.floor(minutes / 10) + 1) * 10;
       const minutesToWait = nextMarkMinutes - minutes;
       
       // Calculate total ms to wait, plus a 2s buffer to ensure server has processed transition
       const msToWait = (minutesToWait * 60 * 1000) - (seconds * 1000) - milliseconds + 2000;
       
-      console.log(`⏱️ Next 15-min auto-refresh scheduled in ${Math.round(msToWait / 1000)}s (at :${nextMarkMinutes % 60} UTC/IST boundary)`);
+      console.log(`⏱️ Next 10-min auto-refresh scheduled in ${Math.round(msToWait / 1000)}s (at :${nextMarkMinutes % 60} UTC/IST boundary)`);
       
       timerId = setTimeout(() => {
         console.log('⏰ 15-minute boundary reached - triggering auto-refresh');
@@ -1079,9 +1072,9 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           
           const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
 
-          const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
-            const startMinutes = (roundNum - 1) * 15;
-            const endMinutes = roundNum * 15;
+          const roundBoxes: RoundBox[] = [1, 2, 3, 4, 5, 6].map((roundNum) => {
+            const startMinutes = (roundNum - 1) * 10;
+            const endMinutes = roundNum * 10;
             
             const opensAt = new Date(Date.UTC(
               today.getUTCFullYear(),
@@ -1422,18 +1415,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 // ✅ CRITICAL FIX: Do NOT convert API times - they're already in the correct format
                 // The backend sends times like "13:45:00.000Z" which should display as 1:45 PM (not converted)
                 if (roundData) {
-                    if (roundData.startedAt) {
-                      // Use the time directly without timezone conversion
-                      updatedBox.opensAt = new Date(roundData.startedAt);
-                    }
-                    if (roundData.completedAt) {
-                      // Use the time directly without timezone conversion
-                      updatedBox.closesAt = new Date(roundData.completedAt);
-                    } else if (roundData.startedAt) {
-                    // If not completed, calculate closesAt as opensAt + 15 minutes
-                    const opensAt = new Date(roundData.startedAt);
-                    updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
+                  if (roundData.startedAt) {
+                    // Use the time directly without timezone conversion
+                    updatedBox.opensAt = new Date(roundData.startedAt);
                   }
+                  if (roundData.completedAt) {
+                    // Use the time directly without timezone conversion
+                    updatedBox.closesAt = new Date(roundData.completedAt);
+                  } else if (roundData.startedAt) {
+                  // If not completed, calculate closesAt as opensAt + 10 minutes
+                  const opensAt = new Date(roundData.startedAt);
+                  updatedBox.closesAt = new Date(opensAt.getTime() + 10 * 60 * 1000);
+                }
                   
                   // Update status based on actual round data
                   if (roundData.status === 'COMPLETED') {
@@ -1504,13 +1497,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     };
 
     fetchCurrentAuctionId();
-    
-    // ✅ CRITICAL FIX: Poll every 5 seconds when round is active, 10 seconds otherwise
-    // Use a stable check that doesn't depend on boxes array reference
-    const pollInterval = 3000; // ✅ Reduced to 3s for seamless refreshing without disturbances
-    
-    const interval = setInterval(fetchCurrentAuctionId, pollInterval);
-    return () => clearInterval(interval);
   }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
 
   const handleNavigate = (page: string, data?: any) => {

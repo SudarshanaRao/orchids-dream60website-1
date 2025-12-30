@@ -761,7 +761,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
               <>
                 {/* Your Bid Card */}
                 <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-2">
                     <span className="text-green-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
                       <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       <span>Your Bid</span>
@@ -770,6 +770,11 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                       <span>{userBidAmount.toLocaleString('en-IN')}</span>
                     </span>
+                  </div>
+                  {/* ✅ Added Time Range for User Bid State */}
+                  <div className="flex items-center gap-1 text-[10px] text-green-700">
+                    <Clock className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{getRoundTimeRange()}</span>
                   </div>
                 </div>
                 
@@ -809,7 +814,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
                 {/* Main Price Card */}
                 <div className="bg-gradient-to-r from-purple-100/90 to-purple-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                  <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-2">
                     <span className="text-purple-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
                       <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       <span>{box.type === 'entry' ? 'Fee' : 'Min Bid'}</span>
@@ -819,6 +824,13 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
                     </span>
                   </div>
+                  {/* ✅ Added Time Range for Active State */}
+                  {box.opensAt && box.closesAt && (
+                    <div className="flex items-center gap-1 text-[10px] text-purple-700">
+                      <Clock className="w-2.5 h-2.5 shrink-0" />
+                      <span className="truncate">{getRoundTimeRange()}</span>
+                    </div>
+                  )}
                 </div>
               </>
             )}
