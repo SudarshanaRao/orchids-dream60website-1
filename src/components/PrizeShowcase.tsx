@@ -757,7 +757,7 @@ interface PrizeShowcaseProps {
                 </div>
 
                 {/* Participation Status Badge */}
-                {isLoggedIn && isUserParticipating && (
+                {isLoggedIn && isUserParticipating && !liveAuctionData?.winnersAnnounced && (
                   <div className="group/stat relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-green-500/10 rounded-xl blur group-hover/stat:blur-md transition-all"></div>
                     <div className="relative backdrop-blur-xl bg-gradient-to-br from-emerald-50/90 to-green-50/85 border-2 border-emerald-300/50 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 shadow-sm inline-flex items-center space-x-1.5 sm:space-x-2">
