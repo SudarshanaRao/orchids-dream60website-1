@@ -305,11 +305,11 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     const status = getBoxStatus();
 
     // ✅ Reusable duration display for all boxes
-    const durationDisplay = box.type === 'round' && box.opensAt && box.closesAt && (
+    const durationDisplay = box.opensAt && box.closesAt && (
       <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
         <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
           <Clock className="w-2.5 h-2.5 shrink-0" />
-          <span className="font-medium">Duration</span>
+          <span className="font-medium">{box.type === 'entry' ? 'Opens At' : 'Duration'}</span>
         </div>
         <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
           {getRoundTimeRange()}
@@ -588,27 +588,28 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
             {/* Information Section */}
             <div className="space-y-1.5 sm:space-y-2.5">
               {durationDisplay}
-              {status === 'winners-announced' ? (
+                {status === 'winners-announced' ? (
 
-              <>
-                {/* Winners Announced Info - Green */}
-                <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center gap-1 sm:gap-2 text-green-800 text-[10px] sm:text-xs font-semibold mb-1 sm:mb-2">
-                    <Trophy className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span>Winners Announced</span>
+                <>
+                  {/* Winners Announced Info - Green */}
+                  <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
+                    <div className="flex items-center gap-1 sm:gap-2 text-green-800 text-[10px] sm:text-xs font-semibold mb-1 sm:mb-2">
+                      <Trophy className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0 text-emerald-600" />
+                      <span>Winners Announced</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] text-green-700 mb-1 sm:mb-2 font-medium">
+                      <CheckCircle2 className="w-2.5 h-2.5 shrink-0 text-emerald-50" />
+                      <span className="truncate">
+                        Auction Concluded Early
+                      </span>
+                    </div>
+                    <div className="bg-white/60 rounded-lg p-1.5 sm:p-2 mt-1 sm:mt-2 border border-green-200/50 shadow-sm">
+                      <p className="text-[9px] sm:text-[10px] text-green-800 leading-tight">
+                        The auction was completed early because there were 3 or fewer participants, making all qualifiers winners by default.
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] text-green-700 mb-1 sm:mb-2">
-                    <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
-                    <span className="truncate">
-                      Completed early
-                    </span>
-                  </div>
-                  <div className="bg-white/60 rounded-lg p-1.5 sm:p-2 mt-1 sm:mt-2 border border-green-200/50">
-                    <p className="text-[9px] sm:text-[10px] text-green-800 leading-tight">
-                      Auction determined in previous rounds.
-                    </p>
-                  </div>
-                </div>
+
 
                 {/* Prize Display for Winners Announced */}
                 {box.type === 'round' && box.prizeAmount && (
@@ -712,20 +713,21 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     </div>
                   )}
                 </>
-              ) : status === 'locked' ? (
-                <>
-                  {/* ✅ Round Time Display for Locked */}
-                  {!winnersAnnounced && box.opensAt && box.closesAt && (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                      <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
-                        <Clock className="w-2.5 h-2.5 shrink-0" />
-                        <span className="font-medium">Opens</span>
+                ) : status === 'locked' ? (
+                  <>
+                    {/* ✅ Round Time Display for Locked */}
+                    {!winnersAnnounced && box.opensAt && box.closesAt && (
+                      <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+                        <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
+                          <Clock className="w-2.5 h-2.5 shrink-0" />
+                          <span className="font-medium">Duration</span>
+                        </div>
+                        <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
+                          {getRoundTimeRange()}
+                        </div>
                       </div>
-                      <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
-                        {getRoundTimeRange()}
-                      </div>
-                    </div>
-                  )}
+                    )}
+
                   {/* Prize Display for Locked Round */}
                   {box.type === 'round' && box.prizeAmount && (
                     <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
