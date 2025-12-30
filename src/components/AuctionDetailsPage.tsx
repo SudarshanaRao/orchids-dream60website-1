@@ -169,14 +169,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     fetchDetailedData(true); // Initial load with loading state
   }, []);
 
-  // ✅ UPDATED: Poll for auction status updates - silent background refresh
-  useEffect(() => {
-    const interval = setInterval(() => {
+    // ✅ SIMPLIFIED: No polling - call once on mount and when userId/auctionId changes
+    useEffect(() => {
       fetchDetailedData(false); // Background refresh without loading state
-    }, 2000); // Faster 2s refresh so next rank opens within seconds
-
-    return () => clearInterval(interval);
-  }, [auction.hourlyAuctionId, userInfo.userId]);
+    }, [auction.hourlyAuctionId, userInfo.userId]);
 
   // ✅ UPDATED: Add isInitialLoad parameter to control loading state
 
@@ -242,14 +238,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     }
   };
 
-  // ✅ NEW: Poll for auction status updates every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchDetailedData(false);
-    }, 5000); // ✅ CHANGED: Poll every 5 seconds for faster updates
-
-    return () => clearInterval(interval);
-  }, [auction.hourlyAuctionId, userInfo.userId]);
+    // ✅ NO POLLING - Handled by manual refresh or navigation
+    useEffect(() => {
+      // Manual sync could be added here if needed
+    }, [auction.hourlyAuctionId, userInfo.userId]);
 
   // ✅ NEW: Check if prize has been claimed by checking hourly auction winners array
   const checkPrizeClaimedStatus = () => {

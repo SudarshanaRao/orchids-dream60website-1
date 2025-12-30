@@ -650,118 +650,121 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                           <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-md shrink-0">
                             <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                           </div>
-                          <div className="min-w-0">
-                            <div className="text-[10px] text-violet-700 font-medium truncate">Top Bid</div>
+                            <div className="min-w-0">
+                              <div className="text-[10px] text-violet-700 font-medium truncate">Your Bid</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-0.5 text-violet-900 font-bold shrink-0 text-xs sm:text-base">
+                            <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>{(userBidAmount || 0).toLocaleString('en-IN')}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5 text-violet-900 font-bold shrink-0 text-xs sm:text-base">
-                          <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span>{box.highestBidFromAPI.toLocaleString('en-IN')}</span>
-                        </div>
+                      </div>
+
+                      {onShowLeaderboard && userHasPaidEntry && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onShowLeaderboard(box.roundNumber!);
+                          }}
+                          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 text-xs"
+                        >
+                          <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>Leaderboard</span>
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-purple-200/60 text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-purple-600 text-[10px] sm:text-sm">
+                        <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>No bids</span>
                       </div>
                     </div>
-
-                    {onShowLeaderboard && userHasPaidEntry && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onShowLeaderboard(box.roundNumber!);
-                        }}
-                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 text-xs"
-                      >
-                        <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span>Leaderboard</span>
-                        <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                    )}
-                  </>
-                ) : (
+                  )}
+                </>
+              ) : status === 'upcoming' ? (
+                <>
                   <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-purple-200/60 text-center">
-                    <div className="flex items-center justify-center gap-1.5 text-purple-600 text-[10px] sm:text-sm">
-                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span>No bids</span>
+                    <div className="flex items-center justify-center gap-1.5 text-purple-900 font-bold text-[10px] sm:text-sm">
+                      <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>Pay Fee to Unlock</span>
                     </div>
                   </div>
-                )}
-              </>
-            ) : status === 'upcoming' ? (
-              <>
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-purple-200/60 text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-purple-900 font-bold text-[10px] sm:text-sm">
-                    <Lock className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span>Pay Fee to Unlock</span>
-                  </div>
-                </div>
-                {/* Prize Display for Upcoming Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
+                  {/* Prize Display for Upcoming Round */}
+                  {box.type === 'round' && box.prizeAmount && (
+                    <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                          <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                          <span>Prize</span>
+                        </span>
+                        <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                          <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                          <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            ) : status === 'locked' ? (
-              <>
-                {/* ✅ Round Time Display for Locked */}
-                {!winnersAnnounced && box.opensAt && box.closesAt && (
-                  <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                    <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
-                      <Clock className="w-2.5 h-2.5 shrink-0" />
-                      <span className="font-medium">Opens</span>
+                  )}
+                </>
+              ) : status === 'locked' ? (
+                <>
+                  {/* ✅ Round Time Display for Locked */}
+                  {!winnersAnnounced && box.opensAt && box.closesAt && (
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+                      <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
+                        <Clock className="w-2.5 h-2.5 shrink-0" />
+                        <span className="font-medium">Opens</span>
+                      </div>
+                      <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
+                        {getRoundTimeRange()}
+                      </div>
                     </div>
-                    <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
-                      {getRoundTimeRange()}
+                  )}
+                  {/* Prize Display for Locked Round */}
+                  {box.type === 'round' && box.prizeAmount && (
+                    <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
+                          <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                          <span>Prize</span>
+                        </span>
+                        <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
+                          <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                          <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {/* Prize Display for Locked Round */}
-                {box.type === 'round' && box.prizeAmount && (
-                  <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
-                    <div className="flex items-center justify-between gap-1.5">
-                      <span className="text-amber-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
-                        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                        <span>Prize</span>
-                      </span>
-                      <span className="text-amber-900 font-bold text-sm sm:text-lg flex items-center gap-0.5 shrink-0">
-                        <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                        <span>{box.prizeAmount.toLocaleString('en-IN')}</span>
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : status === 'paid' ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-fuchsia-200/60 text-center">
-                <div className="flex items-center justify-center gap-1.5 text-fuchsia-800 font-bold text-[10px] sm:text-sm">
-                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span>Fee Paid</span>
-                </div>
-              </div>
-            ) : status === 'not-qualified' ? (
-              <>
-                {/* Not Qualified Warning */}
-                <div className="bg-red-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-red-300/60 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
-                    <div className="text-[10px] sm:text-sm font-bold text-red-800">
-                      Not Qualified
-                    </div>
+                  )}
+                </>
+              ) : status === 'paid' ? (
+                <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 border border-fuchsia-200/60 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-fuchsia-800 font-bold text-[10px] sm:text-sm">
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span>Fee Paid</span>
                   </div>
                 </div>
-              </>
+              ) : status === 'not-qualified' ? (
+                <>
+                  {/* Not Qualified Warning */}
+                  <div className="bg-red-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-red-300/60 text-center">
+                    <div className="flex flex-col items-center justify-center gap-1.5">
+                      <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                      <div className="text-[10px] sm:text-sm font-bold text-red-800">
+                        Not Qualified
+                      </div>
+                      <div className="text-[9px] sm:text-[11px] text-red-700 leading-tight px-1 font-medium">
+                        You did not qualify for this round because your bid in the previous round was not among the top 3 unique bids.
+                      </div>
+                    </div>
+                  </div>
+                </>
             ) : userBidAmount && box.opensAt && box.closesAt ? (
               <>
                 {/* Your Bid Card */}
                 <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
-                  <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-2">
+                  <div className="flex items-center justify-between gap-1.5">
                     <span className="text-green-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
                       <Trophy className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       <span>Your Bid</span>
@@ -770,11 +773,6 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       <IndianRupee className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                       <span>{userBidAmount.toLocaleString('en-IN')}</span>
                     </span>
-                  </div>
-                  {/* ✅ Added Time Range for User Bid State */}
-                  <div className="flex items-center gap-1 text-[10px] text-green-700">
-                    <Clock className="w-2.5 h-2.5 shrink-0" />
-                    <span className="truncate">{getRoundTimeRange()}</span>
                   </div>
                 </div>
                 
@@ -814,7 +812,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
                 {/* Main Price Card */}
                 <div className="bg-gradient-to-r from-purple-100/90 to-purple-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                  <div className="flex items-center justify-between gap-1.5 mb-1 sm:mb-2">
+                  <div className="flex items-center justify-between gap-1.5">
                     <span className="text-purple-700 font-semibold text-[10px] sm:text-sm flex items-center gap-1 sm:gap-1.5">
                       <IndianRupee className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       <span>{box.type === 'entry' ? 'Fee' : 'Min Bid'}</span>
@@ -824,13 +822,6 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
                     </span>
                   </div>
-                  {/* ✅ Added Time Range for Active State */}
-                  {box.opensAt && box.closesAt && (
-                    <div className="flex items-center gap-1 text-[10px] text-purple-700">
-                      <Clock className="w-2.5 h-2.5 shrink-0" />
-                      <span className="truncate">{getRoundTimeRange()}</span>
-                    </div>
-                  )}
                 </div>
               </>
             )}

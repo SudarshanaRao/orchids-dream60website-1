@@ -183,7 +183,7 @@ interface PrizeShowcaseProps {
     return new Date(getCurrentServerTime() + 60 * 60 * 1000);
   };
 
-    // ✅ NEW: Fetch live auction data directly
+    // ✅ Fetch live auction once on mount and rely on parent for updates
     useEffect(() => {
       let isMounted = true;
       const fetchLiveAuction = async () => {
@@ -214,10 +214,8 @@ interface PrizeShowcaseProps {
       };
 
       fetchLiveAuction();
-      const interval = setInterval(fetchLiveAuction, 3000); // ✅ Reduced to 3s for seamless refreshing without disturbances
       return () => {
         isMounted = false;
-        clearInterval(interval);
       };
     }, []);
 
