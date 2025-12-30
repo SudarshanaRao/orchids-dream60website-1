@@ -1498,7 +1498,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     };
 
     fetchCurrentAuctionId();
-  }, [currentUser?.id, currentAuction.userHasPaidEntry, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.boxes from dependencies
+  }, [currentUser?.id, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.userHasPaidEntry to prevent refresh loops
 
   const handleNavigate = (page: string, data?: any) => {
     setCurrentPage(page);

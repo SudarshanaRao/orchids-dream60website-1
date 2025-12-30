@@ -16,7 +16,7 @@ let pendingWorker: ServiceWorker | null = null;
 // Register service worker with update detection
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('✅ [SW] Service Worker registered:', registration);
         
@@ -46,12 +46,6 @@ if ('serviceWorker' in navigator) {
       .catch((error) => {
         console.error('❌ [SW] Service Worker registration failed:', error);
       });
-    
-    // Listen for controller change (new SW activated)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('🔄 [SW] New service worker activated, reloading...');
-      window.location.reload();
-    });
   });
 }
 
