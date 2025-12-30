@@ -126,23 +126,21 @@ const getCurrentAuctionSlot = (serverTime: ServerTime | null) => {
   return hour;
 };
 
-const getCurrentRoundByTime = (serverTime: ServerTime | null) => {
-  if (!serverTime) return 1;
-  
-  const minutes = serverTime.minute;
+  const getCurrentRoundByTime = (serverTime: ServerTime | null) => {
+    if (!serverTime) return 1;
+    
+    const minutes = serverTime.minute;
 
-  if (minutes < 10) return 1;
-  if (minutes < 20) return 2;
-  if (minutes < 30) return 3;
-  if (minutes < 40) return 4;
-  if (minutes < 50) return 5;
-  return 6;
-};
+    if (minutes < 15) return 1;
+    if (minutes < 30) return 2;
+    if (minutes < 45) return 3;
+    return 4;
+  };
 
-const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: ServerTime | null) => {
-  // ✅ Create Date objects in UTC timezone (not local timezone)
-  const startMinutes = (roundNumber - 1) * 10;
-  const endMinutes = roundNumber * 10;
+  const getRoundBoxTimes = (auctionHour: number, roundNumber: number, serverTime: ServerTime | null) => {
+    // ✅ Create Date objects in UTC timezone (not local timezone)
+    const startMinutes = (roundNumber - 1) * 15;
+    const endMinutes = roundNumber * 15;
 
   // Use server timestamp to create dates
   const baseTimestamp = serverTime ? serverTime.timestamp : Date.now();
@@ -1203,299 +1201,242 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => clearInterval(interval);
   }, [serverTime]); // ✅ Add serverTime as dependency
 
-  // Fetch current hourly auction ID when user is logged in
-    useEffect(() => {
-      const fetchCurrentAuctionId = async (showLoading = false) => {
-        // ✅ CRITICAL FIX: Always fetch when user is logged in
-        // This ensures the user's participation status is correctly loaded from the API on page refresh
-        if (!currentUser?.id) return;
-        
-        // ✅ Reset justLoggedIn flag after triggering refetch
-        if (justLoggedIn) {
-          console.log('🔄 User just logged in - forcing immediate auction data refresh');
-          setJustLoggedIn(false);
-        }
-        
-        // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
-        if (showLoading) {
-          setIsLoadingLiveAuction(true);
-        }
+    // Fetch current hourly auction ID when user is logged in
+      useEffect(() => {
+        const fetchCurrentAuctionId = async (showLoading = false) => {
+          // ✅ CRITICAL FIX: Always fetch when user is logged in
+          // This ensures the user's participation status is correctly loaded from the API on page refresh
+          if (!currentUser?.id) return;
+          
+          // ✅ Reset justLoggedIn flag after triggering refetch
+          if (justLoggedIn) {
+            console.log('🔄 User just logged in - forcing immediate auction data refresh');
+            setJustLoggedIn(false);
+          }
+          
+          // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
+          if (showLoading) {
+            setIsLoadingLiveAuction(true);
+          }
 
-      
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        if (!response.ok) return;
         
-        const result = await response.json();
-        
-        // Extract hourlyAuctionId from the response
-        if (result.success && result.data?.hourlyAuctionId) {
-          setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
-          console.log('✅ Live auction ID set:', result.data.hourlyAuctionId);
+        try {
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          if (!response.ok) return;
           
-          // ✅ NEW: Store live auction data to pass to PrizeShowcase
-          setLiveAuctionData(result.data);
+          const result = await response.json();
           
-          // ✅ Check if user has already placed bids in any rounds AND elimination status
-          const liveAuction = result.data;
-          const userBidsMap: { [roundNumber: number]: number } = {};
-          const userQualificationMap: { [roundNumber: number]: boolean } = {};
-          
-          // ✅ NEW: Extract user's entry fee from participants array
-          let userEntryFeeFromAPI: number | undefined = undefined;
-          let userHasPaidEntryFromAPI = false; // ✅ NEW: Track if user has paid entry
-          
-          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
-            const userParticipant = liveAuction.participants.find(
-              (participant: any) => participant.playerId === currentUser.id
-            );
+          // Extract hourlyAuctionId from the response
+          if (result.success && result.data?.hourlyAuctionId) {
+            setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
             
-            if (userParticipant) {
-              // ✅ CRITICAL FIX: If user is found in participants, they have paid entry fee
-              userHasPaidEntryFromAPI = true;
-              userEntryFeeFromAPI = userParticipant.entryFee;
-              console.log(`✅ User found in participants - entry fee paid: ₹${userEntryFeeFromAPI}`);
-            } else {
-              console.log(`⚠️ User NOT found in participants - entry fee not paid`);
-            }
-          }
-          
-          // ✅ NEW: Log raw API data for debugging
-          console.log('🔍 [LIVE AUCTION API] Raw round data from API:', {
-            'Total Rounds': liveAuction.rounds?.length || 0,
-            'Rounds': liveAuction.rounds?.map((r: any) => ({
-              roundNumber: r.roundNumber,
-              'startedAt (UTC)': r.startedAt,
-              'completedAt (UTC)': r.completedAt,
-              status: r.status
-            }))
-          });
-          
-          // ✅ CRITICAL: Update prize value and total participants from API
-          console.log('📊 [LIVE AUCTION DATA] Updating from API:', {
-            'Prize Name': liveAuction.productName,
-            'Prize Value': liveAuction.productValue,
-            'Total Participants': liveAuction.participants?.length || 0
-          });
-          
-          // ✅ CRITICAL: Find user in participants array to check isEliminated status
-          let userParticipant = null;
-          if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
-            userParticipant = liveAuction.participants.find(
-              (participant: any) => participant.playerId === currentUser.id
-            );
+            // ✅ NEW: Store live auction data to pass to PrizeShowcase
+            setLiveAuctionData(result.data);
             
-            if (userParticipant) {
-              console.log(`👤 Found user in participants:`, {
-                username: userParticipant.playerUsername,
-                isEliminated: userParticipant.isEliminated,
-                eliminatedInRound: userParticipant.eliminatedInRound,
-                currentRound: userParticipant.currentRound
-              });
-            }
-          }
-          
-          if (liveAuction.rounds && Array.isArray(liveAuction.rounds)) {
-            // ✅ First pass: Collect all user bids
-            liveAuction.rounds.forEach((round: any) => {
-              if (round.playersData && Array.isArray(round.playersData)) {
-                const userBid = round.playersData.find(
-                  (player: any) => player.playerId === currentUser.id
-                );
-                
-                if (userBid && userBid.auctionPlacedAmount) {
-                  userBidsMap[round.roundNumber] = userBid.auctionPlacedAmount;
-                  console.log(`✅ Found existing bid in Round ${round.roundNumber}: ₹${userBid.auctionPlacedAmount}`);
-                }
-              }
-            });
+            // ✅ Check if user has already placed bids in any rounds AND elimination status
+            const liveAuction = result.data;
+            const userBidsMap: { [roundNumber: number]: number } = {};
+            const userQualificationMap: { [roundNumber: number]: boolean } = {};
             
-            // ✅ Second pass: Set qualification status for each round
-            liveAuction.rounds.forEach((round: any) => {
-              // Round 1: Always eligible if entry fee is paid
-              if (round.roundNumber === 1) {
-                userQualificationMap[1] = true;
-                console.log(`✅ Round 1: User is eligible (entry fee paid)`);
-              }
+            // ✅ NEW: Extract user's entry fee from participants array
+            let userEntryFeeFromAPI: number | undefined = undefined;
+            let userHasPaidEntryFromAPI = false; // ✅ NEW: Track if user has paid entry
+            
+            if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+              const userParticipant = liveAuction.participants.find(
+                (participant: any) => participant.playerId === currentUser.id
+              );
               
-              // Rounds 2, 3, 4: Check if user is eliminated
-              if (round.roundNumber > 1) {
-                // ✅ CRITICAL: If user is eliminated, mark ALL future rounds as not qualified
-                if (userParticipant && userParticipant.isEliminated === true) {
-                  userQualificationMap[round.roundNumber] = false;
-                  console.log(`❌ Round ${round.roundNumber}: User is ELIMINATED (isEliminated=true from participants array)`);
-                } else if (userParticipant && userParticipant.isEliminated === false) {
-                  // User is NOT eliminated, they can continue
-                  userQualificationMap[round.roundNumber] = true;
-                  console.log(`✅ Round ${round.roundNumber}: User is QUALIFIED (isEliminated=false from participants array)`);
-                } else {
-                  // No participant data found - don't set qualification
-                  console.log(`⏳ Round ${round.roundNumber}: No participant data found, waiting...`);
-                }
+              if (userParticipant) {
+                // ✅ CRITICAL FIX: If user is found in participants, they have paid entry fee
+                userHasPaidEntryFromAPI = true;
+                userEntryFeeFromAPI = userParticipant.entryFee;
               }
-            });
-          }
-          
-            // ✅ NEW: Sticky optimistic payment logic
-            let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
-            
-            // If the API says not paid, but we have a recent local payment success, force it to true
-            if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
-              const now = Date.now();
-              // Check if we are still within the 15-second grace period
-              if (now - recentPaymentTimestamp.current < 15000) {
-                console.log('🛡️ [OPTIMISTIC UI] Forcing userHasPaidEntry to true (Grace period active)');
-                finalUserHasPaidEntry = true;
-              } else {
-                // Grace period expired, stop forcing
-                console.log('🛡️ [OPTIMISTIC UI] Grace period expired');
-                setRecentPaymentSuccess(false);
-              }
-            } else if (userHasPaidEntryFromAPI && recentPaymentSuccess) {
-              // API has caught up, we can clear the recent success flag
-              console.log('🛡️ [OPTIMISTIC UI] API has confirmed payment, clearing flag');
-              setRecentPaymentSuccess(false);
             }
-
-            // Update local state with user's existing bids, qualification status, current bid leaders, highest bid from API, winnersAnnounced flag, AND user's entry fee
-            setCurrentAuction(prev => {
-              const updatedBoxes = prev.boxes.map(box => {
-
-              if (box.type === 'round') {
-                const roundBox = box as RoundBox;
-                const roundData = liveAuction.rounds?.find(
-                  (r: any) => r.roundNumber === roundBox.roundNumber
-                );
-                
-                let updatedBox = { ...roundBox };
-                
-                // ✅ NEW: Set winnersAnnounced flag from live auction
-                if (liveAuction.winnersAnnounced) {
-                  updatedBox.winnersAnnounced = true;
-                }
-                
-                // ✅ DYNAMIC MIN BID CALCULATION based on previous round's highest bid and cutoff percentage
-                if (roundBox.roundNumber === 1) {
-                  // ✅ CRITICAL FIX: Use entry fee from API instead of local state
-                  updatedBox.minBid = userEntryFeeFromAPI || 10;
-                  console.log(`✅ Round 1 minBid = ₹${updatedBox.minBid} (entry fee from API)`);
-                } else {
-                  // Round 2, 3, 4: Min bid = highest bid from previous round - cutoff percentage
-                  const previousRoundNumber = roundBox.roundNumber - 1;
-                  const previousRoundData = liveAuction.rounds?.find(
-                    (r: any) => r.roundNumber === previousRoundNumber
+            
+            // ✅ CRITICAL: Find user in participants array to check isEliminated status
+            let userParticipant = null;
+            if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+              userParticipant = liveAuction.participants.find(
+                (participant: any) => participant.playerId === currentUser.id
+              );
+            }
+            
+            if (liveAuction.rounds && Array.isArray(liveAuction.rounds)) {
+              // ✅ First pass: Collect all user bids
+              liveAuction.rounds.forEach((round: any) => {
+                if (round.playersData && Array.isArray(round.playersData)) {
+                  const userBid = round.playersData.find(
+                    (player: any) => player.playerId === currentUser.id
                   );
                   
-                  if (previousRoundData && previousRoundData.playersData && previousRoundData.playersData.length > 0) {
-                    // Find the highest bid from previous round
-                    const highestBidInPreviousRound = Math.max(
-                      ...previousRoundData.playersData.map((p: any) => p.auctionPlacedAmount)
+                  if (userBid && userBid.auctionPlacedAmount) {
+                    userBidsMap[round.roundNumber] = userBid.auctionPlacedAmount;
+                  }
+                }
+              });
+              
+              // ✅ Second pass: Set qualification status for each round
+              liveAuction.rounds.forEach((round: any) => {
+                // Round 1: Always eligible if entry fee is paid
+                if (round.roundNumber === 1) {
+                  userQualificationMap[1] = true;
+                }
+                
+                // Rounds 2, 3, 4: Check if user is eliminated
+                if (round.roundNumber > 1) {
+                  // ✅ CRITICAL: If user is eliminated, mark ALL future rounds as not qualified
+                  if (userParticipant && userParticipant.isEliminated === true) {
+                    userQualificationMap[round.roundNumber] = false;
+                  } else if (userParticipant && userParticipant.isEliminated === false) {
+                    // User is NOT eliminated, they can continue
+                    userQualificationMap[round.roundNumber] = true;
+                  }
+                }
+              });
+            }
+            
+              // ✅ NEW: Sticky optimistic payment logic
+              let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+              
+              // If the API says not paid, but we have a recent local payment success, force it to true
+              if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                const now = Date.now();
+                // Check if we are still within the 15-second grace period
+                if (now - recentPaymentTimestamp.current < 15000) {
+                  finalUserHasPaidEntry = true;
+                } else {
+                  // Grace period expired, stop forcing
+                  setRecentPaymentSuccess(false);
+                }
+              } else if (userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                // API has caught up, we can clear the recent success flag
+                setRecentPaymentSuccess(false);
+              }
+  
+              // Update local state
+              setCurrentAuction(prev => {
+                const updatedBoxes = prev.boxes.map(box => {
+
+                if (box.type === 'round') {
+                  const roundBox = box as RoundBox;
+                  const roundData = liveAuction.rounds?.find(
+                    (r: any) => r.roundNumber === roundBox.roundNumber
+                  );
+                  
+                  let updatedBox = { ...roundBox };
+                  
+                  // ✅ NEW: Set winnersAnnounced flag from live auction
+                  if (liveAuction.winnersAnnounced) {
+                    updatedBox.winnersAnnounced = true;
+                  }
+                  
+                  // ✅ DYNAMIC MIN BID CALCULATION
+                  if (roundBox.roundNumber === 1) {
+                    updatedBox.minBid = userEntryFeeFromAPI || 10;
+                  } else {
+                    const previousRoundNumber = roundBox.roundNumber - 1;
+                    const previousRoundData = liveAuction.rounds?.find(
+                      (r: any) => r.roundNumber === previousRoundNumber
                     );
                     
-                    // Get cutoff percentage for current round
-                    const currentRoundConfig = liveAuction.roundConfig?.find(
-                      (rc: any) => rc.round === roundBox.roundNumber
-                    );
-                    const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
-                    
-                    // Calculate min bid: highest bid - (highest bid * cutoff percentage / 100)
+                    if (previousRoundData && previousRoundData.playersData && previousRoundData.playersData.length > 0) {
+                      const highestBidInPreviousRound = Math.max(
+                        ...previousRoundData.playersData.map((p: any) => p.auctionPlacedAmount)
+                      );
+                      const currentRoundConfig = liveAuction.roundConfig?.find(
+                        (rc: any) => rc.round === roundBox.roundNumber
+                      );
+                      const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
                       const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
                       updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
                     } else {
-                    // Fallback: If no previous round data, use entry fee
-                    const entryBox = prev.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid);
-                    const userEntryFee = entryBox ? (entryBox as EntryBox).entryFee : 10;
-                    updatedBox.minBid = userEntryFee || 10;
-                    console.log(`⚠️ Round ${roundBox.roundNumber} minBid fallback = ₹${updatedBox.minBid} (no previous round data)`);
-                  }
-                }
-                
-                // ✅ CRITICAL FIX: Do NOT convert API times - they're already in the correct format
-                // The backend sends times like "13:45:00.000Z" which should display as 1:45 PM (not converted)
-                if (roundData) {
-                    if (roundData.startedAt) {
-                      // Use the time directly without timezone conversion
-                      updatedBox.opensAt = new Date(roundData.startedAt);
+                      const entryBox = prev.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid);
+                      const userEntryFee = entryBox ? (entryBox as EntryBox).entryFee : 10;
+                      updatedBox.minBid = userEntryFee || 10;
                     }
-                    if (roundData.completedAt) {
-                      // Use the time directly without timezone conversion
-                      updatedBox.closesAt = new Date(roundData.completedAt);
-                    } else if (roundData.startedAt) {
-                    // If not completed, calculate closesAt as opensAt + 15 minutes
-                    const opensAt = new Date(roundData.startedAt);
-                    updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
                   }
                   
-                  // Update status based on actual round data
-                  if (roundData.status === 'COMPLETED') {
-                    updatedBox.status = 'completed';
-                  } else if (roundData.status === 'ACTIVE') {
-                    updatedBox.status = 'active';
-                    updatedBox.isOpen = true;
-                  } else if (roundData.status === 'PENDING') {
-                    updatedBox.status = 'upcoming';
-                    updatedBox.isOpen = false;
-                  }
-                }
-                
-                if (roundData && roundData.playersData && roundData.playersData.length > 0) {
-                  // Sort by bid amount (descending) and timestamp (ascending for ties)
-                  const sortedPlayers = [...roundData.playersData].sort((a: any, b: any) => {
-                    if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
-                      return b.auctionPlacedAmount - a.auctionPlacedAmount;
+                  if (roundData) {
+                      if (roundData.startedAt) {
+                        updatedBox.opensAt = new Date(roundData.startedAt);
+                      }
+                      if (roundData.completedAt) {
+                        updatedBox.closesAt = new Date(roundData.completedAt);
+                      } else if (roundData.startedAt) {
+                      const opensAt = new Date(roundData.startedAt);
+                      updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
                     }
-                    return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
-                  });
-                  
-                  const highestBidder = sortedPlayers[0];
-                  
-                  // Find rank 1 player (highest bid)
-                  const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
-                  const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
-                  
-                    updatedBox = {
-                      ...updatedBox,
-                      currentBid: highestBidder.auctionPlacedAmount,
-                      bidder: highestBidder.playerUsername,
-                      highestBidFromAPI: highestBidFromAPI, // Store the rank 1 bid from API
-                    };
+                    
+                    if (roundData.status === 'COMPLETED') {
+                      updatedBox.status = 'completed';
+                    } else if (roundData.status === 'ACTIVE') {
+                      updatedBox.status = 'active';
+                      updatedBox.isOpen = true;
+                    } else if (roundData.status === 'PENDING') {
+                      updatedBox.status = 'upcoming';
+                      updatedBox.isOpen = false;
+                    }
                   }
-                
-                return updatedBox;
-              }
-              return box;
-            });
-            
-            return {
-              ...prev,
-              // ✅ CRITICAL FIX: Use correct field names from API response
-              // API uses: auctionName (not productName) and prizeValue (not productValue)
-              prize: liveAuction.auctionName || prev.prize,
-              prizeValue: liveAuction.prizeValue || prev.prizeValue,
-              totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
-              boxes: updatedBoxes,
-              userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
-              userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
-              winnersAnnounced: liveAuction.winnersAnnounced || false,
-                userEntryFeeFromAPI: userEntryFeeFromAPI, // ✅ CRITICAL: Store user's entry fee from API
-                userHasPaidEntry: finalUserHasPaidEntry, // ✅ CRITICAL FIX: Update based on participants array + optimistic state
-              };
-            });
+                  
+                  if (roundData && roundData.playersData && roundData.playersData.length > 0) {
+                    const sortedPlayers = [...roundData.playersData].sort((a: any, b: any) => {
+                      if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
+                        return b.auctionPlacedAmount - a.auctionPlacedAmount;
+                      }
+                      return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
+                    });
+                    const highestBidder = sortedPlayers[0];
+                    const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
+                    const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
+                    
+                      updatedBox = {
+                        ...updatedBox,
+                        currentBid: highestBidder.auctionPlacedAmount,
+                        bidder: highestBidder.playerUsername,
+                        highestBidFromAPI: highestBidFromAPI,
+                      };
+                    }
+                  
+                  return updatedBox;
+                }
+                return box;
+              });
+              
+              return {
+                ...prev,
+                prize: liveAuction.auctionName || prev.prize,
+                prizeValue: liveAuction.prizeValue || prev.prizeValue,
+                totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+                boxes: updatedBoxes,
+                userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
+                userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
+                winnersAnnounced: liveAuction.winnersAnnounced || false,
+                  userEntryFeeFromAPI: userEntryFeeFromAPI,
+                  userHasPaidEntry: finalUserHasPaidEntry,
+                };
+              });
 
-        } else {
-          console.log('⚠️ No live auction found in response');
-          setLiveAuctionData(null);
+          } else {
+            setLiveAuctionData(null);
+          }
+        } catch (error) {
+          console.error('Error fetching live auction:', error);
+        } finally {
+          setIsLoadingLiveAuction(false);
         }
-      } catch (error) {
-        console.error('Error fetching live auction:', error);
-      } finally {
-        // ✅ NEW: Set loading state to false after fetch completes
-        setIsLoadingLiveAuction(false);
-      }
-    };
+      };
 
-    fetchCurrentAuctionId();
-  }, [currentUser?.id, justLoggedIn, forceRefetchTrigger]); // ✅ REMOVED currentAuction.userHasPaidEntry to prevent refresh loops
+      // Initial fetch
+      fetchCurrentAuctionId(forceRefetchTrigger === 0);
+
+      // ✅ ADDED: High-frequency polling (3 seconds) to detect real-time updates like early completion
+      const interval = setInterval(() => {
+        fetchCurrentAuctionId(false); // Background refresh
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }, [currentUser?.id, justLoggedIn, forceRefetchTrigger]);
 
   const handleNavigate = (page: string, data?: any) => {
     setCurrentPage(page);

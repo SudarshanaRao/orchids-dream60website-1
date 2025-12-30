@@ -266,25 +266,25 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     return `Round ${box.roundNumber || 1}`;
   };
 
-  const getBoxStatus = () => {
-    if (box.type === 'entry') {
-      return box.hasPaid ? 'paid' : 'open';
-    }
-    
-    // ✅ CRITICAL FIX: Check if user hasn't paid entry fee FIRST
-    // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
-    if (!userHasPaidEntry) {
-      return 'upcoming';
-    }
-    
-    // ✅ CRITICAL FIX: Check winnersAnnounced FIRST - ALL unplayed rounds should show winners-announced
-    // If winners were announced early (≤3 qualified), all remaining rounds with no bids = winners-announced
-    if (winnersAnnounced && box.currentBid === 0) {
-      return 'winners-announced';
-    }
-    
-    // Show normal "Completed" status for rounds that were actually played (have bids)
-    if (box.status === 'completed') return 'completed';
+    const getBoxStatus = () => {
+      if (box.type === 'entry') {
+        return box.hasPaid ? 'paid' : 'open';
+      }
+      
+      // ✅ CRITICAL FIX: Check if user hasn't paid entry fee FIRST
+      // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
+      if (!userHasPaidEntry) {
+        return 'upcoming';
+      }
+      
+      // ✅ CRITICAL FIX: Check winnersAnnounced EARLY
+      // If winners were announced, any round that isn't already completed should show winners-announced
+      if (winnersAnnounced && box.status !== 'completed') {
+        return 'winners-announced';
+      }
+      
+      // Show normal "Completed" status for rounds that were actually played (have bids)
+      if (box.status === 'completed') return 'completed';
     
     // ✅ CRITICAL: Only show "not-qualified" if explicitly false (failed qualification)
     // If undefined (previous round not completed), show normal "locked" status instead
