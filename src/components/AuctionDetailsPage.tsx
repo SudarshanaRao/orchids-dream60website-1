@@ -1266,7 +1266,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
               )}
 
               {/* Expired Status - no one claimed */}
-              {auction.prizeClaimStatus === 'EXPIRED' && (
+              {auction.prizeClaimStatus === 'EXPIRED' && !(auction.claimedByRank && auction.claimedByRank < (auction.finalRank || 0)) && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}

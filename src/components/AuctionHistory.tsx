@@ -829,7 +829,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                 )}
 
                 {/* Claim window expired - show who claimed if available */}
-                {localAuction.prizeClaimStatus === 'EXPIRED' && (
+                {localAuction.prizeClaimStatus === 'EXPIRED' && !(localAuction.claimedByRank && localAuction.claimedByRank < (localAuction.finalRank || 0)) && (
                   <div className="p-2 sm:p-3 bg-gradient-to-r from-red-50 to-rose-50 border border-red-300 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center">
