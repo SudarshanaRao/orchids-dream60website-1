@@ -302,8 +302,23 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     return 'bidding';
   };
 
-  const status = getBoxStatus();
-  const isClickable = box.isOpen && status !== 'paid' && status !== 'completed' && status !== 'upcoming' && status !== 'not-qualified' && status !== 'winners-announced' && !userBidAmount;
+    const status = getBoxStatus();
+
+    // ✅ Reusable duration display for all boxes
+    const durationDisplay = box.type === 'round' && box.opensAt && box.closesAt && (
+      <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
+        <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
+          <Clock className="w-2.5 h-2.5 shrink-0" />
+          <span className="font-medium">Duration</span>
+        </div>
+        <div className="text-[10px] sm:text-sm font-semibold text-purple-900 truncate">
+          {getRoundTimeRange()}
+        </div>
+      </div>
+    );
+
+    const isClickable = box.isOpen && status !== 'paid' && status !== 'completed' && status !== 'upcoming' && status !== 'not-qualified' && status !== 'winners-announced' && !userBidAmount;
+
 
   // ✅ CRITICAL: Extra safeguard - never allow clicking if explicitly not qualified or winners announced
   const canPlaceBid = isClickable && !(box.roundNumber && box.roundNumber > 1 && isUserQualified === false) && !winnersAnnounced;
@@ -570,9 +585,11 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
             )}
           </div>
 
-          {/* Information Section */}
-          <div className="space-y-1.5 sm:space-y-2.5">
-            {status === 'winners-announced' ? (
+            {/* Information Section */}
+            <div className="space-y-1.5 sm:space-y-2.5">
+              {durationDisplay}
+              {status === 'winners-announced' ? (
+
               <>
                 {/* Winners Announced Info - Green */}
                 <div className="bg-gradient-to-r from-green-50/90 to-emerald-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-green-200/60">
@@ -609,23 +626,10 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                   </div>
                 )}
               </>
-            ) : status === 'completed' ? (
-              <>
-                {/* ✅ Completion Info with Round Time */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
-                  <div className="flex items-center gap-1 sm:gap-2 text-purple-800 text-[10px] font-semibold mb-0.5 sm:mb-1.5">
-                    <Trophy className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span>Completed</span>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] text-purple-700">
-                    <Clock className="w-2.5 h-2.5 shrink-0" />
-                    <span className="truncate">
-                      {getRoundTimeRange()}
-                    </span>
-                  </div>
-                </div>
+              ) : status === 'completed' ? (
+                <>
+                  {/* Prize Display for Completed Round */}
 
-                {/* Prize Display for Completed Round */}
                 {box.type === 'round' && box.prizeAmount && (
                   <div className="bg-gradient-to-r from-amber-50/90 to-yellow-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-amber-200/60">
                     <div className="flex items-center justify-between gap-1.5">
