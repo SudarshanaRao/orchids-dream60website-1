@@ -132,22 +132,34 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
               const period = auctionHour >= 12 ? 'PM' : 'AM';
               const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
               
-              let status = 'upcoming';
-              let winner = null;
-              
-              if (currentAuctionData.Status === 'LIVE') {
-                status = 'active';
-              } else if (currentAuctionData.Status === 'COMPLETED') {
-                status = 'completed';
-                if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
+                let status = 'upcoming';
+                let winner = null;
+                let isPrizeClaimed = false;
+                
+                if (currentAuctionData.Status === 'LIVE') {
+                  status = 'active';
+                } else if (currentAuctionData.Status === 'COMPLETED') {
+                  status = 'completed';
+                  if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
+                    const topWinner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
+                    if (topWinner) {
+                      winner = topWinner.playerUsername;
+                      isPrizeClaimed = topWinner.isPrizeClaimed || false;
+                    }
+                  }
+                } else if (currentAuctionData.Status === 'UPCOMING') {
+                  status = 'upcoming';
+                }
+                
+                // If winners are announced, we can also get winner info even if status is not COMPLETED
+                const winnersAnnounced = currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0);
+                if (winnersAnnounced && !winner && currentAuctionData.topWinners?.length > 0) {
                   const topWinner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
-                  if (topWinner && topWinner.playerUsername) {
+                  if (topWinner) {
                     winner = topWinner.playerUsername;
+                    isPrizeClaimed = topWinner.isPrizeClaimed || false;
                   }
                 }
-              } else if (currentAuctionData.Status === 'UPCOMING') {
-                status = 'upcoming';
-              }
               
                 // Check if user has joined this auction
                 const hasUserJoined = user?.id && currentAuctionData.participants?.some(
@@ -178,9 +190,10 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                       value: currentAuctionData.prizeValue || 0,
                       image: currentAuctionData.imageUrl || 'https://images.unsplash.com/photo-1727093493878-874890b4f9fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpUGhvbmUlMjBzbWFydHBob25lJTIwbW9kZXJufGVufDF8fHx8MTc2Mjc5OTQ1MHww&ixlib=rb-4.1.0&q=80&w=1080'
                     },
-                    winner,
-                    winnersAnnounced: currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0),
-                    roundCount: currentAuctionData.roundCount || 4,
+                      winner,
+                      isPrizeClaimed,
+                      winnersAnnounced: winnersAnnounced,
+                      roundCount: currentAuctionData.roundCount || 4,
                     totalParticipants: currentAuctionData.totalParticipants ?? (currentAuctionData.participants?.length ?? currentAuctionData.rounds?.[0]?.totalParticipants ?? 0),
                     hasUserJoined: hasUserJoined || false,
                     userRoundBids,
@@ -389,12 +402,22 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                       </div>
                     </div>
 
-                      <div className="flex items-center gap-4 sm:border-l sm:border-purple-100 sm:pl-4">
-                        <div className="text-center shrink-0">
-                          <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
-                          <div className="text-sm font-bold text-purple-900">{participantCount}</div>
-                        </div>
-                          {auction.status === 'completed' && auction.hourlyAuctionId && (
+                        <div className="flex items-center gap-4 sm:border-l sm:border-purple-100 sm:pl-4">
+                          <div className="text-center shrink-0">
+                            <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
+                            <div className="text-sm font-bold text-purple-900">{participantCount}</div>
+                          </div>
+
+                          {(auction.status === 'completed' || auction.winnersAnnounced) && (
+                            <div className="text-center shrink-0 border-l border-purple-100 pl-4">
+                              <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Prize Claimed By</div>
+                              <div className={`text-sm font-bold ${auction.isPrizeClaimed ? 'text-green-600' : 'text-red-500'}`}>
+                                {auction.isPrizeClaimed ? auction.winner : 'Not Claimed'}
+                              </div>
+                            </div>
+                          )}
+
+                            {auction.status === 'completed' && auction.hourlyAuctionId && (
                             <Button
                               onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
                               size="sm"
