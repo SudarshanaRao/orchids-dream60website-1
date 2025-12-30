@@ -300,8 +300,9 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
     const status = getBoxStatus();
 
-    // ✅ Reusable duration display for all boxes
-    const durationDisplay = box.opensAt && box.closesAt && (
+    // ✅ Reusable duration display - Only show for active/completed rounds, not for remaining/locked ones
+    const durationDisplay = box.opensAt && box.closesAt && 
+      (status === 'completed' || status === 'open' || status === 'bidding' || status === 'paid') && (
       <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
         <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
           <Clock className="w-2.5 h-2.5 shrink-0" />
