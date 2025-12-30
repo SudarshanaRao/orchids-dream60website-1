@@ -266,31 +266,31 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
     return `Round ${box.roundNumber || 1}`;
   };
 
-    const getBoxStatus = () => {
-      if (box.type === 'entry') {
-        return box.hasPaid ? 'paid' : 'open';
-      }
-      
-      // ✅ CRITICAL FIX: Check winnersAnnounced EARLY
-      // If winners were announced, show winners-announced status for ALL round boxes
-      if (winnersAnnounced) {
-        return 'winners-announced';
-      }
+      const getBoxStatus = () => {
+        if (box.type === 'entry') {
+          return box.hasPaid ? 'paid' : 'open';
+        }
+        
+        // ✅ CRITICAL FIX: Check if user hasn't paid entry fee 
+        // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
+        if (!userHasPaidEntry) {
+          return 'upcoming';
+        }
 
-      // ✅ CRITICAL FIX: Check if user hasn't paid entry fee 
-      // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
-      if (!userHasPaidEntry) {
-        return 'upcoming';
-      }
+        // ✅ 1. Show normal "Completed" status for rounds that were actually played/finished
+        // This ensures previous rounds still show their Leaderboard buttons even if auction is over
+        if (box.status === 'completed') return 'completed';
+        
+        // ✅ 2. If winners were announced (auction over), show winners-announced status for remaining round boxes
+        if (winnersAnnounced) {
+          return 'winners-announced';
+        }
       
-      // Show normal "Completed" status for rounds that were actually played (have bids)
-      if (box.status === 'completed') return 'completed';
-    
-    // ✅ CRITICAL: Only show "not-qualified" if explicitly false (failed qualification)
-    // This now includes global elimination logic from AuctionGrid
-    if (box.roundNumber && box.roundNumber > 1 && isUserQualified === false) {
-      return 'not-qualified';
-    }
+      // ✅ 3. Only show "not-qualified" if explicitly false (failed qualification)
+      // This now includes global elimination logic from AuctionGrid
+      if (box.roundNumber && box.roundNumber > 1 && isUserQualified === false) {
+        return 'not-qualified';
+      }
     
     // If user has paid, show actual status based on time
     if (!box.isOpen) return 'locked';
