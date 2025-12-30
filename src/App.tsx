@@ -2121,16 +2121,19 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'forgot') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <ForgotPasswordPage onBack={handleSwitchToLogin} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'forgot') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <ForgotPasswordPage 
+              onBack={handleSwitchToLogin} 
+              onNavigate={handleNavigate}
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
     if (currentPage === 'participation') {
       return (
