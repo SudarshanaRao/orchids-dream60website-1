@@ -1069,6 +1069,9 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
         }
       }
 
+      // ✅ SYNC: Ensure HourlyAuction data is updated with actual claimer info
+      await AuctionHistory.syncClaimStatus(payment.auctionId);
+
 
     const getRankSuffix = (rank) => {
       if (rank === 1) return '1st';

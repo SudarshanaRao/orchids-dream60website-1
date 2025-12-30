@@ -3,104 +3,6 @@ const AuctionHistory = require('../models/AuctionHistory');
 const HourlyAuction = require('../models/HourlyAuction');
 const DailyAuction = require('../models/DailyAuction');
 
-// Helper: sync winner claim statuses into HourlyAuction and DailyAuction config
-const syncWinnerStatuses = async (hourlyAuctionId) => {
-  try {
-    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
-    if (!hourlyAuction) return;
-
-    const historyWinners = await AuctionHistory.find({ hourlyAuctionId, isWinner: true });
-    if (!historyWinners || historyWinners.length === 0) return;
-
-    const byRank = historyWinners.reduce((acc, w) => {
-      acc[w.finalRank] = w;
-      return acc;
-    }, {});
-
-    if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
-      let actualClaimer = null;
-      let allExpired = true;
-
-      hourlyAuction.winners = hourlyAuction.winners.map(w => {
-        const hist = byRank[w.rank];
-        if (hist) {
-          w.prizeClaimStatus = hist.prizeClaimStatus;
-          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-          w.prizeClaimedAt = hist.claimedAt || null;
-          w.prizeClaimedBy = hist.claimedBy || hist.username || null;
-          w.claimNotes = hist.claimNotes || null;
-
-          if (w.isPrizeClaimed) {
-            actualClaimer = w;
-            allExpired = false;
-          }
-          if (hist.prizeClaimStatus === 'PENDING') {
-            allExpired = false;
-          }
-        }
-        return w;
-      });
-
-      // Update top-level winner info based on who actually claimed
-      if (actualClaimer) {
-        hourlyAuction.winnerId = actualClaimer.playerId;
-        hourlyAuction.winnerUsername = actualClaimer.playerUsername;
-        hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
-        console.log(`🏆 [SYNC_WINNERS] Rank ${actualClaimer.rank} claimed. Updated root winner to ${actualClaimer.playerUsername}`);
-      }
-
-      // If all winners expired/failed to claim, log it
-      if (allExpired && !actualClaimer) {
-        console.log(`⚠️ [SYNC_WINNERS] All winners for auction ${hourlyAuctionId} have expired without claiming`);
-      }
-
-      hourlyAuction.markModified('winners');
-      await hourlyAuction.save();
-    }
-
-    // Sync to DailyAuction
-    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
-    if (!dailyAuction) return;
-
-    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
-      c => c.TimeSlot === hourlyAuction.TimeSlot && c.auctionNumber === hourlyAuction.auctionNumber
-    );
-    if (configIndex === -1) return;
-
-    if (dailyAuction.dailyAuctionConfig[configIndex].topWinners) {
-      let dailyActualClaimer = null;
-
-      dailyAuction.dailyAuctionConfig[configIndex].topWinners = dailyAuction.dailyAuctionConfig[configIndex].topWinners.map(tw => {
-        const hist = byRank[tw.rank];
-        if (hist) {
-          tw.prizeClaimStatus = hist.prizeClaimStatus;
-          tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-          tw.prizeClaimedAt = hist.claimedAt || null;
-          tw.prizeClaimedBy = hist.claimedBy || hist.username || null;
-          tw.claimNotes = hist.claimNotes || null;
-
-          if (tw.isPrizeClaimed) {
-            dailyActualClaimer = tw;
-          }
-        }
-        return tw;
-      });
-
-      // Update hourlyAuctionId entry in dailyAuctionConfig if needed
-      if (dailyActualClaimer && dailyAuction.dailyAuctionConfig[configIndex]) {
-        dailyAuction.dailyAuctionConfig[configIndex].isAuctionCompleted = true;
-      }
-
-      dailyAuction.markModified('dailyAuctionConfig');
-      await dailyAuction.save();
-    }
-
-    console.log(`✅ [SYNC_WINNERS] Synced claim statuses for auction ${hourlyAuctionId} to HourlyAuction and DailyAuction`);
-  } catch (error) {
-    console.error('❌ [SYNC_WINNERS] Error syncing winner statuses:', error.message);
-  }
-};
-
 /**
  * Submit prize claim with UPI ID and payment details
  * POST /prize-claim/submit
@@ -171,7 +73,7 @@ const submitPrizeClaim = async (req, res) => {
       
       // ✅ IMMEDIATE: Advance queue to next winner without delay
       await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
-      await syncWinnerStatuses(hourlyAuctionId);
+      await AuctionHistory.syncClaimStatus(hourlyAuctionId);
       
       return res.status(400).json({
         success: false,
@@ -230,7 +132,7 @@ const submitPrizeClaim = async (req, res) => {
       console.log(`📢 [PRIZE_CLAIM] Notified ${winner.username} (Rank ${winner.finalRank}): Prize claimed by ${updatedEntry.username} (Rank ${updatedEntry.finalRank})`);
     }
     
-    await syncWinnerStatuses(hourlyAuctionId);
+    await AuctionHistory.syncClaimStatus(hourlyAuctionId);
     
     console.log(`✅ [PRIZE_CLAIM] Prize claimed successfully by ${updatedEntry.username} (${getRankSuffix(updatedEntry.finalRank)} place)`);
     console.log(`     💰 Final round bid amount: ₹${updatedEntry.lastRoundBidAmount || 0}`);
@@ -296,7 +198,7 @@ const cancelPrizeClaim = async (req, res) => {
     await historyEntry.save();
 
     await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'CANCELLED' });
-    await syncWinnerStatuses(hourlyAuctionId);
+    await AuctionHistory.syncClaimStatus(hourlyAuctionId);
 
     return res.status(200).json({
       success: true,
@@ -351,7 +253,7 @@ const getPrizeClaimStatus = async (req, res) => {
       
       // ✅ IMMEDIATE: Advance queue to next winner
       await AuctionHistory.advanceClaimQueue(hourlyAuctionId, { fromRank: historyEntry.finalRank, reason: 'EXPIRED_WINDOW' });
-      await syncWinnerStatuses(hourlyAuctionId);
+      await AuctionHistory.syncClaimStatus(hourlyAuctionId);
     }
     
     return res.status(200).json({
