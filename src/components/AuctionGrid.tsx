@@ -157,20 +157,32 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <AuctionBox
-                    box={item}
-                    onClick={() => handleBoxClick(item)}
-                    isUserHighestBidder={item.bidder === user?.username}
-                    onShowLeaderboard={onShowLeaderboard}
-                    userHasPaidEntry={auction.userHasPaidEntry}
-                    userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
-                    isUserQualified={item.roundNumber ? auction.userQualificationPerRound?.[item.roundNumber] : undefined}
-                    winnersAnnounced={auction.winnersAnnounced}
-                    serverTime={serverTime}
-                    hourlyAuctionId={auction.hourlyAuctionId} 
-                  />
-                )}
+                  ) : (
+                    <AuctionBox
+                      box={item}
+                      onClick={() => handleBoxClick(item)}
+                      isUserHighestBidder={item.bidder === user?.username}
+                      onShowLeaderboard={onShowLeaderboard}
+                      userHasPaidEntry={auction.userHasPaidEntry}
+                      userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
+                      isUserQualified={
+                        item.roundNumber 
+                          ? (
+                              // If user is explicitly unqualified in this round
+                              auction.userQualificationPerRound?.[item.roundNumber] === false ||
+                              // OR if they were unqualified in ANY previous round
+                              Object.entries(auction.userQualificationPerRound || {})
+                                .some(([round, qualified]) => parseInt(round) < item.roundNumber! && qualified === false)
+                              ? false 
+                              : auction.userQualificationPerRound?.[item.roundNumber]
+                            )
+                          : undefined
+                      }
+                      winnersAnnounced={auction.winnersAnnounced}
+                      serverTime={serverTime}
+                      hourlyAuctionId={auction.hourlyAuctionId} 
+                    />
+                  )}
               </div>
             ))}
           </div>

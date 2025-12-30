@@ -271,23 +271,23 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
         return box.hasPaid ? 'paid' : 'open';
       }
       
-      // ✅ CRITICAL FIX: Check if user hasn't paid entry fee FIRST
+      // ✅ CRITICAL FIX: Check winnersAnnounced EARLY
+      // If winners were announced, show winners-announced status for ALL round boxes
+      if (winnersAnnounced) {
+        return 'winners-announced';
+      }
+
+      // ✅ CRITICAL FIX: Check if user hasn't paid entry fee 
       // If user hasn't paid entry, ALL round boxes should show as 'upcoming' (locked)
       if (!userHasPaidEntry) {
         return 'upcoming';
-      }
-      
-      // ✅ CRITICAL FIX: Check winnersAnnounced EARLY
-      // If winners were announced, any round that isn't already completed should show winners-announced
-      if (winnersAnnounced && box.status !== 'completed') {
-        return 'winners-announced';
       }
       
       // Show normal "Completed" status for rounds that were actually played (have bids)
       if (box.status === 'completed') return 'completed';
     
     // ✅ CRITICAL: Only show "not-qualified" if explicitly false (failed qualification)
-    // If undefined (previous round not completed), show normal "locked" status instead
+    // This now includes global elimination logic from AuctionGrid
     if (box.roundNumber && box.roundNumber > 1 && isUserQualified === false) {
       return 'not-qualified';
     }
@@ -302,7 +302,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
     // ✅ Reusable duration display - Show for all rounds if winners are not yet announced
     const durationDisplay = box.opensAt && box.closesAt && 
-      (status === 'completed' || (!winnersAnnounced && status !== 'winners-announced')) && (
+      (status === 'completed' || (!winnersAnnounced && status !== 'winners-announced' && status !== 'not-qualified')) && (
       <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
         <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
           <Clock className="w-2.5 h-2.5 shrink-0" />
@@ -737,12 +737,12 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 </div>
               ) : status === 'not-qualified' ? (
                 <>
-                  {/* Not Qualified Warning */}
+                  {/* Eliminated Warning */}
                   <div className="bg-red-50/90 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-red-300/60 text-center">
                     <div className="flex flex-col items-center justify-center gap-1.5">
                       <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
-                      <div className="text-[10px] sm:text-sm font-bold text-red-800">
-                        Not Qualified
+                      <div className="text-[10px] sm:text-sm font-bold text-red-800 uppercase tracking-wider">
+                        You are eliminated
                       </div>
                       <div className="text-[9px] sm:text-[11px] text-red-700 leading-tight px-1 font-medium">
                         You did not qualify for this round because your bid in the previous round was not among the top 3 unique bids.
