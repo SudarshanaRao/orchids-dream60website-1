@@ -1203,15 +1203,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return () => clearInterval(interval);
   }, [serverTime]); // ✅ Add serverTime as dependency
 
-  // Fetch current hourly auction ID when user is logged in and has paid entry
+  // Fetch current hourly auction ID when user is logged in
     useEffect(() => {
       const fetchCurrentAuctionId = async (showLoading = false) => {
-        // ✅ CRITICAL FIX: Also fetch when user just logged in (before entry payment)
-        // This ensures fresh data is loaded and no stale bids from previous users are shown
+        // ✅ CRITICAL FIX: Always fetch when user is logged in
+        // This ensures the user's participation status is correctly loaded from the API on page refresh
         if (!currentUser?.id) return;
-        
-        // Only fetch if user has paid entry OR just logged in
-        if (!currentAuction.userHasPaidEntry && !justLoggedIn) return;
         
         // ✅ Reset justLoggedIn flag after triggering refetch
         if (justLoggedIn) {
