@@ -1374,17 +1374,17 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                       {detailedData.rounds.map((round: RoundDetails, index: number) => {
                         const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1;
                         
-                          // ✅ FIX: Improved round status label logic
-                          let roundStatusLabel = round.status;
-                          if (isSkippedRound) {
-                            roundStatusLabel = 'WINNERS Announced';
-                          } else if (auction.winnersAnnounced) {
-                            if (round.status.toLowerCase() === 'active' || round.status.toLowerCase() === 'pending') {
+                            // ✅ FIX: Improved round status label logic
+                            let roundStatusLabel = round.status;
+                            if (isSkippedRound) {
                               roundStatusLabel = 'WINNERS Announced';
-                            } else {
-                              roundStatusLabel = 'Completed';
+                            } else if (auction.winnersAnnounced) {
+                              if (round.status.toLowerCase() === 'active' || round.status.toLowerCase() === 'pending' || round.status.toLowerCase() === 'upcoming') {
+                                roundStatusLabel = 'WINNERS Announced';
+                              } else {
+                                roundStatusLabel = 'Completed';
+                              }
                             }
-                          }
 
                         const qualifiedLabel = winnersAnnouncedEarly && round.roundNumber === 1 ? 'Winner' : 'Qualified';
                         const nonParticipationText = isSkippedRound

@@ -302,7 +302,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
 
     // ✅ Reusable duration display - Show for all rounds if winners are not yet announced
     const durationDisplay = box.opensAt && box.closesAt && 
-      (!winnersAnnounced || status === 'completed' || status === 'open' || status === 'bidding' || status === 'paid') && (
+      (status === 'completed' || (!winnersAnnounced && status !== 'winners-announced')) && (
       <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 border border-purple-200/60">
         <div className="flex items-center gap-1 text-[10px] text-purple-700 mb-0.5">
           <Clock className="w-2.5 h-2.5 shrink-0" />

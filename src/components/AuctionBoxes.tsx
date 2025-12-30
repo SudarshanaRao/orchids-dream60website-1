@@ -84,17 +84,23 @@ export function AuctionBoxes({
         return false;
       })();
 
-      return {
-        id: box.id,
-        type: "round" as const,
-        roundNumber: box.roundNumber,
-        isOpen: computedIsOpen,
-        currentBid: box.currentBid || 0,
-        bidder: box.bidder || null,
-        opensAt,
-        closesAt,
-        status: roundData?.status?.toLowerCase?.() === "completed" ? "completed" : computedIsOpen ? "active" : "upcoming",
-        leaderboard: roundData?.playersData,
+        return {
+          id: box.id,
+          type: "round" as const,
+          roundNumber: box.roundNumber,
+          isOpen: computedIsOpen,
+          currentBid: box.currentBid || 0,
+          bidder: box.bidder || null,
+          opensAt,
+          closesAt,
+          status: liveAuctionData?.winnersAnnounced && roundData?.status?.toLowerCase?.() !== "completed" 
+            ? "winners-announced" 
+            : roundData?.status?.toLowerCase?.() === "completed" 
+              ? "completed" 
+              : computedIsOpen 
+                ? "active" 
+                : "upcoming",
+          leaderboard: roundData?.playersData,
         prizeAmount: roundData?.prizeAmount,
         highestBidFromAPI: Array.isArray(roundData?.playersData)
           ? Math.max(0, ...roundData.playersData.map((p: any) => p.auctionPlacedAmount || p.bidAmount || 0))
