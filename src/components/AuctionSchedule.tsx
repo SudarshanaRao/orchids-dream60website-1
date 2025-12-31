@@ -103,13 +103,13 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
         setIsLoading(true);
       }
 
-          try {
-            const [dailyResponse, liveResponse] = await Promise.all([
-              fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?t=${Date.now()}`, { cache: 'no-store' }),
-              fetch(`${API_ENDPOINTS.scheduler.liveAuction}?t=${Date.now()}`, { cache: 'no-store' })
-            ]);
-            
-            const dailyData = await dailyResponse.json();
+        try {
+          const [dailyResponse, liveResponse] = await Promise.all([
+            fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?`),
+            fetch(`${API_ENDPOINTS.scheduler.liveAuction}?`)
+          ]);
+          
+          const dailyData = await dailyResponse.json();
           const liveData = await liveResponse.json();
           
           let liveAuctionData = null;
