@@ -11,7 +11,7 @@ interface ChristmasHeroBannerProps {
 
 export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
   return (
-    <section className="relative w-full h-[60vh] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+    <section className="relative w-full h-[32vh] sm:h-[450px] md:h-[550px] lg:h-[650px] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 
@@ -27,18 +27,18 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
           className="absolute inset-0 w-full h-full"
         >
             {/* Main Cinematic Video */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover object-center"
-            >
-              <source 
-                src="/christmas-santa.mp4" 
-                type="video/mp4" 
-              />
-            </video>
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover object-center"
+              >
+                <source 
+                  src="/newyear_banner.mp4" 
+                  type="video/mp4" 
+                />
+              </video>
         </motion.div>
         
         {/* Elegant Overlays */}
@@ -115,9 +115,9 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
                   className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#B71C1C]/80 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
                 >
                   <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
-                    Christmas Special
-                  </span>
+                    <span className="text-white text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
+                      New Year Special
+                    </span>
                 </motion.div>
   
                   {/* Headline & Subheadline */}
@@ -127,20 +127,20 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 1, delay: 0.4 }}
                     >
-                      <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
-                          style={{ fontFamily: "'Playfair Display', serif" }}>
-                        Have a <br />
-                        <span className="text-yellow-400 italic relative inline-block">
-                          Merrylitious
-                          <motion.span 
-                            className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 1.2, duration: 1 }}
-                          />
-                        </span> <br />
-                        Christmas
-                      </h1>
+                        <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
+                            style={{ fontFamily: "'Playfair Display', serif" }}>
+                          Have a <br />
+                          <span className="text-yellow-400 italic relative inline-block">
+                            Spectacular
+                            <motion.span 
+                              className="absolute -bottom-2 left-0 w-full h-[3px] bg-yellow-400/40 rounded-full"
+                              initial={{ scaleX: 0 }}
+                              animate={{ scaleX: 1 }}
+                              transition={{ delay: 1.2, duration: 1 }}
+                            />
+                          </span> <br />
+                          New Year
+                        </h1>
                     </motion.div>
   
                     <motion.p
