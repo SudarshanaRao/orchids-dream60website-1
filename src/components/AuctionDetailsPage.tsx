@@ -595,6 +595,13 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     return '🏆';
   };
 
+  const handleCloseSuccess = useCallback(() => setShowSuccessModal(null), []);
+  const handleCloseFailure = useCallback(() => setShowFailureModal(null), []);
+  const handleRetryFailure = useCallback(() => {
+    setShowFailureModal(null);
+    setShowClaimForm(true);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       
@@ -1052,51 +1059,51 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                     </CardContent>
                   </Card>
                 </motion.div>
-              )}
+            )}
 
-              {/* Claimed Status - Only show if claimedBy is NOT set (to avoid duplicate) */}
-              {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId === userInfo.userEmail && !auction.claimedBy && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 sm:mb-6"
-                >
-                  <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.1, 1],
-                          }}
-                          transition={{ 
-                            duration: 1.5,
-                            repeat: Infinity,
-                            repeatDelay: 0.5
-                          }}
-                          className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                        >
-                          <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                        </motion.div>
-                        <div className="flex-1">
-                          <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                            {getRankEmoji(auction.finalRank || 1)} Prize Claimed Successfully!
-                          </h2>
-                          <p className="text-sm text-green-700">Congratulations on your win, Rank {getRankSuffix(auction.finalRank || 1)}</p>
-                        </div>
+            {/* Claimed Status - Only show if claimedBy is NOT set (to avoid duplicate) */}
+            {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId === userInfo.userEmail && !auction.claimedBy && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatDelay: 0.5
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
+                          {getRankEmoji(auction.finalRank || 1)} Prize Claimed Successfully!
+                        </h2>
+                        <p className="text-sm text-green-700">Congratulations on your win, Rank {getRankSuffix(auction.finalRank || 1)}</p>
                       </div>
+                    </div>
 
-                      <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-green-900 mb-1">
-                              Amazon Voucher Delivered
+                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-green-900 mb-1">
+                            Amazon Voucher Delivered
+                          </p>
+                            <p className="text-xs text-green-700 mb-2">
+                              Your prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been sent to <span className="font-semibold">{maskEmail(userInfo.userEmail)}</span>
                             </p>
-                              <p className="text-xs text-green-700 mb-2">
-                                Your prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been sent to <span className="font-semibold">{maskEmail(userInfo.userEmail)}</span>
-                              </p>
 
-                            {auction.claimedAt && (
+                          {auction.claimedAt && (
     <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
       <Clock className="w-3 h-3" />
       <span>
@@ -1117,56 +1124,56 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   )}
 
 
-                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
-              {/* Prize claimed by another winner - Only show if claimedBy is NOT set */}
-              {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId && auction.claimUpiId !== userInfo.userEmail && !auction.claimedBy && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 sm:mb-6"
-                >
-                  <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.1, 1],
-                          }}
-                          transition={{ 
-                            duration: 1.5,
-                            repeat: Infinity,
-                            repeatDelay: 0.5
-                          }}
-                          className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                        >
-                          <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                        </motion.div>
+            {/* Prize claimed by another winner - Only show if claimedBy is NOT set */}
+            {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId && auction.claimUpiId !== userInfo.userEmail && !auction.claimedBy && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatDelay: 0.5
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
+                          {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
+                        </h2>
+                        <p className="text-sm text-green-700">This prize has been claimed</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                            {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
-                          </h2>
-                          <p className="text-sm text-green-700">This prize has been claimed</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-green-900 mb-1">
-                              Winner Details
-                            </p>
-                            <p className="text-xs text-green-700 mb-1">
-                              Claimed by {auction.claimedBy || 'Winner'}
-                            </p>
-                            {auction.claimedAt && (
+                          <p className="text-sm font-semibold text-green-900 mb-1">
+                            Winner Details
+                          </p>
+                          <p className="text-xs text-green-700 mb-1">
+                            Claimed by {auction.claimedBy || 'Winner'}
+                          </p>
+                          {auction.claimedAt && (
     <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
       <Clock className="w-3 h-3" />
       <span>
@@ -1187,56 +1194,56 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   )}
 
 
-                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
-              {/* Prize claimed but no email info - Generic claimed banner - Only show if claimedBy is NOT set */}
-              {auction.prizeClaimStatus === 'CLAIMED' && !auction.claimUpiId && !auction.claimedBy && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 sm:mb-6"
-                >
-                  <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.1, 1],
-                          }}
-                          transition={{ 
-                            duration: 1.5,
-                            repeat: Infinity,
-                            repeatDelay: 0.5
-                          }}
-                          className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                        >
-                          <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                        </motion.div>
+            {/* Prize claimed but no email info - Generic claimed banner - Only show if claimedBy is NOT set */}
+            {auction.prizeClaimStatus === 'CLAIMED' && !auction.claimUpiId && !auction.claimedBy && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6"
+              >
+                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 mb-3">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{ 
+                          duration: 1.5,
+                          repeat: Infinity,
+                          repeatDelay: 0.5
+                        }}
+                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                      </motion.div>
+                      <div className="flex-1">
+                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
+                          🎉 Prize Claimed Successfully!
+                        </h2>
+                        <p className="text-sm text-green-700">This auction prize has been claimed</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                         <div className="flex-1">
-                          <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                            🎉 Prize Claimed Successfully!
-                          </h2>
-                          <p className="text-sm text-green-700">This auction prize has been claimed</p>
-                        </div>
-                      </div>
-
-                      <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                        <div className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-green-900 mb-1">
-                              Prize Successfully Claimed
-                            </p>
-                            <p className="text-xs text-green-700 mb-2">
-                              Amazon voucher worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been delivered
-                            </p>
-                            {auction.claimedAt && (
+                          <p className="text-sm font-semibold text-green-900 mb-1">
+                            Prize Successfully Claimed
+                          </p>
+                          <p className="text-xs text-green-700 mb-2">
+                            Amazon voucher worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been delivered
+                          </p>
+                          {auction.claimedAt && (
     <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
       <Clock className="w-3 h-3" />
       <span>
@@ -1257,100 +1264,100 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   )}
 
 
-                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
-              {/* Expired Status - no one claimed */}
-              {auction.prizeClaimStatus === 'EXPIRED' && !(auction.claimedByRank && auction.claimedByRank < (auction.finalRank || 0)) && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 sm:mb-6 space-y-4"
-                >
-                  <Card className="border-2 border-red-300/70 bg-gradient-to-r from-red-50 to-rose-50 backdrop-blur-xl shadow-lg overflow-hidden">
+            {/* Expired Status - no one claimed */}
+            {auction.prizeClaimStatus === 'EXPIRED' && !(auction.claimedByRank && auction.claimedByRank < (auction.finalRank || 0)) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 sm:mb-6 space-y-4"
+              >
+                <Card className="border-2 border-red-300/70 bg-gradient-to-r from-red-50 to-rose-50 backdrop-blur-xl shadow-lg overflow-hidden">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm sm:text-lg font-bold text-red-900 mb-1">
+                          {getRankEmoji(auction.finalRank || 1)} Your Claim Window Expired
+                        </p>
+                        <p className="text-xs sm:text-sm text-red-700 leading-relaxed">
+                          The 15-minute deadline for your rank passed. The prize has been offered to the next eligible winner in the priority queue.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Show detailed Claimed By container */}
+                {auction.claimedBy && (
+                  <Card className="border-2 border-emerald-300/70 bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-50 backdrop-blur-xl shadow-xl overflow-hidden">
                     <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                      <div className="flex items-center gap-3 sm:gap-4 mb-4">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                          <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm sm:text-lg font-bold text-red-900 mb-1">
-                            {getRankEmoji(auction.finalRank || 1)} Your Claim Window Expired
-                          </p>
-                          <p className="text-xs sm:text-sm text-red-700 leading-relaxed">
-                            The 15-minute deadline for your rank passed. The prize has been offered to the next eligible winner in the priority queue.
-                          </p>
+                          <h3 className="text-sm sm:text-lg font-bold text-emerald-900">
+                            {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
+                          </h3>
+                          <p className="text-xs sm:text-sm text-emerald-700">The prize for this auction has been officially claimed.</p>
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
+                          <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed By</p>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <Users className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span className="font-bold text-emerald-900 text-sm sm:text-base">{maskEmail(auction.claimedBy)}</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
+                          <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed Time</p>
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <Clock className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span className="font-bold text-emerald-900 text-sm sm:text-base">
+                              {auction.claimedAt ? (() => {
+                                const d = new Date(auction.claimedAt);
+                                const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
+                                  return adjusted.toLocaleString('en-IN', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false,
+                                    timeZone: 'Asia/Kolkata'
+                                  });
+                              })() : 'Updating...'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {auction.claimNotes && (
+                        <div className="mt-3 p-3 bg-white/40 rounded-lg border border-emerald-100 italic text-xs text-emerald-700">
+                          <strong>Note:</strong> {auction.claimNotes}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-
-                  {/* Show detailed Claimed By container */}
-                  {auction.claimedBy && (
-                    <Card className="border-2 border-emerald-300/70 bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-50 backdrop-blur-xl shadow-xl overflow-hidden">
-                      <CardContent className="p-4 sm:p-6">
-                        <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-sm sm:text-lg font-bold text-emerald-900">
-                              {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
-                            </h3>
-                            <p className="text-xs sm:text-sm text-emerald-700">The prize for this auction has been officially claimed.</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
-                            <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed By</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                                <Users className="w-4 h-4 text-emerald-600" />
-                              </div>
-                              <span className="font-bold text-emerald-900 text-sm sm:text-base">{maskEmail(auction.claimedBy)}</span>
-                            </div>
-                          </div>
-
-                          <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
-                            <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed Time</p>
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                                <Clock className="w-4 h-4 text-emerald-600" />
-                              </div>
-                              <span className="font-bold text-emerald-900 text-sm sm:text-base">
-                                {auction.claimedAt ? (() => {
-                                  const d = new Date(auction.claimedAt);
-                                  const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
-                                    return adjusted.toLocaleString('en-IN', {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      hour12: false,
-                                      timeZone: 'Asia/Kolkata'
-                                    });
-                                })() : 'Updating...'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {auction.claimNotes && (
-                          <div className="mt-3 p-3 bg-white/40 rounded-lg border border-emerald-100 italic text-xs text-emerald-700">
-                            <strong>Note:</strong> {auction.claimNotes}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-                </motion.div>
-              )}
+                )}
+              </motion.div>
+            )}
 
             {/* Round-by-Round Breakdown */}
             {detailedData && detailedData.rounds && detailedData.rounds.length > 0 && (
@@ -1540,7 +1547,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
 
 
             {/* Net Profit Card for Winners */}
-            {auction.isWinner && auction.lastRoundBidAmount && auction.prizeClaimStatus === 'CLAIMED' && (
+            {auction.isWinner && auction.lastRoundBidAmount && auction.prizeValue && auction.prizeClaimStatus === 'CLAIMED' && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -1622,8 +1629,8 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           auctionId={showSuccessModal.auctionId}
           paidBy={showSuccessModal.paidBy}
           paymentMethod={showSuccessModal.paymentMethod}
-          onBackToHome={() => setShowSuccessModal(null)}
-          onClose={() => setShowSuccessModal(null)}
+          onBackToHome={handleCloseSuccess}
+          onClose={handleCloseSuccess}
         />
       )}
 
@@ -1636,12 +1643,9 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           productName={showFailureModal.productName}
           auctionId={showFailureModal.auctionId}
           paidBy={showFailureModal.paidBy}
-          onRetry={() => {
-            setShowFailureModal(null);
-            setShowClaimForm(true);
-          }}
-          onBackToHome={() => setShowFailureModal(null)}
-          onClose={() => setShowFailureModal(null)}
+          onRetry={handleRetryFailure}
+          onBackToHome={handleCloseFailure}
+          onClose={handleCloseFailure}
         />
       )}
     </div>

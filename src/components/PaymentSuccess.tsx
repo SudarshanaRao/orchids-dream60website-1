@@ -44,17 +44,19 @@ export function PaymentSuccess({
   }, []);
 
   useEffect(() => {
-    if (countdown === 0) {
-      onBackToHome();
-      return;
-    }
-
     const interval = setInterval(() => {
-      setCountdown((prev) => Math.max(0, prev - 1));
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          onBackToHome();
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [countdown, onBackToHome]);
+  }, [onBackToHome]);
 
   const downloadReceipt = () => {
     const doc = jsPDF ? new jsPDF() : null;

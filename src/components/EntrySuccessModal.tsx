@@ -33,8 +33,8 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          onContinue();
           clearInterval(timer);
+          onContinue();
           return 0;
         }
         return prev - 1;
@@ -47,7 +47,7 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
       document.removeEventListener('keydown', handleEscape);
       clearInterval(timer);
     };
-  }, [onClose]);
+  }, [onClose, onContinue]);
 
   return (
     <motion.div 
