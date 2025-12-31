@@ -531,22 +531,23 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                     </Button>
                   </motion.div>
 
-                  {/* User Profile Button */}
-                  <motion.button
-                    onClick={() => onNavigate?.('profile')}
-                    className="flex items-center space-x-2 text-purple-700 hover:text-purple-800 bg-white/70 hover:bg-purple-50/80 px-3 py-2 rounded-xl transition-all border border-purple-200/50 shadow-md shadow-purple-500/5 backdrop-blur-sm"
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <motion.div
-                      className="w-8 h-8 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-full flex items-center justify-center shadow-md"
-                      whileHover={{ rotate: 360 }}
-                      transition={{ duration: 0.6 }}
+                    {/* User Profile Button */}
+                    <motion.button
+                      onClick={() => onNavigate?.('profile')}
+                      className="flex items-center space-x-2 text-purple-700 hover:text-purple-800 bg-white/70 hover:bg-purple-50/80 px-3 py-2 rounded-xl transition-all border border-purple-200/50 shadow-md shadow-purple-500/5 backdrop-blur-sm max-w-[150px] xl:max-w-[200px]"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      <span className="text-white text-sm font-semibold">{user.username.charAt(0).toUpperCase()}</span>
-                    </motion.div>
-                    <span className="font-medium text-sm">{user.username}</span>
-                  </motion.button>
+                      <motion.div
+                        className="w-8 h-8 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
+                        whileHover={{ rotate: 360 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <span className="text-white text-sm font-semibold">{user.username.charAt(0).toUpperCase()}</span>
+                      </motion.div>
+                      <span className="font-medium text-sm truncate flex-1">{user.username}</span>
+                    </motion.button>
+
                 </>
               ) : (
                 /* Guest Navigation */

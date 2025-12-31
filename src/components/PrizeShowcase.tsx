@@ -183,41 +183,51 @@ interface PrizeShowcaseProps {
     return new Date(getCurrentServerTime() + 60 * 60 * 1000);
   };
 
-    // ✅ Fetch live auction once on mount and rely on parent for updates
-    useEffect(() => {
-      let isMounted = true;
-      const fetchLiveAuction = async () => {
-        try {
-          const res = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-          const json = await res.json().catch(() => ({ success: false }));
-          if (!isMounted) return;
-
-          if (res.ok && json?.success && json?.data) {
-            setApiLiveAuction(json.data);
-            setNoLiveAuction(false);
-          } else {
-            setApiLiveAuction(null);
-            setNoLiveAuction(true);
-          }
-        } catch (error) {
-          if (isMounted) {
-            setApiLiveAuction(null);
-            setNoLiveAuction(true);
-          }
-        } finally {
-          if (isMounted) {
-            setApiLiveLoading(false);
-            setHasInitiallyLoaded(true);
-            setIsLoading(false);
-          }
+      // ✅ Fetch live auction once on mount if data is missing, then rely on parent
+      useEffect(() => {
+        let isMounted = true;
+        
+        // Only fetch if parent didn't provide data yet
+        if (liveAuctionData) {
+          setHasInitiallyLoaded(true);
+          setApiLiveLoading(false);
+          setIsLoading(false);
+          return;
         }
-      };
 
-      fetchLiveAuction();
-      return () => {
-        isMounted = false;
-      };
-    }, []);
+        const fetchLiveAuction = async () => {
+          try {
+            const res = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+            const json = await res.json().catch(() => ({ success: false }));
+            if (!isMounted) return;
+
+            if (res.ok && json?.success && json?.data) {
+              setApiLiveAuction(json.data);
+              setNoLiveAuction(false);
+            } else {
+              setApiLiveAuction(null);
+              setNoLiveAuction(true);
+            }
+          } catch (error) {
+            if (isMounted) {
+              setApiLiveAuction(null);
+              setNoLiveAuction(true);
+            }
+          } finally {
+            if (isMounted) {
+              setApiLiveLoading(false);
+              setHasInitiallyLoaded(true);
+              setIsLoading(false);
+            }
+          }
+        };
+
+        fetchLiveAuction();
+        return () => {
+          isMounted = false;
+        };
+      }, [liveAuctionData]);
+
 
     const effectiveLiveAuctionData = apiLiveAuction ?? liveAuctionData;
     const effectiveLoading = (apiLiveLoading || isLoadingLiveAuction) && !apiLiveAuction;

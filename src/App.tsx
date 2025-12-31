@@ -753,6 +753,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
   // ✅ NEW: Track if we're currently fetching live auction data
   const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+  // ✅ Track if the first load has completed
+  const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token
   const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
   // ✅ NEW: Mobile menu state for header (to control from tutorial)
@@ -1231,22 +1233,23 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }, [serverTime]); // ✅ Add serverTime as dependency
 
       // Fetch current hourly auction ID when user is logged in
-        useEffect(() => {
-          const fetchCurrentAuctionId = async (showLoading = false) => {
-            // ✅ CRITICAL FIX: Always fetch when user is logged in
-            // This ensures the user's participation status is correctly loaded from the API on page refresh
-            if (!currentUser?.id) return;
-            
-            // ✅ Reset justLoggedIn flag after triggering refetch
-            if (justLoggedIn) {
-              console.log('🔄 User just logged in - forcing immediate auction data refresh');
-              setJustLoggedIn(false);
-            }
-            
-            // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
-            if (showLoading) {
-              setIsLoadingLiveAuction(true);
-            }
+          useEffect(() => {
+            const fetchCurrentAuctionId = async (showLoading = false) => {
+              // ✅ CRITICAL FIX: Always fetch when user is logged in
+              // This ensures the user's participation status is correctly loaded from the API on page refresh
+              if (!currentUser?.id) return;
+              
+              // ✅ Reset justLoggedIn flag after triggering refetch
+              if (justLoggedIn) {
+                console.log('🔄 User just logged in - forcing immediate auction data refresh');
+                setJustLoggedIn(false);
+              }
+              
+              // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
+              if (showLoading && !hasInitiallyLoaded.current) {
+                setIsLoadingLiveAuction(true);
+              }
+
 
           
           try {
@@ -1463,10 +1466,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             }
           } catch (error) {
             console.error('Error fetching live auction:', error);
-          } finally {
-            setIsLoadingLiveAuction(false);
-          }
-        };
+            } finally {
+              setIsLoadingLiveAuction(false);
+              hasInitiallyLoaded.current = true;
+            }
+          };
+
 
         // Initial fetch
         fetchCurrentAuctionId(forceRefetchTrigger === 0);

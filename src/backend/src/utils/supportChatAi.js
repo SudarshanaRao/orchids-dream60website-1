@@ -149,7 +149,10 @@ const getModelForProvider = (provider) => {
         console.log(`[AI-DEBUG] Calling Ollama at ${baseUrl}`);
         reply = await chatWithOllama({ baseUrl, model, messages, temperature });
       } else if (provider === 'groq') {
-        const apiKey = getRequiredEnv('GROQ_API_KEY');
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+          throw new Error('GROQ_API_KEY is not configured in environment variables');
+        }
         console.log(`[AI-DEBUG] Calling Groq API (key prefix: ${apiKey.substring(0, 6)}...)`);
         reply = await chatWithOpenAiCompatible({
           baseUrl: 'https://api.groq.com/openai/v1',
