@@ -418,27 +418,30 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                       </div>
                     </div>
 
-                        <div className="flex items-center gap-4 sm:border-l sm:border-purple-100 sm:pl-4">
-                          <div className="text-center shrink-0">
-                            <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
-                            <div className="text-sm font-bold text-purple-900">{participantCount}</div>
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 sm:border-l sm:border-purple-100 sm:pl-4 w-full sm:w-auto">
+                          <div className="flex items-center gap-4">
+                            <div className="text-center shrink-0">
+                              <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Players</div>
+                              <div className="text-sm font-bold text-purple-900">{participantCount}</div>
+                            </div>
+
+                            {(auction.status === 'completed' || auction.winnersAnnounced) && (
+                              <div className="text-center shrink-0 border-l border-purple-100 pl-4">
+                                <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Prize Claimed By</div>
+                                <div className={`text-sm font-bold ${auction.isPrizeClaimed ? 'text-green-600' : 'text-red-500'}`}>
+                                  {auction.isPrizeClaimed ? (auction.winner || 'Claimed') : 'Not Claimed'}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          {(auction.status === 'completed' || auction.winnersAnnounced) && (
-                            <div className="text-center shrink-0 border-l border-purple-100 pl-4">
-                              <div className="text-[10px] text-purple-500 font-bold uppercase tracking-wider">Prize Claimed By</div>
-                              <div className={`text-sm font-bold ${auction.isPrizeClaimed ? 'text-green-600' : 'text-red-500'}`}>
-                                {auction.isPrizeClaimed ? auction.winner : 'Not Claimed'}
-                              </div>
-                            </div>
-                          )}
-
+                          <div className="ml-auto sm:ml-0">
                             {auction.status === 'completed' && auction.hourlyAuctionId && (
                             <Button
                               onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
                               size="sm"
                               variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-bold px-2"
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-bold px-2 whitespace-nowrap"
                             >
                               <BarChart2 className="w-3.5 h-3.5 mr-1" />
                               Leaderboard
@@ -461,7 +464,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                                 <Button
                                   onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
                                   size="sm"
-                                  className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
+                                  className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4 whitespace-nowrap"
                                 >
                                   <Trophy className="w-3.5 h-3.5 mr-1" />
                                   Leaderboard
@@ -495,7 +498,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                                 }}
                                 size="sm"
                                 disabled={!isFirst15Mins}
-                                className={`h-8 text-xs font-bold px-4 ${
+                                className={`h-8 text-xs font-bold px-4 whitespace-nowrap ${
                                   isFirst15Mins 
                                     ? 'bg-green-600 hover:bg-green-700 text-white' 
                                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -530,7 +533,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                                   }
                                 }}
                                 size="sm"
-                                className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4"
+                                className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4 whitespace-nowrap"
                               >
                                 <Trophy className="w-3.5 h-3.5 mr-1" />
                                 Bid Now
@@ -551,14 +554,15 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                               }}
                               size="sm"
                               variant="outline"
-                              className="text-purple-600 border-purple-300 hover:bg-purple-50 h-8 text-xs font-bold px-3"
+                              className="text-purple-600 border-purple-300 hover:bg-purple-50 h-8 text-xs font-bold px-3 whitespace-nowrap"
                             >
                               <BarChart2 className="w-3.5 h-3.5 mr-1" />
                               Leaderboard
                             </Button>
                           );
                         })()}
-                      </div>
+                          </div>
+                        </div>
                   </div>
                 </motion.div>
               );

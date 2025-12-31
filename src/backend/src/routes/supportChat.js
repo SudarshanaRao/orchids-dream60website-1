@@ -124,14 +124,23 @@ router.post('/ask', async (req, res) => {
         sources,
       },
     });
-  } catch (error) {
-    console.error('❌ [SUPPORT-CHAT] /ask error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Failed to generate reply. Our team has been notified.',
-      error: error.message
-    });
-  }
+    } catch (error) {
+      console.error('❌ [SUPPORT-CHAT] /ask error:', error);
+      
+      // More specific error message for certain failures
+      let message = 'Failed to generate reply. Our team has been notified.';
+      if (error.message.includes('API key') || error.message.includes('configured')) {
+        message = 'AI service is currently not configured properly. Please contact support.';
+      } else if (error.message.includes('fetch') || error.message.includes('connect')) {
+        message = 'Network error while reaching AI service. Please try again.';
+      }
+
+      return res.status(500).json({ 
+        success: false, 
+        message: message,
+        error: error.message
+      });
+    }
 });
 
 // Get a session's messages

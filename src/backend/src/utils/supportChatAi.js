@@ -109,81 +109,92 @@ const getModelForProvider = (provider) => {
   return 'llama3.1';
 };
 
-const generateAnswerFromContext = async ({ query, context, conversation = [] }) => {
-  const provider = getProvider();
-  const model = getModelForProvider(provider);
-
-  console.log(`[AI-DEBUG] Using model: "${model}" on provider: "${provider}"`);
-
-    const system =
-      'You are Dream60 Assist, the official support chatbot for Dream60 (an auction gaming platform).\n' +
-      'Your goal is to help users by answering questions based STRICTLY and ONLY on the provided WEBSITE CONTEXT.\n' +
-      'Rules:\n' +
-      '1. If the answer is found in the context, provide a clear, concise, and friendly response.\n' +
-      '2. If the user asks a question that is NOT covered by the context, you MUST say exactly: "I don\'t have that specific information on the Dream60 website yet. You can contact our support team in the Contact Us section for further assistance."\n' +
-      '3. Do NOT make up any information. Do NOT use your own training data about auctions or other platforms.\n' +
-      '4. Keep responses professional and localized for Indian users.\n' +
-      '5. Only discuss topics like bidding rules, entry fees, prize claims, and participation if they appear in the context.';
-
-  const messages = [
-    { role: 'system', content: system + `\n\nWEBSITE CONTEXT:\n${context || '(no context provided)'}` },
-    ...conversation,
-    { role: 'user', content: query },
-  ];
-
-  const temperature = Number.isFinite(Number(process.env.SUPPORT_CHAT_TEMPERATURE))
-    ? Number(process.env.SUPPORT_CHAT_TEMPERATURE)
-    : 0.2;
-
-  let reply;
-
-  if (provider === 'ollama') {
-    const baseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
-    console.log(`[AI-DEBUG] Calling Ollama at ${baseUrl}`);
-    reply = await chatWithOllama({ baseUrl, model, messages, temperature });
-  } else if (provider === 'groq') {
-    const apiKey = getRequiredEnv('GROQ_API_KEY');
-    console.log(`[AI-DEBUG] Calling Groq API (key prefix: ${apiKey.substring(0, 6)}...)`);
-    reply = await chatWithOpenAiCompatible({
-      baseUrl: 'https://api.groq.com/openai/v1',
-      apiKey,
-      model,
-      messages,
-      temperature,
-    });
-  } else if (provider === 'openrouter') {
-    const apiKey = getRequiredEnv('OPENROUTER_API_KEY');
-    reply = await chatWithOpenAiCompatible({
-      baseUrl: 'https://openrouter.ai/api/v1',
-      apiKey,
-      model,
-      messages,
-      temperature,
-      // Optional but recommended by OpenRouter
-      extraHeaders: {
-        'HTTP-Referer': process.env.OPENROUTER_SITE_URL || process.env.FRONTEND_URL || process.env.CLIENT_URL || '',
-        'X-Title': 'Dream60 Support Chat',
-      },
-    });
-  } else if (provider === 'together') {
-    const apiKey = getRequiredEnv('TOGETHER_API_KEY');
-    reply = await chatWithOpenAiCompatible({
-      baseUrl: 'https://api.together.xyz/v1',
-      apiKey,
-      model,
-      messages,
-      temperature,
-    });
-  } else if (provider === 'openai_compat') {
-    const apiKey = getRequiredEnv('SUPPORT_CHAT_OPENAI_COMPAT_API_KEY');
-    const baseUrl = getRequiredEnv('SUPPORT_CHAT_OPENAI_COMPAT_BASE_URL');
-    reply = await chatWithOpenAiCompatible({ baseUrl, apiKey, model, messages, temperature });
-  } else {
-    throw new Error(`Unsupported SUPPORT_CHAT_PROVIDER: ${provider}`);
-  }
-
-  return reply || "I don't have that information on the Dream60 website yet.";
-};
+  const generateAnswerFromContext = async ({ query, context, conversation = [] }) => {
+    const provider = getProvider();
+    const model = getModelForProvider(provider);
+  
+    console.log(`[AI-DEBUG] Using model: "${model}" on provider: "${provider}"`);
+  
+    // Fallback if no context and no provider key
+    if (provider === 'groq' && !process.env.GROQ_API_KEY) {
+      console.error('[AI-DEBUG] GROQ_API_KEY is missing from environment variables');
+      return "I'm sorry, I'm currently unable to access my knowledge base. Please contact our support team directly at dream60.official@gmail.com for assistance.";
+    }
+  
+      const system =
+        'You are Dream60 Assist, the official support chatbot for Dream60 (an auction gaming platform).\n' +
+        'Your goal is to help users by answering questions based STRICTLY and ONLY on the provided WEBSITE CONTEXT.\n' +
+        'Rules:\n' +
+        '1. If the answer is found in the context, provide a clear, concise, and friendly response.\n' +
+        '2. If the user asks a question that is NOT covered by the context, you MUST say exactly: "I don\'t have that specific information on the Dream60 website yet. You can contact our support team in the Contact Us section for further assistance."\n' +
+        '3. Do NOT make up any information. Do NOT use your own training data about auctions or other platforms.\n' +
+        '4. Keep responses professional and localized for Indian users.\n' +
+        '5. Only discuss topics like bidding rules, entry fees, prize claims, and participation if they appear in the context.';
+  
+    const messages = [
+      { role: 'system', content: system + `\n\nWEBSITE CONTEXT:\n${context || '(no context provided)'}` },
+      ...conversation,
+      { role: 'user', content: query },
+    ];
+  
+    const temperature = Number.isFinite(Number(process.env.SUPPORT_CHAT_TEMPERATURE))
+      ? Number(process.env.SUPPORT_CHAT_TEMPERATURE)
+      : 0.2;
+  
+    try {
+      let reply;
+  
+      if (provider === 'ollama') {
+        const baseUrl = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+        console.log(`[AI-DEBUG] Calling Ollama at ${baseUrl}`);
+        reply = await chatWithOllama({ baseUrl, model, messages, temperature });
+      } else if (provider === 'groq') {
+        const apiKey = getRequiredEnv('GROQ_API_KEY');
+        console.log(`[AI-DEBUG] Calling Groq API (key prefix: ${apiKey.substring(0, 6)}...)`);
+        reply = await chatWithOpenAiCompatible({
+          baseUrl: 'https://api.groq.com/openai/v1',
+          apiKey,
+          model,
+          messages,
+          temperature,
+        });
+      } else if (provider === 'openrouter') {
+        const apiKey = getRequiredEnv('OPENROUTER_API_KEY');
+        reply = await chatWithOpenAiCompatible({
+          baseUrl: 'https://openrouter.ai/api/v1',
+          apiKey,
+          model,
+          messages,
+          temperature,
+          extraHeaders: {
+            'HTTP-Referer': process.env.OPENROUTER_SITE_URL || process.env.FRONTEND_URL || process.env.CLIENT_URL || '',
+            'X-Title': 'Dream60 Support Chat',
+          },
+        });
+      } else if (provider === 'together') {
+        const apiKey = getRequiredEnv('TOGETHER_API_KEY');
+        reply = await chatWithOpenAiCompatible({
+          baseUrl: 'https://api.together.xyz/v1',
+          apiKey,
+          model,
+          messages,
+          temperature,
+        });
+      } else if (provider === 'openai_compat') {
+        const apiKey = getRequiredEnv('SUPPORT_CHAT_OPENAI_COMPAT_API_KEY');
+        const baseUrl = getRequiredEnv('SUPPORT_CHAT_OPENAI_COMPAT_BASE_URL');
+        reply = await chatWithOpenAiCompatible({ baseUrl, apiKey, model, messages, temperature });
+      } else {
+        throw new Error(`Unsupported SUPPORT_CHAT_PROVIDER: ${provider}`);
+      }
+  
+      return reply || "I don't have that information on the Dream60 website yet.";
+    } catch (err) {
+      console.error(`[AI-DEBUG] AI Provider Error (${provider}):`, err.message);
+      // Fallback message instead of throwing
+      return "I'm having a bit of trouble generating a reply right now. Please try rephrasing your question or check back in a few minutes.";
+    }
+  };
 
 module.exports = {
   normalizeText,

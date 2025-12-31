@@ -43,73 +43,98 @@ interface TesterFeedbackProps {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast.error('Please upload an image file (JPG, PNG, WEBP)');
+          return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`Image is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max size is 5MB.`);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          return;
+        }
+
+        setScreenshot(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setScreenshotPreview(reader.result as string);
+        };
+        reader.onerror = () => {
+          toast.error('Failed to read file. Please try another image.');
+          removeScreenshot();
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    const removeScreenshot = () => {
+      setScreenshot(null);
+      setScreenshotPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      
+      if (!message.trim()) {
+        toast.error('Please enter your feedback message');
         return;
       }
-      setScreenshot(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setScreenshotPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const removeScreenshot = () => {
-    setScreenshot(null);
-    setScreenshotPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim()) {
-      toast.error('Please enter your feedback message');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('type', feedbackType);
-      formData.append('message', message);
-      if (user?.id) formData.append('userId', user.id);
-      if (screenshot) {
-        formData.append('screenshot', screenshot);
+      // Final check for file size before submission
+      if (screenshot && screenshot.size > 5 * 1024 * 1024) {
+        toast.error('Attached image is too large. Please use an image under 5MB.');
+        return;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/feedback`, {
-        method: 'POST',
-        body: formData,
-      });
+      setIsSubmitting(true);
 
-      const data = await response.json();
+      try {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('type', feedbackType);
+        formData.append('message', message);
+        if (user?.id) formData.append('userId', user.id);
+        if (screenshot) {
+          formData.append('screenshot', screenshot);
+        }
 
-      if (data.success) {
-        setIsSuccess(true);
-        toast.success('Feedback submitted successfully!');
-        setMessage('');
-        removeScreenshot();
-      } else {
-        toast.error(data.message || 'Failed to submit feedback');
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/feedback`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.status === 413) {
+          toast.error('Image is too large for our server. Please use a smaller image or compress it.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          setIsSuccess(true);
+          toast.success('Feedback submitted successfully!');
+          setMessage('');
+          removeScreenshot();
+        } else {
+          toast.error(data.message || 'Failed to submit feedback');
+        }
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        toast.error('Could not connect to server. Your image might be too large or your connection is slow.');
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      toast.error('Connection error. Please try again later.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    };
 
   const feedbackTypes = [
     { id: 'suggestion', label: 'Suggestion', icon: MessageSquare, color: 'text-blue-500', bg: 'bg-blue-50' },
