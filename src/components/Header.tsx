@@ -284,7 +284,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
     return (
       <>
         <motion.header
-          className="bg-white/50 backdrop-blur-xl border-b border-purple-200/30 shadow-lg shadow-purple-500/10 sticky top-0 z-50 overflow-hidden"
+          className="bg-white/50 backdrop-blur-xl border-b border-purple-200/30 shadow-lg shadow-purple-500/10 sticky top-0 z-50"
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
@@ -470,16 +470,16 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                   <div className="flex items-center space-x-1.5">
                       {/* Explore Dropdown */}
                       <div className="relative explore-dropdown">
-                        <motion.button
-                          onClick={() => setIsExploreOpen(!isExploreOpen)}
-                          className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all ${isExploreOpen ? 'bg-purple-100 text-purple-800' : 'text-purple-600 hover:bg-purple-50'}`}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Menu className="w-4 h-4" />
-                          <span className="text-sm font-medium">Explore</span>
-                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
-                        </motion.button>
+                          <motion.button
+                            onClick={() => setIsExploreOpen(!isExploreOpen)}
+                            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all ${isExploreOpen ? 'bg-purple-100 text-purple-800' : 'text-purple-600 hover:bg-purple-50'}`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Menu className="w-4 h-4" />
+                            <span className="text-sm font-medium">Menu</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
+                          </motion.button>
 
                         <AnimatePresence>
                           {isExploreOpen && (
