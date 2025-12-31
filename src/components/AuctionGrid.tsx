@@ -49,17 +49,31 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const [showBidModal, setShowBidModal] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const prevPaidStatus = useRef(auction?.userHasPaidEntry);
+  const stickyPaidStatus = useRef(false);
+  const stickyPaidTimestamp = useRef(0);
 
   useEffect(() => {
     if (auction?.userHasPaidEntry && !prevPaidStatus.current) {
       setIsUnlocking(true);
+      stickyPaidStatus.current = true;
+      stickyPaidTimestamp.current = Date.now();
       const timer = setTimeout(() => {
         setIsUnlocking(false);
       }, 1000);
       return () => clearTimeout(timer);
     }
+    
+    if (auction?.userHasPaidEntry) {
+      stickyPaidStatus.current = true;
+      stickyPaidTimestamp.current = Date.now();
+    }
+    
     prevPaidStatus.current = auction?.userHasPaidEntry;
   }, [auction?.userHasPaidEntry]);
+
+  const effectiveUserHasPaidEntry = auction?.userHasPaidEntry || 
+    (stickyPaidStatus.current && (Date.now() - stickyPaidTimestamp.current < 60000)) ||
+    (auction?.userBidsPerRound && Object.keys(auction.userBidsPerRound).length > 0);
 
   // ✅ Add null safety check for auction and boxes
   if (!auction || !auction.boxes) {
@@ -92,6 +106,8 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
 
     console.log('🎯 [AUCTION GRID] Visibility check:', {
       userHasPaidEntry: auction.userHasPaidEntry,
+      effectiveUserHasPaidEntry,
+      stickyPaidStatus: stickyPaidStatus.current,
       isUnlocking,
       roundBoxesCount: roundBoxes.length
     });
@@ -104,8 +120,8 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
         initial={false}
       >
         {/* Bidding Rounds Section */}
-            <div className={`space-y-4 sm:space-y-5 relative p-0.5 sm:p-1 group ${!auction.userHasPaidEntry && !isUnlocking ? 'max-h-[420px] sm:max-h-none overflow-hidden' : ''}`}>
-              {!auction.userHasPaidEntry && !isUnlocking && (
+            <div className={`space-y-4 sm:space-y-5 relative p-0.5 sm:p-1 group ${!effectiveUserHasPaidEntry && !isUnlocking ? 'max-h-[420px] sm:max-h-none overflow-hidden' : ''}`}>
+              {!effectiveUserHasPaidEntry && !isUnlocking && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-purple-300/50 bg-white/60 backdrop-blur-[2px] transition-all duration-500 overflow-hidden px-4">
                   <div className="flex flex-col items-center gap-2.5 sm:gap-4">
                     <div className="w-10 h-10 sm:w-16 sm:h-16 bg-purple-100 rounded-full flex items-center justify-center shadow-sm">
@@ -132,11 +148,11 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
               )}
 
             <div 
-              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${(!auction.userHasPaidEntry && !isUnlocking) ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
+              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${(!effectiveUserHasPaidEntry && !isUnlocking) ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
             >
-              {( (auction.userHasPaidEntry) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
+              {( (effectiveUserHasPaidEntry) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
                 <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
-                  {(isUnlocking || typeof item === 'number') ? (
+                  {(isUnlocking && typeof item !== 'number') ? (
                     <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[240px] xs:h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
                     {/* Active Loader Animation */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-50/10 via-white/5 to-purple-50/10 animate-pulse" />
@@ -152,19 +168,19 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
                     
                     <div className="relative z-10 px-4 py-1.5 bg-purple-50/80 rounded-full border border-purple-100">
                       <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2">
-                        <Sparkles className="w-3 h-3 animate-bounce" />
-                        Synchronizing...
-                      </p>
+                          <Sparkles className="w-3 h-3 animate-bounce" />
+                          Synchronizing...
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  ) : (
-                    <AuctionBox
-                      box={item}
-                      onClick={() => handleBoxClick(item)}
-                      isUserHighestBidder={item.bidder === user?.username}
-                      onShowLeaderboard={onShowLeaderboard}
-                      userHasPaidEntry={auction.userHasPaidEntry}
-                      userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
+                    ) : (
+                      <AuctionBox
+                        box={item}
+                        onClick={() => handleBoxClick(item)}
+                        isUserHighestBidder={item.bidder === user?.username}
+                        onShowLeaderboard={onShowLeaderboard}
+                        userHasPaidEntry={effectiveUserHasPaidEntry}
+                        userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
                       isUserQualified={
                         item.roundNumber 
                           ? (

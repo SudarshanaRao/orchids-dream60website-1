@@ -1326,26 +1326,28 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 });
               }
               
-                  // Update local state
-                  setCurrentAuction(prev => {
-                    // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
-                    // If the user already has a true status for the SAME auction, don't let it flicker back to false
-                    // due to API lag/latency, especially after placing a bid.
-                    let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
-                    
-                    if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
-                      finalUserHasPaidEntry = true;
-                    } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
-                      const now = Date.now();
-                      if (now - recentPaymentTimestamp.current < 15000) {
+                    // Update local state
+                    setCurrentAuction(prev => {
+                      // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
+                      // If the user already has a true status for the SAME auction, don't let it flicker back to false
+                      // due to API lag/latency, especially after placing a bid.
+                      let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+                      
+                      // ✅ CRITICAL: Once paid for THIS auction, stay paid (sticky for entire auction hour)
+                      if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
                         finalUserHasPaidEntry = true;
-                      } else {
-                        setRecentPaymentSuccess(false);
+                      } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                        // Extended timeout to 60 minutes (entire auction duration)
+                        const now = Date.now();
+                        if (now - recentPaymentTimestamp.current < 3600000) {
+                          finalUserHasPaidEntry = true;
+                        } else {
+                          setRecentPaymentSuccess(false);
+                        }
+                      } else if (!userHasPaidEntryFromAPI && (Object.keys(userBidsMap).length > 0 || Object.keys(prev.userBidsPerRound).length > 0)) {
+                        // Trust either API bids or existing local bids
+                        finalUserHasPaidEntry = true;
                       }
-                    } else if (!userHasPaidEntryFromAPI && (Object.keys(userBidsMap).length > 0 || Object.keys(prev.userBidsPerRound).length > 0)) {
-                      // Trust either API bids or existing local bids
-                      finalUserHasPaidEntry = true;
-                    }
 
                     const updatedBoxes = prev.boxes.map(box => {
 
