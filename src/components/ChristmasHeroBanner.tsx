@@ -78,11 +78,26 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
-        <div className="max-w-3xl space-y-2 sm:space-y-6 md:space-y-10 text-center">
-          {/* Content removed as requested, keeping the space */}
+        <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
+          <div className="max-w-3xl space-y-2 sm:space-y-6 md:space-y-10 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+            >
+              <button
+                onClick={onJoinNow}
+                className="group relative px-10 py-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full font-black text-black uppercase tracking-widest shadow-[0_0_25px_rgba(251,191,36,0.5)] hover:shadow-[0_0_50px_rgba(251,191,36,0.7)] transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
+              >
+                <span className="relative z-10 flex items-center gap-2 text-base sm:text-lg">
+                  Join Now
+                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
+              </button>
+            </motion.div>
+          </div>
         </div>
-      </div>
 
 
 
