@@ -210,7 +210,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       setOtpType('email');
       
       // Step 1: Send OTP to current email
-      const response = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
+      const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -252,7 +252,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       setOtpType('phone');
       
       // Step 1: Send OTP to current phone
-      const response = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
+      const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -287,7 +287,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       const type = otpType === 'email' ? 'email' : 'mobile';
 
       // Verify OTP
-      const verifyRes = await fetch(`${API_ENDPOINTS.auth.baseUrl}/verify-otp`, {
+      const verifyRes = await fetch(API_ENDPOINTS.auth.verifyOTP, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -301,24 +301,24 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         throw new Error(error.message || 'Invalid verification code');
       }
 
-      if (verificationStep === 'old') {
-        // Step 1 Complete -> Start Step 2: Send OTP to NEW identifier
-        const newIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
-        
-        const sendNewOtpRes = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            identifier: newIdentifier, 
-            type: otpType === 'email' ? 'email' : 'mobile', 
-            reason: `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
-          }),
-        });
+        if (verificationStep === 'old') {
+          // Step 1 Complete -> Start Step 2: Send OTP to NEW identifier
+          const newIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
+          
+          const sendNewOtpRes = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              identifier: newIdentifier, 
+              type: otpType === 'email' ? 'email' : 'mobile', 
+              reason: `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
+            }),
+          });
 
-        if (!sendNewOtpRes.ok) {
-          const error = await sendNewOtpRes.json();
-          throw new Error(error.message || `Failed to send OTP to new ${otpType}`);
-        }
+          if (!sendNewOtpRes.ok) {
+            const error = await sendNewOtpRes.json();
+            throw new Error(error.message || `Failed to send OTP to new ${otpType}`);
+          }
 
         setOtpRecipient(otpType === 'email' ? pendingEmail : pendingPhone);
         setVerificationStep('new');
@@ -326,25 +326,31 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         toast.success('Step 1 Verified!', {
           description: `Now please enter the code sent to your NEW ${otpType}: ${otpType === 'email' ? pendingEmail : pendingPhone}`,
         });
-      } else if (verificationStep === 'new') {
-        // Step 2 Complete -> Finalize Update in DB
-        const finalIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
-        
-        const updateRes = await fetch(`${API_ENDPOINTS.user.baseUrl}/update-mobile`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: userId,
-            isMobile: otpType === 'phone',
-            isEmail: otpType === 'email',
-            identifier: finalIdentifier
-          }),
-        });
+        } else if (verificationStep === 'new') {
+          // Step 2 Complete -> Finalize Update in DB
+          const finalIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
+          
+          const updateRes = await fetch(API_ENDPOINTS.user.updateDetails, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: userId,
+              isMobile: otpType === 'phone',
+              isEmail: otpType === 'email',
+              identifier: finalIdentifier
+            }),
+          });
 
-        if (!updateRes.ok) {
-          const error = await updateRes.json();
-          throw new Error(error.message || 'Failed to update profile');
-        }
+          if (!updateRes.ok) {
+            let errorMessage = 'Failed to update profile';
+            try {
+              const error = await updateRes.json();
+              errorMessage = error.message || errorMessage;
+            } catch (e) {
+              console.error('Non-JSON error response:', e);
+            }
+            throw new Error(errorMessage);
+          }
 
         if (otpType === 'email') {
           setEmail(pendingEmail);
