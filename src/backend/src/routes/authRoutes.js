@@ -10,6 +10,8 @@ const {
   resetPassword,
   updatePassword,
   sendVerificationOtp,
+  checkEmail,
+  checkMobile,
 } = require('../controllers/authController');
 
 /**
@@ -37,6 +39,48 @@ const {
  *         description: OTP sent successfully
  */
 router.post('/send-verification-otp', sendVerificationOtp);
+
+/**
+ * @swagger
+ * /auth/check-email:
+ *   post:
+ *     summary: Check if email is already registered
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Email check result
+ */
+router.post('/check-email', checkEmail);
+
+/**
+ * @swagger
+ * /auth/check-mobile:
+ *   post:
+ *     summary: Check if mobile is already registered
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               mobile:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Mobile check result
+ */
+router.post('/check-mobile', checkMobile);
 
 /**
  * @swagger

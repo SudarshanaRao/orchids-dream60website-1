@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock, XCircle } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -8,13 +8,12 @@ import { SuccessModal } from './SuccessModal';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { ChangeEmailModal } from './ChangeEmailModal';
 import { ChangePhoneModal } from './ChangePhoneModal';
-import { OTPVerificationModal } from './OTPVerificationModal';
+import { NewEmailInputModal } from './NewEmailInputModal';
+import { NewPhoneInputModal } from './NewPhoneInputModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { NotificationPermissionCard } from './NotificationPermissionCard';
 import { LoadingProfile } from './LoadingProfile';
-// import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { toast } from 'sonner';
-// import { motion } from 'motion/react';
 import { motion, Variants } from "framer-motion";
 import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';
 
@@ -40,41 +39,30 @@ interface AccountSettingsProps {
 
 
 export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onLogout }: AccountSettingsProps) {
-  // Loading and error states
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [userDataError, setUserDataError] = useState<string | null>(null);
 
-  // User data states - will be populated from API
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-    const [emailAlerts, setEmailAlerts] = useState(false);
-    const [smsAlerts, setSmsAlerts] = useState(false);
-    const [bidAlerts, setBidAlerts] = useState(false);
-    const [winNotifications, setWinNotifications] = useState(false);
-    
-    const [showSuccess, setShowSuccess] = useState(false);
+  const [emailAlerts, setEmailAlerts] = useState(false);
+  const [smsAlerts, setSmsAlerts] = useState(false);
+  const [bidAlerts, setBidAlerts] = useState(false);
+  const [winNotifications, setWinNotifications] = useState(false);
+  
+  const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  // const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  // Modal states
   const [showChangeEmail, setShowChangeEmail] = useState(false);
   const [showChangePhone, setShowChangePhone] = useState(false);
-  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [showNewEmailInput, setShowNewEmailInput] = useState(false);
+  const [showNewPhoneInput, setShowNewPhoneInput] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const [otpType, setOtpType] = useState<'email' | 'phone'>('email');
-  const [otpRecipient, setOtpRecipient] = useState('');
-  const [pendingEmail, setPendingEmail] = useState('');
-  const [pendingPhone, setPendingPhone] = useState('');
   const [isDeleted, setIsDeleted] = useState(false);
 
-  // 2-Step Verification state
-  const [verificationStep, setVerificationStep] = useState<'none' | 'old' | 'new'>('none');
-
   const formatIndianMobile = (input: string) => {
-    // keep only digits
     const digits = input.replace(/\D/g, "").slice(0, 10);
 
     if (!digits) return "+91 ";
@@ -89,7 +77,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     return `+91 ${first} ${last}`;
   };
 
-  // Fetch real-time user data from API
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -120,19 +107,17 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         if (data && data.user) {
           const userData = data.user;
           
-          // Update user information
           setFullName(userData.username || userData.name || '');
           setEmail(userData.email || '');
           setPhone(formatIndianMobile(userData.mobile || userData.phone || ''));
 
-            // Update preferences
-              if (userData.preferences) {
-                setEmailAlerts(userData.preferences.emailNotifications ?? false);
-                setSmsAlerts(userData.preferences.smsNotifications ?? false);
-                setBidAlerts(userData.preferences.bidAlerts ?? false);
-                setWinNotifications(userData.preferences.winNotifications ?? false);
-              }
-            } else {
+          if (userData.preferences) {
+            setEmailAlerts(userData.preferences.emailNotifications ?? false);
+            setSmsAlerts(userData.preferences.smsNotifications ?? false);
+            setBidAlerts(userData.preferences.bidAlerts ?? false);
+            setWinNotifications(userData.preferences.winNotifications ?? false);
+          }
+        } else {
           throw new Error('Invalid response format');
         }
       } catch (error) {
@@ -157,7 +142,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         return;
       }
 
-      // Call API to mark account as deleted (isDeleted: true)
       const res = await fetch(API_ENDPOINTS.auth.deleteAccount, {
         method: "DELETE",
         headers: {
@@ -177,7 +161,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         return;
       }
 
-      // Update local state to reflect deletion
       setIsDeleted(true);
 
       toast.success("Account Deleted", {
@@ -199,217 +182,28 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     });
   };
 
-  const handleChangeEmailSubmit = async (newEmail: string) => {
-    if (newEmail === email) {
-      toast.error("New email must be different from the current one.");
-      return;
-    }
-
-    try {
-      setPendingEmail(newEmail);
-      setOtpType('email');
-      
-      // Check if email is already registered
-      const checkRes = await fetch(`${API_ENDPOINTS.auth.signup}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: 'check_only', 
-          mobile: '0000000000',
-          email: newEmail,
-          password: 'check',
-          confirmPassword: 'check'
-        }),
-      });
-      const checkData = await checkRes.json();
-      if (checkRes.status === 409 && checkData.message.toLowerCase().includes('email')) {
-        toast.error("Email already registered with another account.");
-        return;
-      }
-
-      // Step 1: Send OTP to current email
-      const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          identifier: email, 
-          type: 'email', 
-          reason: 'Current Email Verification' 
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send OTP to current email');
-      }
-
-      setOtpRecipient(email);
-      setVerificationStep('old');
-      setShowChangeEmail(false);
-      setShowOTPVerification(true);
-      
-      toast.info('Step 1: Verify Identity', {
-        description: `We've sent a code to your current email ${email} to verify it's you.`,
-      });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to initiate email change.");
-    }
+  const handleOldEmailVerified = () => {
+    setShowChangeEmail(false);
+    setShowNewEmailInput(true);
   };
 
-  const handleChangePhoneSubmit = async (newPhone: string) => {
-    const currentDigits = phone.replace(/\D/g, '');
-    const newDigits = newPhone.replace(/\D/g, '');
-    
-    if (newDigits === currentDigits) {
-      toast.error("New phone number must be different from the current one.");
-      return;
-    }
-
-    try {
-      setPendingPhone(newPhone);
-      setOtpType('phone');
-      
-      // Check if phone is already registered
-      const checkRes = await fetch(`${API_ENDPOINTS.auth.signup}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          username: 'check_only', 
-          mobile: newDigits,
-          email: 'check@check.com',
-          password: 'check',
-          confirmPassword: 'check'
-        }),
-      });
-      const checkData = await checkRes.json();
-      if (checkRes.status === 409 && checkData.message.toLowerCase().includes('mobile')) {
-        toast.error("Phone number already registered with another account.");
-        return;
-      }
-
-      // Step 1: Send OTP to current phone
-      const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          identifier: currentDigits, 
-          type: 'mobile', 
-          reason: 'Current Mobile Verification' 
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send OTP to current mobile');
-      }
-
-      setOtpRecipient(currentDigits);
-      setVerificationStep('old');
-      setShowChangePhone(false);
-      setShowOTPVerification(true);
-
-      toast.info('Step 1: Verify Identity', {
-        description: `We've sent a code to your current mobile ${phone} to verify it's you.`,
-      });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to initiate mobile change.");
-    }
+  const handleOldPhoneVerified = () => {
+    setShowChangePhone(false);
+    setShowNewPhoneInput(true);
   };
 
-  const handleOTPVerify = async (otp: string) => {
-    try {
-      const userId = localStorage.getItem('user_id');
-      const identifier = otpType === 'email' ? otpRecipient : otpRecipient.replace(/\D/g, '');
-      const type = otpType === 'email' ? 'email' : 'mobile';
+  const handleEmailChangeSuccess = (newEmail: string) => {
+    setEmail(newEmail);
+    setShowNewEmailInput(false);
+  };
 
-      // Verify OTP
-      const verifyRes = await fetch(API_ENDPOINTS.auth.verifyOTP, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          [otpType === 'email' ? 'email' : 'mobile']: identifier, 
-          otp 
-        }),
-      });
+  const handlePhoneChangeSuccess = (newPhone: string) => {
+    setPhone(newPhone);
+    setShowNewPhoneInput(false);
+  };
 
-      if (!verifyRes.ok) {
-        const error = await verifyRes.json();
-        throw new Error(error.message || 'Invalid verification code');
-      }
-
-        if (verificationStep === 'old') {
-          // Step 1 Complete -> Start Step 2: Send OTP to NEW identifier
-          const newIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
-          
-          const sendNewOtpRes = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              identifier: newIdentifier, 
-              type: otpType === 'email' ? 'email' : 'mobile', 
-              reason: `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
-            }),
-          });
-
-          if (!sendNewOtpRes.ok) {
-            const error = await sendNewOtpRes.json();
-            throw new Error(error.message || `Failed to send OTP to new ${otpType}`);
-          }
-
-        setOtpRecipient(otpType === 'email' ? pendingEmail : newIdentifier);
-        setVerificationStep('new');
-        
-        toast.success('Step 1 Verified!', {
-          description: `Now please enter the code sent to your NEW ${otpType}: ${otpType === 'email' ? pendingEmail : pendingPhone}`,
-        });
-        } else if (verificationStep === 'new') {
-          // Step 2 Complete -> Finalize Update in DB
-          const finalIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
-          
-          const updateRes = await fetch(API_ENDPOINTS.user.updateDetails, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              user_id: userId,
-              isMobile: otpType === 'phone',
-              isEmail: otpType === 'email',
-              identifier: finalIdentifier
-            }),
-          });
-
-          if (!updateRes.ok) {
-            let errorMessage = 'Failed to update profile';
-            try {
-              const error = await updateRes.json();
-              errorMessage = error.message || errorMessage;
-            } catch (e) {
-              console.error('Non-JSON error response:', e);
-            }
-            throw new Error(errorMessage);
-          }
-
-        if (otpType === 'email') {
-          setEmail(pendingEmail);
-          setPendingEmail('');
-          localStorage.setItem('email', pendingEmail);
-          toast.success('Email Updated!', {
-            description: 'Your email address has been successfully updated.',
-          });
-        } else {
-          setPhone(pendingPhone);
-          setPendingPhone('');
-          localStorage.setItem('user_mobile', finalIdentifier);
-          toast.success('Phone Number Updated!', {
-            description: 'Your phone number has been successfully updated.',
-          });
-        }
-
-        setShowOTPVerification(false);
-        setVerificationStep('none');
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Verification failed");
-    }
+  const handleNavigateToSupport = () => {
+    onNavigate?.('support');
   };
 
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {
@@ -497,7 +291,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     }),
   };
 
-  // Show loading state
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
@@ -506,7 +299,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     );
   }
 
-  // Show error state
   if (userDataError) {
     return (
       <div className="min-h-screen bg-white relative overflow-hidden">
@@ -546,7 +338,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       
-      {/* Header with Logo - matching Support page style */}
       <motion.header 
         className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
@@ -572,7 +363,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
               </div>
             </div>
             
-            {/* Logo */}
             <div 
               className="flex items-center space-x-2 cursor-pointer"
               onClick={onBack}
@@ -589,7 +379,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         </div>
       </motion.header>
 
-      {/* Mobile Title */}
       <motion.div 
         className="flex sm:hidden items-center space-x-2 mb-4 px-3 pt-4"
         initial={{ opacity: 0, y: -10 }}
@@ -599,10 +388,8 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         <h1 className="text-xl font-bold text-purple-800">Account Settings</h1>
       </motion.div>
 
-      {/* Main Content */}
       <main className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-8 max-w-4xl relative z-10">
         <div className="space-y-4 sm:space-y-5 md:space-y-6">
-          {/* Profile Section */}
 
           <motion.div
             custom={0}
@@ -610,9 +397,8 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             animate="visible"
             variants={cardVariants}
           >
-                <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
-                      <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
-                    {/* Card shine effect */}
+            <form onSubmit={handleSaveChanges} className="space-y-4 sm:space-y-5 md:space-y-6">
+              <div className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative">
 
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
@@ -639,7 +425,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 </div>
 
                 <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6 relative">
-                  {/* Full Name */}
                   <motion.div
                     className="space-y-2"
                     whileHover={{ x: 4 }}
@@ -656,12 +441,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled
-                      // placeholder="Enter your full name"
                       className="bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 focus:outline-none focus-visible:outline-none transition-all duration-200 rounded-xl"
                     />
                   </motion.div>
 
-                  {/* Email Address */}
                   <motion.div
                     className="space-y-2"
                     whileHover={{ x: 4 }}
@@ -693,7 +476,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                     />
                   </motion.div>
 
-                  {/* Phone Number */}
                   <motion.div
                     className="space-y-2"
                     whileHover={{ x: 4 }}
@@ -724,85 +506,18 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                       className="bg-purple-50/80 border-purple-300 cursor-not-allowed text-purple-700 rounded-xl"
                     />
                   </motion.div>
-
-                  {/* Address */}
-                  {/* <motion.div
-                    className="space-y-2"
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-purple-500" />
-                      <Label htmlFor="address" className="text-sm font-medium text-purple-900">
-                        Address
-                      </Label>
-                    </div>
-                    <Input
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 focus:outline-none focus-visible:outline-none transition-all duration-200 rounded-xl"
-                    />
-                  </motion.div>*/}
-
-                  {/* Date of Birth */}
-                  {/* <motion.div
-                    className="space-y-2"
-                    whileHover={{ x: 4 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-purple-500" />
-                      <Label htmlFor="dob" className="text-sm font-medium text-purple-900">
-                        Date of Birth
-                      </Label>
-                    </div>
-                    <Input
-                      id="dob"
-                      type="date"
-                      value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                      className="bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 focus:outline-none focus-visible:outline-none transition-all duration-200 rounded-xl"
-                    />
-                  </motion.div>  */}
                 </div>
               </div>
+            </form>
+          </motion.div>
 
-              {/* Save Profile Button */}
-              {/* <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <motion.div className="flex-1 order-1 sm:order-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white py-5 sm:py-6 rounded-xl font-medium shadow-lg shadow-purple-500/30 transition-all text-sm sm:text-base"
-                  >
-                    <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Save Changes
-                  </Button>
-                </motion.div>
-                <motion.div className="order-2 sm:order-2" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onBack}
-                    className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 rounded-xl border-purple-300 hover:bg-purple-50 text-purple-700 transition-all text-sm sm:text-base"
-                  >
-                    Cancel
-                  </Button>
-                </motion.div>
-              </div> */}
-              </form>
-            </motion.div>
-
-            {/* Notifications Section */}
-              <motion.div
-                custom={1}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
-              >
-                {/* Card shine effect */}
-
+          <motion.div
+            custom={1}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+          >
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
               initial={{ x: '-100%', y: '-100%' }}
@@ -828,19 +543,16 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
 
             <div className="p-4 sm:p-5 md:p-6 space-y-4 sm:space-y-5 md:space-y-6 relative">
-              {/* Push Notifications */}
               <motion.div
                 className="flex items-center justify-between p-3 sm:p-4 rounded-xl hover:bg-purple-50/50 transition-all"
                 whileHover={{ x: 4 }}
               >
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-3">
                   <motion.div
-                    className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-xl    flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0"
                     whileHover={{ rotate: 360 }}
                     transition={{ duration: 0.6 }}
                   >
-
-
                     <Gavel className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                   </motion.div>
                   <div className="min-w-0 flex-1">
@@ -855,7 +567,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 />
               </motion.div>
 
-              {/* Email Alerts */}
               <motion.div
                 className="flex items-center justify-between p-3 sm:p-4 rounded-xl hover:bg-purple-50/50 transition-all"
                 whileHover={{ x: 4 }}
@@ -876,10 +587,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 <Switch
                   checked={emailAlerts}
                   onCheckedChange={setEmailAlerts}
-
                   className="data-[state=checked]:bg-purple-600 flex-shrink-0"
                 />
               </motion.div>
+
               <motion.div
                 className="flex items-center justify-between p-3 sm:p-4 rounded-xl hover:bg-purple-50/50 transition-all"
                 whileHover={{ x: 4 }}
@@ -900,11 +611,10 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 <Switch
                   checked={winNotifications}
                   onCheckedChange={setWinNotifications}
-
                   className="data-[state=checked]:bg-purple-600 flex-shrink-0"
                 />
               </motion.div>
-              {/* SMS Alerts */}
+
               <motion.div
                 className="flex items-center justify-between p-3 sm:p-4 rounded-xl hover:bg-purple-50/50 transition-all"
                 whileHover={{ x: 4 }}
@@ -922,28 +632,27 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                     <div className="text-xs sm:text-sm text-purple-600 truncate">Get SMS notifications for transactions</div>
                   </div>
                 </div>
-                  <Switch
-                    checked={smsAlerts}
-                    onCheckedChange={setSmsAlerts}
-                    className="data-[state=checked]:bg-purple-600 flex-shrink-0"
-                  />
-                </motion.div>
+                <Switch
+                  checked={smsAlerts}
+                  onCheckedChange={setSmsAlerts}
+                  className="data-[state=checked]:bg-purple-600 flex-shrink-0"
+                />
+              </motion.div>
 
-                {/* Push Notifications Card */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-4 pt-4 border-t border-purple-200/50"
-                >
-                  <NotificationPermissionCard 
-                    userId={localStorage.getItem('user_id') || undefined}
-                    showTitle={false}
-                  />
-                </motion.div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4 pt-4 border-t border-purple-200/50"
+              >
+                <NotificationPermissionCard 
+                  userId={localStorage.getItem('user_id') || undefined}
+                  showTitle={false}
+                />
+              </motion.div>
+            </div>
 
-              <div className="px-4 sm:px-6 pb-4 sm:pb-6 relative">
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6 relative">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   onClick={handleSavePreferences}
@@ -952,21 +661,17 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                   <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                   Save Preferences
                 </Button>
-
               </motion.div>
             </div>
           </motion.div>
 
-          {/* Security Section */}
-              <motion.div
-                custom={2}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
-              >
-                {/* Card shine effect */}
-
+          <motion.div
+            custom={2}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+          >
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
               initial={{ x: '-100%', y: '-100%' }}
@@ -1022,16 +727,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
           </motion.div>
 
-            {/* Auction History Section */}
-              <motion.div
-                custom={3}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
-              >
-                {/* Card shine effect */}
-
+          <motion.div
+            custom={3}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+          >
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
               initial={{ x: '-100%', y: '-100%' }}
@@ -1087,16 +789,13 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
           </motion.div>
 
-            {/* Danger Zone */}
-              <motion.div
-                custom={4}
-                initial="hidden"
-                animate="visible"
-                variants={cardVariants}
-                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
-              >
-              {/* Card shine effect */}
-
+          <motion.div
+            custom={4}
+            initial="hidden"
+            animate="visible"
+            variants={cardVariants}
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border-2 border-red-200/50 overflow-hidden relative"
+          >
             <motion.div
               className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
               initial={{ x: '-100%', y: '-100%' }}
@@ -1114,7 +813,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
 
             <div className="p-4 sm:p-5 md:p-6 space-y-4 relative">
-              {/* Delete Account */}
               <motion.div whileHover={{ x: 4 }} transition={{ duration: 0.2 }}>
                 <div>
                   <h3 className="font-semibold text-red-900 mb-2 text-sm sm:text-base">Delete Account</h3>
@@ -1135,7 +833,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                 </div>
               </motion.div>
 
-              {/* Sign Out */}
               <motion.div
                 className="pt-4 border-t border-red-100"
                 whileHover={{ x: 4 }}
@@ -1158,7 +855,6 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
                     <Button
                       onClick={() => {
-                        // setShowLogoutDialog(false);
                         toast.info('Signed Out', {
                           description: 'You have been signed out successfully.',
                         });
@@ -1178,12 +874,20 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         </div>
       </main>
 
-      {/* Modals */}
       {showChangeEmail && (
         <ChangeEmailModal
           currentEmail={email}
           onClose={() => setShowChangeEmail(false)}
-          onSubmit={handleChangeEmailSubmit}
+          onOldEmailVerified={handleOldEmailVerified}
+          onNavigateToSupport={handleNavigateToSupport}
+        />
+      )}
+
+      {showNewEmailInput && (
+        <NewEmailInputModal
+          currentEmail={email}
+          onClose={() => setShowNewEmailInput(false)}
+          onSuccess={handleEmailChangeSuccess}
         />
       )}
 
@@ -1191,30 +895,16 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         <ChangePhoneModal
           currentPhone={phone}
           onClose={() => setShowChangePhone(false)}
-          onSubmit={handleChangePhoneSubmit}
+          onOldPhoneVerified={handleOldPhoneVerified}
+          onNavigateToSupport={handleNavigateToSupport}
         />
       )}
 
-      {showOTPVerification && (
-        <OTPVerificationModal
-          type={otpType}
-          recipient={otpRecipient}
-          title={verificationStep === 'old' ? 'Step 1: Verify Identity' : `Step 2: Verify New ${otpType === 'email' ? 'Email' : 'Mobile'}`}
-          description={verificationStep === 'old' 
-            ? `We've sent a 6-digit verification code to your current ${otpType === 'email' ? 'email' : 'mobile'}` 
-            : `Please enter the verification code sent to your new ${otpType === 'email' ? 'email' : 'mobile'}`
-          }
-          onClose={() => setShowOTPVerification(false)}
-          onVerify={handleOTPVerify}
-          skipAutoSend={true}
-          resendEndpoint={API_ENDPOINTS.auth.sendVerificationOtp}
-          resendPayload={{
-            identifier: otpType === 'email' ? otpRecipient : otpRecipient.replace(/\D/g, ''),
-            type: otpType === 'email' ? 'email' : 'mobile',
-            reason: verificationStep === 'old' 
-              ? `Current ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
-              : `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification`
-          }}
+      {showNewPhoneInput && (
+        <NewPhoneInputModal
+          currentPhone={phone}
+          onClose={() => setShowNewPhoneInput(false)}
+          onSuccess={handlePhoneChangeSuccess}
         />
       )}
 

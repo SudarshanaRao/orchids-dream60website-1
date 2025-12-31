@@ -403,6 +403,55 @@ const updatePassword = async (req, res) => {
 };
 
 
+// POST /auth/check-email
+// Body: { email }
+const checkEmail = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const escaped = escapeRegex(normalizedEmail);
+    const existingUser = await User.findOne({ email: new RegExp(`^${escaped}$`, 'i') });
+
+    return res.status(200).json({
+      success: true,
+      exists: !!existingUser,
+      message: existingUser ? 'Email is already registered' : 'Email is available'
+    });
+  } catch (err) {
+    console.error('Check Email Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// POST /auth/check-mobile
+// Body: { mobile }
+const checkMobile = async (req, res) => {
+  try {
+    const { mobile } = req.body || {};
+    
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: 'Mobile is required' });
+    }
+
+    const normalizedMobile = normalizeMobile(mobile);
+    const existingUser = await User.findOne({ mobile: normalizedMobile });
+
+    return res.status(200).json({
+      success: true,
+      exists: !!existingUser,
+      message: existingUser ? 'Mobile number is already registered' : 'Mobile number is available'
+    });
+  } catch (err) {
+    console.error('Check Mobile Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // POST /auth/send-verification-otp
 // Body: { identifier, type, reason }
 const sendVerificationOtp = async (req, res) => {
@@ -450,4 +499,6 @@ module.exports = {
   resetPassword,
   updatePassword,
   sendVerificationOtp,
+  checkEmail,
+  checkMobile,
 };
