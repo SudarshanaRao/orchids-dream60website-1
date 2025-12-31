@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Snowfall from 'react-snowfall';
 import { Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HowDream60Works } from './components/HowDream60Works';
@@ -2358,19 +2357,11 @@ if (currentPage === 'support') {
                           const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
                           const displayTime = `${timeSlot} to ${formattedEndTime}`;
                           
-                          return (
-                              <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
-                                      <Snowfall 
-                                        color="rgba(255, 255, 255, 0.4)" 
-                                        snowflakeCount={isMobile ? 8 : 40} 
-                                        radius={[2.0, 5.0]} 
-                                        speed={[0.2, 0.6]} 
-                                        wind={[-0.2, 0.5]}
-                                        style={{ zIndex: 1 }}
-                                      />
+                            return (
+                                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
 
 
-                              <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                   <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                                     <div>

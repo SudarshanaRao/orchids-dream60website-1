@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Clock, Shield, Zap, Users } from 'lucide-react';
-import Snowfall from 'react-snowfall';
 
 interface FooterProps {
   onNavigate?: (page: string) => void;
@@ -111,20 +110,13 @@ export function Footer({ onNavigate }: FooterProps) {
                   SECURE PLATFORM
                 </div>
               </div>
-            <p className="text-[9px] text-purple-400 font-medium text-center md:text-right max-w-[280px]">
-              Please play responsibly. Skill-based auctions involve financial risk. 18+ only.
-            </p>
+          <p className="text-[9px] text-purple-400 font-medium text-center md:text-right max-w-[280px]">
+                Please play responsibly. Skill-based auctions involve financial risk. 18+ only.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-      
-      {/* Enhanced snowfall with larger size */}
-      <Snowfall 
-        color="#F3E8FF" 
-        snowflakeCount={isMobile ? 12 : 30} 
-        radius={[2.0, 5.0]} 
-        speed={[0.5, 1.2]} 
-      />
-    </footer>
+        
+      </footer>
   );
 }

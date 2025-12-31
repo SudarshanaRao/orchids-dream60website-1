@@ -149,258 +149,221 @@ export function Contact({ onBack }: ContactProps) {
             </div>
           </div>
 
-          {/* Quick Contact Methods */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 relative z-10">
+            {/* Quick Contact Methods */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 relative z-10">
+                <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                  <CardHeader className="text-center pb-2 relative z-10 font-medium">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+                  <CardTitle className="text-purple-800">Live Chat</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center relative z-10 font-medium">
+                  <p className="text-purple-700 mb-2">Instant Support</p>
+                  <Badge className="bg-green-100 text-green-700 border-green-300">Online Now</Badge>
+                  <p className="text-xs text-purple-600 mt-2">Average response: &lt;30 seconds</p>
+                </CardContent>
+              </Card>
+
               <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
                 <CardHeader className="text-center pb-2 relative z-10 font-medium">
-                <MessageSquare className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
-                <CardTitle className="text-purple-800">Live Chat</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center relative z-10 font-medium">
-                <p className="text-purple-700 mb-2">Instant Support</p>
-                <Badge className="bg-green-100 text-green-700 border-green-300">Online Now</Badge>
-                <p className="text-xs text-purple-600 mt-2">Average response: &lt;30 seconds</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
-                <Mail className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
-                <CardTitle className="text-purple-800">Email Support</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center relative z-10 font-medium">
-                <p className="text-purple-700 mb-2">support@dream60.com</p>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-300">24h Response</Badge>
-                <p className="text-xs text-purple-600 mt-2">Detailed assistance</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
-                <Headphones className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
-                <CardTitle className="text-purple-800">Priority Support</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center relative z-10 font-medium">
-                <p className="text-purple-700 mb-2">VIP Members</p>
-                <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">Premium</Badge>
-                <p className="text-xs text-purple-600 mt-2">Dedicated agent</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              <Snowfall 
-                snowflakeCount={3}
-                radius={[0.5, 1.5]}
-                speed={[0.5, 1.0]}
-                style={{ opacity: 0.15 }}
-              />
-              <CardHeader className="text-center pb-2 relative z-10 font-medium">
-                <Users className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
-                <CardTitle className="text-purple-800">Community</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center relative z-10 font-medium">
-                <p className="text-purple-700 mb-2">Discord & Forums</p>
-                <Badge className="bg-orange-100 text-orange-700 border-orange-300">5k+ Members</Badge>
-                <p className="text-xs text-purple-600 mt-2">Player discussions</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Detailed Contact Information */}
-          <div className="grid lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card className="bg-white/90 backdrop-blur-sm border-purple-200 shadow-xl relative overflow-hidden">
-                <Snowfall 
-                  snowflakeCount={isMobile ? 1 : 5}
-                  radius={[0.3, 1.2]}
-                  speed={[0.2, 0.6]}
-                  wind={[-0.2, 0.5]}
-                  style={{ opacity: 0.15 }}
-                />
-                <CardHeader className="relative z-10 font-medium">
-                  <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
-                    <Send className="w-5 h-5 sm:w-6 sm:h-6" />
-                    <span>Send us a Message</span>
-                  </CardTitle>
-                  <p className="text-xs sm:text-sm text-purple-600">We'll get back to you within hours, not days!</p>
+                  <Mail className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+                  <CardTitle className="text-purple-800">Email Support</CardTitle>
                 </CardHeader>
-                <CardContent className="relative z-10 font-medium">
-                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                <CardContent className="text-center relative z-10 font-medium">
+                  <p className="text-purple-700 mb-2">support@dream60.com</p>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-300">24h Response</Badge>
+                  <p className="text-xs text-purple-600 mt-2">Detailed assistance</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <CardHeader className="text-center pb-2 relative z-10 font-medium">
+                  <Headphones className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+                  <CardTitle className="text-purple-800">Priority Support</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center relative z-10 font-medium">
+                  <p className="text-purple-700 mb-2">VIP Members</p>
+                  <Badge className="bg-yellow-100 text-yellow-700 border-yellow-300">Premium</Badge>
+                  <p className="text-xs text-purple-600 mt-2">Dedicated agent</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg hover:shadow-xl hover:from-purple-50 hover:to-purple-100 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <CardHeader className="text-center pb-2 relative z-10 font-medium">
+                  <Users className="w-12 h-12 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+                  <CardTitle className="text-purple-800">Community</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center relative z-10 font-medium">
+                  <p className="text-purple-700 mb-2">Discord & Forums</p>
+                  <Badge className="bg-orange-100 text-orange-700 border-orange-300">5k+ Members</Badge>
+                  <p className="text-xs text-purple-600 mt-2">Player discussions</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Detailed Contact Information */}
+            <div className="grid lg:grid-cols-3 gap-6 sm:gap-8 relative z-10">
+              {/* Contact Form */}
+              <div className="lg:col-span-2">
+                <Card className="bg-white/90 backdrop-blur-sm border-purple-200 shadow-xl relative overflow-hidden">
+                  <CardHeader className="relative z-10 font-medium">
+                    <CardTitle className="text-base sm:text-lg md:text-xl text-purple-800 flex items-center space-x-2">
+                      <Send className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <span>Send us a Message</span>
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-purple-600">We'll get back to you within hours, not days!</p>
+                  </CardHeader>
+                  <CardContent className="relative z-10 font-medium">
+                    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                      <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                          <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
+                          <Input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            placeholder="Enter your full name"
+                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
+                          <Input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            placeholder="your.email@example.com"
+                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
+                            required
+                          />
+                        </div>
+                      </div>
+
                       <div>
-                        <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
+                        <label className="block text-purple-700 font-bold mb-2">Category *</label>
+                        <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                          <SelectTrigger className="bg-white border-purple-300 text-purple-800 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm font-medium">
+                            <SelectValue placeholder="Choose your inquiry type" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border border-purple-200 shadow-lg font-medium">
+                            <SelectItem value="account">Account & Login Issues</SelectItem>
+                            <SelectItem value="auction">Auction Questions</SelectItem>
+                            <SelectItem value="payment">Payment & Billing</SelectItem>
+                            <SelectItem value="technical">Technical Support</SelectItem>
+                            <SelectItem value="prizes">Prize & Delivery</SelectItem>
+                            <SelectItem value="feedback">Feedback & Suggestions</SelectItem>
+                            <SelectItem value="partnership">Business Partnership</SelectItem>
+                            <SelectItem value="press">Press & Media</SelectItem>
+                            <SelectItem value="legal">Legal & Compliance</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-purple-700 font-bold mb-2">Subject *</label>
                         <Input
                           type="text"
-                          value={formData.name}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
-                          placeholder="Enter your full name"
+                          value={formData.subject}
+                          onChange={(e) => handleInputChange('subject', e.target.value)}
+                          placeholder="Brief description of your inquiry"
                           className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
                           required
                         />
                       </div>
                       
                       <div>
-                        <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
-                        <Input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                          placeholder="your.email@example.com"
-                          className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
+                        <label className="block text-purple-700 font-bold mb-2">Message *</label>
+                        <Textarea
+                          value={formData.message}
+                          onChange={(e) => handleInputChange('message', e.target.value)}
+                          placeholder="Please provide as much detail as possible so we can help you quickly..."
+                          rows={6}
+                          className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm resize-none"
                           required
                         />
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-purple-700 font-bold mb-2">Category *</label>
-                      <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                        <SelectTrigger className="bg-white border-purple-300 text-purple-800 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm font-medium">
-                          <SelectValue placeholder="Choose your inquiry type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white border border-purple-200 shadow-lg font-medium">
-                          <SelectItem value="account">Account & Login Issues</SelectItem>
-                          <SelectItem value="auction">Auction Questions</SelectItem>
-                          <SelectItem value="payment">Payment & Billing</SelectItem>
-                          <SelectItem value="technical">Technical Support</SelectItem>
-                          <SelectItem value="prizes">Prize & Delivery</SelectItem>
-                          <SelectItem value="feedback">Feedback & Suggestions</SelectItem>
-                          <SelectItem value="partnership">Business Partnership</SelectItem>
-                          <SelectItem value="press">Press & Media</SelectItem>
-                          <SelectItem value="legal">Legal & Compliance</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600 py-3 font-bold shadow-lg"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <div className="flex items-center justify-center">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Sending...
+                          </div>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Message
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Contact Information Sidebar */}
+              <div className="space-y-6 relative z-10">
+                {/* Company Information */}
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg relative overflow-hidden group">
+                  <CardHeader className="relative z-10 font-medium">
+                    <CardTitle className="text-purple-800 flex items-center space-x-2">
+                      <Building2 className="w-6 h-6 text-purple-600" />
+                      <span>Dream60 India</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 relative z-10 font-medium">
+                    <div className="flex items-start space-x-3">
+                      <MapPin className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-purple-800">Global Headquarters</p>
+                        <p className="text-purple-700 text-sm">
+                          Finpages Tech Private Limited,<br />
+                          #709, Gowra Fountainhead,<br />
+                          Hitech City, Madhapur,<br />
+                          Pin: 500081.
+                        </p>
+                      </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-purple-700 font-bold mb-2">Subject *</label>
-                      <Input
-                        type="text"
-                        value={formData.subject}
-                        onChange={(e) => handleInputChange('subject', e.target.value)}
-                        placeholder="Brief description of your inquiry"
-                        className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-purple-700 font-bold mb-2">Message *</label>
-                      <Textarea
-                        value={formData.message}
-                        onChange={(e) => handleInputChange('message', e.target.value)}
-                        placeholder="Please provide as much detail as possible so we can help you quickly..."
-                        rows={6}
-                        className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm resize-none"
-                        required
-                      />
+                    <div className="flex items-start space-x-3">
+                      <Phone className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-purple-800">Contact</p>
+                        <p className="text-purple-700 text-sm">
+                          Email: support@dream60.com<br />
+                          For urgent auction issues: Live Chat Only
+                        </p>
+                      </div>
                     </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-500 hover:to-purple-600 py-3 font-bold shadow-lg"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <div className="flex items-center justify-center">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Sending...
-                        </div>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4 mr-2" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Contact Information Sidebar */}
-            <div className="space-y-6 relative z-10">
-              {/* Company Information */}
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 shadow-lg relative overflow-hidden group">
-                 <Snowfall 
-                  snowflakeCount={isMobile ? 1 : 4}
-                  radius={[0.3, 1.0]}
-                  speed={[0.1, 0.5]}
-                  style={{ opacity: 0.15 }}
-                />
-                <CardHeader className="relative z-10 font-medium">
-                  <CardTitle className="text-purple-800 flex items-center space-x-2">
-                    <Building2 className="w-6 h-6 text-purple-600" />
-                    <span>Dream60 India</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 relative z-10 font-medium">
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-purple-800">Global Headquarters</p>
-                      <p className="text-purple-700 text-sm">
-                        Finpages Tech Private Limited,<br />
-                        #709, Gowra Fountainhead,<br />
-                        Hitech City, Madhapur,<br />
-                        Pin: 500081.
-                      </p>
+                    <div className="flex items-start space-x-3">
+                      <Globe className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-purple-800">Global Presence</p>
+                        <p className="text-purple-700 text-sm">
+                          Serving India<br />
+                          Licensed & regulated auction platform
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-start space-x-3">
-                    <Phone className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-purple-800">Contact</p>
-                      <p className="text-purple-700 text-sm">
-                        Email: support@dream60.com<br />
-                        For urgent auction issues: Live Chat Only
-                      </p>
-                    </div>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  <div className="flex items-start space-x-3">
-                    <Globe className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-purple-800">Global Presence</p>
-                      <p className="text-purple-700 text-sm">
-                        Serving India<br />
-                        Licensed & regulated auction platform
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Response Times */}
-              <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg relative overflow-hidden group">
-                <Snowfall 
-                  snowflakeCount={isMobile ? 1 : 4}
-                  radius={[0.3, 1.0]}
-                  speed={[0.1, 0.5]}
-                  style={{ opacity: 0.15 }}
-                />
-                <CardHeader className="relative z-10 font-medium">
-                  <CardTitle className="text-purple-800 flex items-center space-x-2">
-                    <Zap className="w-6 h-6 text-purple-600" />
-                    <span>Response Times</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 relative z-10 font-medium">
+                {/* Response Times */}
+                <Card className="bg-gradient-to-br from-white to-purple-50 border-purple-200 shadow-lg relative overflow-hidden group">
+                  <CardHeader className="relative z-10 font-medium">
+                    <CardTitle className="text-purple-800 flex items-center space-x-2">
+                      <Zap className="w-6 h-6 text-purple-600" />
+                      <span>Response Times</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 relative z-10 font-medium">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-700">Live Chat</span>

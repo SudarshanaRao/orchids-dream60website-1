@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import Snowfall from 'react-snowfall';
 import { 
   Trophy, 
   Clock, 
@@ -251,12 +250,11 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const config = getBannerConfig();
   if (!config) return null;
 
-  return (
-    <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
-      <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
-        <Snowfall color="white" snowflakeCount={isMobile ? 5 : 20} radius={[1.5, 3.5]} speed={[0.2, 0.6]} />
-        
-        {/* Marquee Container */}
+    return (
+      <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
+        <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
+          
+          {/* Marquee Container */}
         <div className="flex-1 overflow-hidden h-full flex items-center relative group">
           <div className="flex items-center gap-4 whitespace-nowrap animate-marquee px-4">
             {/* Repeated text for seamless loop - using 8 copies for absolute continuity */}

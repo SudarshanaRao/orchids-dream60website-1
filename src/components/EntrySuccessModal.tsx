@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle, Trophy, Zap, X, ArrowRight, IndianRupee, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Button } from './ui/button';
-import Snowfall from 'react-snowfall';
 
 interface EntrySuccessModalProps {
   entryFee: number;
@@ -93,16 +92,9 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
             <div className="absolute inset-0 bg-gradient-to-br from-purple-50/95 via-white/98 to-purple-100/95 rounded-[26px]"></div>
             <div className="absolute inset-0 backdrop-blur-3xl bg-white/60 rounded-[26px]"></div>
             
-                {/* Content */}
-                    <div className="relative backdrop-blur-xl bg-black/5 rounded-[26px] border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
-                        <Snowfall 
-                          color="#8B5CF6"
-                          snowflakeCount={window.innerWidth < 768 ? 2 : 15}
-                          radius={[0.3, 1.2]}
-                          speed={[0.2, 0.6]}
-                          wind={[-0.2, 0.5]}
-                        />
-                {/* Animated Success Header */}
+                  {/* Content */}
+                      <div className="relative backdrop-blur-xl bg-black/5 rounded-[26px] border border-white/40 shadow-inner shadow-purple-500/20 overflow-hidden">
+                  {/* Animated Success Header */}
 
               <div className="relative overflow-hidden">
                 {/* Background gradient animation */}
