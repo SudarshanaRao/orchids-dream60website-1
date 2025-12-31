@@ -51,11 +51,12 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const prevPaidStatus = useRef(auction?.userHasPaidEntry);
 
   useEffect(() => {
+    // ✅ Reduced delay from 1000ms to 300ms for a snappier feel
     if (auction?.userHasPaidEntry && !prevPaidStatus.current) {
       setIsUnlocking(true);
       const timer = setTimeout(() => {
         setIsUnlocking(false);
-      }, 1000);
+      }, 300);
       return () => clearTimeout(timer);
     }
     prevPaidStatus.current = auction?.userHasPaidEntry;
@@ -89,11 +90,6 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
     };
 
     const roundBoxes = auction.boxes.filter(box => box.type === 'round');
-
-      console.log('🎯 [AUCTION GRID] Visibility check:', {
-        userHasPaidEntry: auction.userHasPaidEntry,
-        roundBoxesCount: roundBoxes.length
-      });
 
     return (
       <div className="relative">
