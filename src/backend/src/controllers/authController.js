@@ -238,6 +238,7 @@ const forgotPassword = async (req, res) => {
       success: true,
       message: type === 'email' ? 'OTP sent to your email' : 'OTP generated',
       userExists: !!user,
+      ...(type === 'mobile' ? { otp: otpCode } : {})
     };
 
     return res.status(200).json(responseData);
@@ -309,6 +310,7 @@ const resendOtp = async (req, res) => {
     const responseData = {
       success: true,
       message: type === 'email' ? 'OTP resent to your email' : 'OTP resent',
+      ...(type === 'mobile' ? { otp: otpCode } : {})
     };
 
     return res.status(200).json(responseData);
@@ -429,6 +431,7 @@ const sendVerificationOtp = async (req, res) => {
     const responseData = {
       success: true,
       message: `OTP sent to your ${type}`,
+      ...(type === 'mobile' ? { otp: otpCode } : {})
     };
 
     return res.status(200).json(responseData);

@@ -209,6 +209,24 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       setPendingEmail(newEmail);
       setOtpType('email');
       
+      // Check if email is already registered
+      const checkRes = await fetch(`${API_ENDPOINTS.auth.signup}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: 'check_only', 
+          mobile: '0000000000',
+          email: newEmail,
+          password: 'check',
+          confirmPassword: 'check'
+        }),
+      });
+      const checkData = await checkRes.json();
+      if (checkRes.status === 409 && checkData.message.toLowerCase().includes('email')) {
+        toast.error("Email already registered with another account.");
+        return;
+      }
+
       // Step 1: Send OTP to current email
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
@@ -251,6 +269,24 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       setPendingPhone(newPhone);
       setOtpType('phone');
       
+      // Check if phone is already registered
+      const checkRes = await fetch(`${API_ENDPOINTS.auth.signup}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: 'check_only', 
+          mobile: newDigits,
+          email: 'check@check.com',
+          password: 'check',
+          confirmPassword: 'check'
+        }),
+      });
+      const checkData = await checkRes.json();
+      if (checkRes.status === 409 && checkData.message.toLowerCase().includes('mobile')) {
+        toast.error("Phone number already registered with another account.");
+        return;
+      }
+
       // Step 1: Send OTP to current phone
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
@@ -283,7 +319,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   const handleOTPVerify = async (otp: string) => {
     try {
       const userId = localStorage.getItem('user_id');
-      const identifier = otpRecipient.replace(/\D/g, '');
+      const identifier = otpType === 'email' ? otpRecipient : otpRecipient.replace(/\D/g, '');
       const type = otpType === 'email' ? 'email' : 'mobile';
 
       // Verify OTP
@@ -1173,7 +1209,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           skipAutoSend={true}
           resendEndpoint={API_ENDPOINTS.auth.sendVerificationOtp}
           resendPayload={{
-            identifier: otpRecipient.replace(/\D/g, ''),
+            identifier: otpType === 'email' ? otpRecipient : otpRecipient.replace(/\D/g, ''),
             type: otpType === 'email' ? 'email' : 'mobile',
             reason: verificationStep === 'old' 
               ? `Current ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
