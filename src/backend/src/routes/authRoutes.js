@@ -218,11 +218,11 @@ router.post('/send-verification-otp', sendVerificationOtp);
  *         message:
  *           type: string
  *           example: "OTP sent via email successfully"
- *         otp:
- *           type: string
- *           example: "483251"
- *           description: Only returned in development mode for testing
- *         emailSent:
+   *         otp:
+   *           type: string
+   *           description: No longer returned in response for security
+   *         emailSent:
+
  *           type: boolean
  *           example: true
  *           description: Indicates if email was sent successfully via Gmail
@@ -449,20 +449,11 @@ router.post('/login', login);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/OTPResponse'
- *             examples:
- *               developmentMode:
- *                 summary: Development mode (OTP in response)
- *                 value:
- *                   success: true
- *                   message: "OTP sent to player@gmail.com via email"
- *                   otp: "483251"
- *                   emailSent: true
- *               productionMode:
- *                 summary: Production mode (OTP not in response)
- *                 value:
- *                   success: true
- *                   message: "OTP sent to player@gmail.com via email"
- *                   emailSent: true
+   *             example:
+   *               success: true
+   *               message: "OTP sent to player@gmail.com via email"
+   *               emailSent: true
+
  *       400:
  *         description: Missing mobile or email parameter
  *         content:

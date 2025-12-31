@@ -230,7 +230,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
       setShowChangeEmail(false);
       setShowOTPVerification(true);
       
-      toast.info('Verification Required', {
+      toast.info('Step 1: Verify Identity', {
         description: `We've sent a code to your current email ${email} to verify it's you.`,
       });
     } catch (err: any) {
@@ -267,12 +267,12 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         throw new Error(error.message || 'Failed to send OTP to current mobile');
       }
 
-      setOtpRecipient(phone);
+      setOtpRecipient(currentDigits);
       setVerificationStep('old');
       setShowChangePhone(false);
       setShowOTPVerification(true);
 
-      toast.info('Verification Required', {
+      toast.info('Step 1: Verify Identity', {
         description: `We've sent a code to your current mobile ${phone} to verify it's you.`,
       });
     } catch (err: any) {
@@ -320,7 +320,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             throw new Error(error.message || `Failed to send OTP to new ${otpType}`);
           }
 
-        setOtpRecipient(otpType === 'email' ? pendingEmail : pendingPhone);
+        setOtpRecipient(otpType === 'email' ? pendingEmail : newIdentifier);
         setVerificationStep('new');
         
         toast.success('Step 1 Verified!', {
@@ -1163,6 +1163,11 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
         <OTPVerificationModal
           type={otpType}
           recipient={otpRecipient}
+          title={verificationStep === 'old' ? 'Step 1: Verify Identity' : `Step 2: Verify New ${otpType === 'email' ? 'Email' : 'Mobile'}`}
+          description={verificationStep === 'old' 
+            ? `We've sent a 6-digit verification code to your current ${otpType === 'email' ? 'email' : 'mobile'}` 
+            : `Please enter the verification code sent to your new ${otpType === 'email' ? 'email' : 'mobile'}`
+          }
           onClose={() => setShowOTPVerification(false)}
           onVerify={handleOTPVerify}
           skipAutoSend={true}
