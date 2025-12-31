@@ -136,30 +136,46 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                 let winner = null;
                 let isPrizeClaimed = false;
                 
-                if (currentAuctionData.Status === 'LIVE') {
-                  status = 'active';
-                } else if (currentAuctionData.Status === 'COMPLETED') {
-                  status = 'completed';
-                  if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
-                    const topWinner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
-                    if (topWinner) {
-                      winner = topWinner.playerUsername;
-                      isPrizeClaimed = topWinner.isPrizeClaimed || false;
+                  if (currentAuctionData.Status === 'LIVE') {
+                    status = 'active';
+                  } else if (currentAuctionData.Status === 'COMPLETED') {
+                    status = 'completed';
+                    if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
+                      // Find actual claimant first (anyone with CLAIMED status or isPrizeClaimed true)
+                      const actualClaimant = currentAuctionData.topWinners.find((w: any) => 
+                        w.prizeClaimStatus === 'CLAIMED' || w.isPrizeClaimed === true
+                      );
+                      const rank1Winner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
+                      
+                      if (actualClaimant) {
+                        winner = actualClaimant.playerUsername;
+                        isPrizeClaimed = true;
+                      } else if (rank1Winner) {
+                        winner = rank1Winner.playerUsername;
+                        isPrizeClaimed = rank1Winner.isPrizeClaimed || false;
+                      }
+                    }
+                  } else if (currentAuctionData.Status === 'UPCOMING') {
+                    status = 'upcoming';
+                  }
+                  
+                  // If winners are announced, we can also get winner info even if status is not COMPLETED
+                  const winnersAnnounced = currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0);
+                  if (winnersAnnounced && !winner && currentAuctionData.topWinners?.length > 0) {
+                    // Find actual claimant first
+                    const actualClaimant = currentAuctionData.topWinners.find((w: any) => 
+                      w.prizeClaimStatus === 'CLAIMED' || w.isPrizeClaimed === true
+                    );
+                    const rank1Winner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
+                    
+                    if (actualClaimant) {
+                      winner = actualClaimant.playerUsername;
+                      isPrizeClaimed = true;
+                    } else if (rank1Winner) {
+                      winner = rank1Winner.playerUsername;
+                      isPrizeClaimed = rank1Winner.isPrizeClaimed || false;
                     }
                   }
-                } else if (currentAuctionData.Status === 'UPCOMING') {
-                  status = 'upcoming';
-                }
-                
-                // If winners are announced, we can also get winner info even if status is not COMPLETED
-                const winnersAnnounced = currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0);
-                if (winnersAnnounced && !winner && currentAuctionData.topWinners?.length > 0) {
-                  const topWinner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
-                  if (topWinner) {
-                    winner = topWinner.playerUsername;
-                    isPrizeClaimed = topWinner.isPrizeClaimed || false;
-                  }
-                }
               
                 // Check if user has joined this auction
                 const hasUserJoined = user?.id && currentAuctionData.participants?.some(
