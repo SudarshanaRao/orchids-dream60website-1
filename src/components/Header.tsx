@@ -3,8 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download, Sparkles, IndianRupee, LifeBuoy, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
+import { toast } from 'sonner';
+import { IOSInstallGuide } from './IOSInstallGuide';
 
-    interface HeaderProps {
+interface HeaderProps {
       user?: {
         id?: string;
         username: string;
@@ -39,14 +41,15 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
   
   // Use external state if provided, otherwise use internal state
     const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
-      const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
-      const [hasNewHistory, setHasNewHistory] = useState(false);
-      const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-      const [showInstallButton, setShowInstallButton] = useState(true); // Default to true to show manual install guide
-      const [isStandalone, setIsStandalone] = useState(false);
+  const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
+  const [hasNewHistory, setHasNewHistory] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(true); // Default to true to show manual install guide
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
-      // PWA Install prompt handler
-      useEffect(() => {
+  // PWA Install prompt handler
+  useEffect(() => {
         const handler = (e: Event) => {
           console.log('✅ [PWA] beforeinstallprompt fired');
           e.preventDefault();
@@ -75,47 +78,48 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
         return () => window.removeEventListener('beforeinstallprompt', handler);
       }, []);
 
-        const handleInstallClick = async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`👤 [PWA] User choice: ${outcome}`);
+          const handleInstallClick = async () => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
             
-            if (outcome === 'accepted') {
-              setShowInstallButton(false);
+            if (isIOS) {
+              setShowIOSGuide(true);
+              return;
             }
-            setDeferredPrompt(null);
-            return;
-          }
 
-          // Fallback guide if native prompt isn't available
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-          const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-          
-          if (isStandalone) {
-            toast.info('App Already Installed', {
-              description: 'Dream60 is already installed on your device.',
-            });
-            return;
-          }
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              console.log(`👤 [PWA] User choice: ${outcome}`);
+              
+              if (outcome === 'accepted') {
+                setShowInstallButton(false);
+              }
+              setDeferredPrompt(null);
+              return;
+            }
 
-          if (isIOS) {
-            toast.info('Install Dream60 on iOS', {
-              description: 'Tap the "Share" button in Safari and select "Add to Home Screen" to install.',
-              duration: 6000,
-            });
-          } else if (isChrome) {
-            toast.info('Install Dream60', {
-              description: 'Open your browser menu (⋮) and select "Install App" or "Add to Home Screen".',
-              duration: 6000,
-            });
-          } else {
-            toast.info('Install Dream60', {
-              description: 'Select "Add to Home Screen" from your browser menu to install the app.',
-              duration: 6000,
-            });
-          }
-        };
+            // Fallback guide if native prompt isn't available
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            
+            if (isStandalone) {
+              toast.info('Dream60 already installed', {
+                description: 'You are already using the Dream60 APK version.',
+              });
+              return;
+            }
+
+            if (isChrome) {
+              toast.info('Install Dream60 APK', {
+                description: 'Open your browser menu (⋮) and select "Install App" or "Add to Home Screen".',
+                duration: 6000,
+              });
+            } else {
+              toast.info('Install Dream60 APK', {
+                description: 'Select "Add to Home Screen" from your browser menu to install the APK.',
+                duration: 6000,
+              });
+            }
+          };
 
 
       const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number; totalClaimed: number }>(() => ({
@@ -355,14 +359,14 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
 
             {/* Mobile Install App & Menu Buttons */}
               <div className="lg:hidden flex items-center gap-2">
-                <motion.button
-                  onClick={handleInstallClick}
-                  className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="Install App"
-                  data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
-                >
+                  <motion.button
+                    onClick={handleInstallClick}
+                    className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Install APK"
+                    data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
+                  >
                   <Download className="w-5 h-5" />
                 </motion.button>
 
@@ -525,15 +529,15 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                                 <Sparkles className="w-4 h-4" />
                                 <span className="text-sm font-medium">What's new</span>
                               </button>
-                              {showInstallButton && (
-                                <button
-                                  onClick={() => { handleInstallClick(); setIsExploreOpen(false); }}
-                                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
-                                >
-                                  <Download className="w-4 h-4" />
-                                  <span className="text-sm font-medium">Install App</span>
-                                </button>
-                              )}
+                                {showInstallButton && (
+                                  <button
+                                    onClick={() => { handleInstallClick(); setIsExploreOpen(false); }}
+                                    className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    <span className="text-sm font-medium">Install APK</span>
+                                  </button>
+                                )}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -626,7 +630,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                                 className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
                                 <Download className="w-4 h-4" />
-                                <span className="text-sm font-medium">Install App</span>
+                                <span className="text-sm font-medium">Install APK</span>
                               </button>
                             )}
                           </motion.div>
@@ -835,7 +839,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                               <Download className="w-5 h-5 text-purple-600" />
                             </div>
-                            <span className="font-medium text-purple-900">Install App</span>
+                            <span className="font-medium text-purple-900">Install APK</span>
                           </button>
                         </motion.div>
 
@@ -955,18 +959,18 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                         </motion.div>
 
 
-                          <motion.div variants={menuItemVariants}>
-                            <button
-                              onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
-                              className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
-                              data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
-                            >
-                              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                                <Download className="w-5 h-5 text-purple-600" />
-                              </div>
-                              <span className="font-medium text-purple-900">Install App</span>
-                            </button>
-                          </motion.div>
+                            <motion.div variants={menuItemVariants}>
+                              <button
+                                onClick={() => { handleInstallClick(); setMobileMenuOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl hover:bg-purple-50 transition-all text-left group"
+                                data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
+                              >
+                                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                  <Download className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <span className="font-medium text-purple-900">Install APK</span>
+                              </button>
+                            </motion.div>
 
                         <motion.div variants={menuItemVariants} className="pt-2">
                           <Button
@@ -985,6 +989,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
           </>
         )}
       </AnimatePresence>
-    </>
-  );
-}
+        <IOSInstallGuide isOpen={showIOSGuide} onClose={() => setShowIOSGuide(false)} />
+      </>
+    );
+  }

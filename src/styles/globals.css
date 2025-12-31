@@ -151,6 +151,12 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+html, body {
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+}
+
 @layer base {
   * {
     @apply border-gray-300 outline-purple-500/50;
@@ -158,6 +164,7 @@
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
   }
 }
 
