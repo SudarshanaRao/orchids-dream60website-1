@@ -1326,17 +1326,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 });
               }
               
-                    // Update local state
-                    setCurrentAuction(prev => {
-                      // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
-                      // If the user already has a true status for the SAME auction, don't let it flicker back to false
-                      // due to API lag/latency, especially after placing a bid.
-                      let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
-                      
-                      // ✅ CRITICAL: Once paid for THIS auction, stay paid (sticky for entire auction hour)
-                      if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
-                        finalUserHasPaidEntry = true;
-                      } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                      // Update local state
+                      setCurrentAuction(prev => {
+                        // ✅ NEW: Check localStorage for sticky payment status (survives refresh)
+                        const auctionId = prev.id;
+                        const paymentKey = `payment_${currentUser.id}_${auctionId}`;
+                        const storedPayment = localStorage.getItem(paymentKey) === 'true';
+                        const storedExpiry = parseInt(localStorage.getItem(`${paymentKey}_expiry`) || '0');
+                        const isPaymentValid = storedPayment && Date.now() < storedExpiry;
+
+                        // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
+                        // If the user already has a true status for the SAME auction, don't let it flicker back to false
+                        // due to API lag/latency, especially after placing a bid.
+                        let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+                        
+                        // ✅ CRITICAL: Once paid for THIS auction, stay paid (sticky for entire auction hour)
+                        if (isPaymentValid) {
+                          finalUserHasPaidEntry = true;
+                        } else if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
+                          finalUserHasPaidEntry = true;
+                        } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
                         // Extended timeout to 60 minutes (entire auction duration)
                         const now = Date.now();
                         if (now - recentPaymentTimestamp.current < 3600000) {
@@ -1722,40 +1731,48 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const handleCloseEntryFailure = useCallback(() => setShowEntryFailure(null), []);
   const handleCloseBidSuccess = useCallback(() => setShowBidSuccess(null), []);
 
-  const handleEntrySuccess = useCallback(() => {
-    if (!showEntrySuccess || !currentUser) return;
+    const handleEntrySuccess = useCallback(() => {
+      if (!showEntrySuccess || !currentUser) return;
 
-    toast.success('Entry Fee Paid!', {
-      description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-    });
+      toast.success('Entry Fee Paid!', {
+        description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+      });
 
-    // ✅ Close modal and update state instantly
-    setShowEntrySuccess(null);
-    
-    setCurrentAuction(prev => ({
-      ...prev,
-      userHasPaidEntry: true,
-      // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
-      boxes: prev.boxes.map(b => 
-        b.type === 'entry' 
-          ? { ...b, hasPaid: true } 
-          : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
-      )
-    }));
+      // ✅ Store payment status in localStorage to survive refresh and prevent flickering
+      // Use the auction ID to ensure it's specific to this auction
+      const auctionId = currentAuction.id;
+      const paymentKey = `payment_${currentUser.id}_${auctionId}`;
+      localStorage.setItem(paymentKey, 'true');
+      // Set an expiry for 2 hours (enough for the auction duration)
+      localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
 
-    // ✅ NEW: Sticky optimistic payment state update
-    setRecentPaymentSuccess(true);
-    recentPaymentTimestamp.current = Date.now();
+      // ✅ Close modal and update state instantly
+      setShowEntrySuccess(null);
+      
+      setCurrentAuction(prev => ({
+        ...prev,
+        userHasPaidEntry: true,
+        // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
+        boxes: prev.boxes.map(b => 
+          b.type === 'entry' 
+            ? { ...b, hasPaid: true } 
+            : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
+        )
+      }));
 
-    // ✅ Trigger refetch immediately to sync with server
-    console.log('💳 Payment successful - triggering immediate auction data refresh');
-    setForceRefetchTrigger(prev => prev + 1);
-    
-    // Refresh user profile stats too
-    if (currentUser.id) {
-      fetchAndSetUser(currentUser.id);
-    }
-  }, [showEntrySuccess, currentUser]);
+      // ✅ NEW: Sticky optimistic payment state update
+      setRecentPaymentSuccess(true);
+      recentPaymentTimestamp.current = Date.now();
+
+      // ✅ Trigger refetch immediately to sync with server
+      console.log('💳 Payment successful - triggering immediate auction data refresh');
+      setForceRefetchTrigger(prev => prev + 1);
+      
+      // Refresh user profile stats too
+      if (currentUser.id) {
+        fetchAndSetUser(currentUser.id);
+      }
+    }, [showEntrySuccess, currentUser, currentAuction.id]);
 
   const handleEntryFailure = useCallback(() => {
     setShowEntryFailure(null);

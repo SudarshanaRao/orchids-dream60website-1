@@ -44,40 +44,64 @@ interface AuctionGridProps {
   isJoinWindowOpen: boolean;
 }
 
-export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTime, isJoinWindowOpen }: AuctionGridProps) {
-  const [selectedBox, setSelectedBox] = useState<Box | null>(null);
-  const [showBidModal, setShowBidModal] = useState(false);
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const prevPaidStatus = useRef(auction?.userHasPaidEntry);
-  const stickyPaidStatus = useRef(false);
-  const stickyPaidTimestamp = useRef(0);
+  export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTime, isJoinWindowOpen }: AuctionGridProps) {
+    const [selectedBox, setSelectedBox] = useState<Box | null>(null);
+    const [showBidModal, setShowBidModal] = useState(false);
+    const [isUnlocking, setIsUnlocking] = useState(false);
+    // ✅ Track paid status and auction ID to detect genuine changes
+    const prevPaidStatus = useRef<{ status: boolean; auctionId: string | null }>({
+      status: !!auction?.userHasPaidEntry,
+      auctionId: auction?.hourlyAuctionId || null
+    });
+    const stickyPaidStatus = useRef(false);
+    const stickyPaidTimestamp = useRef(0);
+    const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (!user?.username) {
-      stickyPaidStatus.current = false;
-      stickyPaidTimestamp.current = 0;
-      prevPaidStatus.current = false;
-    }
-  }, [user?.username]);
+    useEffect(() => {
+      if (!user?.username) {
+        stickyPaidStatus.current = false;
+        stickyPaidTimestamp.current = 0;
+        prevPaidStatus.current = { status: false, auctionId: null };
+      }
+    }, [user?.username]);
 
-  useEffect(() => {
-    if (auction?.userHasPaidEntry && !prevPaidStatus.current) {
-      setIsUnlocking(true);
-      stickyPaidStatus.current = true;
-      stickyPaidTimestamp.current = Date.now();
-      const timer = setTimeout(() => {
-        setIsUnlocking(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-    
-    if (auction?.userHasPaidEntry) {
-      stickyPaidStatus.current = true;
-      stickyPaidTimestamp.current = Date.now();
-    }
-    
-    prevPaidStatus.current = auction?.userHasPaidEntry;
-  }, [auction?.userHasPaidEntry]);
+    useEffect(() => {
+      const currentPaid = !!auction?.userHasPaidEntry;
+      const currentAuctionId = auction?.hourlyAuctionId || null;
+      
+      // ✅ Trigger "Synchronizing" ONLY if:
+      // 1. User was NOT paid and is NOW paid for the SAME auction
+      // 2. OR it's a NEW auction and the user is already paid (initial unlock)
+      const isNewlyPaidSameAuction = currentPaid && !prevPaidStatus.current.status && currentAuctionId === prevPaidStatus.current.auctionId;
+      const isNewAuctionAlreadyPaid = currentPaid && currentAuctionId !== prevPaidStatus.current.auctionId;
+
+      if (isNewlyPaidSameAuction || isNewAuctionAlreadyPaid) {
+        console.log('✨ [AUCTION GRID] Triggering synchronizing state:', { isNewlyPaidSameAuction, isNewAuctionAlreadyPaid });
+        
+        // Clear any existing timer
+        if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+        
+        setIsUnlocking(true);
+        stickyPaidStatus.current = true;
+        stickyPaidTimestamp.current = Date.now();
+        
+        unlockTimerRef.current = setTimeout(() => {
+          setIsUnlocking(false);
+          unlockTimerRef.current = null;
+        }, 1500); // Slightly longer for smoother feel
+      }
+      
+      if (currentPaid) {
+        stickyPaidStatus.current = true;
+        stickyPaidTimestamp.current = Date.now();
+      }
+      
+      prevPaidStatus.current = { status: currentPaid, auctionId: currentAuctionId };
+      
+      return () => {
+        if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+      };
+    }, [auction?.userHasPaidEntry, auction?.hourlyAuctionId]);
 
   const effectiveUserHasPaidEntry = auction?.userHasPaidEntry || 
     (stickyPaidStatus.current && (Date.now() - stickyPaidTimestamp.current < 60000)) ||
