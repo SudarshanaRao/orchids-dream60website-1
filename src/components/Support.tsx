@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, IndianRupee, Trophy, AlertCircle, Search, Send } from 'lucide-react';
 import { Button } from './ui/button';
@@ -10,18 +10,30 @@ import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../lib/api-config';
 
 interface SupportProps {
+  user?: {
+    id: string;
+    username: string;
+    email?: string;
+  } | null;
   onBack: () => void;
   onNavigate?: (page: string) => void;
 }
 
-export function Support({ onBack, onNavigate }: SupportProps) {
+export function Support({ user, onBack, onNavigate }: SupportProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [searchQuery, setSearchQuery] = useState('');
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
-  const [ticketName, setTicketName] = useState('');
-  const [ticketEmail, setTicketEmail] = useState('');
+  const [ticketName, setTicketName] = useState(user?.username || '');
+  const [ticketEmail, setTicketEmail] = useState(user?.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setTicketName(user.username || '');
+      setTicketEmail(user.email || '');
+    }
+  }, [user]);
 
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
@@ -374,30 +386,33 @@ export function Support({ onBack, onNavigate }: SupportProps) {
                   </div>
                 </div>
 
-                <form onSubmit={handleSubmitTicket} className="space-y-3 sm:space-y-4">
-                  <div>
-                    <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Name</label>
-                    <Input
-                      type="text"
-                      value={ticketName}
-                      onChange={(e) => setTicketName(e.target.value)}
-                      placeholder="Your full name"
-                      className="bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all font-medium"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Email</label>
-                    <Input
-                      type="email"
-                      value={ticketEmail}
-                      onChange={(e) => setTicketEmail(e.target.value)}
-                      placeholder="your.email@example.com"
-                      className="bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all font-medium"
-                      required
-                    />
-                  </div>
+                  <form onSubmit={handleSubmitTicket} className="space-y-3 sm:space-y-4">
+                    <div>
+                      <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Name {!user && <span className="text-rose-500">*</span>}</label>
+                      <Input
+                        type="text"
+                        value={ticketName}
+                        onChange={(e) => setTicketName(e.target.value)}
+                        readOnly={!!user}
+                        placeholder="Your full name"
+                        className={`bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all font-medium ${user ? 'cursor-not-allowed opacity-70' : ''}`}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Email {!user && <span className="text-rose-500">*</span>}</label>
+                      <Input
+                        type="email"
+                        value={ticketEmail}
+                        onChange={(e) => setTicketEmail(e.target.value)}
+                        readOnly={!!user}
+                        placeholder="your.email@example.com"
+                        className={`bg-white/80 backdrop-blur-xl border-purple-300/50 text-purple-800 placeholder:text-purple-400 shadow-lg shadow-purple-500/5 focus:border-purple-400 transition-all font-medium ${user ? 'cursor-not-allowed opacity-70' : ''}`}
+                        required
+                      />
+                    </div>
+
                   
                   <div>
                     <label className="block text-sm sm:text-base text-purple-700 mb-2 font-medium">Subject</label>

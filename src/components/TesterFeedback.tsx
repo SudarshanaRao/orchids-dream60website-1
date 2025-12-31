@@ -24,12 +24,20 @@ interface TesterFeedbackProps {
   onBack: () => void;
 }
 
-export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) => {
-  const [feedbackType, setFeedbackType] = useState<'idea' | 'suggestion' | 'error' | 'issue'>('suggestion');
-  const [message, setMessage] = useState('');
-  const [name, setName] = useState(user?.username || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) => {
+    const [feedbackType, setFeedbackType] = useState<'idea' | 'suggestion' | 'error' | 'issue'>('suggestion');
+    const [message, setMessage] = useState('');
+    const [name, setName] = useState(user?.username || '');
+    const [email, setEmail] = useState(user?.email || '');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    React.useEffect(() => {
+      if (user) {
+        setName(user.username || '');
+        setEmail(user.email || '');
+      }
+    }, [user]);
+
   const [isSuccess, setIsSuccess] = useState(false);
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -198,33 +206,46 @@ export const TesterFeedback: React.FC<TesterFeedbackProps> = ({ user, onBack }) 
                 ))}
               </div>
 
-              {/* User Info (Auto-filled if logged in) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
-                    Your Name
-                  </label>
-                    <input
-                      type="text"
-                      value={name}
-                      readOnly
-                      placeholder="Enter your name"
-                      className="w-full px-5 py-4 bg-slate-100 border-2 border-slate-200 rounded-2xl cursor-not-allowed outline-none font-bold text-slate-500"
-                    />
-                  </div>
+                {/* User Info (Auto-filled if logged in) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
-                      Email Address
+                      Your Name {!user && <span className="text-rose-500">*</span>}
                     </label>
-                    <input
-                      type="email"
-                      value={email}
-                      readOnly
-                      placeholder="Enter your email"
-                      className="w-full px-5 py-4 bg-slate-100 border-2 border-slate-200 rounded-2xl cursor-not-allowed outline-none font-bold text-slate-500"
-                    />
+                      <input
+                        type="text"
+                        required={!user}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        readOnly={!!user}
+                        placeholder="Enter your name"
+                        className={`w-full px-5 py-4 border-2 rounded-2xl outline-none font-bold transition-all ${
+                          user 
+                            ? 'bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500' 
+                            : 'bg-slate-50 border-slate-100 focus:border-purple-500 focus:bg-white text-slate-700'
+                        }`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">
+                        Email Address {!user && <span className="text-rose-500">*</span>}
+                      </label>
+                      <input
+                        type="email"
+                        required={!user}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        readOnly={!!user}
+                        placeholder="Enter your email"
+                        className={`w-full px-5 py-4 border-2 rounded-2xl outline-none font-bold transition-all ${
+                          user 
+                            ? 'bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500' 
+                            : 'bg-slate-50 border-slate-100 focus:border-purple-500 focus:bg-white text-slate-700'
+                        }`}
+                      />
+                  </div>
                 </div>
-              </div>
+
 
                 {/* Message */}
                 <div className="space-y-2">

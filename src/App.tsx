@@ -2187,12 +2187,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-if (currentPage === 'support') {
+    if (currentPage === 'support') {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <Support onBack={handleBackToGame} onNavigate={handleNavigate} />
+            <Support user={currentUser} onBack={handleBackToGame} onNavigate={handleNavigate} />
           </TooltipProvider>
         </QueryClientProvider>
       );
