@@ -9,16 +9,19 @@ interface OTPVerificationModalProps {
   recipient: string;
   onClose: () => void;
   onVerify: (otp: string) => void;
+  title?: string;
+  description?: string;
+  skipAutoSend?: boolean;
 }
 
 
-export function OTPVerificationModal({ type, recipient, onClose, onVerify }: OTPVerificationModalProps) {
+export function OTPVerificationModal({ type, recipient, onClose, onVerify, title, description, skipAutoSend = false }: OTPVerificationModalProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-const [serverOtp, setServerOtp] = useState<string | null>(null);
+  const [serverOtp, setServerOtp] = useState<string | null>(null);
 
   // Helper to build request body based on type
   const buildRequestBody = () => {
@@ -27,121 +30,84 @@ const [serverOtp, setServerOtp] = useState<string | null>(null);
   };
 
   // Send OTP API call (POST /auth/forgot-password)
-const sendOtp = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const response = await fetch(API_ENDPOINTS.auth.sendOtp, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildRequestBody()),
-    });
+  const sendOtp = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(API_ENDPOINTS.auth.sendOtp, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildRequestBody()),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to send OTP');
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send OTP');
+      }
+
+      // ⭐ NEW: show OTP returned from server
+      if (data.otp) {
+        setServerOtp(data.otp);
+      }
+
+      setTimeLeft(60);
+    } catch (err: any) {
+      setError(err.message || 'Error sending OTP');
+    } finally {
+      setLoading(false);
     }
-
-    // ⭐ NEW: show OTP returned from server
-    if (data.otp) {
-      setServerOtp(data.otp);
-    }
-
-    setTimeLeft(60);
-  } catch (err: any) {
-    setError(err.message || 'Error sending OTP');
-  } finally {
-    setLoading(false);
-  }
-};
-
-const updateDetails = async () => {
-  try {
-    const userId = localStorage.getItem("user_id");
-
-    if (!userId) {
-      setError("User ID missing in localStorage");
-      return;
-    }
-
-    const payload = {
-      user_id: userId,
-      identifier: recipient,
-      isEmail: type === "email",
-      isMobile: type === "phone"
-    };
-
-    const res = await fetch(API_ENDPOINTS.user.updateDetails, {
-      method: "PUT", 
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "Failed to update details");
-    }
-
-  } catch (error: any) {
-    setError(error.message);
-  }
-};
-
-
+  };
 
   // Verify OTP API call (POST /auth/verify-otp)
-const verifyOtp = async (otpCode: string) => {
-  setLoading(true);
-  setError(null);
+  const verifyOtp = async (otpCode: string) => {
+    setLoading(true);
+    setError(null);
 
-  try {
-    const body = {
-      otp: otpCode,
-      ...(type === 'email' ? { email: recipient } : { mobile: recipient }),
-    };
+    try {
+      const body = {
+        otp: otpCode,
+        ...(type === 'email' ? { email: recipient } : { mobile: recipient }),
+      };
 
-    const response = await fetch(API_ENDPOINTS.auth.verifyOTP, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+      const response = await fetch(API_ENDPOINTS.auth.verifyOTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || 'OTP verification failed');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'OTP verification failed');
+      }
+
+      // Notify parent
+      onVerify(otpCode);
+
+    } catch (err: any) {
+      setError(err.message || 'Error verifying OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const sentRef = useRef(false);
+
+  useEffect(() => {
+    if (!sentRef.current && !skipAutoSend) {
+      sendOtp();
+      sentRef.current = true;
     }
 
-    // OTP verified → Now update details
-    await updateDetails();
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
 
-    // Notify parent
-    onVerify(otpCode);
+    inputRefs.current[0]?.focus();
 
-  } catch (err: any) {
-    setError(err.message || 'Error verifying OTP');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-const sentRef = useRef(false);
-
-useEffect(() => {
-  if (!sentRef.current) {
-    sendOtp();
-    sentRef.current = true;
-  }
-
-  const timer = setInterval(() => {
-    setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-  }, 1000);
-
-  inputRefs.current[0]?.focus();
-
-  return () => clearInterval(timer);
-}, []);
+    return () => clearInterval(timer);
+  }, [recipient]);
 
 
   const handleChange = (index: number, value: string) => {
@@ -197,7 +163,7 @@ useEffect(() => {
             <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
               <Shield className="w-5 h-5 text-purple-600" />
             </div>
-            <h2 className="text-xl font-semibold text-purple-900">Verify OTP</h2>
+            <h2 className="text-xl font-semibold text-purple-900">{title || 'Verify OTP'}</h2>
           </div>
           <button
             onClick={onClose}
@@ -211,7 +177,7 @@ useEffect(() => {
         <div className="p-6 space-y-6">
           <div className="text-center space-y-2">
             <p className="text-purple-700">
-              We've sent a 6-digit verification code to
+              {description || "We've sent a 6-digit verification code to"}
             </p>
             <p className="font-semibold text-purple-900">{recipient}</p>
             {serverOtp && (

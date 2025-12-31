@@ -67,11 +67,15 @@ export function ChangePhoneModal({ currentPhone, onClose, onSubmit }: ChangePhon
             />
           </div>
 
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-            <p className="text-sm text-purple-700">
-              <span className="font-medium">Note:</span> You will receive an OTP verification code on your new phone number via SMS to confirm the change.
-            </p>
-          </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <p className="text-sm text-purple-700">
+                <span className="font-medium text-purple-900">Step 1:</span> We will first verify your <strong>current</strong> phone number.
+              </p>
+              <p className="text-xs text-purple-600 mt-1">
+                Once verified, we will send another code to your new phone number.
+              </p>
+            </div>
+
 
           <div className="flex gap-3 pt-2">
             <Button

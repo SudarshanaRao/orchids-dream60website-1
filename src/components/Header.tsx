@@ -38,56 +38,85 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
   }, [isExploreOpen]);
   
   // Use external state if provided, otherwise use internal state
-  const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
-    const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
-    const [hasNewHistory, setHasNewHistory] = useState(false);
-    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-    const [showInstallButton, setShowInstallButton] = useState(false);
+    const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
+      const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
+      const [hasNewHistory, setHasNewHistory] = useState(false);
+      const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+      const [showInstallButton, setShowInstallButton] = useState(true); // Default to true to show manual install guide
+      const [isStandalone, setIsStandalone] = useState(false);
 
-    // PWA Install prompt handler
-    useEffect(() => {
-      const handler = (e: Event) => {
-        e.preventDefault();
-        setDeferredPrompt(e);
-        setShowInstallButton(true);
-      };
+      // PWA Install prompt handler
+      useEffect(() => {
+        const handler = (e: Event) => {
+          console.log('✅ [PWA] beforeinstallprompt fired');
+          e.preventDefault();
+          setDeferredPrompt(e);
+          setShowInstallButton(true);
+        };
 
-      window.addEventListener('beforeinstallprompt', handler);
+        window.addEventListener('beforeinstallprompt', handler);
 
-      // Check if app is already installed
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        setShowInstallButton(false);
-      }
-
-      return () => window.removeEventListener('beforeinstallprompt', handler);
-    }, []);
-
-      const handleInstallClick = async () => {
-        if (!deferredPrompt) {
-          // Check if on iOS
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-          if (isIOS) {
-            alert('To install this app on your iPhone/iPad: Tap the "Share" button in Safari and then "Add to Home Screen".');
-          } else {
-            // Check if already in standalone mode
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-              alert('App is already installed!');
-            } else {
-              alert('To install: Open your browser menu (usually three dots or an arrow) and select "Install" or "Add to Home Screen".');
-            }
+        // Check if app is already installed
+        const checkStandalone = () => {
+          const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
+          setIsStandalone(isStandaloneMode);
+          if (isStandaloneMode) {
+            setShowInstallButton(false);
           }
-          return;
-        }
-  
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        
-        if (outcome === 'accepted') {
+        };
+
+        checkStandalone();
+        window.addEventListener('appinstalled', () => {
+          console.log('✅ [PWA] App installed successfully');
           setShowInstallButton(false);
-        }
-        
-        setDeferredPrompt(null);
-      };
+          setIsStandalone(true);
+        });
+
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+      }, []);
+
+        const handleInstallClick = async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`👤 [PWA] User choice: ${outcome}`);
+            
+            if (outcome === 'accepted') {
+              setShowInstallButton(false);
+            }
+            setDeferredPrompt(null);
+            return;
+          }
+
+          // Fallback guide if native prompt isn't available
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+          const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+          
+          if (isStandalone) {
+            toast.info('App Already Installed', {
+              description: 'Dream60 is already installed on your device.',
+            });
+            return;
+          }
+
+          if (isIOS) {
+            toast.info('Install Dream60 on iOS', {
+              description: 'Tap the "Share" button in Safari and select "Add to Home Screen" to install.',
+              duration: 6000,
+            });
+          } else if (isChrome) {
+            toast.info('Install Dream60', {
+              description: 'Open your browser menu (⋮) and select "Install App" or "Add to Home Screen".',
+              duration: 6000,
+            });
+          } else {
+            toast.info('Install Dream60', {
+              description: 'Select "Add to Home Screen" from your browser menu to install the app.',
+              duration: 6000,
+            });
+          }
+        };
+
 
       const [userStats, setUserStats] = useState<{ totalWins: number; totalLosses: number; totalClaimed: number }>(() => ({
         totalWins: user?.totalWins ?? 0,

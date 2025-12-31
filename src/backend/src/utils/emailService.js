@@ -120,18 +120,46 @@ const brandStyles = `
     margin: 20px 0;
     display: inline-block;
   }
-  .action-button { 
-    display: inline-block; 
-    padding: 18px 36px; 
-    background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); 
-    color: #ffffff !important; 
-    text-decoration: none; 
-    border-radius: 14px; 
-    font-weight: 700; 
-    font-size: 16px;
-    box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
-    margin-top: 10px;
-  }
+    .action-button { 
+      display: inline-block; 
+      padding: 18px 36px; 
+      background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); 
+      color: #ffffff !important; 
+      text-decoration: none; 
+      border-radius: 14px; 
+      font-weight: 700; 
+      font-size: 16px;
+      box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+      margin: 20px 0;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(124, 58, 237, 0.1);
+      color: #a78bfa;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+      font-size: 14px;
+    }
+    .winner-highlight {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
   .info-grid { 
     display: table;
     width: 100%;
@@ -258,6 +286,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
   const privacyHref = `${baseUrl}/privacy`;
   const supportHref = `${baseUrl}/support`;
   const contactHref = `${baseUrl}/contact`;
+  const logoUrl = `${baseUrl}/icons/icon-192x192.png`;
 
   return `
     <!DOCTYPE html>
@@ -274,7 +303,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
           <div class="header ${isWinner ? 'winner-header' : ''}">
             <div class="logo-wrapper">
               <div class="logo-img">
-                <img src="${baseUrl}/logo.svg" alt="D60" style="width: 100%; height: 100%;" />
+                <img src="${logoUrl}" alt="D60" style="width: 100%; height: 100%; object-fit: contain;" />
               </div>
             </div>
             <h1 class="brand-text">Dream60</h1>
@@ -302,7 +331,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
 /**
  * Send OTP Email
  */
-const sendOtpEmail = async (email, otp) => {
+const sendOtpEmail = async (email, otp, reason = 'Verification') => {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
       console.warn('⚠️ Email credentials not configured.');
@@ -313,23 +342,23 @@ const sendOtpEmail = async (email, otp) => {
     const primaryClientUrl = getPrimaryClientUrl();
 
     const bodyHtml = `
-      <h2 class="hero-title">Verify Your Account</h2>
-      <p class="hero-text">Welcome to Dream60. Use the verification code below to secure your account. This code will expire in 10 minutes.</p>
+      <h2 class="hero-title">${reason} Code</h2>
+      <p class="hero-text">Use the verification code below to complete your ${reason.toLowerCase()} process. This code will expire in 10 minutes.</p>
       <div style="text-align: center; margin: 32px 0;">
         <div class="otp-code">${otp}</div>
         <p class="feature-sub">Security Team: Never share this code with anyone.</p>
       </div>
       <div class="alert-box alert-warning">
         <div class="alert-title">Didn't request this?</div>
-        <div class="alert-desc">If you didn't attempt to sign in or register, please ignore this email or contact support if you suspect unauthorized access.</div>
+        <div class="alert-desc">If you didn't attempt this action, please ignore this email or contact support if you suspect unauthorized access.</div>
       </div>
     `;
 
     const mailOptions = {
       from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Verification Code: ' + otp,
-      html: buildEmailTemplate({ primaryClientUrl, title: 'Security Verification', status: 'Verification', bodyHtml }),
+      subject: `[Dream60] ${reason} Code: ${otp}`,
+      html: buildEmailTemplate({ primaryClientUrl, title: 'Security Verification', status: reason, bodyHtml }),
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -410,6 +439,28 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
         <div class="feature-sub">Winner of ${auctionName}</div>
       </div>
 
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Auction Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auction Name</td>
+            <td>${auctionName}</td>
+          </tr>
+          <tr>
+            <td>Final Rank</td>
+            <td class="winner-highlight">#1 (Winner)</td>
+          </tr>
+          <tr>
+            <td>Prize Value</td>
+            <td class="winner-highlight">₹${prizeAmount.toLocaleString('en-IN')}</td>
+          </tr>
+        </tbody>
+      </table>
+
       ${paymentAmount ? `
       <div class="alert-box alert-warning">
         <div class="alert-title">Processing Fee Required</div>
@@ -425,7 +476,7 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
       </div>
 
       <div style="text-align: center; margin-top: 30px;">
-        <a href="${primaryClientUrl}/history" class="action-button" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);">Claim Your Prize Now</a>
+        <a href="${primaryClientUrl}/history" class="action-button" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000000 !important;">Claim Your Prize Now</a>
       </div>
     `;
 
@@ -550,13 +601,39 @@ const sendWinnersAnnouncementEmail = async (email, details) => {
       <p class="hero-text">The competition was fierce, and the results are finally in. Here is how you performed:</p>
       
       <div class="feature-box">
-        <div class="feature-label">Your Performance</div>
+        <div class="feature-label">Your Final Rank</div>
         <div class="feature-value">Rank #${rank}</div>
-        <div class="feature-sub">Prize: ₹${prizeAmount.toLocaleString('en-IN')}</div>
+        <div class="feature-sub">Auction: ${auctionName}</div>
       </div>
 
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th colspan="2">Auction Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auction Name</td>
+            <td>${auctionName}</td>
+          </tr>
+          <tr>
+            <td>Your Rank</td>
+            <td class="${rank === 1 ? 'winner-highlight' : ''}">#${rank}</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td>${rank === 1 ? 'Winner' : rank <= 3 ? 'Waiting List' : 'Participation'}</td>
+          </tr>
+          <tr>
+            <td>Prize Pool</td>
+            <td>₹${prizeAmount.toLocaleString('en-IN')}</td>
+          </tr>
+        </tbody>
+      </table>
+
       <div style="text-align: center; margin-top: 30px;">
-        <a href="${primaryClientUrl}/history" class="action-button">View Leaderboard</a>
+        <a href="${primaryClientUrl}/history" class="action-button">View Full Leaderboard</a>
       </div>
     `;
 

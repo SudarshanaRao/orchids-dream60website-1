@@ -9,7 +9,34 @@ const {
   resendOtp,
   resetPassword,
   updatePassword,
+  sendVerificationOtp,
 } = require('../controllers/authController');
+
+/**
+ * @swagger
+ * /auth/send-verification-otp:
+ *   post:
+ *     summary: SEND VERIFICATION OTP (e.g. for profile changes)
+ *     tags: [Authentication, Email Integration]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               identifier:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [email, mobile]
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ */
+router.post('/send-verification-otp', sendVerificationOtp);
 
 /**
  * @swagger

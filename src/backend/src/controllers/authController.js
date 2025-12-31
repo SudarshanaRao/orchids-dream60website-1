@@ -411,6 +411,47 @@ const updatePassword = async (req, res) => {
 };
 
 
+// POST /auth/send-verification-otp
+// Body: { identifier, type, reason }
+const sendVerificationOtp = async (req, res) => {
+  try {
+    const { identifier, type, reason = 'Verification' } = req.body || {};
+    
+    if (!identifier || !type) {
+      return res.status(400).json({ success: false, message: 'Identifier and type are required' });
+    }
+
+    const otpCode = generateOtp();
+
+    await OTP.findOneAndUpdate(
+      { identifier, type },
+      { otp: otpCode, createdAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    if (type === 'email') {
+      const emailResult = await sendOtpEmail(identifier, otpCode, reason);
+      if (!emailResult.success) {
+        console.warn('Email send failed:', emailResult.message);
+      }
+    }
+
+    const responseData = {
+      success: true,
+      message: `OTP sent to your ${type}`,
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.otp = otpCode;
+    }
+
+    return res.status(200).json(responseData);
+  } catch (err) {
+    console.error('Send Verification OTP Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -419,4 +460,5 @@ module.exports = {
   resendOtp,
   resetPassword,
   updatePassword,
+  sendVerificationOtp,
 };

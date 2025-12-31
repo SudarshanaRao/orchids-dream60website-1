@@ -70,11 +70,15 @@ export function ChangeEmailModal({ currentEmail, onClose, onSubmit }: ChangeEmai
             />
           </div>
 
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-            <p className="text-sm text-purple-700">
-              <span className="font-medium">Note:</span> You will receive an OTP verification code on your new email address to confirm the change.
-            </p>
-          </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <p className="text-sm text-purple-700">
+                <span className="font-medium text-purple-900">Step 1:</span> We will first verify your <strong>current</strong> email address.
+              </p>
+              <p className="text-xs text-purple-600 mt-1">
+                Once verified, we will send another code to your new email address.
+              </p>
+            </div>
+
 
           <div className="flex gap-3 pt-2">
             <Button

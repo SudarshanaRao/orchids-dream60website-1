@@ -70,6 +70,9 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   const [pendingPhone, setPendingPhone] = useState('');
   const [isDeleted, setIsDeleted] = useState(false);
 
+  // 2-Step Verification state
+  const [verificationStep, setVerificationStep] = useState<'none' | 'old' | 'new'>('none');
+
   const formatIndianMobile = (input: string) => {
     // keep only digits
     const digits = input.replace(/\D/g, "").slice(0, 10);
@@ -196,38 +199,175 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     });
   };
 
-  const handleChangeEmailSubmit = (newEmail: string) => {
-    setPendingEmail(newEmail);
-    setOtpType('email');
-    setOtpRecipient(newEmail);
-    setShowChangeEmail(false);
-    setShowOTPVerification(true);
-  };
-
-  const handleChangePhoneSubmit = (newPhone: string) => {
-    setPendingPhone(newPhone);
-    setOtpType('phone');
-    setOtpRecipient(newPhone);
-    setShowChangePhone(false);
-    setShowOTPVerification(true);
-  };
-
-  const handleOTPVerify = (_otp: string) => {
-    if (otpType === 'email' && pendingEmail) {
-      setEmail(pendingEmail);
-      setPendingEmail('');
-      toast.success('Email Updated!', {
-        description: 'Your email address has been successfully updated.',
-      });
-    } else if (otpType === 'phone' && pendingPhone) {
-      setPhone(pendingPhone);
-      setPendingPhone('');
-      toast.success('Phone Number Updated!', {
-        description: 'Your phone number has been successfully updated.',
-      });
+  const handleChangeEmailSubmit = async (newEmail: string) => {
+    if (newEmail === email) {
+      toast.error("New email must be different from the current one.");
+      return;
     }
 
-    setShowOTPVerification(false);
+    try {
+      setPendingEmail(newEmail);
+      setOtpType('email');
+      
+      // Step 1: Send OTP to current email
+      const response = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          identifier: email, 
+          type: 'email', 
+          reason: 'Current Email Verification' 
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send OTP to current email');
+      }
+
+      setOtpRecipient(email);
+      setVerificationStep('old');
+      setShowChangeEmail(false);
+      setShowOTPVerification(true);
+      
+      toast.info('Verification Required', {
+        description: `We've sent a code to your current email ${email} to verify it's you.`,
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to initiate email change.");
+    }
+  };
+
+  const handleChangePhoneSubmit = async (newPhone: string) => {
+    const currentDigits = phone.replace(/\D/g, '');
+    const newDigits = newPhone.replace(/\D/g, '');
+    
+    if (newDigits === currentDigits) {
+      toast.error("New phone number must be different from the current one.");
+      return;
+    }
+
+    try {
+      setPendingPhone(newPhone);
+      setOtpType('phone');
+      
+      // Step 1: Send OTP to current phone
+      const response = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          identifier: currentDigits, 
+          type: 'mobile', 
+          reason: 'Current Mobile Verification' 
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send OTP to current mobile');
+      }
+
+      setOtpRecipient(phone);
+      setVerificationStep('old');
+      setShowChangePhone(false);
+      setShowOTPVerification(true);
+
+      toast.info('Verification Required', {
+        description: `We've sent a code to your current mobile ${phone} to verify it's you.`,
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to initiate mobile change.");
+    }
+  };
+
+  const handleOTPVerify = async (otp: string) => {
+    try {
+      const userId = localStorage.getItem('user_id');
+      const identifier = otpRecipient.replace(/\D/g, '');
+      const type = otpType === 'email' ? 'email' : 'mobile';
+
+      // Verify OTP
+      const verifyRes = await fetch(`${API_ENDPOINTS.auth.baseUrl}/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          [otpType === 'email' ? 'email' : 'mobile']: identifier, 
+          otp 
+        }),
+      });
+
+      if (!verifyRes.ok) {
+        const error = await verifyRes.json();
+        throw new Error(error.message || 'Invalid verification code');
+      }
+
+      if (verificationStep === 'old') {
+        // Step 1 Complete -> Start Step 2: Send OTP to NEW identifier
+        const newIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
+        
+        const sendNewOtpRes = await fetch(`${API_ENDPOINTS.auth.baseUrl}/send-verification-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            identifier: newIdentifier, 
+            type: otpType === 'email' ? 'email' : 'mobile', 
+            reason: `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
+          }),
+        });
+
+        if (!sendNewOtpRes.ok) {
+          const error = await sendNewOtpRes.json();
+          throw new Error(error.message || `Failed to send OTP to new ${otpType}`);
+        }
+
+        setOtpRecipient(otpType === 'email' ? pendingEmail : pendingPhone);
+        setVerificationStep('new');
+        
+        toast.success('Step 1 Verified!', {
+          description: `Now please enter the code sent to your NEW ${otpType}: ${otpType === 'email' ? pendingEmail : pendingPhone}`,
+        });
+      } else if (verificationStep === 'new') {
+        // Step 2 Complete -> Finalize Update in DB
+        const finalIdentifier = otpType === 'email' ? pendingEmail : pendingPhone.replace(/\D/g, '');
+        
+        const updateRes = await fetch(`${API_ENDPOINTS.user.baseUrl}/update-mobile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            isMobile: otpType === 'phone',
+            isEmail: otpType === 'email',
+            identifier: finalIdentifier
+          }),
+        });
+
+        if (!updateRes.ok) {
+          const error = await updateRes.json();
+          throw new Error(error.message || 'Failed to update profile');
+        }
+
+        if (otpType === 'email') {
+          setEmail(pendingEmail);
+          setPendingEmail('');
+          localStorage.setItem('email', pendingEmail);
+          toast.success('Email Updated!', {
+            description: 'Your email address has been successfully updated.',
+          });
+        } else {
+          setPhone(pendingPhone);
+          setPendingPhone('');
+          localStorage.setItem('user_mobile', finalIdentifier);
+          toast.success('Phone Number Updated!', {
+            description: 'Your phone number has been successfully updated.',
+          });
+        }
+
+        setShowOTPVerification(false);
+        setVerificationStep('none');
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification failed");
+    }
   };
 
   const handleChangePassword = async (currentPassword: string, newPassword: string) => {
