@@ -1326,31 +1326,28 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 });
               }
               
-                // ✅ NEW: Sticky optimistic payment logic
-                let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
-                
-                // If the API says not paid, but we have a recent local payment success, force it to true
-                if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
-                  const now = Date.now();
-                  // Check if we are still within the 15-second grace period
-                  if (now - recentPaymentTimestamp.current < 15000) {
-                    finalUserHasPaidEntry = true;
-                  } else {
-                    // Grace period expired, stop forcing
-                    setRecentPaymentSuccess(false);
-                  }
-                } else if (!userHasPaidEntryFromAPI && Object.keys(userBidsMap).length > 0) {
-                  // ✅ NEW: If user has placed bids according to the API's own rounds data, 
-                  // they MUST have paid entry fee. Trust the round data if participant data is missing/lagging.
-                  finalUserHasPaidEntry = true;
-                } else if (userHasPaidEntryFromAPI && recentPaymentSuccess) {
-                  // API has caught up, we can clear the recent success flag
-                  setRecentPaymentSuccess(false);
-                }
-    
-                // Update local state
-                setCurrentAuction(prev => {
-                  const updatedBoxes = prev.boxes.map(box => {
+                  // Update local state
+                  setCurrentAuction(prev => {
+                    // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
+                    // If the user already has a true status for the SAME auction, don't let it flicker back to false
+                    // due to API lag/latency, especially after placing a bid.
+                    let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+                    
+                    if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
+                      finalUserHasPaidEntry = true;
+                    } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                      const now = Date.now();
+                      if (now - recentPaymentTimestamp.current < 15000) {
+                        finalUserHasPaidEntry = true;
+                      } else {
+                        setRecentPaymentSuccess(false);
+                      }
+                    } else if (!userHasPaidEntryFromAPI && (Object.keys(userBidsMap).length > 0 || Object.keys(prev.userBidsPerRound).length > 0)) {
+                      // Trust either API bids or existing local bids
+                      finalUserHasPaidEntry = true;
+                    }
+
+                    const updatedBoxes = prev.boxes.map(box => {
 
                   if (box.type === 'round') {
                     const roundBox = box as RoundBox;
