@@ -255,7 +255,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
     return (
       <>
         <motion.header
-          className="bg-white/50 backdrop-blur-xl border-b border-purple-200/30 shadow-lg shadow-purple-500/10 sticky top-0 z-[100]"
+          className="bg-white/50 backdrop-blur-xl border-b border-purple-200/30 shadow-lg shadow-purple-500/10 sticky top-0 z-50 overflow-hidden"
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
@@ -439,28 +439,16 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
-                      <motion.button
-                        onClick={() => onNavigate?.('transactions')}
-                        className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-purple-600 hover:bg-purple-50 transition-all"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        data-whatsnew-target="transactions"
-                      >
-                        <IndianRupee className="w-4 h-4" />
-                        <span className="text-sm font-medium">Transactions</span>
-                      </motion.button>
-
-                      {/* Play & Support Dropdown */}
+                      {/* Explore Dropdown */}
                       <div className="relative explore-dropdown">
                         <motion.button
                           onClick={() => setIsExploreOpen(!isExploreOpen)}
                           className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all ${isExploreOpen ? 'bg-purple-100 text-purple-800' : 'text-purple-600 hover:bg-purple-50'}`}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          data-whatsnew-target="support"
                         >
-                          <LifeBuoy className="w-4 h-4" />
-                          <span className="text-sm font-medium">Play & Support</span>
+                          <Menu className="w-4 h-4" />
+                          <span className="text-sm font-medium">Explore</span>
                           <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
                         </motion.button>
 
@@ -473,6 +461,13 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                               className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-purple-100 py-2 z-[60] backdrop-blur-xl"
                             >
                               <button
+                                onClick={() => { onNavigate?.('rules'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm font-medium">Rules</span>
+                              </button>
+                              <button
                                 onClick={() => { onNavigate?.('participation'); setIsExploreOpen(false); }}
                                 className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
@@ -480,18 +475,18 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                                 <span className="text-sm font-medium">Play Guide</span>
                               </button>
                               <button
+                                onClick={() => { onNavigate?.('transactions'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <IndianRupee className="w-4 h-4" />
+                                <span className="text-sm font-medium">Transactions</span>
+                              </button>
+                              <button
                                 onClick={() => { onNavigate?.('support'); setIsExploreOpen(false); }}
                                 className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
                                 <LifeBuoy className="w-4 h-4" />
-                                <span className="text-sm font-medium">Support Center</span>
-                              </button>
-                              <button
-                                onClick={() => { onNavigate?.('rules'); setIsExploreOpen(false); }}
-                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
-                              >
-                                <FileText className="w-4 h-4" />
-                                <span className="text-sm font-medium">Rules</span>
+                                <span className="text-sm font-medium">Support</span>
                               </button>
                               <div className="h-px bg-purple-50 my-1 mx-2" />
                               <button
@@ -505,7 +500,6 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                                 <button
                                   onClick={() => { handleInstallClick(); setIsExploreOpen(false); }}
                                   className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
-                                  data-whatsnew-target="pwa-install"
                                 >
                                   <Download className="w-4 h-4" />
                                   <span className="text-sm font-medium">Install App</span>
@@ -515,7 +509,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                           )}
                         </AnimatePresence>
                       </div>
-                    </div>
+                  </div>
 
                   {/* Logout Button - Only on large screens */}
                   <motion.div

@@ -179,34 +179,61 @@ interface AuctionGridProps {
                 </div>
               )}
 
-                  {( (effectiveUserHasPaidEntry) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
-                    <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
-                          <AuctionBox
-                            box={item}
-                            onClick={() => handleBoxClick(item)}
-                            isUserHighestBidder={item.bidder === user?.username}
-                            onShowLeaderboard={onShowLeaderboard}
-                            userHasPaidEntry={effectiveUserHasPaidEntry}
-                            userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
-                          isUserQualified={
-                            item.roundNumber 
-                              ? (
-                                  // If user is explicitly unqualified in this round
-                                  auction.userQualificationPerRound?.[item.roundNumber] === false ||
-                                  // OR if they were unqualified in ANY previous round
-                                  Object.entries(auction.userQualificationPerRound || {})
-                                    .some(([round, qualified]) => parseInt(round) < item.roundNumber! && qualified === false)
-                                  ? false 
-                                  : auction.userQualificationPerRound?.[item.roundNumber]
-                                )
-                              : undefined
-                          }
-                          winnersAnnounced={auction.winnersAnnounced}
-                          serverTime={serverTime}
-                          hourlyAuctionId={auction.hourlyAuctionId} 
-                        />
-                  </div>
-                ))}
+            <div 
+              className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${(!effectiveUserHasPaidEntry && !isUnlocking) ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
+            >
+              {( (effectiveUserHasPaidEntry) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
+                <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
+                  {(isUnlocking && typeof item !== 'number') ? (
+                    <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[240px] xs:h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
+                    {/* Active Loader Animation */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-50/10 via-white/5 to-purple-50/10 animate-pulse" />
+                    
+                    <div className="relative z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md border border-purple-100">
+                      <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+                    </div>
+                    
+                    <div className="relative z-10 space-y-2 text-center">
+                      <div className="h-4 w-24 bg-purple-100/50 rounded-full mx-auto" />
+                      <div className="h-8 w-32 bg-purple-100/50 rounded-lg mx-auto" />
+                    </div>
+                    
+                    <div className="relative z-10 px-4 py-1.5 bg-purple-50/80 rounded-full border border-purple-100">
+                      <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2">
+                          <Sparkles className="w-3 h-3 animate-bounce" />
+                          Synchronizing...
+                        </p>
+                      </div>
+                    </div>
+                    ) : (
+                      <AuctionBox
+                        box={item}
+                        onClick={() => handleBoxClick(item)}
+                        isUserHighestBidder={item.bidder === user?.username}
+                        onShowLeaderboard={onShowLeaderboard}
+                        userHasPaidEntry={effectiveUserHasPaidEntry}
+                        userBidAmount={item.roundNumber ? auction.userBidsPerRound?.[item.roundNumber] : undefined}
+                      isUserQualified={
+                        item.roundNumber 
+                          ? (
+                              // If user is explicitly unqualified in this round
+                              auction.userQualificationPerRound?.[item.roundNumber] === false ||
+                              // OR if they were unqualified in ANY previous round
+                              Object.entries(auction.userQualificationPerRound || {})
+                                .some(([round, qualified]) => parseInt(round) < item.roundNumber! && qualified === false)
+                              ? false 
+                              : auction.userQualificationPerRound?.[item.roundNumber]
+                            )
+                          : undefined
+                      }
+                      winnersAnnounced={auction.winnersAnnounced}
+                      serverTime={serverTime}
+                      hourlyAuctionId={auction.hourlyAuctionId} 
+                    />
+                  )}
+              </div>
+            ))}
+          </div>
         </div>
       </motion.div>
 
