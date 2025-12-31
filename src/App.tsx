@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Snowfall from 'react-snowfall';
-import { Clock } from 'lucide-react';
+import { Clock, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HowDream60Works } from './components/HowDream60Works';
 import { Header } from './components/Header';
@@ -242,6 +242,21 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 };
 
   const App = () => {
+    const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
+    const [isPlacingBid, setIsPlacingBid] = useState(false);
+    const [previousRound, setPreviousRound] = useState<number>(1);
+    const [forceRefetchTrigger, setForceRefetchTrigger] = useState<number>(0);
+    const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
+    const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
+    const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+    const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+    const [showAmazonVoucherModal, setShowAmazonVoucherModal] = useState<boolean>(false);
+    const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
+    const [dailyStats, setDailyStats] = useState({ totalAuctions: 6, totalPrizeValue: 350000 });
+    const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
+    const recentPaymentTimestamp = useRef<number>(0);
+
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -875,33 +890,17 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     // ✅ REMOVED: Redundant serverTime reset useEffect that was wiping out boxes
 
     // ✅ NEW: Persist currentAuction state to localStorage
-    useEffect(() => {
-      if (currentAuction && currentAuction.id !== 'auction-loading' && currentAuction.title !== 'Loading...') {
-        try {
-          localStorage.setItem('cached_current_auction', JSON.stringify(currentAuction));
-        } catch (e) {
-          console.error('Error saving auction state:', e);
+      useEffect(() => {
+        if (currentAuction && currentAuction.id !== 'auction-loading' && currentAuction.title !== 'Loading...') {
+          try {
+            localStorage.setItem('cached_current_auction', JSON.stringify(currentAuction));
+          } catch (e) {
+            console.error('Error saving auction state:', e);
+          }
         }
-      }
-    }, [currentAuction]);
+      }, [currentAuction]);
 
-    const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
-
-  const [isPlacingBid, setIsPlacingBid] = useState(false);
-  const [previousRound, setPreviousRound] = useState<number>(1);
-  const [forceRefetchTrigger, setForceRefetchTrigger] = useState<number>(0);
-  const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
-  const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
-  const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
-  const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [showAmazonVoucherModal, setShowAmazonVoucherModal] = useState<boolean>(false);
-  const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
-  const [dailyStats, setDailyStats] = useState({ totalAuctions: 6, totalPrizeValue: 350000 });
-  const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
-  const recentPaymentTimestamp = useRef<number>(0);
-
-  // Tutorial steps for What's New
+    // Tutorial steps for What's New
   const whatsNewSteps: TutorialStep[] = [
     {
       id: 'welcome',
