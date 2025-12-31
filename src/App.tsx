@@ -869,7 +869,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       }, msToWait);
     };
     scheduleNextFetch();
-    return () => if (timerId) clearTimeout(timerId);
+    return () => { if (timerId) clearTimeout(timerId); };
   }, [refreshAuctionData]);
 
     // ✅ REMOVED: Redundant serverTime reset useEffect that was wiping out boxes
