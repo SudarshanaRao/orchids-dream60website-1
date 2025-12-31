@@ -35,7 +35,7 @@ export function PaymentFailure({
   onBackToHome,
   onClose
 }: PaymentFailureProps) {
-  const [countdown, setCountdown] = useState(2);
+  const [countdown, setCountdown] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -285,19 +285,19 @@ export function PaymentFailure({
                   Download Receipt
                 </Button>
                 
-                <div className="flex flex-col items-center gap-1.5 pt-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                    Redirecting in <span className="text-red-500 text-sm font-black">{countdown}s</span>
-                  </span>
-                    <div className="flex gap-1">
-                      {[1, 2].map((i) => (
-                        <div 
-                          key={i} 
-                          className={`h-1 w-8 rounded-full transition-all duration-300 ${i <= (2 - countdown + 1) ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-gray-100'}`} 
-                        />
-                      ))}
-                    </div>
-                </div>
+                  <div className="flex flex-col items-center gap-1.5 pt-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                      Redirecting in <span className="text-red-500 text-sm font-black">{countdown}s</span>
+                    </span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3].map((i) => (
+                          <div 
+                            key={i} 
+                            className={`h-1 w-8 rounded-full transition-all duration-300 ${i <= (3 - countdown + 1) ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-gray-100'}`} 
+                          />
+                        ))}
+                      </div>
+                  </div>
               </div>
 
           </div>

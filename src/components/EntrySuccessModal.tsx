@@ -12,7 +12,7 @@ interface EntrySuccessModalProps {
 }
 
 export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: EntrySuccessModalProps) {
-  const [countdown, setCountdown] = useState(2);
+  const [countdown, setCountdown] = useState(3);
   const [showContinue, setShowContinue] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: 
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
-          setShowContinue(true);
+          onContinue();
           clearInterval(timer);
           return 0;
         }
