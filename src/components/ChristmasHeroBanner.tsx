@@ -80,70 +80,9 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
       {/* Main Content Area */}
       <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-center">
         <div className="max-w-3xl space-y-2 sm:space-y-6 md:space-y-10 text-center">
-          {/* New Year Special Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-3 py-1 bg-[#B71C1C]/80 rounded-full shadow-[0_4px_20px_rgba(183,28,28,0.4)] backdrop-blur-sm"
-          >
-            <Sparkles className="w-3 h-3 text-yellow-400 animate-pulse" />
-            <span className="text-white text-[9px] sm:text-xs font-bold tracking-[0.2em] uppercase">
-              New Year Special
-            </span>
-          </motion.div>
-
-            {/* Headline & Subheadline */}
-            <div className="space-y-1 sm:space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.4 }}
-              >
-                <h1 className="text-2xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white leading-[1.1] drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] select-none"
-                    style={{ fontFamily: "'Playfair Display', serif" }}>
-                  Have a <br />
-                  <span className="text-yellow-400 italic relative inline-block">
-                    Spectacular
-                    <motion.span 
-                      className="absolute -bottom-2 left-0 w-full h-[2px] bg-yellow-400/40 rounded-full"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: 1 }}
-                      transition={{ delay: 1.2, duration: 1 }}
-                    />
-                  </span> <br />
-                  New Year
-                </h1>
-              </motion.div>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, delay: 0.6 }}
-                className="text-[11px] sm:text-lg md:text-xl text-gray-200/90 font-medium max-w-lg leading-relaxed select-none mx-auto"
-              >
-                Win exciting prizes & festive rewards on <span className="font-bold text-yellow-400">Dream60</span>
-              </motion.p>
-            </div>
-
-            {/* CTA Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="pt-1 sm:pt-4 flex justify-center max-w-lg mx-auto w-full"
-            >
-              <motion.button
-                onClick={onJoinNow}
-                whileTap={{ scale: 0.95 }}
-                className="relative flex items-center justify-center gap-2 bg-[#B71C1C]/90 text-white px-6 sm:px-12 py-1.5 sm:py-4 rounded-full font-bold text-xs sm:text-lg shadow-2xl backdrop-blur-sm hover:bg-[#B71C1C] transition-colors"
-              >
-              <span className="relative z-10">Explore Prizes</span>
-              <ChevronRight className="w-4 h-4 relative z-10" />
-            </motion.button>
-          </motion.div>
+          {/* Content removed as requested, keeping the space */}
+        </div>
       </div>
-    </div>
 
 
 
