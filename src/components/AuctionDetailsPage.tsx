@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Trophy, Calendar, Clock, IndianRupee, Target, Award, Crown, Users, TrendingUp, Sparkles, Box, CheckCircle2, XCircle, Lock, Medal, TrendingDown, BarChart3, Zap, Loader2, AlertCircle, CheckCircle, Gift, Timer, HourglassIcon } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 import { LoadingProfile } from './LoadingProfile';
+import { PaymentSuccess } from './PaymentSuccess';
+import { PaymentFailure } from './PaymentFailure';
 
 const maskEmail = (email: string) => {
   if (!email) return '';
@@ -80,10 +82,6 @@ interface AuctionDetailsData {
     onBack: () => void;
     serverTime: any;
   }
-
-
-import { PaymentSuccess } from './PaymentSuccess';
-import { PaymentFailure } from './PaymentFailure';
 
 export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
   const [auction, setAuction] = useState(initialAuction);
