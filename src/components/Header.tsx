@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download, Sparkles, IndianRupee, LifeBuoy } from 'lucide-react';
+import { Trophy, Clock, Menu, X, User, LogOut, Shield, FileText, History, ArrowLeft, XCircle, Download, Sparkles, IndianRupee, LifeBuoy, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
@@ -23,6 +23,19 @@ import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 
 export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, mobileMenuOpen: externalMobileMenuOpen, setMobileMenuOpen: externalSetMobileMenuOpen }: HeaderProps) {
   const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
+  const [isExploreOpen, setIsExploreOpen] = useState(false);
+  const dropdownRef = useState<HTMLDivElement | null>(null)[0];
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExploreOpen && !(event.target as HTMLElement).closest('.explore-dropdown')) {
+        setIsExploreOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isExploreOpen]);
   
   // Use external state if provided, otherwise use internal state
   const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
@@ -426,93 +439,77 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
 
                   {/* Navigation Links */}
                   <div className="flex items-center space-x-1.5">
-                      {/* PWA Install Button - Only on large screens */}
-                        {showInstallButton && (
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={handleInstallClick}
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                              size="sm"
-                              data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
+                      {/* Explore Dropdown */}
+                      <div className="relative explore-dropdown">
+                        <motion.button
+                          onClick={() => setIsExploreOpen(!isExploreOpen)}
+                          className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all ${isExploreOpen ? 'bg-purple-100 text-purple-800' : 'text-purple-600 hover:bg-purple-50'}`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <Menu className="w-4 h-4" />
+                          <span className="text-sm font-medium">Explore</span>
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
+                        </motion.button>
+
+                        <AnimatePresence>
+                          {isExploreOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-purple-100 py-2 z-[60] backdrop-blur-xl"
                             >
-                              <Download className="w-4 h-4 mr-1.5" />
-                              Install App
-                            </Button>
-                          </motion.div>
-                        )}
-
-
-                        {user && (
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={() => onStartTutorial?.()}
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                              size="sm"
-                              data-tutorial-target="tutorial-trigger"
-                            >
-                                <Sparkles className="w-4 h-4 mr-1.5" />
-                                What's new
-
-                            </Button>
-                          </motion.div>
-                        )}
-
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button
-                            onClick={() => onNavigate?.('rules')}
-                            variant="ghost"
-                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                            size="sm"
-                          >
-                            <FileText className="w-4 h-4 mr-1.5" />
-                            Rules
-                          </Button>
-                        </motion.div>
-
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                              onClick={() => onNavigate?.('participation')}
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 hidden xl:flex transition-all"
-                              size="sm"
-                            >
-                              <Shield className="w-4 h-4 mr-1.5" />
-                              Play Guide
-                            </Button>
-                          </motion.div>
-
-<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <Button
-                                onClick={() => onNavigate?.('transactions')}
-                                variant="ghost"
-                                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                                size="sm"
-                                data-whatsnew-target="transactions"
+                              <button
+                                onClick={() => { onNavigate?.('rules'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
-                                <IndianRupee className="w-4 h-4 mr-1.5" />
-                                Transactions
-                              </Button>
-                            </motion.div>
-
-
-<motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <Button
-                                onClick={() => onNavigate?.('support')}
-                                variant="ghost"
-                                className="text-purple-600 hover:text-purple-700 hover:bg-purple-50/80 transition-all"
-                                size="sm"
-                                data-whatsnew-target="support"
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm font-medium">Rules</span>
+                              </button>
+                              <button
+                                onClick={() => { onNavigate?.('participation'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
-                                <LifeBuoy className="w-4 h-4 mr-1.5" />
-                                Support
-                              </Button>
+                                <Shield className="w-4 h-4" />
+                                <span className="text-sm font-medium">Play Guide</span>
+                              </button>
+                              <button
+                                onClick={() => { onNavigate?.('transactions'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <IndianRupee className="w-4 h-4" />
+                                <span className="text-sm font-medium">Transactions</span>
+                              </button>
+                              <button
+                                onClick={() => { onNavigate?.('support'); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <LifeBuoy className="w-4 h-4" />
+                                <span className="text-sm font-medium">Support</span>
+                              </button>
+                              <div className="h-px bg-purple-50 my-1 mx-2" />
+                              <button
+                                onClick={() => { onStartTutorial?.(); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                                <span className="text-sm font-medium">What's new</span>
+                              </button>
+                              {showInstallButton && (
+                                <button
+                                  onClick={() => { handleInstallClick(); setIsExploreOpen(false); }}
+                                  className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  <span className="text-sm font-medium">Install App</span>
+                                </button>
+                              )}
                             </motion.div>
-
-
+                          )}
+                        </AnimatePresence>
                       </div>
-
+                  </div>
 
                   {/* Logout Button - Only on large screens */}
                   <motion.div
@@ -523,7 +520,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                     <Button
                       onClick={onLogout}
                       variant="ghost"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50/80 transition-all"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 transition-all"
                       size="sm"
                     >
                       <LogOut className="w-4 h-4 mr-1.5" />
@@ -534,7 +531,7 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                     {/* User Profile Button */}
                     <motion.button
                       onClick={() => onNavigate?.('profile')}
-                      className="flex items-center space-x-2 text-purple-700 hover:text-purple-800 bg-white/70 hover:bg-purple-50/80 px-3 py-2 rounded-xl transition-all border border-purple-200/50 shadow-md shadow-purple-500/5 backdrop-blur-sm max-w-[150px] xl:max-w-[200px]"
+                      className="flex items-center space-x-2 text-purple-700 hover:text-purple-800 bg-white/70 hover:bg-purple-50 px-3 py-2 rounded-xl transition-all border border-purple-200/50 shadow-md backdrop-blur-sm"
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -545,46 +542,68 @@ export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, m
                       >
                         <span className="text-white text-sm font-semibold">{user.username.charAt(0).toUpperCase()}</span>
                       </motion.div>
-                      <span className="font-medium text-sm truncate flex-1">{user.username}</span>
+                      <span className="font-medium text-sm truncate max-w-[100px]">{user.username}</span>
                     </motion.button>
 
                 </>
               ) : (
                 /* Guest Navigation */
                 <div className="flex items-center space-x-1.5">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => onNavigate?.('rules')}
-                        variant="ghost"
-                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
-                        size="sm"
+                    {/* Explore Dropdown for Guests */}
+                    <div className="relative explore-dropdown">
+                      <motion.button
+                        onClick={() => setIsExploreOpen(!isExploreOpen)}
+                        className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl transition-all ${isExploreOpen ? 'bg-purple-100 text-purple-800' : 'text-purple-600 hover:bg-purple-50'}`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <FileText className="w-4 h-4 mr-1.5" />
-                        Rules
-                      </Button>
-                    </motion.div>
+                        <Menu className="w-4 h-4" />
+                        <span className="text-sm font-medium">Explore</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExploreOpen ? 'rotate-180' : ''}`} />
+                      </motion.button>
 
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={() => onNavigate?.('participation')}
-                        variant="ghost"
-                        className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 hidden xl:flex transition-all"
-                        size="sm"
-                      >
-                        How to Play
-                      </Button>
-                    </motion.div>
-
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button
-                          onClick={() => onNavigate?.('support')}
-                          variant="ghost"
-                          className="rounded-xl text-purple-600 hover:text-purple-700 hover:bg-purple-100/90 transition-all"
-                          size="sm"
-                        >
-                          Support
-                        </Button>
-                      </motion.div>
+                      <AnimatePresence>
+                        {isExploreOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                            className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-purple-100 py-2 z-[60] backdrop-blur-xl"
+                          >
+                            <button
+                              onClick={() => { onNavigate?.('rules'); setIsExploreOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span className="text-sm font-medium">Rules</span>
+                            </button>
+                            <button
+                              onClick={() => { onNavigate?.('participation'); setIsExploreOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                            >
+                              <Shield className="w-4 h-4" />
+                              <span className="text-sm font-medium">How to Play</span>
+                            </button>
+                            <button
+                              onClick={() => { onNavigate?.('support'); setIsExploreOpen(false); }}
+                              className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                            >
+                              <LifeBuoy className="w-4 h-4" />
+                              <span className="text-sm font-medium">Support</span>
+                            </button>
+                            {showInstallButton && (
+                              <button
+                                onClick={() => { handleInstallClick(); setIsExploreOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm font-medium">Install App</span>
+                              </button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
                       <motion.div
                         whileHover={{ scale: 1.05, y: -1 }}

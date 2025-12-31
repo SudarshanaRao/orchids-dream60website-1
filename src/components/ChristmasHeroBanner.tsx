@@ -11,7 +11,7 @@ interface ChristmasHeroBannerProps {
 
 export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
   return (
-    <section className="relative w-full h-[220px] sm:h-[750px] md:h-[650px] overflow-hidden bg-[#0a1a2f]">
+    <section className="relative w-full h-[350px] sm:h-[500px] lg:h-[60vh] overflow-hidden bg-[#0a1a2f]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <motion.div 
@@ -78,20 +78,20 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
       </div>
 
         {/* Main Content Area */}
-        <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-end pb-10 sm:pb-24">
+        <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-end pb-8 sm:pb-12 lg:pb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="mb-8"
+            className="mb-4 sm:mb-6"
           >
             <button
               onClick={onJoinNow}
-              className="group relative px-10 py-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full font-black text-black uppercase tracking-widest shadow-[0_0_25px_rgba(251,191,36,0.5)] hover:shadow-[0_0_50px_rgba(251,191,36,0.7)] transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
+              className="group relative px-6 py-2.5 sm:px-8 sm:py-3 lg:px-6 lg:py-2.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full font-bold text-black uppercase tracking-widest shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:shadow-[0_0_40px_rgba(251,191,36,0.6)] transform hover:-translate-y-1 transition-all duration-300 active:scale-95"
             >
-              <span className="relative z-10 flex items-center gap-2 text-base sm:text-lg">
+              <span className="relative z-10 flex items-center gap-2 text-sm sm:text-base lg:text-sm">
                 Join Now
-                <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-4 lg:h-4 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 rounded-full transition-opacity duration-300" />
             </button>
