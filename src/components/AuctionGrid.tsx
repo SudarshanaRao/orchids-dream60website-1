@@ -53,6 +53,14 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const stickyPaidTimestamp = useRef(0);
 
   useEffect(() => {
+    if (!user?.username) {
+      stickyPaidStatus.current = false;
+      stickyPaidTimestamp.current = 0;
+      prevPaidStatus.current = false;
+    }
+  }, [user?.username]);
+
+  useEffect(() => {
     if (auction?.userHasPaidEntry && !prevPaidStatus.current) {
       setIsUnlocking(true);
       stickyPaidStatus.current = true;

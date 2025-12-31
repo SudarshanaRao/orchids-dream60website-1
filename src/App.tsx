@@ -1692,10 +1692,14 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       })
     }));
     
-    // ✅ Clear hourly auction ID
-    setCurrentHourlyAuctionId(null);
-    
-    setCurrentPage("game");
+      // ✅ Clear hourly auction ID
+      setCurrentHourlyAuctionId(null);
+      
+      // ✅ Clear sticky payment state on logout
+      setRecentPaymentSuccess(false);
+      recentPaymentTimestamp.current = 0;
+      
+      setCurrentPage("game");
     window.history.pushState({}, '', '/');
   };
 
