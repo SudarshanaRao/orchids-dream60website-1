@@ -222,10 +222,20 @@ interface PrizeShowcaseProps {
     const effectiveLiveAuctionData = apiLiveAuction ?? liveAuctionData;
     const effectiveLoading = (apiLiveLoading || isLoadingLiveAuction) && !apiLiveAuction;
 
-    // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
-    useEffect(() => {
-      // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
-      if (effectiveLoading && !hasInitiallyLoaded) {
+      // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
+      useEffect(() => {
+        // ✅ CRITICAL FIX: Reset participation status if user is not logged in
+        if (!isLoggedIn) {
+          setIsUserParticipating(false);
+          setRecentPaymentSuccess(false);
+          recentPaymentTimestamp.current = 0;
+          if (onUserParticipationChange) {
+            onUserParticipationChange(false);
+          }
+        }
+
+        // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
+        if (effectiveLoading && !hasInitiallyLoaded) {
         setIsLoading(true);
         setNoLiveAuction(false);
         return;
@@ -317,7 +327,7 @@ interface PrizeShowcaseProps {
       console.log('⏭️ [PRIZE SHOWCASE] Same auction, keeping existing end time');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveAuctionData, isLoadingLiveAuction, hasInitiallyLoaded]);
+  }, [liveAuctionData, isLoadingLiveAuction, hasInitiallyLoaded, isLoggedIn]);
 
   // ✅ Update join window status from serverTime
   useEffect(() => {
@@ -413,7 +423,7 @@ interface PrizeShowcaseProps {
 
   const entryBoxes = currentPrize.boxes.filter(box => box.type === 'entry');
   const hasAnyPaidEntry =
-    isUserParticipating || currentPrize.userHasPaidEntry || entryBoxes.some(box => box.hasPaid);
+    isLoggedIn && (isUserParticipating || currentPrize.userHasPaidEntry || entryBoxes.some(box => box.hasPaid));
 
   const totalEntryFee = boxAFee + boxBFee;
 
