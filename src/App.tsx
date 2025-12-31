@@ -1339,6 +1339,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                     // Grace period expired, stop forcing
                     setRecentPaymentSuccess(false);
                   }
+                } else if (!userHasPaidEntryFromAPI && Object.keys(userBidsMap).length > 0) {
+                  // ✅ NEW: If user has placed bids according to the API's own rounds data, 
+                  // they MUST have paid entry fee. Trust the round data if participant data is missing/lagging.
+                  finalUserHasPaidEntry = true;
                 } else if (userHasPaidEntryFromAPI && recentPaymentSuccess) {
                   // API has caught up, we can clear the recent success flag
                   setRecentPaymentSuccess(false);
