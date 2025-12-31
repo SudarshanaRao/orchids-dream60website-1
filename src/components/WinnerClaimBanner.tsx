@@ -46,20 +46,23 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     const cachedData = localStorage.getItem(`banner_cache_${effectiveUserId}`);
     if (cachedData && isLoading) {
       try {
-        const parsed = JSON.parse(cachedData);
-        if (Date.now() - parsed.timestamp < 60000) { // 1 minute cache
-          setBannerType(parsed.type);
-          setBannerData(parsed.data);
-          setIsVisible(true);
-          setIsLoading(false);
-        }
+          const parsed = JSON.parse(cachedData);
+          const isSameDay = new Date(parsed.timestamp).getUTCDate() === new Date().getUTCDate();
+          if (isSameDay && (Date.now() - parsed.timestamp < 10000)) { // 10 seconds cache within same day
+            setBannerType(parsed.type);
+            setBannerData(parsed.data);
+            setIsVisible(true);
+            setIsLoading(false);
+          } else {
+            localStorage.removeItem(`banner_cache_${effectiveUserId}`);
+          }
       } catch (e) {}
     }
 
-    try {
-      // ✅ Use limit=5 for faster API response
-      const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}&limit=5`);
-      if (response.ok) {
+      try {
+        // ✅ Use limit=5 for faster API response, added cache-busting
+        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}&limit=5&t=${Date.now()}`, { cache: 'no-store' });
+        if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
           const sortedData = [...result.data].sort((a, b) => 

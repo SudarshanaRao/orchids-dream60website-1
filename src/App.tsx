@@ -80,7 +80,7 @@ let serverTimeOffset: number = 0;
 // ✅ Fetch server time from API - only once on mount
 const fetchServerTime = async (): Promise<ServerTime | null> => {
   try {
-    const response = await fetch(API_ENDPOINTS.serverTime);
+    const response = await fetch(`${API_ENDPOINTS.serverTime}?t=${Date.now()}`, { cache: 'no-store' });
     const data = await response.json();
     
     if (data.success && data.data) {
@@ -727,7 +727,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (showLoading) setIsLoadingLiveAuction(true);
 
     try {
-      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+      const response = await fetch(`${API_ENDPOINTS.scheduler.liveAuction}?t=${Date.now()}`, { cache: 'no-store' });
       if (!response.ok) {
         console.log('⚠️ No live auction available');
         setLiveAuctionData(null);
@@ -957,13 +957,13 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     setTutorialStartToken(Date.now());
   };
 
-  // ✅ NEW: Fetch daily auction stats
-  useEffect(() => {
-    const fetchDailyStats = async () => {
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
-        if (!response.ok) return;
-        const result = await response.json();
+    // ✅ NEW: Fetch daily auction stats
+    useEffect(() => {
+      const fetchDailyStats = async () => {
+        try {
+          const response = await fetch(`${API_ENDPOINTS.scheduler.dailyAuction}?t=${Date.now()}`, { cache: 'no-store' });
+          if (!response.ok) return;
+          const result = await response.json();
         if (result.success && result.data) {
           const auctions = result.data.auctions || [];
           const totalAuctions = result.data.totalAuctionsPerDay || auctions.length || 6;
