@@ -1165,6 +1165,15 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
           recipient={otpRecipient}
           onClose={() => setShowOTPVerification(false)}
           onVerify={handleOTPVerify}
+          skipAutoSend={true}
+          resendEndpoint={API_ENDPOINTS.auth.sendVerificationOtp}
+          resendPayload={{
+            identifier: otpRecipient.replace(/\D/g, ''),
+            type: otpType === 'email' ? 'email' : 'mobile',
+            reason: verificationStep === 'old' 
+              ? `Current ${otpType === 'email' ? 'Email' : 'Mobile'} Verification` 
+              : `New ${otpType === 'email' ? 'Email' : 'Mobile'} Verification`
+          }}
         />
       )}
 

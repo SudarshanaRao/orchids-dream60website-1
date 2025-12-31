@@ -12,16 +12,27 @@ interface OTPVerificationModalProps {
   title?: string;
   description?: string;
   skipAutoSend?: boolean;
+  resendEndpoint?: string;
+  resendPayload?: Record<string, any>;
 }
 
 
-export function OTPVerificationModal({ type, recipient, onClose, onVerify, title, description, skipAutoSend = false }: OTPVerificationModalProps) {
+export function OTPVerificationModal({ 
+  type, 
+  recipient, 
+  onClose, 
+  onVerify, 
+  title, 
+  description, 
+  skipAutoSend = false,
+  resendEndpoint,
+  resendPayload
+}: OTPVerificationModalProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timeLeft, setTimeLeft] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [serverOtp, setServerOtp] = useState<string | null>(null);
 
   // Helper to build request body based on type
   const buildRequestBody = () => {
@@ -29,30 +40,28 @@ export function OTPVerificationModal({ type, recipient, onClose, onVerify, title
     else return { mobile: recipient };
   };
 
-  // Send OTP API call (POST /auth/forgot-password)
-  const sendOtp = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(API_ENDPOINTS.auth.sendOtp, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestBody()),
-      });
+    // Send OTP API call
+    const sendOtp = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const url = resendEndpoint || API_ENDPOINTS.auth.sendOtp;
+        const body = resendPayload || buildRequestBody();
 
-      const data = await response.json();
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP');
-      }
+        const data = await response.json();
 
-      // ⭐ NEW: show OTP returned from server
-      if (data.otp) {
-        setServerOtp(data.otp);
-      }
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to send OTP');
+        }
 
-      setTimeLeft(60);
-    } catch (err: any) {
+        setTimeLeft(60);
+      } catch (err: any) {
       setError(err.message || 'Error sending OTP');
     } finally {
       setLoading(false);
@@ -180,14 +189,9 @@ export function OTPVerificationModal({ type, recipient, onClose, onVerify, title
               {description || "We've sent a 6-digit verification code to"}
             </p>
             <p className="font-semibold text-purple-900">{recipient}</p>
-            {serverOtp && (
-  <p className="text-green-600 text-sm">
-    OTP: <span className="font-semibold">{serverOtp}</span>
-  </p>
-)}
 
-            {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
-          </div>
+              {error && <p className="text-red-600 text-sm mt-1">{error}</p>}
+            </div>
 
           <div className="space-y-4">
             <div className="flex justify-center gap-2" onPaste={handlePaste}>

@@ -240,11 +240,6 @@ const forgotPassword = async (req, res) => {
       userExists: !!user,
     };
 
-    // Only include OTP in response for development/testing
-    if (process.env.NODE_ENV !== 'production') {
-      responseData.otp = otpCode;
-    }
-
     return res.status(200).json(responseData);
   } catch (err) {
     console.error('Forgot Password Error:', err);
@@ -315,11 +310,6 @@ const resendOtp = async (req, res) => {
       success: true,
       message: type === 'email' ? 'OTP resent to your email' : 'OTP resent',
     };
-
-    // Only include OTP in response for development/testing
-    if (process.env.NODE_ENV !== 'production') {
-      responseData.otp = otpCode;
-    }
 
     return res.status(200).json(responseData);
   } catch (err) {
@@ -440,10 +430,6 @@ const sendVerificationOtp = async (req, res) => {
       success: true,
       message: `OTP sent to your ${type}`,
     };
-
-    if (process.env.NODE_ENV !== 'production') {
-      responseData.otp = otpCode;
-    }
 
     return res.status(200).json(responseData);
   } catch (err) {
