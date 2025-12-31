@@ -23,83 +23,100 @@ interface HeaderProps {
       setMobileMenuOpen?: (open: boolean) => void;
     }
 
-export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, mobileMenuOpen: externalMobileMenuOpen, setMobileMenuOpen: externalSetMobileMenuOpen }: HeaderProps) {
-  const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
-  const [isExploreOpen, setIsExploreOpen] = useState(false);
-  const dropdownRef = useState<HTMLDivElement | null>(null)[0];
+  export function Header({ user, onNavigate, onLogin, onLogout, onStartTutorial, mobileMenuOpen: externalMobileMenuOpen, setMobileMenuOpen: externalSetMobileMenuOpen }: HeaderProps) {
+    const [internalMobileMenuOpen, setInternalMobileMenuOpen] = useState(false);
+    const [isExploreOpen, setIsExploreOpen] = useState(false);
+    const dropdownRef = useState<HTMLDivElement | null>(null)[0];
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isExploreOpen && !(event.target as HTMLElement).closest('.explore-dropdown')) {
-        setIsExploreOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isExploreOpen]);
-  
-  // Use external state if provided, otherwise use internal state
-    const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
-  const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
-  const [hasNewHistory, setHasNewHistory] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallButton, setShowInstallButton] = useState(true); // Default to true to show manual install guide
-  const [isStandalone, setIsStandalone] = useState(false);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (isExploreOpen && !(event.target as HTMLElement).closest('.explore-dropdown')) {
+          setIsExploreOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isExploreOpen]);
+    
+    // Use external state if provided, otherwise use internal state
+      const mobileMenuOpen = externalMobileMenuOpen !== undefined ? externalMobileMenuOpen : internalMobileMenuOpen;
+    const setMobileMenuOpen = externalSetMobileMenuOpen || setInternalMobileMenuOpen;
+    const [hasNewHistory, setHasNewHistory] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPWAPrompt);
+    const [showInstallButton, setShowInstallButton] = useState(true); // Default to true to show manual install guide
+    const [isStandalone, setIsStandalone] = useState(false);
+    const [showIOSGuide, setShowIOSGuide] = useState(false);
 
-  // PWA Install prompt handler
-  useEffect(() => {
-        const handler = (e: Event) => {
-          console.log('✅ [PWA] beforeinstallprompt fired');
-          e.preventDefault();
-          setDeferredPrompt(e);
-          setShowInstallButton(true);
-        };
+    // PWA Install prompt handler
+    useEffect(() => {
+          const handler = (e: Event) => {
+            console.log('✅ [PWA] beforeinstallprompt fired in Header');
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallButton(true);
+          };
 
-        window.addEventListener('beforeinstallprompt', handler);
+          const pwaCapturedHandler = () => {
+            console.log('✅ [PWA] Header notified of global prompt capture');
+            if ((window as any).deferredPWAPrompt) {
+              setDeferredPrompt((window as any).deferredPWAPrompt);
+              setShowInstallButton(true);
+            }
+          };
 
-        // Check if app is already installed
-        const checkStandalone = () => {
-          const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
-          setIsStandalone(isStandaloneMode);
-          if (isStandaloneMode) {
+          window.addEventListener('beforeinstallprompt', handler);
+          window.addEventListener('pwa-prompt-captured', pwaCapturedHandler);
+
+          // Check if app is already installed
+          const checkStandalone = () => {
+            const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
+            setIsStandalone(isStandaloneMode);
+            if (isStandaloneMode) {
+              setShowInstallButton(false);
+            }
+          };
+
+          checkStandalone();
+          window.addEventListener('appinstalled', () => {
+            console.log('✅ [PWA] App installed successfully');
             setShowInstallButton(false);
-          }
-        };
+            setIsStandalone(true);
+          });
 
-        checkStandalone();
-        window.addEventListener('appinstalled', () => {
-          console.log('✅ [PWA] App installed successfully');
-          setShowInstallButton(false);
-          setIsStandalone(true);
-        });
+          return () => {
+            window.removeEventListener('beforeinstallprompt', handler);
+            window.removeEventListener('pwa-prompt-captured', pwaCapturedHandler);
+          };
+        }, []);
 
-        return () => window.removeEventListener('beforeinstallprompt', handler);
-      }, []);
-
-          const handleInstallClick = async () => {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-            
-            if (isIOS) {
-              setShowIOSGuide(true);
-              return;
-            }
-
-            if (deferredPrompt) {
-              deferredPrompt.prompt();
-              const { outcome } = await deferredPrompt.userChoice;
-              console.log(`👤 [PWA] User choice: ${outcome}`);
+            const handleInstallClick = async () => {
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
               
-              if (outcome === 'accepted') {
-                setShowInstallButton(false);
+              if (isIOS) {
+                setShowIOSGuide(true);
+                return;
               }
-              setDeferredPrompt(null);
-              return;
-            }
 
-            // Fallback guide if native prompt isn't available
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+              // Use either local state or global window variable
+              const promptToUse = deferredPrompt || (window as any).deferredPWAPrompt;
+
+              if (promptToUse) {
+                console.log('🚀 [PWA] Triggering native install prompt');
+                promptToUse.prompt();
+                const { outcome } = await promptToUse.userChoice;
+                console.log(`👤 [PWA] User choice: ${outcome}`);
+                
+                if (outcome === 'accepted') {
+                  setShowInstallButton(false);
+                }
+                setDeferredPrompt(null);
+                (window as any).deferredPWAPrompt = null;
+                return;
+              }
+
+              // Fallback guide if native prompt isn't available
+              const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
             
             if (isStandalone) {
               toast.info('Dream60 already installed', {

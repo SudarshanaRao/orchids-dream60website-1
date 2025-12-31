@@ -757,6 +757,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token
   const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
+  const [forceTutorialShow, setForceTutorialShow] = useState<boolean>(false);
   // ✅ NEW: Mobile menu state for header (to control from tutorial)
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   // ✅ NEW: Show Amazon Voucher modal after first login/signup
@@ -822,6 +823,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   ];
 
   const handleStartTutorial = () => {
+    setForceTutorialShow(true);
     setTutorialStartToken(Date.now());
   };
 
@@ -2610,17 +2612,21 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
           </AnimatePresence>
 
-            {/* What's New Tutorial Overlay - Only show on first login/signup or when manually triggered */}
-              {currentUser && (
-                <TutorialOverlay
-                  steps={whatsNewSteps}
-                  tutorialId="dream60-whatsnew-v2"
-                  startToken={tutorialStartToken}
-                  forceShow={tutorialStartToken > 0}
-                  onComplete={() => { setMobileMenuOpen(false); handleNavigate('game'); }}
-                  returnTo=""
-                />
-              )}
+              {/* What's New Tutorial Overlay - Only show on first login/signup or when manually triggered */}
+                {currentUser && (
+                  <TutorialOverlay
+                    steps={whatsNewSteps}
+                    tutorialId="dream60-whatsnew-v2"
+                    startToken={tutorialStartToken}
+                    forceShow={forceTutorialShow}
+                    onComplete={() => { 
+                      setMobileMenuOpen(false); 
+                      setForceTutorialShow(false);
+                      handleNavigate('game'); 
+                    }}
+                    returnTo=""
+                  />
+                )}
 
               {/* Amazon Voucher Modal - Shows on first login/signup */}
               <AmazonVoucherModal

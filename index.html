@@ -20,6 +20,16 @@
     <script>
       // Disable right-click
       document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // PWA Global Prompt Capture
+      window.deferredPWAPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPWAPrompt = e;
+        console.log('✅ [PWA] Global beforeinstallprompt captured');
+        // Dispatch custom event to notify components
+        window.dispatchEvent(new CustomEvent('pwa-prompt-captured'));
+      });
     </script>
   </head>
   <body oncontextmenu="return false;">
