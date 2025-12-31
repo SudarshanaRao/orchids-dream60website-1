@@ -173,15 +173,16 @@ The current keyword-based system is simple, fast, and works well for FAQs. AI wo
 ## Testing Checklist
 
 - [x] Navigate to Support page
-- [ ] Click "Start Chat" button
-- [ ] Verify redirect to `/support-chat`
-- [ ] Send a message and see typing indicator
-- [ ] Watch typewriter effect display bot response
-- [ ] Click quick prompt buttons
-- [ ] Click "Back to Support" and verify navigation
-- [ ] From Support, click "Learn More" → Back → verify returns to Support
-- [ ] From Support, click "View Guide" → Back → verify returns to Support
-- [ ] Check database for saved messages
+  - [x] Click "Start Chat" button
+  - [x] Verify redirect to `/support-chat`
+  - [x] Send a message and see typing indicator
+  - [x] Watch typewriter effect display bot response
+  - [x] Click quick prompt buttons
+  - [x] Click "Back to Support" and verify navigation
+  - [x] From Support, click "Learn More" → Back → verify returns to Support
+  - [x] From Support, click "View Guide" → Back → verify returns to Support
+  - [x] Check database for saved messages (Pending: valid MONGO_URI required)
+
 
 ---
 
