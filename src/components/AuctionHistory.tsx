@@ -11,6 +11,8 @@ import { Label } from './ui/label';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 import { LoadingProfile } from './LoadingProfile';
+import { PaymentSuccess } from './PaymentSuccess';
+import { PaymentFailure } from './PaymentFailure';
 
   interface AuctionHistoryProps {
     user: {
@@ -157,6 +159,10 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
     const [showClaimForm, setShowClaimForm] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [localAuction, setLocalAuction] = useState(auction);
+    
+    // NEW: Modal states for prize claim
+    const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
+    const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
 
   
   // ✅ REMOVED: Individual fetch logic - now using prop
@@ -455,43 +461,61 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
           contact: userMobile, // ✅ Use fetched or placeholder mobile number
           upiId: currentUserEmail,
         },
-        async (response) => {
-          console.log('Prize claim payment successful:', response);
-          
-          // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
-          // The response from verification already contains all claim data
-          console.log('✅ Prize claim data received from verification:', response.data);
-          
-          // ✅ Update local state immediately - no page reload
-          setLocalAuction(prev => ({
-            ...prev,
-            prizeClaimStatus: 'CLAIMED',
-            claimedAt: Date.now(),
-            claimedBy: currentUserName,
-            claimUpiId: currentUserEmail,
-            claimedByRank: prev.finalRank
-          }));
-          
-          toast.success('🎉 Prize Claimed Successfully!', {
-            description: `Amazon voucher details will be sent to ${currentUserEmail}`,
-            duration: 5000,
-          });
-          
-          setShowClaimForm(false);
-          setIsProcessing(false);
-          
-          // ✅ Refetch history data in background without reload
-          setTimeout(() => {
-            onClaimSuccess();
-          }, 1000);
-        },
-        (error) => {
-          console.error('Prize claim payment failed:', error);
-          toast.error('Payment Failed', {
-            description: error || 'Failed to process prize claim payment',
-          });
-          setIsProcessing(false);
-        }
+          async (response) => {
+            console.log('Prize claim payment successful:', response);
+            
+            // ✅ Show Success Modal
+            setShowSuccessModal({
+              amount: localAuction.lastRoundBidAmount,
+              type: 'claim',
+              productName: localAuction.prize,
+              productWorth: localAuction.prizeValue,
+              auctionId: localAuction.hourlyAuctionId,
+              paidBy: currentUserName,
+              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay'
+            });
+
+            // ✅ Update local state immediately - no page reload
+            setLocalAuction(prev => ({
+              ...prev,
+              prizeClaimStatus: 'CLAIMED',
+              claimedAt: Date.now(),
+              claimedBy: currentUserName,
+              claimUpiId: currentUserEmail,
+              claimedByRank: prev.finalRank
+            }));
+            
+            toast.success('🎉 Prize Claimed Successfully!', {
+              description: `Amazon voucher details will be sent to ${currentUserEmail}`,
+              duration: 5000,
+            });
+            
+            setShowClaimForm(false);
+            setIsProcessing(false);
+            
+            // ✅ Refetch history data in background without reload
+            setTimeout(() => {
+              onClaimSuccess();
+            }, 1000);
+          },
+          (error) => {
+            console.error('Prize claim payment failed:', error);
+            
+            setShowFailureModal({
+              amount: localAuction.lastRoundBidAmount,
+              type: 'claim',
+              errorMessage: error || 'Failed to process prize claim payment',
+              productName: localAuction.prize,
+              auctionId: localAuction.hourlyAuctionId,
+              paidBy: currentUserName
+            });
+
+            toast.error('Payment Failed', {
+              description: error || 'Failed to process prize claim payment',
+            });
+            setIsProcessing(false);
+          }
+
       );
     } catch (error) {
       console.error('Error initiating prize claim payment:', error);
@@ -1053,12 +1077,46 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* NEW: Payment Success Modal */}
+        {showSuccessModal && (
+          <PaymentSuccess
+            amount={showSuccessModal.amount}
+            type={showSuccessModal.type}
+            productName={showSuccessModal.productName}
+            productWorth={showSuccessModal.productWorth}
+            auctionId={showSuccessModal.auctionId}
+            paidBy={showSuccessModal.paidBy}
+            paymentMethod={showSuccessModal.paymentMethod}
+            onBackToHome={() => setShowSuccessModal(null)}
+            onClose={() => setShowSuccessModal(null)}
+          />
+        )}
+
+        {/* NEW: Payment Failure Modal */}
+        {showFailureModal && (
+          <PaymentFailure
+            amount={showFailureModal.amount}
+            type={showFailureModal.type}
+            errorMessage={showFailureModal.errorMessage}
+            productName={showFailureModal.productName}
+            auctionId={showFailureModal.auctionId}
+            paidBy={showFailureModal.paidBy}
+            onRetry={() => {
+              setShowFailureModal(null);
+              setShowClaimForm(true);
+            }}
+            onBackToHome={() => setShowFailureModal(null)}
+            onClose={() => setShowFailureModal(null)}
+          />
+        )}
+      </motion.div>
+    );
+  };
+
 
 export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
   const [activeTab, setActiveTab] = useState('all');
