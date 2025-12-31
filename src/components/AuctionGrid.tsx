@@ -134,9 +134,9 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
             <div 
               className={`grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-all duration-700 ${(!auction.userHasPaidEntry && !isUnlocking) ? 'opacity-40 blur-[4px] grayscale pointer-events-none' : 'opacity-100 blur-0 grayscale-0 scale-100'}`}
             >
-            {( (auction.userHasPaidEntry && !isUnlocking) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
+            {( (auction.userHasPaidEntry) ? roundBoxes : [1, 2, 3, 4]).map((item, idx) => (
               <div key={typeof item === 'number' ? `placeholder-${item}` : item.id}>
-                {(typeof item === 'number' || isUnlocking) ? (
+                {(typeof item === 'number' || (isUnlocking && typeof item === 'number')) ? (
                   <div className="bg-white/40 border-2 border-purple-100/80 rounded-2xl h-[240px] xs:h-[280px] sm:h-[320px] flex flex-col items-center justify-center p-6 space-y-4 shadow-sm backdrop-blur-[1px] relative overflow-hidden group">
                     {/* Active Loader Animation */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-50/10 via-white/5 to-purple-50/10 animate-pulse" />
