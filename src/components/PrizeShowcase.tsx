@@ -222,19 +222,22 @@ interface PrizeShowcaseProps {
     const effectiveLiveAuctionData = apiLiveAuction ?? liveAuctionData;
     const effectiveLoading = (apiLiveLoading || isLoadingLiveAuction) && !apiLiveAuction;
 
-      // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
-      useEffect(() => {
-        // ✅ CRITICAL FIX: Reset participation status if user is not logged in
-        if (!isLoggedIn) {
-          setIsUserParticipating(false);
-          setRecentPaymentSuccess(false);
-          recentPaymentTimestamp.current = 0;
-          if (onUserParticipationChange) {
-            onUserParticipationChange(false);
+        // ✅ UPDATED: Process live auction data from parent - only show loading on initial load
+        useEffect(() => {
+          // ✅ CRITICAL FIX: Reset participation status if user is not logged in
+          if (!isLoggedIn) {
+            setIsUserParticipating(false);
+            setRecentPaymentSuccess(false);
+            recentPaymentTimestamp.current = 0;
+            setParticipants([]);
+            setParticipantsCount(0);
+            if (onUserParticipationChange) {
+              onUserParticipationChange(false);
+            }
+            return; // ✅ ADDED: Prevent further processing if not logged in
           }
-        }
 
-        // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
+          // ✅ CRITICAL FIX: Only show loading state on initial load, not on subsequent polls
         if (effectiveLoading && !hasInitiallyLoaded) {
         setIsLoading(true);
         setNoLiveAuction(false);

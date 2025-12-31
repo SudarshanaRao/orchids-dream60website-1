@@ -52,13 +52,15 @@ export function AuctionGrid({ auction, user, onBid, onShowLeaderboard, serverTim
   const stickyPaidStatus = useRef(false);
   const stickyPaidTimestamp = useRef(0);
 
-  useEffect(() => {
-    if (!user?.username) {
-      stickyPaidStatus.current = false;
-      stickyPaidTimestamp.current = 0;
-      prevPaidStatus.current = false;
-    }
-  }, [user?.username]);
+    useEffect(() => {
+      if (!user?.username) {
+        stickyPaidStatus.current = false;
+        stickyPaidTimestamp.current = 0;
+        prevPaidStatus.current = false;
+        // ✅ Explicitly clear isUnlocking on logout to prevent stuck loaders
+        setIsUnlocking(false);
+      }
+    }, [user?.username]);
 
   useEffect(() => {
     if (auction?.userHasPaidEntry && !prevPaidStatus.current) {

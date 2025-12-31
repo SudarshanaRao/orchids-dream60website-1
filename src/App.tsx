@@ -1718,40 +1718,43 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     window.history.pushState({}, '', '/login');
   };
 
-        const handleEntrySuccess = () => {
-          if (!showEntrySuccess || !currentUser) return;
+          const handleEntrySuccess = () => {
+            if (!showEntrySuccess) return;
+        
+            // Update state if user is still logged in
+            if (currentUser) {
+              toast.success('Entry Fee Paid!', {
+                description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+              });
+              
+              // Refresh user profile stats
+              fetchAndSetUser(currentUser.id);
+            }
+        
+            // ✅ Always close modal regardless of user session
+            setShowEntrySuccess(null);
+            
+            setCurrentAuction(prev => ({
+              ...prev,
+              userHasPaidEntry: !!currentUser, // Only stay paid if still logged in
+              // ✅ CLEAR ROUND BOXES to force fresh rendering
+              boxes: prev.boxes.map(b => 
+                b.type === 'entry' 
+                  ? { ...b, hasPaid: !!currentUser } 
+                  : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
+              )
+            }));
+    
+            if (currentUser) {
+              // ✅ NEW: Sticky optimistic payment state update
+              setRecentPaymentSuccess(true);
+              recentPaymentTimestamp.current = Date.now();
       
-          toast.success('Entry Fee Paid!', {
-            description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-          });
-      
-          // ✅ Close modal and update state instantly
-          setShowEntrySuccess(null);
-          
-          setCurrentAuction(prev => ({
-            ...prev,
-            userHasPaidEntry: true,
-            // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
-            boxes: prev.boxes.map(b => 
-              b.type === 'entry' 
-                ? { ...b, hasPaid: true } 
-                : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
-            )
-          }));
-  
-          // ✅ NEW: Sticky optimistic payment state update
-          setRecentPaymentSuccess(true);
-          recentPaymentTimestamp.current = Date.now();
-  
-          // ✅ Trigger refetch immediately to sync with server
-          console.log('💳 Payment successful - triggering immediate auction data refresh');
-          setForceRefetchTrigger(prev => prev + 1);
-          
-          // Refresh user profile stats too
-          if (currentUser.id) {
-            fetchAndSetUser(currentUser.id);
-          }
-        };
+              // ✅ Trigger refetch immediately to sync with server
+              console.log('💳 Payment successful - triggering immediate auction data refresh');
+              setForceRefetchTrigger(prev => prev + 1);
+            }
+          };
 
   const handleEntryFailure = () => {
     setShowEntryFailure(null);
