@@ -1742,6 +1742,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
 
       toast.success('Entry Fee Paid!', {
         description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+        duration: 3000,
       });
 
       // ✅ Store payment status in localStorage to survive refresh and prevent flickering

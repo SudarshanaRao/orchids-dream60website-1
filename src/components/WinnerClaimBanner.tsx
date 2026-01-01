@@ -290,10 +290,10 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             claimedByRank: prev.finalRank
           }));
           
-          toast.success('🎉 Prize Claimed Successfully!', {
-            description: `Amazon voucher details will be sent to ${userProfile.email}`,
-            duration: 5000,
-          });
+            toast.success('🎉 Prize Claimed Successfully!', {
+              description: `Amazon voucher details will be sent to ${userProfile.email}`,
+              duration: 3000,
+            });
           
           setIsProcessingClaim(false);
           

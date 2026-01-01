@@ -529,10 +529,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
             claimedByRank: auction.finalRank
           }));
           
-          toast.success('🎉 Prize Claimed Successfully!', {
-            description: `Amazon voucher details will be sent to your registered email`,
-            duration: 5000,
-          });
+            toast.success('🎉 Prize Claimed Successfully!', {
+              description: `Amazon voucher details will be sent to your registered email`,
+              duration: 3000,
+            });
           
           setShowClaimForm(false);
           setIsProcessing(false);

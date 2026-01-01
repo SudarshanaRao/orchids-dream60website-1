@@ -485,10 +485,10 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
               claimedByRank: prev.finalRank
             }));
             
-            toast.success('🎉 Prize Claimed Successfully!', {
-              description: `Amazon voucher details will be sent to ${currentUserEmail}`,
-              duration: 5000,
-            });
+              toast.success('🎉 Prize Claimed Successfully!', {
+                description: `Amazon voucher details will be sent to ${currentUserEmail}`,
+                duration: 3000,
+              });
             
             setShowClaimForm(false);
             setIsProcessing(false);
