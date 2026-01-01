@@ -20,6 +20,7 @@ const {
   checkAuctionParticipation,
   forceCompleteAuction,
   getFirstUpcomingProduct,
+  syncMasterToAuctions,
 } = require('../controllers/schedulerController');
 
 /**
@@ -950,5 +951,96 @@ router.post('/force-complete/:hourlyAuctionId', forceCompleteAuction);
  *         description: Internal server error
  */
 router.get('/first-upcoming-product', getFirstUpcomingProduct);
+
+/**
+ * @swagger
+ * /scheduler/sync-master-to-auctions:
+ *   post:
+ *     summary: Sync master auction changes to daily and hourly auctions
+ *     description: |
+ *       Syncs product images, image URL, auction name, prize value, and other config changes
+ *       from master auction to existing daily and hourly auctions.
+ *       
+ *       **Use this endpoint after:**
+ *       - Updating product images in admin page
+ *       - Changing auction name, prize value, or other config in master auction
+ *       - Any master auction config changes that need to reflect in today's auctions
+ *       
+ *       **What it syncs:**
+ *       - productImages (array of images with descriptions)
+ *       - imageUrl (main product image)
+ *       - auctionName
+ *       - prizeValue
+ *       - maxDiscount
+ *       
+ *       **Important:**
+ *       - Only syncs to active daily auctions for today or future dates
+ *       - Does NOT disturb other values like participants, bids, rounds, status
+ *       - Matches auctions by auctionNumber
+ *     tags: [Scheduler]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - masterId
+ *             properties:
+ *               masterId:
+ *                 type: string
+ *                 description: UUID of the master auction to sync from
+ *                 example: "b336ea64-b9b1-4abb-9027-5bbbaa02a876"
+ *     responses:
+ *       200:
+ *         description: Master auction changes synced successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Master auction changes synced to daily and hourly auctions successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     masterId:
+ *                       type: string
+ *                       example: "b336ea64-b9b1-4abb-9027-5bbbaa02a876"
+ *                     dailyAuctionId:
+ *                       type: string
+ *                       example: "641ba475-0756-4cf0-bc11-1358b4373c9c"
+ *                     dailyAuctionUpdated:
+ *                       type: boolean
+ *                       example: true
+ *                     hourlyAuctionsUpdated:
+ *                       type: number
+ *                       example: 13
+ *                     configsUpdated:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           auctionNumber:
+ *                             type: number
+ *                             example: 1
+ *                           auctionName:
+ *                             type: string
+ *                             example: "SMART WATCH"
+ *                           productImagesCount:
+ *                             type: number
+ *                             example: 3
+ *       400:
+ *         description: Missing masterId parameter
+ *       404:
+ *         description: Master auction or daily auction not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/sync-master-to-auctions', syncMasterToAuctions);
 
 module.exports = router;

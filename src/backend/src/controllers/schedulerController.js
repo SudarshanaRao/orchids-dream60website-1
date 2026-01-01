@@ -2302,6 +2302,116 @@ const forceCompleteAuction = async (req, res) => {
 };
 
 /**
+ * Sync master auction config changes to daily and hourly auctions
+ * POST /scheduler/sync-master-to-auctions
+ * Syncs productImages, imageUrl, auctionName, prizeValue, etc. from master to existing daily/hourly auctions
+ */
+const syncMasterToAuctions = async (req, res) => {
+  try {
+    const { masterId } = req.body;
+    
+    if (!masterId) {
+      return res.status(400).json({
+        success: false,
+        message: 'masterId is required',
+      });
+    }
+    
+    const masterAuction = await MasterAuction.findOne({ masterId });
+    
+    if (!masterAuction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Master auction not found',
+      });
+    }
+    
+    const todayIST = getISTDateStart();
+    
+    const dailyAuction = await DailyAuction.findOne({
+      masterId,
+      auctionDate: { $gte: todayIST },
+      isActive: true,
+    });
+    
+    if (!dailyAuction) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active daily auction found for this master auction',
+      });
+    }
+    
+    const syncResults = {
+      dailyAuctionUpdated: false,
+      hourlyAuctionsUpdated: 0,
+      configsUpdated: [],
+    };
+    
+    for (const masterConfig of masterAuction.dailyAuctionConfig) {
+      const dailyConfigIndex = dailyAuction.dailyAuctionConfig.findIndex(
+        dc => dc.auctionNumber === masterConfig.auctionNumber
+      );
+      
+      if (dailyConfigIndex !== -1) {
+        const dailyConfig = dailyAuction.dailyAuctionConfig[dailyConfigIndex];
+        
+        dailyAuction.dailyAuctionConfig[dailyConfigIndex].productImages = masterConfig.productImages || [];
+        dailyAuction.dailyAuctionConfig[dailyConfigIndex].imageUrl = masterConfig.imageUrl || dailyConfig.imageUrl;
+        dailyAuction.dailyAuctionConfig[dailyConfigIndex].auctionName = masterConfig.auctionName || dailyConfig.auctionName;
+        dailyAuction.dailyAuctionConfig[dailyConfigIndex].prizeValue = masterConfig.prizeValue ?? dailyConfig.prizeValue;
+        dailyAuction.dailyAuctionConfig[dailyConfigIndex].maxDiscount = masterConfig.maxDiscount ?? dailyConfig.maxDiscount;
+        
+        const hourlyAuctionId = dailyConfig.hourlyAuctionId;
+        
+        if (hourlyAuctionId) {
+          const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
+          
+          if (hourlyAuction) {
+            hourlyAuction.productImages = masterConfig.productImages || [];
+            hourlyAuction.imageUrl = masterConfig.imageUrl || hourlyAuction.imageUrl;
+            hourlyAuction.auctionName = masterConfig.auctionName || hourlyAuction.auctionName;
+            hourlyAuction.prizeValue = masterConfig.prizeValue ?? hourlyAuction.prizeValue;
+            hourlyAuction.maxDiscount = masterConfig.maxDiscount ?? hourlyAuction.maxDiscount;
+            
+            await hourlyAuction.save();
+            syncResults.hourlyAuctionsUpdated++;
+          }
+        }
+        
+        syncResults.configsUpdated.push({
+          auctionNumber: masterConfig.auctionNumber,
+          auctionName: masterConfig.auctionName,
+          productImagesCount: (masterConfig.productImages || []).length,
+        });
+      }
+    }
+    
+    dailyAuction.markModified('dailyAuctionConfig');
+    await dailyAuction.save();
+    syncResults.dailyAuctionUpdated = true;
+    
+    console.log(`✅ [SYNC-MASTER] Synced master ${masterId} to daily/hourly auctions:`, syncResults);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Master auction changes synced to daily and hourly auctions successfully',
+      data: {
+        masterId,
+        dailyAuctionId: dailyAuction.dailyAuctionId,
+        ...syncResults,
+      },
+    });
+  } catch (error) {
+    console.error('❌ [SYNC-MASTER] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Get first upcoming product with all images and descriptions
  * GET /scheduler/first-upcoming-product
  * Returns the first upcoming auction's product details including all product images
@@ -2378,4 +2488,5 @@ module.exports = {
   checkAuctionParticipation,
   forceCompleteAuction,
   getFirstUpcomingProduct,
+  syncMasterToAuctions,
 };
