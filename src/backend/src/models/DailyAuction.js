@@ -104,6 +104,14 @@ const ParticipantSchema = new mongoose.Schema(
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const ProductImageSchema = new mongoose.Schema(
+  {
+    imageUrl: { type: String, required: true },
+    description: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const DailyAuctionConfigSchema = new mongoose.Schema(
   {
     auctionNumber: { type: Number, required: true, min: 1 },
@@ -133,6 +141,7 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     roundCount: { type: Number, min: 1, default: 4 },
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
+    productImages: { type: [ProductImageSchema], default: [] },
 
     // ========== TRACKING FIELDS ==========
     isAuctionCompleted: { type: Boolean, default: false },
