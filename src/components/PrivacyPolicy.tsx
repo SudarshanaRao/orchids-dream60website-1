@@ -128,7 +128,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                   <li>Email Address</li>
                   <li>Residential Address in India</li>
                   <li>PAN Card Details (for prize verification and tax compliance)</li>
-                  <li>Payment details (processed securely via Razorpay)</li>
+                  <li>Payment details (processed securely via India's trusted payment gateway)</li>
                 </ul>
               </div>
             </CardContent>
@@ -147,7 +147,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
                   <h4 className="font-semibold text-purple-800 mb-2">Service Provision</h4>
                   <p className="text-purple-700 text-sm">
-                    We use your info to manage your account, process entry fees and bids via Razorpay, calculate auction winners, and deliver Amazon Vouchers.
+                    We use your info to manage your account, process entry fees and bids via India's trusted payment gateway, calculate auction winners, and deliver Amazon Vouchers.
                   </p>
                 </div>
 
@@ -171,7 +171,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
             </CardHeader>
             <CardContent className="p-4 sm:p-6 space-y-3 text-sm sm:text-base text-purple-700">
               <p>
-                We implement industry-standard encryption and security protocols. All financial transactions are handled by our secure payment partner, Razorpay, ensuring your bank/UPI details never touch our servers directly.
+                We implement industry-standard encryption and security protocols. All financial transactions are handled by India's trusted payment gateway, ensuring your bank/UPI details never touch our servers directly.
               </p>
             </CardContent>
           </Card>

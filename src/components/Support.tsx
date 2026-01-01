@@ -134,7 +134,7 @@ export function Support({ user, onBack, onNavigate }: SupportProps) {
         },
         {
           question: 'Is my payment secure?',
-          answer: 'Yes, all payments are processed through Razorpay, India\'s leading secure payment gateway, supporting UPI, Cards, and Net Banking.'
+          answer: 'Yes, all payments are processed through India\'s trusted payment gateway, supporting UPI, Cards, and Net Banking.'
         }
       ]
     },

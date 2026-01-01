@@ -30,7 +30,7 @@ export function PaymentFailure({
   productWorth,
   timeSlot,
   paidBy,
-  paymentMethod = 'UPI / Razorpay',
+  paymentMethod = 'UPI / Card',
   onRetry,
   onBackToHome,
   onClose

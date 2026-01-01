@@ -2407,7 +2407,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                             console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
                             
                             // Extract payment method and UPI from paymentData if available
-                            const method = paymentData?.payment?.paymentMethod || 'UPI / Card (Razorpay)';
+                            const method = paymentData?.payment?.paymentMethod || 'UPI / Card';
                             const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
                             
                             // ✅ Update local state immediately for instant rendering without reload
@@ -2462,7 +2462,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                                 productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
                                 timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
                                 paidBy: currentUser.username || currentUser.email,
-                                paymentMethod: 'UPI / Card (Razorpay)'
+                                paymentMethod: 'UPI / Card'
                               });
 
                         }}
@@ -2601,7 +2601,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                   productWorth={currentAuction.prizeValue}
                   timeSlot={liveAuctionData?.TimeSlot || currentAuction.auctionHour}
                   paidBy={currentUser?.username || currentUser?.email}
-                  paymentMethod="Wallet / Razorpay"
+                  paymentMethod="Wallet / UPI"
                   onBackToHome={() => {
                     setShowBidSuccess(null);
                     setCurrentPage('game');

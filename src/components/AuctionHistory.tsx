@@ -472,7 +472,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
               productWorth: localAuction.prizeValue,
               auctionId: localAuction.hourlyAuctionId,
               paidBy: currentUserName,
-              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay'
+              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card'
             });
 
             // ✅ Update local state immediately - no page reload

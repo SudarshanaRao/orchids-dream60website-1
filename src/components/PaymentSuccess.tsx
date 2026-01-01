@@ -29,7 +29,7 @@ export function PaymentSuccess({
   productWorth,
   timeSlot,
   paidBy,
-  paymentMethod = 'UPI / Razorpay',
+  paymentMethod = 'UPI / Card',
   onBackToHome,
   onClose
 }: PaymentSuccessProps) {

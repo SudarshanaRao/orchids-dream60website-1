@@ -516,7 +516,7 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
             productWorth: auction.prizeValue,
             auctionId: auction.hourlyAuctionId,
             paidBy: currentUserName,
-            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Razorpay'
+            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card'
           });
 
           // ✅ Update local state immediately - no page reload
