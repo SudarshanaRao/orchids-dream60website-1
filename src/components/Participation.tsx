@@ -221,6 +221,21 @@ export function Participation({ onBack }: ParticipationProps) {
                       </div>
                     </div>
                   </div>
+
+                  <div className="bg-orange-50 border-l-4 border-orange-400 p-3 sm:p-4 mt-3">
+                    <h4 className="text-orange-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
+                      <TrendingUp className="w-4 h-4 mr-1" />
+                      Elimination Process
+                    </h4>
+                      <div className="text-orange-700 text-xs space-y-1">
+                        <div>• <strong>Progressive elimination:</strong> Happens after each round based on the bid placed in that round.</div>
+                        <div>• <strong>Separate Bids:</strong> Bids for each round are separate and NOT cumulative.</div>
+                        <div>• <strong>Top 3 bidders</strong> advance to the next round</div>
+                        <div>• <strong>Lower-ranked participants</strong> are eliminated from the auction</div>
+                        <div>• <strong>Round 4 (Final):</strong> Only remaining top bidders compete for the prize</div>
+                        <div>• <strong>Stay competitive:</strong> Strategically place your bids each round to avoid elimination</div>
+                      </div>
+                  </div>
                 </div>
 
                 {/* Step 3: Payment Methods */}

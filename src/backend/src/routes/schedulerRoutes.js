@@ -19,6 +19,7 @@ const {
   getAuctionLeaderboard,
   checkAuctionParticipation,
   forceCompleteAuction,
+  getFirstUpcomingProduct,
 } = require('../controllers/schedulerController');
 
 /**
@@ -930,5 +931,24 @@ router.get('/check-participation', checkAuctionParticipation);
  *         description: Internal server error
  */
 router.post('/force-complete/:hourlyAuctionId', forceCompleteAuction);
+
+/**
+ * @swagger
+ * /scheduler/first-upcoming-product:
+ *   get:
+ *     summary: Get first upcoming product with all images and descriptions
+ *     description: |
+ *       Returns the first upcoming auction's product details including all product images.
+ *       Useful for the prize showcase component to display product cards with multiple images.
+ *     tags: [Scheduler]
+ *     responses:
+ *       200:
+ *         description: First upcoming product retrieved successfully
+ *       404:
+ *         description: No upcoming auction found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/first-upcoming-product', getFirstUpcomingProduct);
 
 module.exports = router;

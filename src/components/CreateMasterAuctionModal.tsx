@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Image as ImageIcon, Upload } from 'lucide-react';
+import { X, Image as ImageIcon, Upload, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface ProductImage {
+  imageUrl: string;
+  description: string[];
+}
 
 interface DailyAuctionConfigItem {
   auctionNumber: number;
@@ -24,6 +29,7 @@ interface DailyAuctionConfigItem {
     topBidAmountsPerRound: number;
   }>;
   imageUrl?: string;
+  productImages?: ProductImage[];
 }
 
 interface MasterAuction {
@@ -56,26 +62,27 @@ export function CreateMasterAuctionModal({
 
   useEffect(() => {
     if (!editingAuction && auctionConfigs.length === 0) {
-      const defaultConfig: DailyAuctionConfigItem = {
-        auctionNumber: 1,
-        TimeSlot: '14:00',
-        auctionName: 'Auction 1',
-        prizeValue: 1000,
-        Status: 'UPCOMING',
-        maxDiscount: 0,
-        EntryFee: 'RANDOM',
-        minEntryFee: null,
-        maxEntryFee: null,
-        FeeSplits: { BoxA: 50, BoxB: 50 },
-        roundCount: 4,
-        roundConfig: [
-          { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-        ],
-        imageUrl: '',
-      };
+        const defaultConfig: DailyAuctionConfigItem = {
+          auctionNumber: 1,
+          TimeSlot: '14:00',
+          auctionName: 'Auction 1',
+          prizeValue: 1000,
+          Status: 'UPCOMING',
+          maxDiscount: 0,
+          EntryFee: 'RANDOM',
+          minEntryFee: null,
+          maxEntryFee: null,
+          FeeSplits: { BoxA: 50, BoxB: 50 },
+          roundCount: 4,
+          roundConfig: [
+            { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          ],
+          imageUrl: '',
+          productImages: [],
+        };
       setAuctionConfigs([defaultConfig]);
     }
   }, [editingAuction]);
@@ -103,6 +110,7 @@ export function CreateMasterAuctionModal({
           { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
         ],
         imageUrl: '',
+        productImages: [],
       },
     ]);
   };
@@ -118,6 +126,56 @@ export function CreateMasterAuctionModal({
   const handleConfigChange = (index: number, field: string, value: any) => {
     const updated = [...auctionConfigs];
     (updated[index] as any)[field] = value;
+    setAuctionConfigs(updated);
+  };
+
+  const handleAddProductImage = (configIndex: number) => {
+    const updated = [...auctionConfigs];
+    if (!updated[configIndex].productImages) {
+      updated[configIndex].productImages = [];
+    }
+    updated[configIndex].productImages!.push({
+      imageUrl: '',
+      description: [''],
+    });
+    setAuctionConfigs(updated);
+  };
+
+  const handleRemoveProductImage = (configIndex: number, imageIndex: number) => {
+    const updated = [...auctionConfigs];
+    updated[configIndex].productImages = updated[configIndex].productImages?.filter((_, i) => i !== imageIndex);
+    setAuctionConfigs(updated);
+  };
+
+  const handleProductImageChange = (configIndex: number, imageIndex: number, field: 'imageUrl' | 'description', value: string | string[]) => {
+    const updated = [...auctionConfigs];
+    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
+      (updated[configIndex].productImages![imageIndex] as any)[field] = value;
+    }
+    setAuctionConfigs(updated);
+  };
+
+  const handleAddDescriptionPoint = (configIndex: number, imageIndex: number) => {
+    const updated = [...auctionConfigs];
+    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
+      updated[configIndex].productImages![imageIndex].description.push('');
+    }
+    setAuctionConfigs(updated);
+  };
+
+  const handleRemoveDescriptionPoint = (configIndex: number, imageIndex: number, descIndex: number) => {
+    const updated = [...auctionConfigs];
+    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
+      updated[configIndex].productImages![imageIndex].description = updated[configIndex].productImages![imageIndex].description.filter((_, i) => i !== descIndex);
+    }
+    setAuctionConfigs(updated);
+  };
+
+  const handleDescriptionPointChange = (configIndex: number, imageIndex: number, descIndex: number, value: string) => {
+    const updated = [...auctionConfigs];
+    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
+      updated[configIndex].productImages![imageIndex].description[descIndex] = value;
+    }
     setAuctionConfigs(updated);
   };
 
@@ -312,6 +370,110 @@ export function CreateMasterAuctionModal({
                           />
                         </div>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="col-span-2 mt-4 border-t-2 border-purple-100 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-bold text-purple-900">
+                        <ImageIcon className="w-4 h-4 inline-block mr-1" />
+                        Product Gallery (Multiple Images with Descriptions)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleAddProductImage(index)}
+                        className="flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-semibold"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Image
+                      </button>
+                    </div>
+
+                    {config.productImages && config.productImages.length > 0 ? (
+                      <div className="space-y-4">
+                        {config.productImages.map((productImage, imgIndex) => (
+                          <div key={imgIndex} className="border-2 border-purple-200 rounded-lg p-3 bg-purple-50/50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-semibold text-purple-800">Image #{imgIndex + 1}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveProductImage(index, imgIndex)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-purple-700 mb-1">
+                                  Image URL
+                                </label>
+                                <input
+                                  type="url"
+                                  value={productImage.imageUrl}
+                                  onChange={(e) => handleProductImageChange(index, imgIndex, 'imageUrl', e.target.value)}
+                                  placeholder="https://example.com/image.jpg"
+                                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                />
+                              </div>
+
+                              {productImage.imageUrl && (
+                                <div className="w-24 h-24 bg-white rounded-lg overflow-hidden border border-purple-200">
+                                  <img
+                                    src={productImage.imageUrl}
+                                    alt={`Product ${imgIndex + 1}`}
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-size="10" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo img%3C/text%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <label className="block text-xs font-semibold text-purple-700">
+                                    Description Points (shown on card back)
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddDescriptionPoint(index, imgIndex)}
+                                    className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
+                                  >
+                                    + Add Point
+                                  </button>
+                                </div>
+                                <div className="space-y-2">
+                                  {productImage.description.map((desc, descIndex) => (
+                                    <div key={descIndex} className="flex items-center gap-2">
+                                      <span className="text-xs text-purple-500 w-4">{descIndex + 1}.</span>
+                                      <input
+                                        type="text"
+                                        value={desc}
+                                        onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, e.target.value)}
+                                        placeholder="Enter description point..."
+                                        className="flex-1 px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                      />
+                                      {productImage.description.length > 1 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
+                                          className="text-red-400 hover:text-red-600"
+                                        >
+                                          <X className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-purple-500 italic">No product images added. Click "Add Image" to create flip-card gallery.</p>
                     )}
                   </div>
                 </div>

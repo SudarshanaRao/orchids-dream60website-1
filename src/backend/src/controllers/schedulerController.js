@@ -658,6 +658,7 @@ const createHourlyAuctions = async (dailyAuction) => {
           roundCount: config.roundCount || 4,
           roundConfig: config.roundConfig || [],
           imageUrl: config.imageUrl || null,
+          productImages: config.productImages || [],
           rounds: roundTimes, // ✅ Use pre-calculated round times
           participants: [], // ✅ Start with empty participants
           winners: [], // ✅ Start with empty winners
@@ -1020,9 +1021,10 @@ const getLiveHourlyAuction = async (req, res) => {
           winnersAnnounced: 1,
           roundConfig: 1,
           completedAt: 1,
-          TimeSlot: 1,
-          imageUrl: 1,
-          EntryFee: 1,
+        TimeSlot: 1,
+        imageUrl: 1,
+        productImages: 1,
+        EntryFee: 1,
           minEntryFee: 1,
           maxEntryFee: 1,
           auctionDate: 1,
@@ -2298,6 +2300,59 @@ const forceCompleteAuction = async (req, res) => {
   }
 };
 
+/**
+ * Get first upcoming product with all images and descriptions
+ * GET /scheduler/first-upcoming-product
+ * Returns the first upcoming auction's product details including all product images
+ */
+const getFirstUpcomingProduct = async (req, res) => {
+  try {
+    const todayIST = getISTDateStart();
+    
+    const upcomingAuction = await HourlyAuction.findOne({
+      Status: 'UPCOMING',
+      auctionDate: { $gte: todayIST }
+    })
+    .sort({ auctionDate: 1, TimeSlot: 1 })
+    .select({
+      hourlyAuctionId: 1,
+      hourlyAuctionCode: 1,
+      auctionName: 1,
+      prizeValue: 1,
+      imageUrl: 1,
+      productImages: 1,
+      TimeSlot: 1,
+      auctionDate: 1,
+      Status: 1,
+      EntryFee: 1,
+      minEntryFee: 1,
+      maxEntryFee: 1,
+      FeeSplits: 1,
+    })
+    .lean();
+    
+    if (!upcomingAuction) {
+      return res.status(404).json({
+        success: false,
+        message: 'No upcoming auction found',
+        data: null,
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: upcomingAuction,
+    });
+  } catch (error) {
+    console.error('Error in getFirstUpcomingProduct:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -2321,4 +2376,5 @@ module.exports = {
   getAuctionLeaderboard,
   checkAuctionParticipation,
   forceCompleteAuction,
+  getFirstUpcomingProduct,
 };

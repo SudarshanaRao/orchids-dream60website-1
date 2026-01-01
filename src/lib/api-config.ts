@@ -67,6 +67,7 @@ export const API_ENDPOINTS = {
     adminDashboard: `${API_BASE_URL}/scheduler/admin/dashboard`,
     adminAuctionHistory: `${API_BASE_URL}/scheduler/admin/auction-history`,
     adminAuctionDetails: `${API_BASE_URL}/scheduler/admin/auction-details`,
+    firstUpcomingProduct: `${API_BASE_URL}/scheduler/first-upcoming-product`,
   },
   
   // User Management

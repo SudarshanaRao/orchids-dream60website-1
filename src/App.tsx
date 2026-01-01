@@ -33,6 +33,7 @@ import { WinningTips } from './components/WinningTips';
 import { SupportChatPage } from './components/SupportChatPage';
 import { TesterFeedback } from './components/TesterFeedback';
 import { TransactionHistoryPage } from './components/TransactionHistoryPage';
+import { PrizeShowcasePage } from './components/PrizeShowcasePage';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
 import { WinnersAnnouncedBanner } from './components/WinnersAnnouncedBanner';
@@ -308,6 +309,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/support-chat') return 'support-chat';
     if (path === '/tester-feedback') return 'tester-feedback';
     if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+    if (path === '/prizeshowcase') return 'prizeshowcase';
 
     return 'game';
   });
@@ -345,6 +347,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/support-chat') setCurrentPage('support-chat');
       else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
       else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+      else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
       else setCurrentPage('game');
     };
 
@@ -1519,7 +1522,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           'support-chat': '/support-chat',
           'tester-feedback': '/tester-feedback',
           'transactions': '/transactions',
-
+          'prizeshowcase': '/prizeshowcase',
         'careers': '/careers'
       };
     
@@ -2259,6 +2262,19 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             <TooltipProvider>
               <Sonner />
               <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      if (currentPage === 'prizeshowcase') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <BrowserRouter>
+                <Sonner />
+                <PrizeShowcasePage />
+              </BrowserRouter>
             </TooltipProvider>
           </QueryClientProvider>
         );

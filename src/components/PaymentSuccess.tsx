@@ -45,15 +45,15 @@ export function PaymentSuccess({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onBackToHome();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    setCountdown((prev) => {
+      if (prev <= 0) {
+        clearInterval(interval);
+        onBackToHome();
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
     return () => clearInterval(interval);
   }, [onBackToHome]);

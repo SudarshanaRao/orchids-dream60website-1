@@ -17,6 +17,14 @@ const FeeSplitsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ProductImageSchema = new mongoose.Schema(
+  {
+    imageUrl: { type: String, required: true },
+    description: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const RoundConfigSchema = new mongoose.Schema(
   {
     round: { type: Number, required: true, min: 1 },
@@ -61,6 +69,7 @@ const DailyAuctionSchema = new mongoose.Schema(
     roundCount: { type: Number, min: 1, default: 4 },
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
+    productImages: { type: [ProductImageSchema], default: [] },
   },
   { _id: false }
 );

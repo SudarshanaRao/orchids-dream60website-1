@@ -17,6 +17,14 @@ const FeeSplitsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const ProductImageSchema = new mongoose.Schema(
+  {
+    imageUrl: { type: String, required: true },
+    description: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const RoundConfigSchema = new mongoose.Schema(
   {
     round: { type: Number, required: true, min: 1 },
@@ -227,6 +235,11 @@ const hourlyAuctionSchema = new mongoose.Schema(
     imageUrl: {
       type: String,
       default: null,
+    },
+    
+    productImages: {
+      type: [ProductImageSchema],
+      default: [],
     },
     
     // ========== NEW FIELDS FOR PLAYER TRACKING ========== 

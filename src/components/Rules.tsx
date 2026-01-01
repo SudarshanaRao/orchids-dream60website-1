@@ -186,6 +186,20 @@ export function Rules({ onBack }: RulesProps) {
                     <div>• Non-refundable participation</div>
                   </div>
                 </div>
+
+                <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded mt-3 sm:col-span-2">
+                  <h4 className="text-orange-800 font-semibold text-sm mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    Elimination Process
+                  </h4>
+                  <div className="text-orange-700 text-xs sm:text-sm space-y-1">
+                    <div>• <strong>After each round</strong>, lowest ranked bidders are eliminated</div>
+                    <div>• <strong>Only Top 3</strong> participants advance to the next round</div>
+                    <div>• <strong>Round 1-3:</strong> Place strategic bids to stay in Top 3</div>
+                    <div>• <strong>Round 4 (Final):</strong> Only the remaining top bidders compete for the prize</div>
+                    <div>• <strong>Eliminated?</strong> You cannot re-enter that auction box</div>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
@@ -240,6 +254,22 @@ export function Rules({ onBack }: RulesProps) {
                   </p>
                   <p className="text-blue-700">
                     <strong className="text-blue-800">Win Condition:</strong> The participant with the highest valid bid at the end of round 4 claims the prize.
+                  </p>
+                </div>
+                
+                <div className="bg-orange-50 border-l-4 border-orange-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm mt-3">
+                  <h4 className="text-orange-800 font-semibold text-sm mb-2">How Elimination Works</h4>
+                    <p className="text-orange-700">
+                      <strong className="text-orange-800">Round Ranking:</strong> After each 15-minute round, participants are ranked by their bid amount in that specific round. Bids are separate for each round and NOT cumulative.
+                    </p>
+                  <p className="text-orange-700">
+                    <strong className="text-orange-800">Survival Rule:</strong> Only the Top 3 bidders advance to the next round. All others are eliminated.
+                  </p>
+                  <p className="text-orange-700">
+                    <strong className="text-orange-800">Strategy Required:</strong> You must strategically increase your bids each round to maintain a top position and avoid elimination.
+                  </p>
+                  <p className="text-orange-700">
+                    <strong className="text-orange-800">Final Showdown:</strong> By Round 4, only the highest bidders remain to compete for the prize.
                   </p>
                 </div>
               </div>
