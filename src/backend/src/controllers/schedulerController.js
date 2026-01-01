@@ -524,6 +524,7 @@ const createDailyAuction = async () => {
         completedAt: null,
         topWinners: [],
         hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
+        productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
       };
     });
     
