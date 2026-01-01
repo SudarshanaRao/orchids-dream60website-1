@@ -93,7 +93,7 @@ export function Participation({ onBack }: ParticipationProps) {
                     <div className="text-purple-600 text-xs space-y-1">
                       <div>• Only Indian currency (₹ INR) accepted</div>
                       <div>• Localized support and fulfillment</div>
-                      <div>• 6 exciting auctions daily</div>
+                        <div>• premium hourly Auctions daily</div>
                       <div>• Real-time competitive bidding</div>
                     </div>
                   </div>
@@ -105,7 +105,7 @@ export function Participation({ onBack }: ParticipationProps) {
                     <div className="text-green-600 text-xs space-y-1">
                       <div>• Entry fee varies based on product value</div>
                       <div>• Fair and random generation system</div>
-                      <div>• Example: ₹10k product may have ₹29-₹99 entry</div>
+                        <div>• Example: ₹10k product may have ₹9-₹99 entry</div>
                       <div>• Full disclosure of fees upon auction opening</div>
                     </div>
                   </div>
@@ -189,7 +189,7 @@ export function Participation({ onBack }: ParticipationProps) {
                           Timing
                         </h4>
                         <div className="text-blue-700 text-xs space-y-1">
-                          <div>• 6 auctions daily</div>
+                            <div>• premium hourly Auctions daily</div>
                           <div>• Duration: 60 minutes</div>
                           <div>• Slots starting every hour</div>
                           <div>• No extensions permitted</div>
@@ -298,7 +298,7 @@ export function Participation({ onBack }: ParticipationProps) {
                         Pro Tip
                       </h4>
                       <div className="text-yellow-700 text-xs relative z-10">
-                        The entry fee is randomly generated based on the product. A high-value product worth ₹10k might have an entry fee between ₹29-₹99. Always check the fee on the auction box before joining!
+                          The entry fee is randomly generated based on the product. A high-value product worth ₹10k might have an entry fee between ₹9-₹99. Always check the fee on the auction box before joining!
                       </div>
                     </div>
                   </div>

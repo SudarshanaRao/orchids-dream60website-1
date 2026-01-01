@@ -90,9 +90,9 @@ export function Rules({ onBack }: RulesProps) {
                     <Sparkles className="w-4 h-4 mr-1" />
                     Daily Auctions
                   </div>
-                  <div className="text-xs sm:text-sm text-purple-600 space-y-1">
-                    <div>• 6 auctions run every single day</div>
-                    <div>• Each auction lasts exactly 60 minutes</div>
+                    <div className="text-xs sm:text-sm text-purple-600 space-y-1">
+                      <div>• premium hourly Auctions daily</div>
+                      <div>• Each auction lasts exactly 60 minutes</div>
                     <div>• 2 entry boxes + 4 live bidding rounds</div>
                   </div>
                 </div>
@@ -127,9 +127,9 @@ export function Rules({ onBack }: RulesProps) {
                     <Badge className="bg-purple-600 text-white">1</Badge>
                     <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Pay Entry Fee</h3>
                   </div>
-                  <p className="text-purple-600 text-xs sm:text-sm">
-                    Entry fees are randomly generated based on the product worth. For a ₹10,000 product, entry might be ₹29-₹99. Pay to unlock all 4 rounds.
-                  </p>
+                    <p className="text-purple-600 text-xs sm:text-sm">
+                      Entry fees are randomly generated based on the product worth. For a ₹10,000 product, entry might be ₹9-₹99. Pay to unlock all 4 rounds.
+                    </p>
                 </div>
 
                 <div className="space-y-3">
@@ -220,7 +220,7 @@ export function Rules({ onBack }: RulesProps) {
                     <strong className="text-purple-800">Duration:</strong> Join window opens at the start of each hour.
                   </p>
                   <p className="text-purple-700">
-                    <strong className="text-purple-800">Payment:</strong> Fees are product-based and random. Example: A product worth ₹10k might have an entry fee between ₹29-₹99.
+                    <strong className="text-purple-800">Payment:</strong> Fees are product-based and random. Example: A product worth ₹10k might have an entry fee between ₹9-₹99.
                   </p>
                   <p className="text-purple-700">
                     <strong className="text-purple-800">Strategy:</strong> Paying the entry fee unlocks access to bid for higher value prizes in rounds 3-6.
