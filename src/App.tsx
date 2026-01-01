@@ -2267,18 +2267,28 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         );
       }
 
-      if (currentPage === 'prizeshowcase') {
-        return (
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <BrowserRouter>
+        if (currentPage === 'prizeshowcase') {
+          return (
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
                 <Sonner />
-                <PrizeShowcasePage />
-              </BrowserRouter>
-            </TooltipProvider>
-          </QueryClientProvider>
-        );
-      }
+                <PrizeShowcasePage 
+                  onBack={handleBackToGame} 
+                  onJoinAuction={() => {
+                    handleBackToGame();
+                    // Scroll to auction grid on next tick
+                    setTimeout(() => {
+                      const grid = document.getElementById('auction-grid');
+                      if (grid) {
+                        grid.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 100);
+                  }}
+                />
+              </TooltipProvider>
+            </QueryClientProvider>
+          );
+        }
 
       if (currentPage === 'contact') {
 

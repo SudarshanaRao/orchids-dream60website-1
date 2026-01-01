@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Gift, Clock, IndianRupee, Loader2, ArrowLeft } from 'lucide-react';
 import { ProductFlipCard } from './ProductFlipCard';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { Link } from 'react-router-dom';
 
 interface ProductImage {
   imageUrl: string;
@@ -27,7 +26,12 @@ interface UpcomingProduct {
   FeeSplits: { BoxA: number; BoxB: number } | null;
 }
 
-export function PrizeShowcasePage() {
+interface PrizeShowcasePageProps {
+  onBack: () => void;
+  onJoinAuction: () => void;
+}
+
+export function PrizeShowcasePage({ onBack, onJoinAuction }: PrizeShowcasePageProps) {
   const [product, setProduct] = useState<UpcomingProduct | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,13 +79,13 @@ export function PrizeShowcasePage() {
           </div>
           <h2 className="text-2xl font-bold text-purple-900 mb-2">No Upcoming Products</h2>
           <p className="text-purple-600 mb-6">{error || 'There are no upcoming products to display right now.'}</p>
-          <Link 
-            to="/"
+          <button 
+            onClick={onBack}
             className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -101,15 +105,15 @@ export function PrizeShowcasePage() {
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link 
-            to="/"
-            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-        </div>
+          <div className="mb-8">
+            <button 
+              onClick={onBack}
+              className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </button>
+          </div>
 
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full mb-4">
@@ -173,16 +177,16 @@ export function PrizeShowcasePage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-center text-white">
-          <h3 className="text-xl font-bold mb-2">Ready to Win?</h3>
-          <p className="text-white/80 mb-4">Join the auction at {product.TimeSlot} and compete for this amazing prize!</p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-colors"
-          >
-            Join Auction
-          </Link>
-        </div>
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-center text-white">
+            <h3 className="text-xl font-bold mb-2">Ready to Win?</h3>
+            <p className="text-white/80 mb-4">Join the auction at {product.TimeSlot} and compete for this amazing prize!</p>
+            <button
+              onClick={onJoinAuction}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-purple-600 rounded-xl font-bold hover:bg-purple-50 transition-colors"
+            >
+              Join Auction
+            </button>
+          </div>
       </div>
     </div>
   );
