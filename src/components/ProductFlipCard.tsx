@@ -17,6 +17,7 @@ interface ProductFlipCardProps {
 export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   if (!productImages || productImages.length === 0) {
     return (
@@ -48,11 +49,32 @@ export function ProductFlipCard({ productImages, productName, prizeValue }: Prod
     setIsFlipped(!isFlipped);
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!isFlipped) {
+      setIsFlipped(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (isFlipped) {
+      setIsFlipped(false);
+    }
+  };
+
+  const handleTouchStart = () => {
+    setIsFlipped(!isFlipped);
+  };
+
   return (
     <div className="relative w-full max-w-md mx-auto">
       <div 
         className="relative w-full h-96 cursor-pointer perspective-1000"
         onClick={handleFlip}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
         onKeyDown={(e) => e.key === 'Enter' && handleFlip()}
         tabIndex={0}
         role="button"
@@ -102,10 +124,10 @@ export function ProductFlipCard({ productImages, productName, prizeValue }: Prod
               </div>
 
               <div className="absolute bottom-3 left-0 right-0 text-center">
-                <p className="text-xs text-purple-600 font-medium animate-pulse">
-                  Tap to see details
-                </p>
-              </div>
+                  <p className="text-xs text-purple-600 font-medium animate-pulse">
+                    Hover or tap to see details
+                  </p>
+                </div>
 
               <div className="absolute inset-0 rounded-2xl ring-2 ring-purple-300/30 ring-inset pointer-events-none" />
             </div>
@@ -159,10 +181,10 @@ export function ProductFlipCard({ productImages, productName, prizeValue }: Prod
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-white/20 text-center">
-                  <p className="text-xs text-white/60 font-medium">
-                    Tap to see image
-                  </p>
-                </div>
+                    <p className="text-xs text-white/60 font-medium">
+                      Move away or tap to see image
+                    </p>
+                  </div>
               </div>
 
               <div className="absolute inset-0 rounded-2xl ring-2 ring-white/20 ring-inset pointer-events-none" />
