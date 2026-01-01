@@ -2317,7 +2317,7 @@ const syncMasterToAuctions = async (req, res) => {
       });
     }
     
-    const masterAuction = await MasterAuction.findOne({ masterId });
+    const masterAuction = await MasterAuction.findOne({ master_id: masterId });
     
     if (!masterAuction) {
       return res.status(404).json({
