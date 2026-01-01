@@ -234,7 +234,7 @@ export function Participation({ onBack }: ParticipationProps) {
                       <div>
                         <h4 className="text-green-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
                           <CreditCard className="w-4 h-4 mr-1" />
-                          Accepted via Razorpay
+                          Accepted via India's trusted payment gateway
                         </h4>
                         <div className="text-green-700 text-xs space-y-1">
                           <div>• UPI (Google Pay, PhonePe, Paytm)</div>

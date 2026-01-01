@@ -279,7 +279,7 @@ export function Rules({ onBack }: RulesProps) {
               </h3>
               <div className="bg-green-50 border border-green-200 rounded p-3 relative z-10">
                 <div className="text-green-700 text-xs space-y-2">
-                  <div>• <strong>Secured Payments:</strong> via Razorpay (INR)</div>
+                  <div>• <strong>Secured Payments:</strong> via India's trusted payment gateway (INR)</div>
                   <div>• <strong>Timestamp Sync:</strong> All bids recorded by server time</div>
                   <div>• <strong>Zero Fraud:</strong> Advanced detection algorithms</div>
                 </div>
