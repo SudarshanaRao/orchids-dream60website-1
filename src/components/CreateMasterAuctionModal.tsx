@@ -179,6 +179,30 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
+  const handleBulkAddPoints = (configIndex: number, imageIndex: number, text: string) => {
+    if (!text.trim()) return;
+    
+    // Split by newline and clean up markers like '-', '*', '•'
+    const points = text
+      .split('\n')
+      .map(p => p.trim().replace(/^[•\-\*\d\.]+\s*/, ''))
+      .filter(p => p.length > 0);
+    
+    if (points.length === 0) return;
+
+    const updated = [...auctionConfigs];
+    const currentDesc = updated[configIndex].productImages![imageIndex].description;
+    
+    // If only one empty point exists, replace it
+    if (currentDesc.length === 1 && currentDesc[0] === '') {
+      updated[configIndex].productImages![imageIndex].description = points;
+    } else {
+      updated[configIndex].productImages![imageIndex].description = [...currentDesc, ...points];
+    }
+    
+    setAuctionConfigs(updated);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -431,43 +455,91 @@ export function CreateMasterAuctionModal({
                                 </div>
                               )}
 
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <label className="block text-xs font-semibold text-purple-700">
-                                    Description Points (shown on card back)
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAddDescriptionPoint(index, imgIndex)}
-                                    className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
-                                  >
-                                    + Add Point
-                                  </button>
-                                </div>
-                                <div className="space-y-2">
-                                  {productImage.description.map((desc, descIndex) => (
-                                    <div key={descIndex} className="flex items-center gap-2">
-                                      <span className="text-xs text-purple-500 w-4">{descIndex + 1}.</span>
-                                      <input
-                                        type="text"
-                                        value={desc}
-                                        onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, e.target.value)}
-                                        placeholder="Enter description point..."
-                                        className="flex-1 px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                                      />
-                                      {productImage.description.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
-                                          className="text-red-400 hover:text-red-600"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
-                                      )}
+                                <div>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-xs font-bold text-purple-700">
+                                      Description Points (shown on card back)
+                                    </label>
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const text = prompt('Paste your list of points (one per line):');
+                                          if (text) handleBulkAddPoints(index, imgIndex, text);
+                                        }}
+                                        className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded hover:bg-purple-700 transition-colors"
+                                      >
+                                        Import List
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddDescriptionPoint(index, imgIndex)}
+                                        className="text-[10px] bg-green-600 text-white px-2 py-0.5 rounded hover:bg-green-700 transition-colors"
+                                      >
+                                        + Add Point
+                                      </button>
                                     </div>
-                                  ))}
+                                  </div>
+
+                                  {/* Preview Section */}
+                                  {productImage.description.some(d => d.trim()) && (
+                                    <div className="mb-3 p-2 bg-white rounded border border-purple-200 shadow-inner">
+                                      <p className="text-[10px] font-bold text-purple-400 uppercase mb-1">Preview</p>
+                                      <ul className="list-disc list-inside space-y-0.5">
+                                        {productImage.description.filter(d => d.trim()).map((d, i) => (
+                                          <li key={i} className="text-xs text-purple-900">{d}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-2">
+                                    {productImage.description.map((desc, descIndex) => (
+                                      <div key={descIndex} className="flex items-center gap-2 group">
+                                        <div className="flex-1 relative">
+                                          <input
+                                            type="text"
+                                            value={desc}
+                                            onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, e.target.value)}
+                                            placeholder="Enter description point..."
+                                            className="w-full px-2 py-1.5 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm pr-8"
+                                          />
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-purple-300">
+                                            {descIndex + 1}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const updated = [...auctionConfigs];
+                                              const current = updated[index].productImages![imgIndex].description;
+                                              updated[index].productImages![imgIndex].description = [
+                                                ...current.slice(0, descIndex + 1),
+                                                '',
+                                                ...current.slice(descIndex + 1)
+                                              ];
+                                              setAuctionConfigs(updated);
+                                            }}
+                                            className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                            title="Add point below"
+                                          >
+                                            <Plus className="w-4 h-4" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
+                                            className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                            title="Delete point"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
+
                             </div>
                           </div>
                         ))}
