@@ -7,9 +7,15 @@ import {
   Timer, 
   Gift,
   AlertTriangle,
-  History
+  History,
+  IndianRupee,
+  Loader2
 } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
+import { PaymentSuccess } from './PaymentSuccess';
+import { PaymentFailure } from './PaymentFailure';
+import { toast } from 'sonner';
 
 interface WinnerClaimBannerProps {
   userId: string;
@@ -32,6 +38,11 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   const [isVisible, setIsVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingClaim, setIsProcessingClaim] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
+  const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
+  
+  const { initiatePrizeClaimPayment, loading: paymentLoading } = usePrizeClaimPayment();
 
   const fetchBannerStatus = useCallback(async () => {
     const effectiveUserId = userId || localStorage.getItem('user_id');
@@ -117,16 +128,19 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
             const closedKey = `closed_banner_${latestAuction._id}_${latestAuction.completedAt}_${status}`;
             
             if (localStorage.getItem(closedKey) !== 'true') {
-              const newBannerData = {
-                ...latestAuction,
-                resultStatus: status,
-                resultAnnouncedAt: latestAuction.completedAt,
-                queuePosition: rank || (latestAuction.eliminatedInRound ? `Eliminated R${latestAuction.eliminatedInRound}` : 'N/A'),
-                deadline: deadline,
-                timerLabel: timerLabel,
-                claimedByRank: latestAuction.claimedByRank,
-                claimNotes: claimNotes
-              };
+                const newBannerData = {
+                  ...latestAuction,
+                  resultStatus: status,
+                  resultAnnouncedAt: latestAuction.completedAt,
+                  queuePosition: rank || (latestAuction.eliminatedInRound ? `Eliminated R${latestAuction.eliminatedInRound}` : 'N/A'),
+                  deadline: deadline,
+                  timerLabel: timerLabel,
+                  claimedByRank: latestAuction.claimedByRank,
+                  claimNotes: claimNotes,
+                  hourlyAuctionId: latestAuction.hourlyAuctionId,
+                  lastRoundBidAmount: latestAuction.lastRoundBidAmount,
+                  prizeValue: latestAuction.prizeValue
+                };
 
               setBannerType(status);
               setBannerData(newBannerData);
@@ -192,6 +206,122 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
     }
   };
 
+  const handleClaimNow = async () => {
+    if (bannerType !== 'WIN' || !bannerData) return;
+    
+    const effectiveUserId = userId || localStorage.getItem('user_id');
+    if (!effectiveUserId) {
+      toast.error('Please login to claim your prize');
+      return;
+    }
+
+    if (!bannerData.hourlyAuctionId) {
+      toast.error('Missing auction information. Please try from Auction History.');
+      return;
+    }
+
+    if (!bannerData.lastRoundBidAmount || bannerData.lastRoundBidAmount <= 0) {
+      toast.error('Invalid bid amount. Please contact support.');
+      return;
+    }
+
+    setIsProcessingClaim(true);
+
+    try {
+      const profileResponse = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${effectiveUserId}`);
+      let userProfile = { mobile: '', email: '', username: '' };
+      
+      if (profileResponse.ok) {
+        const result = await profileResponse.json();
+        if (result.success && result.profile) {
+          userProfile = {
+            mobile: result.profile.mobile || localStorage.getItem('user_mobile') || '9999999999',
+            email: result.profile.email || localStorage.getItem('user_email') || '',
+            username: result.profile.username || localStorage.getItem('user_name') || '',
+          };
+        }
+      }
+
+      if (!userProfile.email) {
+        userProfile.email = localStorage.getItem('user_email') || localStorage.getItem('email') || '';
+      }
+      if (!userProfile.username) {
+        userProfile.username = localStorage.getItem('user_name') || 'Winner';
+      }
+
+      if (!userProfile.email) {
+        toast.error('Email not found. Please update your profile.');
+        setIsProcessingClaim(false);
+        return;
+      }
+
+      initiatePrizeClaimPayment(
+        {
+          userId: effectiveUserId,
+          hourlyAuctionId: bannerData.hourlyAuctionId,
+          amount: bannerData.lastRoundBidAmount,
+          currency: 'INR',
+          username: userProfile.username,
+        },
+        {
+          name: userProfile.username,
+          email: userProfile.email,
+          contact: userProfile.mobile || '9999999999',
+          upiId: userProfile.email,
+        },
+        async (response) => {
+          setShowSuccessModal({
+            amount: bannerData.lastRoundBidAmount,
+            type: 'claim',
+            productName: bannerData.auctionName,
+            productWorth: bannerData.prizeValue,
+            auctionId: bannerData.hourlyAuctionId,
+            paidBy: userProfile.username,
+            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card'
+          });
+
+          setBannerType('CLAIMED');
+          setBannerData((prev: any) => ({
+            ...prev,
+            prizeClaimStatus: 'CLAIMED',
+            claimedAt: Date.now(),
+            claimedBy: userProfile.username,
+            claimUpiId: userProfile.email,
+            claimedByRank: prev.finalRank
+          }));
+          
+          toast.success('🎉 Prize Claimed Successfully!', {
+            description: `Amazon voucher details will be sent to ${userProfile.email}`,
+            duration: 5000,
+          });
+          
+          setIsProcessingClaim(false);
+          
+          localStorage.removeItem(`banner_cache_${effectiveUserId}`);
+        },
+        (error) => {
+          setShowFailureModal({
+            amount: bannerData.lastRoundBidAmount,
+            type: 'claim',
+            errorMessage: error || 'Failed to process prize claim payment',
+            productName: bannerData.auctionName,
+            auctionId: bannerData.hourlyAuctionId,
+            paidBy: userProfile.username
+          });
+
+          toast.error('Payment Failed', {
+            description: error || 'Failed to process prize claim payment',
+          });
+          setIsProcessingClaim(false);
+        }
+      );
+    } catch (error) {
+      console.error('Error initiating prize claim payment:', error);
+      toast.error('Failed to initiate payment. Please try again.');
+      setIsProcessingClaim(false);
+    }
+  };
+
   if (isLoading || !isVisible || !bannerType || bannerType === 'QUALIFIED') return null;
 
   const getBannerConfig = () => {
@@ -251,6 +381,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   if (!config) return null;
 
     return (
+      <>
       <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
         <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
           
@@ -276,13 +407,33 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                     </span>
                   </div>
 
-                <button
-                  onClick={() => onNavigate(config.navigateTo)}
-                  className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20"
-                >
-                  {config.buttonText}
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                {bannerType === 'WIN' ? (
+                  <button
+                    onClick={handleClaimNow}
+                    disabled={isProcessingClaim || paymentLoading}
+                    className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isProcessingClaim || paymentLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>PROCESSING...</span>
+                      </>
+                    ) : (
+                      <>
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        <span>PAY ₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'} & CLAIM</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onNavigate(config.navigateTo)}
+                    className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20"
+                  >
+                    {config.buttonText}
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 
                 <div className="h-4 w-[2px] bg-white/30 rounded-full" />
               </div>
@@ -311,5 +462,39 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         }
       `}</style>
     </div>
+
+    {/* Payment Success Modal */}
+    {showSuccessModal && (
+      <PaymentSuccess
+        amount={showSuccessModal.amount}
+        type={showSuccessModal.type}
+        productName={showSuccessModal.productName}
+        productWorth={showSuccessModal.productWorth}
+        auctionId={showSuccessModal.auctionId}
+        paidBy={showSuccessModal.paidBy}
+        paymentMethod={showSuccessModal.paymentMethod}
+        onBackToHome={() => setShowSuccessModal(null)}
+        onClose={() => setShowSuccessModal(null)}
+      />
+    )}
+
+    {/* Payment Failure Modal */}
+    {showFailureModal && (
+      <PaymentFailure
+        amount={showFailureModal.amount}
+        type={showFailureModal.type}
+        errorMessage={showFailureModal.errorMessage}
+        productName={showFailureModal.productName}
+        auctionId={showFailureModal.auctionId}
+        paidBy={showFailureModal.paidBy}
+        onRetry={() => {
+          setShowFailureModal(null);
+          handleClaimNow();
+        }}
+        onBackToHome={() => setShowFailureModal(null)}
+        onClose={() => setShowFailureModal(null)}
+      />
+    )}
+    </>
   );
 }
