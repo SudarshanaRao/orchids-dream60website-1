@@ -28,13 +28,13 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
           />
         </video>
 
-        {/* Desktop Video - 75vh, object-contain (no stretch, no crop) */}
+        {/* Desktop Video - 75vh, object-cover for full width background */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="hidden lg:block w-full h-full object-contain object-center"
+          className="hidden lg:block w-full h-full object-cover object-center"
         >
           <source 
             src="/newyear_banner_large.mp4" 
