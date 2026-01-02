@@ -379,19 +379,21 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
             sortedAuctions.map((auction, index) => {
               const participantCount = auction.totalParticipants ?? 0;
               return (
-                <motion.div
-                  key={`${auction.hour}-${auction.minute}`}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`
-                    relative overflow-hidden rounded-2xl border-2 transition-all duration-300
-                    ${auction.status === 'active' 
-                      ? 'border-violet-300 bg-violet-50/50' 
-                      : 'border-purple-100 bg-white hover:border-purple-200'
-                    }
-                  `}
-                >
+                  <motion.div
+                    key={`${auction.hour}-${auction.minute}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => onNavigate?.('prizeshowcase', { auctionId: auction.auctionId })}
+                    className={`
+                      relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer
+                      ${auction.status === 'active' 
+                        ? 'border-violet-300 bg-violet-50/50' 
+                        : 'border-purple-100 bg-white hover:border-purple-200'
+                      }
+                    `}
+                  >
+
                   <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useIsMobile } from '@/lib/hooks/use-mobile';
 
 interface ProductImage {
   imageUrl: string;
@@ -14,10 +15,12 @@ interface ProductFlipCardProps {
   prizeValue: number;
 }
 
-export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
+    const isMobile = useIsMobile();
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isFlipped, setIsFlipped] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
 
   if (!productImages || productImages.length === 0) {
     return (
@@ -49,23 +52,22 @@ export function ProductFlipCard({ productImages, productName, prizeValue }: Prod
     setIsFlipped(!isFlipped);
   };
 
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (!isFlipped) {
-      setIsFlipped(true);
-    }
-  };
+    const handleMouseEnter = () => {
+      if (isMobile) return;
+      setIsHovered(true);
+      if (!isFlipped) {
+        setIsFlipped(true);
+      }
+    };
 
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (isFlipped) {
-      setIsFlipped(false);
-    }
-  };
+    const handleMouseLeave = () => {
+      if (isMobile) return;
+      setIsHovered(false);
+      if (isFlipped) {
+        setIsFlipped(false);
+      }
+    };
 
-  const handleTouchStart = () => {
-    setIsFlipped(!isFlipped);
-  };
 
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -74,7 +76,6 @@ export function ProductFlipCard({ productImages, productName, prizeValue }: Prod
         onClick={handleFlip}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
         onKeyDown={(e) => e.key === 'Enter' && handleFlip()}
         tabIndex={0}
         role="button"
