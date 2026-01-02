@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductImage {
@@ -18,6 +18,16 @@ interface ProductFlipCardProps {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Use the first image's description as the single description for the product
     const productDescription = productImages[0]?.description || [];
@@ -52,8 +62,6 @@ interface ProductFlipCardProps {
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
   };
-
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const handleMouseEnter = () => {
     if (isMobile) return;
