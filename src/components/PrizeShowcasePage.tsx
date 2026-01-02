@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Gift, Clock, IndianRupee, Loader2, ArrowLeft } from 'lucide-react';
 import { ProductFlipCard } from './ProductFlipCard';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { Button } from './ui/button';
+import { motion } from 'framer-motion';
 
 interface ProductImage {
   imageUrl: string;
@@ -101,25 +103,64 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
     ? [{ imageUrl: product.imageUrl, description: [] }]
     : [];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-pink-200/30 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative max-w-4xl mx-auto px-4 py-8">
-          <div className="mb-8">
-            <button 
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 font-medium transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Auction
-            </button>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        {/* Header with Logo */}
+        <motion.header 
+          className="bg-white/95 backdrop-blur-md border-b border-purple-200 shadow-sm sticky top-0 z-50"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={onBack}
+                  variant="ghost"
+                  size="sm"
+                  className="text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Auction
+                </Button>
+                <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
+                <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Prize Showcase</h1>
+              </div>
+              
+              {/* Logo */}
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={onBack}
+              >
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                </div>
+                <div className="hidden sm:block">
+                  <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                  <p className="text-[10px] text-purple-600">Live Auction Play</p>
+                </div>
+              </div>
+            </div>
           </div>
+        </motion.header>
 
-        <div className="text-center mb-8">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-pink-200/30 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative max-w-4xl mx-auto px-4 py-8">
+          {/* Mobile Title */}
+          <motion.h1 
+            className="sm:hidden text-2xl font-bold text-purple-800 mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            Prize Showcase
+          </motion.h1>
+
+          <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full mb-4">
             <Gift className="w-5 h-5 text-purple-600" />
             <span className="text-sm font-semibold text-purple-700">Upcoming Prize</span>
