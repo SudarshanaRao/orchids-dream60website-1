@@ -2275,25 +2275,27 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         );
       }
 
-        if (currentPage === 'prizeshowcase') {
+if (currentPage === 'prizeshowcase') {
           return (
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
-                <Sonner />
-                <PrizeShowcasePage 
-                  onBack={handleBackToGame} 
-                  onJoinAuction={() => {
-                    handleBackToGame();
-                    // Scroll to auction grid on next tick
-                    setTimeout(() => {
-                      const grid = document.getElementById('auction-grid');
-                      if (grid) {
-                        grid.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }, 100);
-                  }}
-                  hourlyAuctionId={selectedPrizeShowcaseAuctionId}
-                />
+                <BrowserRouter>
+                  <Sonner />
+                  <PrizeShowcasePage 
+                    onBack={handleBackToGame} 
+                    onJoinAuction={() => {
+                      handleBackToGame();
+                      // Scroll to auction grid on next tick
+                      setTimeout(() => {
+                        const grid = document.getElementById('auction-grid');
+                        if (grid) {
+                          grid.scrollIntoView({ behavior: 'smooth' });
+                        }
+                      }, 100);
+                    }}
+                    hourlyAuctionId={selectedPrizeShowcaseAuctionId}
+                  />
+                </BrowserRouter>
               </TooltipProvider>
             </QueryClientProvider>
           );

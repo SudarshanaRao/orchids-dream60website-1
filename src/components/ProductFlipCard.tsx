@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useIsMobile } from '@/lib/hooks/use-mobile';
 
 interface ProductImage {
   imageUrl: string;
@@ -55,22 +54,23 @@ interface ProductFlipCardProps {
     setIsFlipped(!isFlipped);
   };
 
-    const handleMouseEnter = () => {
-      if (isMobile) return;
-      setIsHovered(true);
-      if (!isFlipped) {
-        setIsFlipped(true);
-      }
-    };
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!isFlipped) {
+      setIsFlipped(true);
+    }
+  };
 
-    const handleMouseLeave = () => {
-      if (isMobile) return;
-      setIsHovered(false);
-      if (isFlipped) {
-        setIsFlipped(false);
-      }
-    };
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (isFlipped) {
+      setIsFlipped(false);
+    }
+  };
 
+  const handleTouchStart = () => {
+    setIsFlipped(!isFlipped);
+  };
 
   return (
     <div className="relative w-full max-w-md mx-auto">
@@ -79,6 +79,7 @@ interface ProductFlipCardProps {
         onClick={handleFlip}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
         onKeyDown={(e) => e.key === 'Enter' && handleFlip()}
         tabIndex={0}
         role="button"
