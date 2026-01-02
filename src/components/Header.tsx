@@ -48,92 +48,127 @@ interface HeaderProps {
     const [isStandalone, setIsStandalone] = useState(false);
     const [showIOSGuide, setShowIOSGuide] = useState(false);
 
-    // PWA Install prompt handler
-    useEffect(() => {
-          const handler = (e: Event) => {
-            console.log('✅ [PWA] beforeinstallprompt fired in Header');
-            e.preventDefault();
-            setDeferredPrompt(e);
-            setShowInstallButton(true);
-          };
+  // PWA Install prompt handler
+  useEffect(() => {
+        const handler = (e: Event) => {
+          console.log('✅ [PWA v2] beforeinstallprompt fired in Header');
+          e.preventDefault();
+          setDeferredPrompt(e);
+          setShowInstallButton(true);
+        };
 
-          const pwaCapturedHandler = () => {
-            console.log('✅ [PWA] Header notified of global prompt capture');
-            if ((window as any).deferredPWAPrompt) {
-              setDeferredPrompt((window as any).deferredPWAPrompt);
-              setShowInstallButton(true);
-            }
-          };
+        const pwaCapturedHandler = (e: Event) => {
+          console.log('✅ [PWA v2] Header notified of global prompt capture');
+          const customEvent = e as CustomEvent;
+          if (customEvent.detail?.prompt) {
+            setDeferredPrompt(customEvent.detail.prompt);
+          } else if ((window as any).deferredPWAPrompt) {
+            setDeferredPrompt((window as any).deferredPWAPrompt);
+          }
+          setShowInstallButton(true);
+        };
 
-          window.addEventListener('beforeinstallprompt', handler);
-          window.addEventListener('pwa-prompt-captured', pwaCapturedHandler);
+        const pwaInstalledHandler = () => {
+          console.log('✅ [PWA v2] App installed - hiding button');
+          setShowInstallButton(false);
+          setIsStandalone(true);
+          setDeferredPrompt(null);
+        };
 
-          // Check if app is already installed
-          const checkStandalone = () => {
-            const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
-            setIsStandalone(isStandaloneMode);
-            if (isStandaloneMode) {
-              setShowInstallButton(false);
-            }
-          };
+        window.addEventListener('beforeinstallprompt', handler);
+        window.addEventListener('pwa-prompt-captured', pwaCapturedHandler);
+        window.addEventListener('pwa-installed', pwaInstalledHandler);
 
-          checkStandalone();
-          window.addEventListener('appinstalled', () => {
-            console.log('✅ [PWA] App installed successfully');
+        // Check if app is already installed
+        const checkStandalone = () => {
+          const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone || document.referrer.includes('android-app://');
+          setIsStandalone(isStandaloneMode);
+          if (isStandaloneMode) {
             setShowInstallButton(false);
-            setIsStandalone(true);
-          });
+          }
+        };
 
-          return () => {
-            window.removeEventListener('beforeinstallprompt', handler);
-            window.removeEventListener('pwa-prompt-captured', pwaCapturedHandler);
-          };
-        }, []);
+        checkStandalone();
+        window.addEventListener('appinstalled', pwaInstalledHandler);
+
+        // Check if global prompt was already captured before component mounted
+        if ((window as any).deferredPWAPrompt) {
+          console.log('✅ [PWA v2] Found existing global prompt');
+          setDeferredPrompt((window as any).deferredPWAPrompt);
+          setShowInstallButton(true);
+        }
+
+        return () => {
+          window.removeEventListener('beforeinstallprompt', handler);
+          window.removeEventListener('pwa-prompt-captured', pwaCapturedHandler);
+          window.removeEventListener('pwa-installed', pwaInstalledHandler);
+          window.removeEventListener('appinstalled', pwaInstalledHandler);
+        };
+      }, []);
 
             const handleInstallClick = async () => {
+              console.log('🔘 [PWA v2] Install button clicked');
               const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
               
               if (isIOS) {
+                console.log('📱 [PWA v2] iOS detected - showing guide');
                 setShowIOSGuide(true);
                 return;
               }
 
               // Use either local state or global window variable
               const promptToUse = deferredPrompt || (window as any).deferredPWAPrompt;
+              console.log('🔍 [PWA v2] Prompt available:', !!promptToUse);
 
               if (promptToUse) {
-                console.log('🚀 [PWA] Triggering native install prompt');
-                promptToUse.prompt();
-                const { outcome } = await promptToUse.userChoice;
-                console.log(`👤 [PWA] User choice: ${outcome}`);
-                
-                if (outcome === 'accepted') {
-                  setShowInstallButton(false);
+                try {
+                  console.log('🚀 [PWA v2] Triggering native install prompt');
+                  await promptToUse.prompt();
+                  const { outcome } = await promptToUse.userChoice;
+                  console.log(`👤 [PWA v2] User choice: ${outcome}`);
+                  
+                  if (outcome === 'accepted') {
+                    toast.success('Dream60 installed!', {
+                      description: 'You can now access Dream60 from your home screen.',
+                    });
+                    setShowInstallButton(false);
+                  }
+                  setDeferredPrompt(null);
+                  (window as any).deferredPWAPrompt = null;
+                  (window as any).pwaInstallReady = false;
+                } catch (err) {
+                  console.error('❌ [PWA v2] Install prompt error:', err);
                 }
-                setDeferredPrompt(null);
-                (window as any).deferredPWAPrompt = null;
                 return;
               }
 
               // Fallback guide if native prompt isn't available
+              console.log('⚠️ [PWA v2] No native prompt - showing fallback');
               const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+              const isEdge = /Edg/.test(navigator.userAgent);
+              const isAndroid = /Android/.test(navigator.userAgent);
             
             if (isStandalone) {
               toast.info('Dream60 already installed', {
-                description: 'You are already using the Dream60 APK version.',
+                description: 'You are already using the Dream60 app.',
               });
               return;
             }
 
-            if (isChrome) {
-              toast.info('Install Dream60 APK', {
-                description: 'Open your browser menu (⋮) and select "Install App" or "Add to Home Screen".',
-                duration: 6000,
+            if (isAndroid) {
+              toast.info('Install Dream60', {
+                description: 'Tap the menu (⋮) → "Install app" or "Add to Home screen"',
+                duration: 8000,
+              });
+            } else if (isChrome || isEdge) {
+              toast.info('Install Dream60', {
+                description: 'Click the install icon (⊕) in the address bar, or use Menu → "Install Dream60..."',
+                duration: 8000,
               });
             } else {
-              toast.info('Install Dream60 APK', {
-                description: 'Select "Add to Home Screen" from your browser menu to install the APK.',
-                duration: 6000,
+              toast.info('Install Dream60', {
+                description: 'Use your browser menu to "Add to Home Screen" or "Install"',
+                duration: 8000,
               });
             }
           };
@@ -381,7 +416,7 @@ interface HeaderProps {
                     className="text-purple-700 p-2.5 hover:bg-purple-50/80 rounded-xl transition-all relative z-10 backdrop-blur-sm border border-purple-200/50 shadow-md"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    title="Install APK"
+                    title="Install App"
                     data-tutorial-target="pwa-install" data-whatsnew-target="pwa-install"
                   >
                   <Download className="w-5 h-5" />
@@ -552,7 +587,7 @@ interface HeaderProps {
                                     className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                                   >
                                     <Download className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Install APK</span>
+                                    <span className="text-sm font-medium">Install App</span>
                                   </button>
                                 )}
                             </motion.div>

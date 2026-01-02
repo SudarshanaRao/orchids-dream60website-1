@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dream60-v1';
+const CACHE_NAME = 'dream60-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
