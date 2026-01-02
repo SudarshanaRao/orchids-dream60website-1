@@ -15,7 +15,6 @@ interface ProductFlipCardProps {
 }
 
   export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
-    const isMobile = useIsMobile();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
