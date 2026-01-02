@@ -145,12 +145,12 @@ const swaggerOptions = {
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/d60-internal-ref', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 console.log(
   `📘 Swagger Docs available at: ${
     process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`
-  }/api-docs`
+  }/d60-internal-ref`
 );
 
 // --------------------
