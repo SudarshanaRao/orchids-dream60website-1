@@ -136,6 +136,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
   const [showCreateAuction, setShowCreateAuction] = useState(false);
   const [editingAuction, setEditingAuction] = useState<MasterAuction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
 
   const fetchStatistics = async () => {
     try {
@@ -565,21 +566,36 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           </div>
         )}
 
-        {activeTab === 'users' && statistics && (
-          <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search users by username, email, mobile, or user code..."
-                  className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
-                />
+{activeTab === 'users' && statistics && (
+            <div className="space-y-6">
+              {/* Search Bar and Filters */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search users by username, email, mobile, or user code..."
+                      className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <select
+                      value={dateFilter}
+                      onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
+                      className="px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 bg-white text-purple-900 font-medium"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Last 24 Hours</option>
+                      <option value="week">Last 7 Days</option>
+                      <option value="month">Last 30 Days</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
 
             {/* All Users Table */}
             <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
@@ -597,18 +613,30 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                       <th className="text-left py-3 px-4 text-purple-700 font-semibold">Won</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {[...statistics.recentUsers, ...statistics.topSpenders, ...statistics.topWinners]
-                      .filter((user, index, self) => 
-                        self.findIndex(u => u.user_id === user.user_id) === index
-                      )
-                      .filter(user => 
-                        !searchTerm || 
-                        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        user.userCode.toLowerCase().includes(searchTerm.toLowerCase())
-                      )
-                      .map((user: CombinedUser) => (
+<tbody>
+                      {[...statistics.recentUsers, ...statistics.topSpenders, ...statistics.topWinners]
+                        .filter((user, index, self) => 
+                          self.findIndex(u => u.user_id === user.user_id) === index
+                        )
+                        .filter(user => 
+                          !searchTerm || 
+                          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.userCode.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .filter((user: CombinedUser) => {
+                          if (dateFilter === 'all') return true;
+                          if (!user.joinedAt) return false;
+                          const joinedDate = new Date(user.joinedAt);
+                          const now = new Date();
+                          const diffTime = now.getTime() - joinedDate.getTime();
+                          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                          if (dateFilter === 'today') return diffDays <= 1;
+                          if (dateFilter === 'week') return diffDays <= 7;
+                          if (dateFilter === 'month') return diffDays <= 30;
+                          return true;
+                        })
+                        .map((user: CombinedUser) => (
                         <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
                           <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
                           <td className="py-3 px-4">{user.username}</td>
