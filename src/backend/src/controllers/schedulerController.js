@@ -2498,4 +2498,5 @@ module.exports = {
   checkAuctionParticipation,
   forceCompleteAuction,
   getFirstUpcomingProduct,
+  syncMasterToAuctions,
 };
