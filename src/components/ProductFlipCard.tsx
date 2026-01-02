@@ -53,7 +53,10 @@ interface ProductFlipCardProps {
     setIsFlipped(!isFlipped);
   };
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   const handleMouseEnter = () => {
+    if (isMobile) return;
     setIsHovered(true);
     if (!isFlipped) {
       setIsFlipped(true);
@@ -61,14 +64,11 @@ interface ProductFlipCardProps {
   };
 
   const handleMouseLeave = () => {
+    if (isMobile) return;
     setIsHovered(false);
     if (isFlipped) {
       setIsFlipped(false);
     }
-  };
-
-  const handleTouchStart = () => {
-    setIsFlipped(!isFlipped);
   };
 
   return (
@@ -78,7 +78,6 @@ interface ProductFlipCardProps {
         onClick={handleFlip}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
         onKeyDown={(e) => e.key === 'Enter' && handleFlip()}
         tabIndex={0}
         role="button"
