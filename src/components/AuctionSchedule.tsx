@@ -384,7 +384,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => onNavigate?.('prizeshowcase', { auctionId: auction.auctionId })}
+                    onClick={() => onNavigate?.('prizeshowcase', { hourlyAuctionId: auction.hourlyAuctionId })}
                     className={`
                       relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer
                       ${auction.status === 'active' 

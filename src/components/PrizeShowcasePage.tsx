@@ -29,9 +29,10 @@ interface UpcomingProduct {
 interface PrizeShowcasePageProps {
   onBack: () => void;
   onJoinAuction: () => void;
+  hourlyAuctionId?: string | null;
 }
 
-export function PrizeShowcasePage({ onBack, onJoinAuction }: PrizeShowcasePageProps) {
+export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: PrizeShowcasePageProps) {
   const [product, setProduct] = useState<UpcomingProduct | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +41,16 @@ export function PrizeShowcasePage({ onBack, onJoinAuction }: PrizeShowcasePagePr
     const fetchProduct = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
+        const url = hourlyAuctionId 
+          ? `${API_ENDPOINTS.scheduler.firstUpcomingProduct}?hourlyAuctionId=${hourlyAuctionId}`
+          : API_ENDPOINTS.scheduler.firstUpcomingProduct;
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.success && data.data) {
           setProduct(data.data);
         } else {
-          setError(data.message || 'No upcoming product found');
+          setError(data.message || 'No upcoming auctions currently');
         }
       } catch (err) {
         console.error('Error fetching product:', err);
@@ -57,7 +61,7 @@ export function PrizeShowcasePage({ onBack, onJoinAuction }: PrizeShowcasePagePr
     };
 
     fetchProduct();
-  }, []);
+  }, [hourlyAuctionId]);
 
   if (isLoading) {
     return (

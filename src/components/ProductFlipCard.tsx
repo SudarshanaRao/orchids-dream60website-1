@@ -21,6 +21,9 @@ interface ProductFlipCardProps {
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
+    // Use the first image's description as the single description for the product
+    const productDescription = productImages[0]?.description || [];
+
 
   if (!productImages || productImages.length === 0) {
     return (
@@ -105,13 +108,15 @@ interface ProductFlipCardProps {
                 </div>
               </div>
 
-              <div className="absolute top-3 right-3 z-10">
-                <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
-                  <span className="text-xs text-white font-medium">
-                    {currentIndex + 1}/{productImages.length}
-                  </span>
+              {productImages.length > 1 && (
+                <div className="absolute top-3 right-3 z-10">
+                  <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
+                    <span className="text-xs text-white font-medium">
+                      {currentIndex + 1}/{productImages.length}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="w-full h-full flex items-center justify-center p-8">
                 <img
@@ -141,45 +146,47 @@ interface ProductFlipCardProps {
               transform: 'rotateY(180deg)',
             }}
           >
-            <div className="relative w-full h-full bg-gradient-to-br from-purple-600/95 via-purple-700/95 to-indigo-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
-              
-              <div className="absolute top-3 right-3">
-                <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-full">
-                  <span className="text-xs text-white font-medium">
-                    {currentIndex + 1}/{productImages.length}
-                  </span>
-                </div>
-              </div>
+              <div className="relative w-full h-full bg-gradient-to-br from-purple-600/95 via-purple-700/95 to-indigo-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
+                
+                {productImages.length > 1 && (
+                  <div className="absolute top-3 right-3">
+                    <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-full">
+                      <span className="text-xs text-white font-medium">
+                        {currentIndex + 1}/{productImages.length}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
-              <div className="relative h-full flex flex-col p-5">
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
-                    {productName}
-                  </h3>
-                  <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
-                </div>
+                <div className="relative h-full flex flex-col p-5">
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                      {productName}
+                    </h3>
+                    <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
+                  </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  {currentImage.description && currentImage.description.length > 0 ? (
-                    <ul className="space-y-2.5">
-                      {currentImage.description.filter(d => d.trim()).map((point, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
-                            <span className="text-xs font-bold text-white">{idx + 1}</span>
-                          </span>
-                          <span className="text-sm text-white/90 leading-relaxed">
-                            {point}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-white/70 text-sm italic">
-                      No description available for this image.
-                    </p>
-                  )}
-                </div>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    {productDescription && productDescription.length > 0 ? (
+                      <ul className="space-y-2.5">
+                        {productDescription.filter(d => d.trim()).map((point, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                              <span className="text-xs font-bold text-white">{idx + 1}</span>
+                            </span>
+                            <span className="text-sm text-white/90 leading-relaxed">
+                              {point}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-white/70 text-sm italic">
+                        No description available for this product.
+                      </p>
+                    )}
+                  </div>
 
                 <div className="mt-4 pt-3 border-t border-white/20 text-center">
                     <p className="text-xs text-white/60 font-medium">
@@ -248,19 +255,12 @@ interface ProductFlipCardProps {
         .rotate-y-180 {
           transform: rotateY(180deg);
         }
+        .custom-scrollbar {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.3);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.5);
+          display: none;
         }
       `}</style>
     </div>

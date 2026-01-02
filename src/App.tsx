@@ -561,6 +561,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     hourlyAuctionId?: string;
   } | null>(null);
 
+  const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useState<string | null>(null);
+
   // Generate random entry fees between ₹1000-₹3500
   const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
 
@@ -1499,6 +1501,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       return;
     }
 
+    if (page === 'prizeshowcase') {
+      setSelectedPrizeShowcaseAuctionId(data?.hourlyAuctionId || null);
+      window.history.pushState({}, '', '/prizeshowcase');
+      return;
+    }
+
     // ✅ Update browser URL to match the page
     const urlMap: { [key: string]: string } = {
         'game': '/',
@@ -2284,6 +2292,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                       }
                     }, 100);
                   }}
+                  hourlyAuctionId={selectedPrizeShowcaseAuctionId}
                 />
               </TooltipProvider>
             </QueryClientProvider>
