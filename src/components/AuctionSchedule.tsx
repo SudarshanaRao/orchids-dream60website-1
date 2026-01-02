@@ -384,9 +384,13 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    onClick={() => onNavigate?.('prizeshowcase', { hourlyAuctionId: auction.hourlyAuctionId })}
+                    onClick={() => {
+                      if (auction.status === 'upcoming') {
+                        onNavigate?.('prizeshowcase', { hourlyAuctionId: auction.hourlyAuctionId });
+                      }
+                    }}
                     className={`
-                      relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer
+                      relative overflow-hidden rounded-2xl border-2 transition-all duration-300 ${auction.status === 'upcoming' ? 'cursor-pointer' : ''}
                       ${auction.status === 'active' 
                         ? 'border-violet-300 bg-violet-50/50' 
                         : 'border-purple-100 bg-white hover:border-purple-200'

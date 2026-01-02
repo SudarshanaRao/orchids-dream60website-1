@@ -937,16 +937,81 @@ router.post('/force-complete/:hourlyAuctionId', forceCompleteAuction);
  * @swagger
  * /scheduler/first-upcoming-product:
  *   get:
- *     summary: Get first upcoming product with all images and descriptions
+ *     summary: Get upcoming product with all images and descriptions
  *     description: |
- *       Returns the first upcoming auction's product details including all product images.
+ *       Returns the upcoming auction's product details including all product images.
  *       Useful for the prize showcase component to display product cards with multiple images.
+ *       
+ *       **Behavior:**
+ *       - If `hourlyAuctionId` is provided, returns that specific upcoming auction
+ *       - If no parameter is provided, returns message indicating no upcoming auctions currently
+ *       
+ *       **Use this endpoint:**
+ *       - When user clicks on an upcoming auction in the auction schedule
+ *       - To display product details on the prize showcase page
  *     tags: [Scheduler]
+ *     parameters:
+ *       - in: query
+ *         name: hourlyAuctionId
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: UUID of the hourly auction to retrieve. If not provided, returns "No upcoming auctions currently"
+ *         example: "9be58e75-ab01-45fa-bf5a-7dd6340afd82"
  *     responses:
  *       200:
- *         description: First upcoming product retrieved successfully
- *       404:
- *         description: No upcoming auction found
+ *         description: Response with upcoming product data or message
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "No upcoming auctions currently"
+ *                 data:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     hourlyAuctionId:
+ *                       type: string
+ *                       example: "9be58e75-ab01-45fa-bf5a-7dd6340afd82"
+ *                     hourlyAuctionCode:
+ *                       type: string
+ *                       example: "HA000001"
+ *                     auctionName:
+ *                       type: string
+ *                       example: "SMART WATCH"
+ *                     prizeValue:
+ *                       type: number
+ *                       example: 10000
+ *                     imageUrl:
+ *                       type: string
+ *                       example: "https://example.com/product.jpg"
+ *                     productImages:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           imageUrl:
+ *                             type: string
+ *                           description:
+ *                             type: string
+ *                     TimeSlot:
+ *                       type: string
+ *                       example: "12:00"
+ *                     auctionDate:
+ *                       type: string
+ *                       format: date-time
+ *                     Status:
+ *                       type: string
+ *                       example: "UPCOMING"
+ *                     EntryFee:
+ *                       type: number
+ *                       example: 100
  *       500:
  *         description: Internal server error
  */

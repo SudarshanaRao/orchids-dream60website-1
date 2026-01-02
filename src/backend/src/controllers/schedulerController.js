@@ -2412,19 +2412,29 @@ const syncMasterToAuctions = async (req, res) => {
 };
 
 /**
- * Get first upcoming product with all images and descriptions
- * GET /scheduler/first-upcoming-product
- * Returns the first upcoming auction's product details including all product images
+ * Get upcoming product with all images and descriptions
+ * GET /scheduler/first-upcoming-product?hourlyAuctionId=xxx
+ * If hourlyAuctionId is provided, returns that specific upcoming auction
+ * If no parameter is provided, returns message indicating no upcoming auctions
  */
 const getFirstUpcomingProduct = async (req, res) => {
   try {
+    const { hourlyAuctionId } = req.query;
     const todayIST = getISTDateStart();
     
+    if (!hourlyAuctionId) {
+      return res.status(200).json({
+        success: false,
+        message: 'No upcoming auctions currently',
+        data: null,
+      });
+    }
+    
     const upcomingAuction = await HourlyAuction.findOne({
+      hourlyAuctionId: hourlyAuctionId,
       Status: 'UPCOMING',
       auctionDate: { $gte: todayIST }
     })
-    .sort({ auctionDate: 1, TimeSlot: 1 })
     .select({
       hourlyAuctionId: 1,
       hourlyAuctionCode: 1,
@@ -2443,9 +2453,9 @@ const getFirstUpcomingProduct = async (req, res) => {
     .lean();
     
     if (!upcomingAuction) {
-      return res.status(404).json({
+      return res.status(200).json({
         success: false,
-        message: 'No upcoming auction found',
+        message: 'No upcoming auction found for the given ID',
         data: null,
       });
     }
