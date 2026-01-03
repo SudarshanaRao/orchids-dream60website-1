@@ -34,6 +34,13 @@ import { toast } from 'sonner';
 
 interface AnalyticsData {
   date: string;
+  dateISO: string;
+  currentTime: string;
+  currentTimeISO: string;
+  currentTimeSlot: string;
+  fetchedAt: string;
+  isToday: boolean;
+  schedulerDataIncluded?: boolean;
   summary: {
     totalAuctions: number;
     liveAuctions: number;
@@ -66,6 +73,7 @@ interface AnalyticsData {
     auctionName: string;
     timeSlot: string;
     status: string;
+    dbStatus?: string;
     prizeValue: number;
     participantCount: number;
     currentRound: number;
@@ -73,6 +81,7 @@ interface AnalyticsData {
     winnersCount: number;
     claimedCount: number;
     totalEntryFees: number;
+    fromScheduler?: boolean;
     winners: Array<{
       rank: number;
       username: string;
@@ -83,10 +92,21 @@ interface AnalyticsData {
   }>;
   last7DaysData: Array<{
     date: string;
+    dateISO?: string;
     dayName: string;
     participants: number;
     claimed: number;
     revenue: number;
+  }>;
+  upcomingAuctionsList?: Array<{
+    auctionId: string;
+    auctionCode: string;
+    auctionName: string;
+    timeSlot: string;
+    prizeValue: number;
+    status: string;
+    auctionDate: string;
+    auctionDateISO?: string;
   }>;
   currentLiveAuction: {
     auctionId: string;
