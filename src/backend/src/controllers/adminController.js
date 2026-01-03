@@ -787,6 +787,7 @@ const deletePushSubscriptionAdmin = async (req, res) => {
 /**
  * Get Analytics Data (Admin)
  * Returns comprehensive analytics for daily auction activity with date filtering
+ * Fetches fresh data from database on every call
  */
 const getAnalyticsData = async (req, res) => {
   try {
@@ -809,11 +810,13 @@ const getAnalyticsData = async (req, res) => {
 
     const { date } = req.query;
     
+    const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    
     let targetDate;
     if (date) {
-      targetDate = new Date(date);
+      targetDate = new Date(date + 'T00:00:00+05:30');
     } else {
-      targetDate = new Date();
+      targetDate = nowIST;
     }
     
     const startOfDay = new Date(targetDate);
@@ -822,11 +825,15 @@ const getAnalyticsData = async (req, res) => {
     const endOfDay = new Date(targetDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const currentHour = nowIST.getHours();
+    const currentTimeSlot = `${currentHour.toString().padStart(2, '0')}:00-${(currentHour + 1).toString().padStart(2, '0')}:00`;
+
     const [
       dailyAuction,
       hourlyAuctions,
       auctionHistories,
-      last7DaysData
+      last7DaysData,
+      upcomingAuctionsAll
     ] = await Promise.all([
       DailyAuction.findOne({
         auctionDate: { $gte: startOfDay, $lte: endOfDay }
@@ -873,13 +880,27 @@ const getAnalyticsData = async (req, res) => {
           });
         }
         return results;
-      })()
+      })(),
+      
+      HourlyAuction.find({
+        auctionDate: { $gte: startOfDay },
+        Status: { $in: ['UPCOMING', 'SCHEDULED'] }
+      }).sort({ auctionDate: 1, TimeSlot: 1 }).limit(10).lean()
     ]);
+
+    const isToday = startOfDay.toDateString() === nowIST.toDateString();
+    
+    const todaysUpcoming = isToday 
+      ? hourlyAuctions.filter(a => {
+          const slotHour = parseInt(a.TimeSlot.split(':')[0]);
+          return (a.Status === 'UPCOMING' || a.Status === 'SCHEDULED') && slotHour >= currentHour;
+        })
+      : hourlyAuctions.filter(a => a.Status === 'UPCOMING' || a.Status === 'SCHEDULED');
 
     const totalAuctions = hourlyAuctions.length;
     const liveAuctions = hourlyAuctions.filter(a => a.Status === 'LIVE');
     const completedAuctions = hourlyAuctions.filter(a => a.Status === 'COMPLETED');
-    const upcomingAuctions = hourlyAuctions.filter(a => a.Status === 'UPCOMING');
+    const upcomingAuctions = todaysUpcoming;
     
     const uniqueParticipants = new Set(auctionHistories.map(h => h.userId)).size;
     const totalParticipations = auctionHistories.length;
@@ -898,12 +919,25 @@ const getAnalyticsData = async (req, res) => {
       const winners = auctionParticipants.filter(h => h.isWinner);
       const claimed = winners.filter(w => w.prizeClaimStatus === 'CLAIMED');
       
+      const slotHour = parseInt(auction.TimeSlot.split(':')[0]);
+      let computedStatus = auction.Status;
+      if (isToday && auction.Status !== 'COMPLETED' && auction.Status !== 'LIVE') {
+        if (slotHour < currentHour) {
+          computedStatus = 'COMPLETED';
+        } else if (slotHour === currentHour) {
+          computedStatus = 'LIVE';
+        } else {
+          computedStatus = 'UPCOMING';
+        }
+      }
+      
       return {
         auctionId: auction.hourlyAuctionId,
         auctionCode: auction.hourlyAuctionCode,
         auctionName: auction.auctionName,
         timeSlot: auction.TimeSlot,
-        status: auction.Status,
+        status: computedStatus,
+        dbStatus: auction.Status,
         prizeValue: auction.prizeValue,
         participantCount: auctionParticipants.length,
         currentRound: auction.currentRound,
@@ -939,6 +973,9 @@ const getAnalyticsData = async (req, res) => {
       success: true,
       data: {
         date: targetDate.toISOString().split('T')[0],
+        currentTime: nowIST.toISOString(),
+        currentTimeSlot,
+        fetchedAt: new Date().toISOString(),
         summary: {
           totalAuctions,
           liveAuctions: liveAuctions.length,
@@ -957,6 +994,15 @@ const getAnalyticsData = async (req, res) => {
         claimStatusDistribution,
         auctionDetails,
         last7DaysData,
+        upcomingAuctionsList: upcomingAuctions.map(a => ({
+          auctionId: a.hourlyAuctionId,
+          auctionCode: a.hourlyAuctionCode,
+          auctionName: a.auctionName,
+          timeSlot: a.TimeSlot,
+          prizeValue: a.prizeValue,
+          status: a.Status,
+          auctionDate: a.auctionDate
+        })),
         currentLiveAuction: liveAuctions.length > 0 ? {
           auctionId: liveAuctions[0].hourlyAuctionId,
           auctionName: liveAuctions[0].auctionName,
