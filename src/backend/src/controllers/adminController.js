@@ -781,6 +781,196 @@ const deletePushSubscriptionAdmin = async (req, res) => {
   }
 };
 
+/**
+ * Get Analytics Data (Admin)
+ * Returns comprehensive analytics for daily auction activity with date filtering
+ */
+const getAnalyticsData = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Admin user_id required.',
+      });
+    }
+
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || adminUser.userType !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.',
+      });
+    }
+
+    const { date } = req.query;
+    
+    let targetDate;
+    if (date) {
+      targetDate = new Date(date);
+    } else {
+      targetDate = new Date();
+    }
+    
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const [
+      dailyAuction,
+      hourlyAuctions,
+      auctionHistories,
+      last7DaysData
+    ] = await Promise.all([
+      DailyAuction.findOne({
+        auctionDate: { $gte: startOfDay, $lte: endOfDay }
+      }).lean(),
+      
+      HourlyAuction.find({
+        auctionDate: { $gte: startOfDay, $lte: endOfDay }
+      }).sort({ TimeSlot: 1 }).lean(),
+      
+      AuctionHistory.find({
+        auctionDate: { $gte: startOfDay, $lte: endOfDay }
+      }).lean(),
+      
+      (async () => {
+        const results = [];
+        for (let i = 6; i >= 0; i--) {
+          const dayStart = new Date(targetDate);
+          dayStart.setDate(dayStart.getDate() - i);
+          dayStart.setHours(0, 0, 0, 0);
+          
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
+          
+          const [participants, claimed, revenue] = await Promise.all([
+            AuctionHistory.countDocuments({
+              auctionDate: { $gte: dayStart, $lte: dayEnd }
+            }),
+            AuctionHistory.countDocuments({
+              auctionDate: { $gte: dayStart, $lte: dayEnd },
+              prizeClaimStatus: 'CLAIMED'
+            }),
+            AuctionHistory.aggregate([
+              { $match: { auctionDate: { $gte: dayStart, $lte: dayEnd } } },
+              { $group: { _id: null, total: { $sum: '$entryFeePaid' } } }
+            ])
+          ]);
+          
+          results.push({
+            date: dayStart.toISOString().split('T')[0],
+            dayName: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+            participants,
+            claimed,
+            revenue: revenue[0]?.total || 0
+          });
+        }
+        return results;
+      })()
+    ]);
+
+    const totalAuctions = hourlyAuctions.length;
+    const liveAuctions = hourlyAuctions.filter(a => a.Status === 'LIVE');
+    const completedAuctions = hourlyAuctions.filter(a => a.Status === 'COMPLETED');
+    const upcomingAuctions = hourlyAuctions.filter(a => a.Status === 'UPCOMING');
+    
+    const uniqueParticipants = new Set(auctionHistories.map(h => h.userId)).size;
+    const totalParticipations = auctionHistories.length;
+    const totalClaimed = auctionHistories.filter(h => h.prizeClaimStatus === 'CLAIMED').length;
+    const totalPending = auctionHistories.filter(h => h.prizeClaimStatus === 'PENDING' && h.isWinner).length;
+    const totalExpired = auctionHistories.filter(h => h.prizeClaimStatus === 'EXPIRED').length;
+    
+    const totalEntryFees = auctionHistories.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0);
+    const totalPrizeValue = completedAuctions.reduce((sum, a) => sum + (a.prizeValue || 0), 0);
+    const totalClaimedValue = auctionHistories
+      .filter(h => h.prizeClaimStatus === 'CLAIMED')
+      .reduce((sum, h) => sum + (h.prizeAmountWon || 0), 0);
+
+    const auctionDetails = hourlyAuctions.map(auction => {
+      const auctionParticipants = auctionHistories.filter(h => h.hourlyAuctionId === auction.hourlyAuctionId);
+      const winners = auctionParticipants.filter(h => h.isWinner);
+      const claimed = winners.filter(w => w.prizeClaimStatus === 'CLAIMED');
+      
+      return {
+        auctionId: auction.hourlyAuctionId,
+        auctionCode: auction.hourlyAuctionCode,
+        auctionName: auction.auctionName,
+        timeSlot: auction.TimeSlot,
+        status: auction.Status,
+        prizeValue: auction.prizeValue,
+        participantCount: auctionParticipants.length,
+        currentRound: auction.currentRound,
+        totalRounds: auction.roundCount,
+        winnersCount: winners.length,
+        claimedCount: claimed.length,
+        totalEntryFees: auctionParticipants.reduce((sum, p) => sum + (p.entryFeePaid || 0), 0),
+        winners: winners.map(w => ({
+          rank: w.finalRank,
+          username: w.username,
+          prizeAmount: w.prizeAmountWon,
+          claimStatus: w.prizeClaimStatus,
+          claimedAt: w.claimedAt
+        }))
+      };
+    });
+
+    const statusDistribution = {
+      live: liveAuctions.length,
+      completed: completedAuctions.length,
+      upcoming: upcomingAuctions.length,
+      cancelled: hourlyAuctions.filter(a => a.Status === 'CANCELLED').length
+    };
+
+    const claimStatusDistribution = {
+      claimed: totalClaimed,
+      pending: totalPending,
+      expired: totalExpired,
+      notApplicable: auctionHistories.filter(h => h.prizeClaimStatus === 'NOT_APPLICABLE').length
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        date: targetDate.toISOString().split('T')[0],
+        summary: {
+          totalAuctions,
+          liveAuctions: liveAuctions.length,
+          completedAuctions: completedAuctions.length,
+          upcomingAuctions: upcomingAuctions.length,
+          uniqueParticipants,
+          totalParticipations,
+          totalClaimed,
+          totalPending,
+          totalExpired,
+          totalEntryFees,
+          totalPrizeValue,
+          totalClaimedValue
+        },
+        statusDistribution,
+        claimStatusDistribution,
+        auctionDetails,
+        last7DaysData,
+        currentLiveAuction: liveAuctions.length > 0 ? {
+          auctionId: liveAuctions[0].hourlyAuctionId,
+          auctionName: liveAuctions[0].auctionName,
+          timeSlot: liveAuctions[0].TimeSlot,
+          prizeValue: liveAuctions[0].prizeValue,
+          currentRound: liveAuctions[0].currentRound,
+          totalRounds: liveAuctions[0].roundCount,
+          participantCount: liveAuctions[0].totalParticipants
+        } : null
+      }
+    });
+  } catch (err) {
+    console.error('Get Analytics Data Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   getUserStatistics,
@@ -793,4 +983,5 @@ module.exports = {
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,
   deletePushSubscriptionAdmin,
+  getAnalyticsData,
 };

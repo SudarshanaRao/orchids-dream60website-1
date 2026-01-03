@@ -13,6 +13,7 @@ const {
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,
   deletePushSubscriptionAdmin,
+  getAnalyticsData,
 } = require('../controllers/adminController');
 
 /**
@@ -649,5 +650,37 @@ router.delete('/master-auctions/:master_id/slots/:auction_number', deleteDailyAu
  */
 router.get('/push-subscriptions', getPushSubscriptionStats);
 router.delete('/push-subscriptions/:subscriptionId', deletePushSubscriptionAdmin);
+
+/**
+ * @swagger
+ * /admin/analytics:
+ *   get:
+ *     summary: GET ANALYTICS DATA (ADMIN)
+ *     description: Get comprehensive analytics for daily auction activity with date filtering (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *       - name: date
+ *         in: query
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date to get analytics for (YYYY-MM-DD format). Defaults to today.
+ *     responses:
+ *       200:
+ *         description: Analytics data retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied - Admin privileges required
+ *       500:
+ *         description: Server error
+ */
+router.get('/analytics', getAnalyticsData);
 
 module.exports = router;

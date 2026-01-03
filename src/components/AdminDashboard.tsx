@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Users,
   TrendingUp,
   Trophy,
-  DollarSign,
+  IndianRupee,
   LogOut,
   Plus,
   Activity,
@@ -19,11 +19,13 @@ import {
   X,
   Mail,
   Bell,
+  BarChart3,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminEmailManagement } from './AdminEmailManagement';
 import { AdminPushNotifications } from './AdminPushNotifications';
 import { CreateMasterAuctionModal } from './CreateMasterAuctionModal';
+import { AdminAnalyticsDashboard } from './AdminAnalyticsDashboard';
 
 interface AdminUser {
   user_id: string;
@@ -129,7 +131,7 @@ interface CombinedUser {
 
 
 export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'emails' | 'notifications'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'analytics' | 'emails' | 'notifications'>('overview');
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [masterAuctions, setMasterAuctions] = useState<MasterAuction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -137,6 +139,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
   const [editingAuction, setEditingAuction] = useState<MasterAuction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const analyticsRef = useRef<{ refresh: () => Promise<void> }>(null);
 
   const fetchStatistics = async () => {
     try {
@@ -247,14 +250,19 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
 
   const handleRefresh = async () => {
     setIsLoading(true);
-    if (activeTab === 'overview' || activeTab === 'users') {
-      await fetchStatistics();
-    }
-    if (activeTab === 'auctions') {
-      await fetchMasterAuctions();
+    try {
+      if (activeTab === 'overview' || activeTab === 'users') {
+        await fetchStatistics();
+      } else if (activeTab === 'auctions') {
+        await fetchMasterAuctions();
+      } else if (activeTab === 'analytics') {
+        await analyticsRef.current?.refresh();
+      }
+      toast.success('Data refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh data');
     }
     setIsLoading(false);
-    toast.success('Data refreshed');
   };
 
   const handleLogout = () => {
@@ -365,10 +373,22 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                   : 'text-purple-500 hover:text-purple-700'
               }`}
             >
-              <Mail className="w-5 h-5 inline-block mr-2" />
-              Email Management
-            </button>
-            {/* Added Notifications tab */}
+<Mail className="w-5 h-5 inline-block mr-2" />
+                Email Management
+              </button>
+              {/* Added Analytics tab */}
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'analytics'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <BarChart3 className="w-5 h-5 inline-block mr-2" />
+                Analytics
+              </button>
+              {/* Added Notifications tab */}
             <button
               onClick={() => setActiveTab('notifications')}
               className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
@@ -441,33 +461,33 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
 
             {/* Financial Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <DollarSign className="w-6 h-6 text-purple-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-purple-600">Total Amount Spent</h3>
-                    <p className="text-3xl font-bold text-purple-900">
-                      ₹{statistics.activity.totalAmountSpent.toLocaleString()}
-                    </p>
+<div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <IndianRupee className="w-6 h-6 text-purple-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-purple-600">Total Amount Spent</h3>
+                      <p className="text-3xl font-bold text-purple-900">
+                        {statistics.activity.totalAmountSpent.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <DollarSign className="w-6 h-6 text-green-700" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-green-600">Total Amount Won</h3>
-                    <p className="text-3xl font-bold text-green-900">
-                      ₹{statistics.activity.totalAmountWon.toLocaleString()}
-                    </p>
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <IndianRupee className="w-6 h-6 text-green-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-green-600">Total Amount Won</h3>
+                      <p className="text-3xl font-bold text-green-900">
+                        {statistics.activity.totalAmountWon.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
             </div>
 
             {/* Recent Users */}
@@ -832,16 +852,20 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           </div>
         )}
 
-        {/* Email & Notifications Tabs */}
-        {activeTab === 'emails' && (
-          <>
-            <AdminEmailManagement adminUserId={adminUser.user_id} />
-          </>
-        )}
+{/* Email & Notifications Tabs */}
+          {activeTab === 'emails' && (
+            <>
+              <AdminEmailManagement adminUserId={adminUser.user_id} />
+            </>
+          )}
 
-        {activeTab === 'notifications' && (
-          <AdminPushNotifications adminUserId={adminUser.user_id} />
-        )}
+          {activeTab === 'analytics' && (
+            <AdminAnalyticsDashboard ref={analyticsRef} adminUserId={adminUser.user_id} />
+          )}
+
+          {activeTab === 'notifications' && (
+            <AdminPushNotifications adminUserId={adminUser.user_id} />
+          )}
       </main>
       {/* Create/Edit Master Auction Modal */}
       {showCreateAuction && (
