@@ -2,9 +2,9 @@
 const User = require('../models/user');
 const MasterAuction = require('../models/masterAuction');
 const PushSubscription = require('../models/PushSubscription');
-const DailyAuction = require('../models/dailyAuction');
-const HourlyAuction = require('../models/hourlyAuction');
-const AuctionHistory = require('../models/auctionHistory');
+const DailyAuction = require('../models/DailyAuction');
+const HourlyAuction = require('../models/HourlyAuction');
+const AuctionHistory = require('../models/AuctionHistory');
 const bcrypt = require('bcryptjs');
 
 /**
