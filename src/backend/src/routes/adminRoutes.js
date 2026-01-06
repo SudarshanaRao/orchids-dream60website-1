@@ -23,7 +23,9 @@ const {
 const {
   getEligibleWinners,
   sendVoucher,
-  getIssuedVouchers
+  getIssuedVouchers,
+  getWoohooBalance,
+  getWoohooTransactions
 } = require('../controllers/adminVoucherController');
 
 /**
@@ -705,5 +707,7 @@ router.post('/set-super-admin', setSuperAdminByEmail);
 router.get('/vouchers/eligible-winners', getEligibleWinners);
 router.post('/vouchers/send', sendVoucher);
 router.get('/vouchers/issued', getIssuedVouchers);
+router.get('/vouchers/woohoo-balance', getWoohooBalance);
+router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
 
 module.exports = router;

@@ -205,8 +205,50 @@ const getIssuedVouchers = async (req, res) => {
     }
 };
 
+/**
+ * Get Woohoo Account Balance
+ */
+const getWoohooBalance = async (req, res) => {
+    try {
+        const balanceData = await woohooService.getAccountBalance();
+        return res.status(200).json({
+            success: true,
+            data: balanceData
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo balance:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching balance from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo Transaction History
+ */
+const getWoohooTransactions = async (req, res) => {
+    try {
+        const transactions = await woohooService.getTransactionHistory();
+        return res.status(200).json({
+            success: true,
+            data: transactions
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo transactions:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching transactions from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
 module.exports = {
     getEligibleWinners,
     sendVoucher,
-    getIssuedVouchers
+    getIssuedVouchers,
+    getWoohooBalance,
+    getWoohooTransactions
 };

@@ -158,6 +158,20 @@ class WoohooService {
     }
 
     /**
+     * Get Account Balance (SVC Balance)
+     */
+    async getAccountBalance() {
+        return this.request('GET', '/v3/accounts');
+    }
+
+    /**
+     * Get Transaction History (Orders)
+     */
+    async getTransactionHistory() {
+        return this.request('GET', '/v3/orders');
+    }
+
+    /**
      * Get Activated Cards (For sync_only=false or after order completion)
      */
     async getActivatedCards(orderId) {

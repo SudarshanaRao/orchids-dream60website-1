@@ -10,6 +10,9 @@ import {
   AlertCircle,
   Clock,
   ExternalLink,
+  IndianRupee,
+  History,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,10 +24,13 @@ interface EligibleWinner {
   userMobile: string;
   auctionName: string;
   prizeAmountWon: number;
+  entryFeePaid: number;
   lastRoundBidAmount: number;
+  remainingProductFees: number;
   TimeSlot: string;
   prizeClaimStatus: string;
   remainingFeesPaid: boolean;
+  claimedAt?: string;
 }
 
 interface IssuedVoucher {
@@ -42,6 +48,15 @@ interface IssuedVoucher {
   createdAt: string;
 }
 
+interface WoohooTransaction {
+  orderId: string;
+  refno: string;
+  status: string;
+  amount: number;
+  createdAt: string;
+  type: string;
+}
+
 interface AdminVoucherManagementProps {
   adminUserId: string;
 }
@@ -49,10 +64,12 @@ interface AdminVoucherManagementProps {
 export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementProps) => {
   const [eligibleWinners, setEligibleWinners] = useState<EligibleWinner[]>([]);
   const [issuedVouchers, setIssuedVouchers] = useState<IssuedVoucher[]>([]);
+  const [woohooBalance, setWoohooBalance] = useState<number | null>(null);
+  const [woohooTransactions, setWoohooTransactions] = useState<WoohooTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued'>('eligible');
+  const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
 
   const fetchEligibleWinners = async () => {
     try {
@@ -80,9 +97,40 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
+  const fetchWoohooBalance = async () => {
+    try {
+      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-balance?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        // Woohoo API v3 balance is usually in data.balance or data[0].balance
+        const balance = data.data?.balance || data.data?.[0]?.balance || 0;
+        setWoohooBalance(balance);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo balance:', error);
+    }
+  };
+
+  const fetchWoohooTransactions = async () => {
+    try {
+      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-transactions?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        setWoohooTransactions(data.data?.orders || data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo transactions:', error);
+    }
+  };
+
   const loadData = async () => {
     setIsLoading(true);
-    await Promise.all([fetchEligibleWinners(), fetchIssuedVouchers()]);
+    await Promise.all([
+      fetchEligibleWinners(), 
+      fetchIssuedVouchers(),
+      fetchWoohooBalance(),
+      fetchWoohooTransactions()
+    ]);
     setIsLoading(false);
   };
 
@@ -125,15 +173,20 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   };
 
   const filteredEligible = eligibleWinners.filter(w => 
-    w.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.auctionName.toLowerCase().includes(searchTerm.toLowerCase())
+    w.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    w.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    w.auctionName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredIssued = issuedVouchers.filter(v => 
-    v.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.woohooOrderId.toLowerCase().includes(searchTerm.toLowerCase())
+    v.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.woohooOrderId?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredTransactions = woohooTransactions.filter(t => 
+    t.orderId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.refno?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -146,8 +199,8 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Stats & Balance */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-purple-100 rounded-lg">
@@ -159,6 +212,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
             </div>
           </div>
         </div>
+
         <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-green-100 rounded-lg">
@@ -170,31 +224,61 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
             </div>
           </div>
         </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Wallet className="w-6 h-6 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-600 font-semibold">Woohoo Balance (SVC)</p>
+              <div className="flex items-center gap-1">
+                <IndianRupee className="w-5 h-5 text-blue-900" />
+                <p className="text-2xl font-bold text-blue-900">
+                  {woohooBalance !== null ? woohooBalance.toLocaleString() : '---'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs & Search */}
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
         <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setActiveSubTab('eligible')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 activeSubTab === 'eligible' 
                 ? 'bg-purple-700 text-white shadow-md' 
                 : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
               }`}
             >
+              <Users className="w-4 h-4" />
               Eligible Winners
             </button>
             <button
               onClick={() => setActiveSubTab('issued')}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 activeSubTab === 'issued' 
                 ? 'bg-purple-700 text-white shadow-md' 
                 : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
               }`}
             >
+              <Ticket className="w-4 h-4" />
               Issued Vouchers
+            </button>
+            <button
+              onClick={() => setActiveSubTab('woohoo-history')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                activeSubTab === 'woohoo-history' 
+                ? 'bg-purple-700 text-white shadow-md' 
+                : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              Woohoo History
             </button>
           </div>
           <div className="relative flex-1 md:max-w-md">
@@ -203,7 +287,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, email, or ID..."
+              placeholder="Search by name, email, or order ID..."
               className="w-full pl-10 pr-4 py-2 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
             />
           </div>
@@ -214,40 +298,58 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
             <table className="w-full">
               <thead>
                 <tr className="border-b border-purple-200">
-                  <th className="text-left py-3 px-4 text-purple-700">Winner</th>
-                  <th className="text-left py-3 px-4 text-purple-700">Auction</th>
-                  <th className="text-left py-3 px-4 text-purple-700">Prize Amount</th>
-                  <th className="text-left py-3 px-4 text-purple-700">Payment</th>
-                  <th className="text-center py-3 px-4 text-purple-700">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEligible.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-purple-500">
-                      No eligible winners found
-                    </td>
+                    <th className="text-left py-3 px-4 text-purple-700">Winner</th>
+                    <th className="text-left py-3 px-4 text-purple-700">Auction</th>
+                      <th className="text-left py-3 px-4 text-purple-700">Prize Amount</th>
+                      <th className="text-left py-3 px-4 text-purple-700">Total Paid</th>
+                      <th className="text-left py-3 px-4 text-purple-700">Won Date</th>
+                      <th className="text-center py-3 px-4 text-purple-700">Action</th>
                   </tr>
-                ) : (
-                  filteredEligible.map((winner) => (
-                    <tr key={winner._id} className="border-b border-purple-100 hover:bg-purple-50">
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-purple-900">{winner.userName}</div>
-                        <div className="text-xs text-purple-600">{winner.userEmail}</div>
+                </thead>
+                <tbody>
+                  {filteredEligible.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-purple-500">
+                        No eligible winners found
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="text-sm font-medium">{winner.auctionName}</div>
-                        <div className="text-xs text-purple-500">{winner.TimeSlot}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-purple-900">₹{winner.prizeAmountWon.toLocaleString()}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                          <CheckCircle className="w-3 h-3" /> Paid
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
+                    </tr>
+                  ) : (
+                    filteredEligible.map((winner) => (
+                      <tr key={winner._id} className="border-b border-purple-100 hover:bg-purple-50">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-purple-900">{winner.userName}</div>
+                          <div className="text-xs text-purple-600">{winner.userEmail}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm font-medium">{winner.auctionName}</div>
+                          <div className="text-xs text-purple-500">{winner.TimeSlot}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-purple-900">₹{winner.prizeAmountWon.toLocaleString()}</div>
+                        </td>
+                            <td className="py-3 px-4">
+                              <div className="font-bold text-purple-900">₹{(winner.entryFeePaid + winner.lastRoundBidAmount).toLocaleString()}</div>
+                              <div className="text-[10px] text-purple-500">
+                                Entry: ₹{winner.entryFeePaid} + Bid: ₹{winner.lastRoundBidAmount}
+                              </div>
+                              <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
+                                <CheckCircle className="w-2 h-2" /> Paid
+                              </span>
+                            </td>
+                          <td className="py-3 px-4">
+                            <div className="text-xs font-medium text-purple-900">
+                              {winner.claimedAt ? new Date(winner.claimedAt).toLocaleString('en-IN', {
+                                timeZone: 'UTC',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              }) : '---'}
+                            </div>
+                          </td>
+                        <td className="py-3 px-4 text-center">
                         <button
                           onClick={() => handleSendVoucher(winner)}
                           disabled={isSending === winner._id}
@@ -267,7 +369,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : activeSubTab === 'issued' ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -307,16 +409,76 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                       </td>
                       <td className="py-3 px-4 text-xs">
                         {voucher.cardNumber && (
-                          <div>Card: {voucher.cardNumber}</div>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono bg-purple-50 px-1 rounded">Card: {voucher.cardNumber}</span>
+                            <span className="font-mono bg-amber-50 px-1 rounded">PIN: {voucher.cardPin}</span>
+                          </div>
                         )}
-                        {voucher.cardPin && (
-                          <div>PIN: {voucher.cardPin}</div>
-                        )}
-                        {!voucher.cardNumber && 'Processing...'}
+                        {!voucher.cardNumber && voucher.status === 'complete' && 'Email Sent'}
+                        {!voucher.cardNumber && voucher.status !== 'complete' && 'Processing...'}
                       </td>
-                      <td className="py-3 px-4 text-xs text-purple-600">
-                        {new Date(voucher.createdAt).toLocaleString()}
+                        <td className="py-3 px-4 text-xs text-purple-600">
+                          {new Date(voucher.createdAt).toLocaleString('en-IN', {
+                            timeZone: 'Asia/Kolkata',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-purple-200">
+                  <th className="text-left py-3 px-4 text-purple-700">Woohoo Order ID</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Reference No</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Amount</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Status</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-purple-500">
+                      No Woohoo transactions found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((tx, index) => (
+                    <tr key={tx.orderId || index} className="border-b border-purple-100 hover:bg-purple-50">
+                      <td className="py-3 px-4 font-mono text-xs">{tx.orderId}</td>
+                      <td className="py-3 px-4 font-mono text-xs text-purple-600">{tx.refno}</td>
+                      <td className="py-3 px-4 font-bold">₹{tx.amount.toLocaleString()}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${
+                          tx.status === 'COMPLETE' || tx.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : 
+                          tx.status === 'CANCELLED' || tx.status === 'FAILED' ? 'bg-red-100 text-red-700' : 
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {tx.status}
+                        </span>
                       </td>
+                        <td className="py-3 px-4 text-xs text-purple-500">
+                          {tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', {
+                            timeZone: 'Asia/Kolkata',
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          }) : '---'}
+                        </td>
                     </tr>
                   ))
                 )}
