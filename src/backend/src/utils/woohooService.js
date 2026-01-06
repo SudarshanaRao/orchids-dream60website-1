@@ -75,6 +75,7 @@ class WoohooService {
 
         try {
             const url = `${this.baseUrl}${endpoint}`;
+            const date = new Date().toISOString();
             
             // For Woohoo V3, clientId and client_id are often mandatory in the request body for POST/PUT 
             // especially for the Order API. Adding both for maximum compatibility.
@@ -87,6 +88,18 @@ class WoohooService {
                 };
             }
 
+            // Calculate signature for V3 Revamp
+            // Pattern: clientId + date + requestBody (if exists)
+            let signature = '';
+            if (this.clientSecret) {
+                const bodyStr = requestData ? JSON.stringify(requestData) : '';
+                const signStr = (this.clientId?.trim() || '') + date + bodyStr;
+                signature = crypto
+                    .createHmac('sha256', this.clientSecret.trim())
+                    .update(signStr)
+                    .digest('hex');
+            }
+
             const response = await axios({
                 method,
                 url,
@@ -96,7 +109,10 @@ class WoohooService {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'clientId': this.clientId?.trim(),
-                    'client_id': this.clientId?.trim()
+                    'client_id': this.clientId?.trim(),
+                    'date': date,
+                    'signature': signature,
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
             });
 
@@ -174,13 +190,14 @@ class WoohooService {
                     sku: orderDetails.sku,
                     price: orderDetails.amount,
                     quantity: 1,
-                    currency: 356 // INR
+                    currency: 'INR' // V3 Revamp often prefers string code
                 }
             ],
             payments: [
                 {
                     code: this.svc?.trim(),
-                    amount: orderDetails.amount
+                    amount: orderDetails.amount,
+                    currency: 'INR'
                 }
             ],
             refno: referenceNumber,

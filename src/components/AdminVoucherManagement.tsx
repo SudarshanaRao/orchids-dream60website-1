@@ -623,9 +623,9 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                 </button>
               </div>
               
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Voucher Distribution</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to send a <span className="font-bold text-purple-700">₹{showConfirmModal.winner.prizeAmountWon.toLocaleString()}</span> {selectedSku} voucher to <span className="font-bold text-gray-900">{showConfirmModal.winner.userName}</span>?
+              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">Are you sure?</h3>
+              <p className="text-gray-600 mb-6 text-center">
+                You are about to send a <span className="font-bold text-purple-700">₹{showConfirmModal.winner.prizeAmountWon.toLocaleString()}</span> Amazon voucher to <span className="font-bold text-gray-900">{showConfirmModal.winner.userName}</span>.
               </p>
 
               <div className="flex gap-3">
@@ -633,14 +633,14 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                   onClick={() => setShowConfirmModal({ show: false, winner: null })}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
                 >
-                  Cancel
+                  No, Cancel
                 </button>
                 <button
                   onClick={confirmSendVoucher}
                   className="flex-1 px-4 py-3 bg-purple-700 text-white font-semibold rounded-xl hover:bg-purple-800 transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4" />
-                  Confirm & Send
+                  Yes, Send it!
                 </button>
               </div>
             </div>
