@@ -880,7 +880,12 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     </span>
                     <span className="text-purple-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
                       <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
+                      <span>
+                        {(box.type === 'entry' 
+                          ? box.entryFee 
+                          : Math.max(box.minBid || 0, box.entryFee || 0)
+                        )?.toLocaleString('en-IN')}
+                      </span>
                     </span>
                   </div>
                 </div>

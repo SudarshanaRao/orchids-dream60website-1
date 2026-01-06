@@ -34,11 +34,10 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   
   // Min bid calculation:
   // - Entry box: use entry fee
-  // - Round 1: use user's entry fee as minimum
-  // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
+  // - All Rounds: use the higher of calculated minBid or the entry fee
   const baseminBidAmount = isEntryBox 
     ? entryFeeAmount 
-    : (box.roundNumber === 1 ? (userEntryFee || entryFeeAmount) : (box.minBid || 10));
+    : Math.max(box.minBid || 10, userEntryFee || entryFeeAmount || 10);
   
   // ✅ CRITICAL: Ensure minimum bid is ALWAYS higher than user's previous round bid
   // If user bid ₹1000 in Round 1, they MUST bid ₹1000 + entry fee (₹34) = ₹1034 in Round 2

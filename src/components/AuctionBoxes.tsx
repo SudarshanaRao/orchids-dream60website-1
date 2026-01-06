@@ -101,14 +101,15 @@ export function AuctionBoxes({
                 ? "active" 
                 : "upcoming",
           leaderboard: roundData?.playersData,
-        prizeAmount: roundData?.prizeAmount,
-        highestBidFromAPI: Array.isArray(roundData?.playersData)
-          ? Math.max(0, ...roundData.playersData.map((p: any) => p.auctionPlacedAmount || p.bidAmount || 0))
-          : undefined,
-        hasPaid: userHasPaidEntry,
-        isQualified: box.isQualified,
-      };
-    });
+          prizeAmount: roundData?.prizeAmount,
+          highestBidFromAPI: Array.isArray(roundData?.playersData)
+            ? Math.max(0, ...roundData.playersData.map((p: any) => p.auctionPlacedAmount || p.bidAmount || 0))
+            : undefined,
+          hasPaid: userHasPaidEntry,
+          isQualified: box.isQualified,
+          entryFee: entryBox?.entryFee,
+        };
+      });
 
   const handleBid = async (boxId: number, amount: number) => {
     const round = transformedRoundBoxes.find((b) => b.id === boxId);
