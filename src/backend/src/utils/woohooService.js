@@ -75,14 +75,26 @@ class WoohooService {
 
         try {
             const url = `${this.baseUrl}${endpoint}`;
+            
+            // For Woohoo V3, clientId is often mandatory in the request body for POST/PUT 
+            // even if it's in the headers. Adding it to data if it's an object.
+            let requestData = data;
+            if (data && typeof data === 'object' && !Array.isArray(data) && (method === 'POST' || method === 'PUT')) {
+                requestData = {
+                    ...data,
+                    clientId: this.clientId?.trim()
+                };
+            }
+
             const response = await axios({
                 method,
                 url,
-                data,
+                data: requestData,
                 params,
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'clientId': this.clientId?.trim() // Also adding to headers just in case
                 }
             });
 

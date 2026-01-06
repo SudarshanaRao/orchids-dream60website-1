@@ -13,6 +13,7 @@ import {
   IndianRupee,
   History,
   Wallet,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -89,6 +90,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const [isSending, setIsSending] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
+  const [showConfirmModal, setShowConfirmModal] = useState<{show: boolean, winner: EligibleWinner | null}>({
+    show: false,
+    winner: null
+  });
 
   const fetchEligibleWinners = async () => {
     try {
@@ -199,11 +204,15 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
       toast.error('Please select a voucher SKU first');
       return;
     }
+    
+    setShowConfirmModal({ show: true, winner });
+  };
 
-    if (!confirm(`Are you sure you want to send a ₹${winner.prizeAmountWon} ${selectedSku} voucher to ${winner.userName}?`)) {
-      return;
-    }
+  const confirmSendVoucher = async () => {
+    const winner = showConfirmModal.winner;
+    if (!winner) return;
 
+    setShowConfirmModal({ show: false, winner: null });
     setIsSending(winner._id);
     try {
       const response = await fetch('https://dev-api.dream60.com/admin/vouchers/send', {
@@ -223,7 +232,6 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
         toast.success(`Voucher sent successfully to ${winner.userName}`);
         await loadData();
       } else {
-        // Handle specific Woohoo error codes if possible
         const errorMsg = data.error?.message || data.message || 'Failed to send voucher';
         toast.error(errorMsg);
         console.error('Voucher distribution error:', data);
@@ -357,59 +365,58 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
           </div>
         </div>
 
-          {activeSubTab === 'eligible' ? (
-            <div className="space-y-6">
-              {/* SKU Selection Area */}
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 space-y-2">
-                  <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">1. Select Category</label>
-                  <select 
-                    value={selectedCategoryId}
-                    onChange={(e) => setSelectedCategoryId(e.target.value)}
-                    className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all"
-                  >
-                    <option value="">-- Choose Category --</option>
-                    {woohooCategories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex-1 space-y-2">
-                  <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">2. Select Voucher (SKU)</label>
-                  <select 
-                    value={selectedSku}
-                    onChange={(e) => setSelectedSku(e.target.value)}
-                    disabled={!selectedCategoryId || isFetchingProducts}
-                    className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all disabled:opacity-50"
-                  >
-                    <option value="AMAZON_GC">Amazon Gift Card (Default)</option>
-                    {woohooProducts.map(prod => (
-                      <option key={prod.sku} value={prod.sku}>{prod.name} ({prod.sku})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="md:w-48 space-y-2">
-                   <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">Status</label>
-                   <div className="p-2.5 bg-white border-2 border-purple-100 rounded-lg text-sm text-purple-600 font-medium flex items-center gap-2">
-                     {isFetchingProducts ? (
-                       <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
-                     ) : (
-                       <><CheckCircle className="w-4 h-4" /> Ready</>
-                     )}
-                   </div>
-                </div>
+        {activeSubTab === 'eligible' ? (
+          <div className="space-y-6">
+            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col md:flex-row gap-4 items-end">
+              <div className="flex-1 space-y-2">
+                <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">1. Select Category</label>
+                <select 
+                  value={selectedCategoryId}
+                  onChange={(e) => setSelectedCategoryId(e.target.value)}
+                  className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all"
+                >
+                  <option value="">-- Choose Category --</option>
+                  {woohooCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
+              <div className="flex-1 space-y-2">
+                <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">2. Select Voucher (SKU)</label>
+                <select 
+                  value={selectedSku}
+                  onChange={(e) => setSelectedSku(e.target.value)}
+                  disabled={!selectedCategoryId || isFetchingProducts}
+                  className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all disabled:opacity-50"
+                >
+                  <option value="AMAZON_GC">Amazon Gift Card (Default)</option>
+                  {woohooProducts.map(prod => (
+                    <option key={prod.sku} value={prod.sku}>{prod.name} ({prod.sku})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:w-48 space-y-2">
+                 <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">Status</label>
+                 <div className="p-2.5 bg-white border-2 border-purple-100 rounded-lg text-sm text-purple-600 font-medium flex items-center gap-2">
+                   {isFetchingProducts ? (
+                     <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
+                   ) : (
+                     <><CheckCircle className="w-4 h-4" /> Ready</>
+                   )}
+                 </div>
+              </div>
+            </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                <tr className="border-b border-purple-200">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-purple-200">
                     <th className="text-left py-3 px-4 text-purple-700">Winner</th>
                     <th className="text-left py-3 px-4 text-purple-700">Auction</th>
-                      <th className="text-left py-3 px-4 text-purple-700">Prize Amount</th>
-                      <th className="text-left py-3 px-4 text-purple-700">Total Paid</th>
-                      <th className="text-left py-3 px-4 text-purple-700">Won Date</th>
-                      <th className="text-center py-3 px-4 text-purple-700">Action</th>
+                    <th className="text-left py-3 px-4 text-purple-700">Prize Amount</th>
+                    <th className="text-left py-3 px-4 text-purple-700">Total Paid</th>
+                    <th className="text-left py-3 px-4 text-purple-700">Won Date</th>
+                    <th className="text-center py-3 px-4 text-purple-700">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -433,53 +440,52 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         <td className="py-3 px-4">
                           <div className="font-bold text-purple-900">₹{winner.prizeAmountWon.toLocaleString()}</div>
                         </td>
-                            <td className="py-3 px-4">
-                              <div className="font-bold text-purple-900">₹{(winner.entryFeePaid + winner.lastRoundBidAmount).toLocaleString()}</div>
-                              <div className="text-[10px] text-purple-500">
-                                Entry: ₹{winner.entryFeePaid} + Bid: ₹{winner.lastRoundBidAmount}
-                              </div>
-                              <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
-                                <CheckCircle className="w-2 h-2" /> Paid
-                              </span>
-                            </td>
-                          <td className="py-3 px-4">
-                            <div className="text-xs font-medium text-purple-900">
-                              {winner.claimedAt ? (() => {
-                                const date = new Date(winner.claimedAt);
-                                // Explicitly subtract 5.5 hours (330 minutes) as requested by user
-                                const adjustedDate = new Date(date.getTime() - (330 * 60 * 1000));
-                                return adjustedDate.toLocaleString('en-IN', {
-                                  timeZone: 'UTC',
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: true
-                                });
-                              })() : '---'}
-                            </div>
-                          </td>
-
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-purple-900">₹{(winner.entryFeePaid + winner.lastRoundBidAmount).toLocaleString()}</div>
+                          <div className="text-[10px] text-purple-500">
+                            Entry: ₹{winner.entryFeePaid} + Bid: ₹{winner.lastRoundBidAmount}
+                          </div>
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
+                            <CheckCircle className="w-2 h-2" /> Paid
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-xs font-medium text-purple-900">
+                            {winner.claimedAt ? (() => {
+                              const date = new Date(winner.claimedAt);
+                              const adjustedDate = new Date(date.getTime() - (330 * 60 * 1000));
+                              return adjustedDate.toLocaleString('en-IN', {
+                                timeZone: 'UTC',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              });
+                            })() : '---'}
+                          </div>
+                        </td>
                         <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleSendVoucher(winner)}
-                          disabled={isSending === winner._id}
-                          className="flex items-center gap-2 mx-auto px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-all disabled:opacity-50"
-                        >
-                          {isSending === winner._id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
-                          Send Voucher
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                          <button
+                            onClick={() => handleSendVoucher(winner)}
+                            disabled={isSending === winner._id}
+                            className="flex items-center gap-2 mx-auto px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-all disabled:opacity-50"
+                          >
+                            {isSending === winner._id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                            Send Voucher
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : activeSubTab === 'issued' ? (
           <div className="overflow-x-auto">
@@ -529,17 +535,17 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         {!voucher.cardNumber && voucher.status === 'complete' && 'Email Sent'}
                         {!voucher.cardNumber && voucher.status !== 'complete' && 'Processing...'}
                       </td>
-                        <td className="py-3 px-4 text-xs text-purple-600">
-                          {new Date(voucher.createdAt).toLocaleString('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          })}
-                        </td>
+                      <td className="py-3 px-4 text-xs text-purple-600">
+                        {new Date(voucher.createdAt).toLocaleString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -580,17 +586,17 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                           {tx.status}
                         </span>
                       </td>
-                        <td className="py-3 px-4 text-xs text-purple-500">
-                          {tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                          }) : '---'}
-                        </td>
+                      <td className="py-3 px-4 text-xs text-purple-500">
+                        {tx.createdAt ? new Date(tx.createdAt).toLocaleString('en-IN', {
+                          timeZone: 'Asia/Kolkata',
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        }) : '---'}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -599,6 +605,48 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal.show && showConfirmModal.winner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="bg-purple-100 p-3 rounded-xl">
+                  <AlertCircle className="w-6 h-6 text-purple-700" />
+                </div>
+                <button 
+                  onClick={() => setShowConfirmModal({ show: false, winner: null })}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Voucher Distribution</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to send a <span className="font-bold text-purple-700">₹{showConfirmModal.winner.prizeAmountWon.toLocaleString()}</span> {selectedSku} voucher to <span className="font-bold text-gray-900">{showConfirmModal.winner.userName}</span>?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmModal({ show: false, winner: null })}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmSendVoucher}
+                  className="flex-1 px-4 py-3 bg-purple-700 text-white font-semibold rounded-xl hover:bg-purple-800 transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Confirm & Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
