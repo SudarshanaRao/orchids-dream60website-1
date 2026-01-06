@@ -1,0 +1,36 @@
+// ✅ Updated initial import statements
+import { useState, useEffect } from 'react';
+
+import { Clock } from 'lucide-react';
+import { Header } from './components/Header';
+import { AuctionGrid } from './components/AuctionGrid';
+import { AuctionSchedule } from './components/AuctionSchedule';
+import { PrizeShowcase } from './components/PrizeShowcase';
+import { Footer } from './components/Footer';
+import { TermsAndConditions } from './components/TermsAndConditions';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { Support } from './components/Support';
+import { Contact } from './components/Contact';
+import { Rules } from './components/Rules';
+import { Participation } from './components/Participation';
+import { LoginForm } from './components/LoginForm';
+import { SignupForm } from './components/SignupForm';
+import { PaymentSuccess } from './components/PaymentSuccess';
+import { PaymentFailure } from './components/PaymentFailure';
+import { Leaderboard } from './components/Leaderboard';
+import { AccountSettings } from './components/AccountSettings';
+import { AuctionHistory } from './components/AuctionHistory';
+import { AuctionDetailsPage } from './components/AuctionDetailsPage';
+import { AdminLogin } from './components/AdminLogin';
+import { AdminDashboard } from './components/AdminDashboard';
+import { ForgotPasswordPage } from "./components/ForgotPasswordPage";
+import { AdvertisementPopup } from './components/AdvertisementPopup';
+import { toast } from 'sonner';
+import { parseAPITimestamp } from './utils/timezone';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/toaster';
+import { Sonner } from '@/components/ui/sonner';
+import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
+import { BrowserRouter } from 'react-router-dom';
+import { API_ENDPOINTS } from '@/lib/api-config';
