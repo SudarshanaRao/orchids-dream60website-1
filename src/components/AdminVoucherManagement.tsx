@@ -57,6 +57,20 @@ interface WoohooTransaction {
   type: string;
 }
 
+interface WoohooCategory {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface WoohooProduct {
+  sku: string;
+  name: string;
+  description: string;
+  minPrice: number;
+  maxPrice: number;
+}
+
 interface AdminVoucherManagementProps {
   adminUserId: string;
 }
@@ -66,7 +80,12 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const [issuedVouchers, setIssuedVouchers] = useState<IssuedVoucher[]>([]);
   const [woohooBalance, setWoohooBalance] = useState<number | null>(null);
   const [woohooTransactions, setWoohooTransactions] = useState<WoohooTransaction[]>([]);
+  const [woohooCategories, setWoohooCategories] = useState<WoohooCategory[]>([]);
+  const [woohooProducts, setWoohooProducts] = useState<WoohooProduct[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedSku, setSelectedSku] = useState<string>('AMAZON_GC');
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingProducts, setIsFetchingProducts] = useState(false);
   const [isSending, setIsSending] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
@@ -102,7 +121,6 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
       const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-balance?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
-        // Woohoo API v3 balance is usually in data.balance or data[0].balance
         const balance = data.data?.balance || data.data?.[0]?.balance || 0;
         setWoohooBalance(balance);
       }
@@ -123,13 +141,43 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
+  const fetchWoohooCategories = async () => {
+    try {
+      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-categories?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        setWoohooCategories(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo categories:', error);
+    }
+  };
+
+  const fetchWoohooProducts = async (categoryId: string) => {
+    if (!categoryId) return;
+    setIsFetchingProducts(true);
+    try {
+      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-products/${categoryId}?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        setWoohooProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo products:', error);
+      toast.error('Failed to fetch products for this category');
+    } finally {
+      setIsFetchingProducts(false);
+    }
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     await Promise.all([
       fetchEligibleWinners(), 
       fetchIssuedVouchers(),
       fetchWoohooBalance(),
-      fetchWoohooTransactions()
+      fetchWoohooTransactions(),
+      fetchWoohooCategories()
     ]);
     setIsLoading(false);
   };
@@ -138,8 +186,21 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     loadData();
   }, [adminUserId]);
 
+  useEffect(() => {
+    if (selectedCategoryId) {
+      fetchWoohooProducts(selectedCategoryId);
+    } else {
+      setWoohooProducts([]);
+    }
+  }, [selectedCategoryId]);
+
   const handleSendVoucher = async (winner: EligibleWinner) => {
-    if (!confirm(`Are you sure you want to send a ₹${winner.prizeAmountWon} voucher to ${winner.userName}?`)) {
+    if (!selectedSku) {
+      toast.error('Please select a voucher SKU first');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to send a ₹${winner.prizeAmountWon} ${selectedSku} voucher to ${winner.userName}?`)) {
       return;
     }
 
@@ -151,7 +212,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
         body: JSON.stringify({
           user_id: adminUserId,
           claimId: winner._id,
-          sku: 'AMAZON_GC', // Generic SKU for now, should be configurable
+          sku: selectedSku,
           amount: winner.prizeAmountWon
         }),
       });
@@ -162,7 +223,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
         toast.success(`Voucher sent successfully to ${winner.userName}`);
         await loadData();
       } else {
-        toast.error(data.message || 'Failed to send voucher');
+        // Handle specific Woohoo error codes if possible
+        const errorMsg = data.error?.message || data.message || 'Failed to send voucher';
+        toast.error(errorMsg);
+        console.error('Voucher distribution error:', data);
       }
     } catch (error) {
       console.error('Error sending voucher:', error);
@@ -293,10 +357,52 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
           </div>
         </div>
 
-        {activeSubTab === 'eligible' ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
+          {activeSubTab === 'eligible' ? (
+            <div className="space-y-6">
+              {/* SKU Selection Area */}
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 space-y-2">
+                  <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">1. Select Category</label>
+                  <select 
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all"
+                  >
+                    <option value="">-- Choose Category --</option>
+                    {woohooCategories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">2. Select Voucher (SKU)</label>
+                  <select 
+                    value={selectedSku}
+                    onChange={(e) => setSelectedSku(e.target.value)}
+                    disabled={!selectedCategoryId || isFetchingProducts}
+                    className="w-full p-2.5 bg-white border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none transition-all disabled:opacity-50"
+                  >
+                    <option value="AMAZON_GC">Amazon Gift Card (Default)</option>
+                    {woohooProducts.map(prod => (
+                      <option key={prod.sku} value={prod.sku}>{prod.name} ({prod.sku})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="md:w-48 space-y-2">
+                   <label className="text-xs font-bold text-purple-700 uppercase tracking-wider">Status</label>
+                   <div className="p-2.5 bg-white border-2 border-purple-100 rounded-lg text-sm text-purple-600 font-medium flex items-center gap-2">
+                     {isFetchingProducts ? (
+                       <><Loader2 className="w-4 h-4 animate-spin" /> Loading...</>
+                     ) : (
+                       <><CheckCircle className="w-4 h-4" /> Ready</>
+                     )}
+                   </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
                 <tr className="border-b border-purple-200">
                     <th className="text-left py-3 px-4 text-purple-700">Winner</th>
                     <th className="text-left py-3 px-4 text-purple-700">Auction</th>
@@ -338,17 +444,23 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                             </td>
                           <td className="py-3 px-4">
                             <div className="text-xs font-medium text-purple-900">
-                              {winner.claimedAt ? new Date(winner.claimedAt).toLocaleString('en-IN', {
-                                timeZone: 'UTC',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                              }) : '---'}
+                              {winner.claimedAt ? (() => {
+                                const date = new Date(winner.claimedAt);
+                                // Explicitly subtract 5.5 hours (330 minutes) as requested by user
+                                const adjustedDate = new Date(date.getTime() - (330 * 60 * 1000));
+                                return adjustedDate.toLocaleString('en-IN', {
+                                  timeZone: 'UTC',
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: true
+                                });
+                              })() : '---'}
                             </div>
                           </td>
+
                         <td className="py-3 px-4 text-center">
                         <button
                           onClick={() => handleSendVoucher(winner)}

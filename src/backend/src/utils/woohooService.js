@@ -29,10 +29,12 @@ class WoohooService {
 
         try {
             // Step 1: Get Authorization Code
+            // Using both camelCase and snake_case for maximum compatibility
+            // Trimming values to avoid hidden space issues
             const authResponse = await axios.post(this.verifyUrl, {
-                clientId: this.clientId,
-                username: this.username,
-                password: this.password
+                client_id: this.clientId?.trim(),
+                username: this.username?.trim(),
+                password: this.password?.trim()
             });
 
             if (!authResponse.data || !authResponse.data.authorizationCode) {
@@ -43,8 +45,10 @@ class WoohooService {
 
             // Step 2: Get Access Token
             const tokenResponse = await axios.post(this.tokenUrl, {
-                clientId: this.clientId,
-                clientSecret: this.clientSecret,
+                clientId: this.clientId?.trim(),
+                client_id: this.clientId?.trim(),
+                clientSecret: this.clientSecret?.trim(),
+                client_secret: this.clientSecret?.trim(),
                 authorizationCode: authCode
             });
 

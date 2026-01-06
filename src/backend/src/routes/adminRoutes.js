@@ -24,12 +24,14 @@ const {
   getEligibleWinners,
   sendVoucher,
   getIssuedVouchers,
-  getWoohooBalance,
-  getWoohooTransactions
-} = require('../controllers/adminVoucherController');
-
-/**
- * @swagger
+    getWoohooBalance,
+    getWoohooTransactions,
+    getWoohooCategories,
+    getWoohooProducts
+  } = require('../controllers/adminVoucherController');
+  
+  /**
+   * @swagger
  * tags:
  *   - name: Admin
  *     description: Admin panel APIs for managing Dream60 platform
@@ -709,5 +711,7 @@ router.post('/vouchers/send', sendVoucher);
 router.get('/vouchers/issued', getIssuedVouchers);
 router.get('/vouchers/woohoo-balance', getWoohooBalance);
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
+router.get('/vouchers/woohoo-categories', getWoohooCategories);
+router.get('/vouchers/woohoo-products/:categoryId', getWoohooProducts);
 
 module.exports = router;
