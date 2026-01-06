@@ -256,7 +256,7 @@ const brandStyles = `
   .winner-amount {
     color: #fbbf24;
   }
-`;`;
+`;
 
 // Create reusable transporter
 const createTransporter = () => {
