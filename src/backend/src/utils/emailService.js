@@ -279,7 +279,7 @@ const getPrimaryClientUrl = () => {
 };
 
   const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
-    const baseUrl = primaryClientUrl;
+    const baseUrl = "https://test.dream60.com";
     const termsHref = `${baseUrl}/terms`;
     const privacyHref = `${baseUrl}/privacy`;
     const supportHref = `${baseUrl}/support`;
