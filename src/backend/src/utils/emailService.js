@@ -278,51 +278,55 @@ const getPrimaryClientUrl = () => {
   return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
-const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
-  const baseUrl = primaryClientUrl;
-  const termsHref = `${baseUrl}/terms`;
-  const privacyHref = `${baseUrl}/privacy`;
-  const supportHref = `${baseUrl}/support`;
-  const contactHref = `${baseUrl}/contact`;
-  const logoUrl = `https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/project-uploads/1811a3c1-620a-4c8b-a119-34f19f40817b/logo-1-1767714888861.png?width=400&height=400&resize=contain`;
+  const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
+    const baseUrl = primaryClientUrl;
+    const termsHref = `${baseUrl}/terms`;
+    const privacyHref = `${baseUrl}/privacy`;
+    const supportHref = `${baseUrl}/support`;
+    const helpHref = `${baseUrl}/help`;
+    const rulesHref = `${baseUrl}/rules`;
+    const contactHref = `${baseUrl}/contact`;
+    const logoUrl = `https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/project-uploads/1811a3c1-620a-4c8b-a119-34f19f40817b/logo-1-1767714888861.png?width=400&height=400&resize=contain`;
 
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${title}</title>
-      <style>${brandStyles}</style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="card ${isWinner ? 'winner-card' : ''}">
-          <div class="header ${isWinner ? 'winner-header' : ''}">
-            <div class="logo-wrapper">
-              <img src="${logoUrl}" alt="Dream60" class="logo-img" />
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>${title}</title>
+        <style>${brandStyles}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="card ${isWinner ? 'winner-card' : ''}">
+            <div class="header ${isWinner ? 'winner-header' : ''}">
+              <div class="logo-wrapper">
+                <img src="${logoUrl}" alt="Dream60" class="logo-img" />
+              </div>
+              <h1 class="brand-text">Dream60</h1>
+              ${isWinner ? `<div class="winner-badge">CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
             </div>
-            <h1 class="brand-text">Dream60</h1>
-            ${isWinner ? `<div class="winner-badge">CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
-          </div>
-          <div class="content">
-            ${bodyHtml}
-          </div>
-          <div class="footer">
-            <div class="footer-nav">
-              <a href="${supportHref}" class="footer-link">Help</a>
-              <a href="${contactHref}" class="footer-link">Contact</a>
-              <a href="${termsHref}" class="footer-link">Terms</a>
-              <a href="${privacyHref}" class="footer-link">Privacy</a>
+            <div class="content">
+              ${bodyHtml}
             </div>
-            <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
+            <div class="footer">
+              <div class="footer-nav">
+                <a href="${helpHref}" class="footer-link">Help</a>
+                <a href="${rulesHref}" class="footer-link">Rules</a>
+                <a href="${supportHref}" class="footer-link">Support</a>
+                <a href="${contactHref}" class="footer-link">Contact</a>
+                <a href="${termsHref}" class="footer-link">Terms</a>
+                <a href="${privacyHref}" class="footer-link">Privacy</a>
+              </div>
+              <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
+            </div>
           </div>
         </div>
-      </div>
-    </body>
-    </html>
-  `;
-};
+      </body>
+      </html>
+    `;
+  };
 
 /**
  * Send OTP Email
@@ -382,7 +386,7 @@ const sendWelcomeEmail = async (email, username) => {
       <div class="info-grid">
         <div class="info-cell">
           <div class="info-label">STRATEGIZE</div>
-          <div class="info-value">Unique Low Bids</div>
+          <div class="info-value">Unique Highest Bids</div>
         </div>
         <div class="info-cell">
           <div class="info-label">COMPETE</div>
