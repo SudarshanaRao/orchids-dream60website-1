@@ -273,17 +273,17 @@ const createTransporter = () => {
 
 const getPrimaryClientUrl = () => {
   // Always prioritize the environment variables, fallback to test domain
-  const raw = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://test.dream60.com';
+  const raw = process.env.FRONTEND_URL || 'https://test.dream60.com';
   // Take first if it's a list (some configs might have multiple)
   return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
   const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
-    const baseUrl = "https://test.dream60.com";
+    const baseUrl = primaryClientUrl;
     const termsHref = `${baseUrl}/terms`;
     const privacyHref = `${baseUrl}/privacy`;
     const supportHref = `${baseUrl}/support`;
-    const helpHref = `${baseUrl}/help`;
+    const helpHref = `${baseUrl}/support`;
     const rulesHref = `${baseUrl}/rules`;
     const contactHref = `${baseUrl}/contact`;
     const logoUrl = `https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/project-uploads/1811a3c1-620a-4c8b-a119-34f19f40817b/logo-1-1767714888861.png?width=400&height=400&resize=contain`;
