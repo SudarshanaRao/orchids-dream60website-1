@@ -473,7 +473,10 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         auctionId={showSuccessModal.auctionId}
         paidBy={showSuccessModal.paidBy}
         paymentMethod={showSuccessModal.paymentMethod}
-        onBackToHome={() => setShowSuccessModal(null)}
+          onBackToHome={() => {
+            setShowSuccessModal(null);
+            onNavigate('history');
+          }}
         onClose={() => setShowSuccessModal(null)}
       />
     )}

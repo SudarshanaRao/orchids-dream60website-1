@@ -593,7 +593,10 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     return '🏆';
   };
 
-  const handleCloseSuccess = useCallback(() => setShowSuccessModal(null), []);
+  const handleCloseSuccess = useCallback(() => {
+    setShowSuccessModal(null);
+    onBack();
+  }, [onBack]);
   const handleCloseFailure = useCallback(() => setShowFailureModal(null), []);
   const handleRetryFailure = useCallback(() => {
     setShowFailureModal(null);
