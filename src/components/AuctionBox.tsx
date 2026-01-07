@@ -557,7 +557,11 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5, type: "spring" }}
+                className="flex flex-col items-center gap-1"
               >
+                <span className="text-[10px] sm:text-xs font-medium text-purple-700">
+                  {box.isOpen ? 'Round Closes In' : 'Round Opens In'}
+                </span>
                 <div className="bg-purple-600 backdrop-blur-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg border-2 border-purple-300/60">
                   <div className="flex items-center gap-1 sm:gap-1.5 text-white">
                     <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

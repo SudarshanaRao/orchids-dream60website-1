@@ -65,43 +65,49 @@ interface AuctionGridProps {
       }
     }, [user?.username]);
 
-    useEffect(() => {
-      const currentPaid = !!auction?.userHasPaidEntry;
-      const currentAuctionId = auction?.hourlyAuctionId || null;
-      
-      // ✅ Trigger "Synchronizing" ONLY if:
-      // 1. User was NOT paid and is NOW paid for the SAME auction
-      // 2. OR it's a NEW auction and the user is already paid (initial unlock)
-      const isNewlyPaidSameAuction = currentPaid && !prevPaidStatus.current.status && currentAuctionId === prevPaidStatus.current.auctionId;
-      const isNewAuctionAlreadyPaid = currentPaid && currentAuctionId !== prevPaidStatus.current.auctionId;
+      useEffect(() => {
+        const currentPaid = !!auction?.userHasPaidEntry;
+        const currentAuctionId = auction?.hourlyAuctionId || null;
+        
+        // ✅ Trigger "Synchronizing" ONLY if:
+        // 1. User was NOT paid and is NOW paid for the SAME auction
+        // 2. OR it's a NEW auction and the user is already paid (initial unlock)
+        const isNewlyPaidSameAuction = currentPaid && !prevPaidStatus.current.status && currentAuctionId === prevPaidStatus.current.auctionId;
+        const isNewAuctionAlreadyPaid = currentPaid && currentAuctionId !== prevPaidStatus.current.auctionId && prevPaidStatus.current.auctionId !== null;
 
-      if (isNewlyPaidSameAuction || isNewAuctionAlreadyPaid) {
-        console.log('✨ [AUCTION GRID] Triggering synchronizing state:', { isNewlyPaidSameAuction, isNewAuctionAlreadyPaid });
+        if (isNewlyPaidSameAuction || isNewAuctionAlreadyPaid) {
+          console.log('✨ [AUCTION GRID] Triggering synchronizing state:', { isNewlyPaidSameAuction, isNewAuctionAlreadyPaid });
+          
+          // Clear any existing timer
+          if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+          
+          setIsUnlocking(true);
+          stickyPaidStatus.current = true;
+          stickyPaidTimestamp.current = Date.now();
+          
+          unlockTimerRef.current = setTimeout(() => {
+            setIsUnlocking(false);
+            unlockTimerRef.current = null;
+          }, 1200);
+        } else if (isUnlocking) {
+          // ✅ Force clear stuck synchronizing state after 2 seconds
+          const safetyTimer = setTimeout(() => {
+            setIsUnlocking(false);
+          }, 2000);
+          return () => clearTimeout(safetyTimer);
+        }
         
-        // Clear any existing timer
-        if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+        if (currentPaid) {
+          stickyPaidStatus.current = true;
+          stickyPaidTimestamp.current = Date.now();
+        }
         
-        setIsUnlocking(true);
-        stickyPaidStatus.current = true;
-        stickyPaidTimestamp.current = Date.now();
+        prevPaidStatus.current = { status: currentPaid, auctionId: currentAuctionId };
         
-        unlockTimerRef.current = setTimeout(() => {
-          setIsUnlocking(false);
-          unlockTimerRef.current = null;
-        }, 1500); // Slightly longer for smoother feel
-      }
-      
-      if (currentPaid) {
-        stickyPaidStatus.current = true;
-        stickyPaidTimestamp.current = Date.now();
-      }
-      
-      prevPaidStatus.current = { status: currentPaid, auctionId: currentAuctionId };
-      
-      return () => {
-        if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
-      };
-    }, [auction?.userHasPaidEntry, auction?.hourlyAuctionId]);
+        return () => {
+          if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+        };
+      }, [auction?.userHasPaidEntry, auction?.hourlyAuctionId, isUnlocking]);
 
   const effectiveUserHasPaidEntry = auction?.userHasPaidEntry || 
     (stickyPaidStatus.current && (Date.now() - stickyPaidTimestamp.current < 60000)) ||
