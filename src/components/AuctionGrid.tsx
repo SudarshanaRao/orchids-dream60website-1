@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Lock, Loader2, Sparkles } from 'lucide-react';
 import { AuctionBox } from './AuctionBox';
 import { BidModal } from './BidModal';

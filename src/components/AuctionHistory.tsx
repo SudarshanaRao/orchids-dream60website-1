@@ -3,7 +3,7 @@ import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
 import { Input } from './ui/input';

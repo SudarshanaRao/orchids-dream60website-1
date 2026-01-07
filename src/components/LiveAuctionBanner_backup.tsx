@@ -1,5 +1,5 @@
 import { Trophy, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface LiveAuctionBannerProps {
   onBidNow?: () => void;

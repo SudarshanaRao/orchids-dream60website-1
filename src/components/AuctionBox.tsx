@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Lock, Crown, Clock, Zap, Target, TrendingUp, Sparkles, Trophy, CheckCircle2, AlertCircle, Timer, IndianRupee, Users, Award, ChevronRight, Info } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {

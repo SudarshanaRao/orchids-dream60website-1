@@ -1,7 +1,7 @@
 import { ArrowLeft, Shield, Eye, Lock, Database, Server, Globe, AlertCircle, FileText, Users, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 
 interface PrivacyPolicyProps {

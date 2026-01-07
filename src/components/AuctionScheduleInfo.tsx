@@ -1,5 +1,5 @@
 import { Clock, Lock, Unlock, Zap, Star, IndianRupee } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export function AuctionScheduleInfo() {
   return (

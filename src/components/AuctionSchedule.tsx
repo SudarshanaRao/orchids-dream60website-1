@@ -1,6 +1,6 @@
 import { Clock, Calendar, Trophy, Sparkles, Radio, PlayCircle, BarChart2 } from 'lucide-react';
 import { Badge } from './ui/badge';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useState, useEffect } from 'react';
 import { getCurrentIST } from '../utils/timezone';

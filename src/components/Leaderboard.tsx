@@ -1,6 +1,6 @@
 import  { useState, useEffect} from 'react';
 import { ArrowLeft, Trophy, Crown, Award, Medal, IndianRupee, Users, Clock, ChevronUp, TrendingUp, BarChart3, Activity, Target, Zap, Loader2, AlertCircle, Download, Gift } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_ENDPOINTS } from '../lib/api-config';
 import jsPDF from 'jspdf';
 import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';

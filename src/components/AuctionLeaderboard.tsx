@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Trophy, Download, Eye, BarChart2, Clock, Users, IndianRupee, Medal, Crown, Award, CheckCircle, XCircle, Gift, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { API_ENDPOINTS, buildQueryString } from '../lib/api-config';

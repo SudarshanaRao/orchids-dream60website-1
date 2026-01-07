@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, Sparkles, ChevronRight, Crown, Star } from 'lucide-react';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface WinnersAnnouncedBannerProps {
   onBidNow?: () => void;

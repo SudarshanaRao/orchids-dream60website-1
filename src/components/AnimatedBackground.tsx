@@ -1,5 +1,5 @@
 
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export function AnimatedBackground() {
   // Elegant gradient orbs
