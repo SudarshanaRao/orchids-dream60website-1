@@ -56,34 +56,41 @@ interface AuctionGridProps {
     const stickyPaidStatus = useRef(false);
     const stickyPaidTimestamp = useRef(0);
     const unlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastUnlockTriggerTime = useRef<number>(0);
 
     useEffect(() => {
       if (!user?.username) {
         stickyPaidStatus.current = false;
         stickyPaidTimestamp.current = 0;
         prevPaidStatus.current = { status: false, auctionId: null };
+        lastUnlockTriggerTime.current = 0;
       }
     }, [user?.username]);
 
       useEffect(() => {
         const currentPaid = !!auction?.userHasPaidEntry;
         const currentAuctionId = auction?.hourlyAuctionId || null;
+        const now = Date.now();
         
         // ✅ Trigger "Synchronizing" ONLY if:
         // 1. User was NOT paid and is NOW paid for the SAME auction
         // 2. OR it's a NEW auction and the user is already paid (initial unlock)
+        // AND it hasn't been triggered in the last 10 seconds (prevents flickering)
         const isNewlyPaidSameAuction = currentPaid && !prevPaidStatus.current.status && currentAuctionId === prevPaidStatus.current.auctionId;
         const isNewAuctionAlreadyPaid = currentPaid && currentAuctionId !== prevPaidStatus.current.auctionId && prevPaidStatus.current.auctionId !== null;
+        const recentlyTriggered = now - lastUnlockTriggerTime.current < 10000;
 
-        if (isNewlyPaidSameAuction || isNewAuctionAlreadyPaid) {
+        if ((isNewlyPaidSameAuction || isNewAuctionAlreadyPaid) && !recentlyTriggered) {
           console.log('✨ [AUCTION GRID] Triggering synchronizing state:', { isNewlyPaidSameAuction, isNewAuctionAlreadyPaid });
           
+          lastUnlockTriggerTime.current = now;
+
           // Clear any existing timer
           if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
           
           setIsUnlocking(true);
           stickyPaidStatus.current = true;
-          stickyPaidTimestamp.current = Date.now();
+          stickyPaidTimestamp.current = now;
           
           unlockTimerRef.current = setTimeout(() => {
             setIsUnlocking(false);
