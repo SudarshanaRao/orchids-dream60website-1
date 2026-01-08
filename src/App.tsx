@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HowDream60Works } from './components/HowDream60Works';
 import { Header } from './components/Header';
@@ -599,83 +599,38 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       0
     ));
     
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-
-    const roundBoxes: RoundBox[] = [1, 2, 3, 4, 5, 6].map((roundNum) => {
-      const startMinutes = (roundNum - 1) * 10;
-      const endMinutes = roundNum * 10;
-      
-      const opensAt = new Date(Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth(),
-        today.getUTCDate(),
-        auctionHour,
-        startMinutes,
-        0
-      ));
-      
-      const closesAt = new Date(Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth(),
-        today.getUTCDate(),
-        auctionHour,
-        endMinutes,
-        0
-      ));
-
-      return {
-        id: roundNum + 2,
-        type: "round",
-        roundNumber: roundNum,
-        isOpen: false,
-        minBid: 10,
-        currentBid: 0,
-        bidder: null,
-        opensAt,
-        closesAt,
-        leaderboard: [],
-        status: "upcoming",
-      };
-    });
-
-    const entryBox1: EntryBox = {
-      id: 1,
-      type: "entry",
-      isOpen: true,
-      entryFee: entryFee1,
-      currentBid: 0,
-      bidder: null,
-      hasPaid: false,
-      status: "upcoming",
-    };
-
-    const entryBox2: EntryBox = {
-      id: 2,
-      type: "entry",
-      isOpen: true,
-      entryFee: entryFee2,
-      currentBid: 0,
-      bidder: null,
-      hasPaid: false,
-      status: "upcoming",
-    };
-
     return {
-      id: `auction-${auctionHour}`,
-      title: "Loading...", // ✅ Will be updated from API
-      prize: "Loading...", // ✅ Will be updated from API
-      prizeValue: 0, // ✅ Will be updated from API
+      id: 'auction-1',
+      title: 'Mega Auction',
+      prize: 'iPhone 15 Pro',
+      prizeValue: 129900,
       startTime,
-      endTime,
-      currentRound: 1,
-      totalParticipants: 0, // ✅ Will be updated from API
+      endTime: new Date(startTime.getTime() + 60 * 60 * 1000), // 1 hour duration
+      currentRound: getCurrentRoundByTime(serverTime),
+      totalParticipants: 0,
       userHasPaidEntry: false,
-      auctionHour: auctionHour,
+      auctionHour,
       userBidsPerRound: {},
       userQualificationPerRound: {},
-      boxes: [entryBox1, entryBox2, ...roundBoxes],
+      boxes: [
+        { id: 1, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee1, hasPaid: false },
+        { id: 2, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee2, hasPaid: false },
+        { id: 3, type: "round", roundNumber: 1, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 1, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 1, serverTime).closesAt, leaderboard: generateDemoLeaderboard(1) },
+        { id: 4, type: "round", roundNumber: 2, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 2, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 2, serverTime).closesAt, leaderboard: generateDemoLeaderboard(2) },
+        { id: 5, type: "round", roundNumber: 3, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 3, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 3, serverTime).closesAt, leaderboard: generateDemoLeaderboard(3) },
+        { id: 6, type: "round", roundNumber: 4, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 4, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 4, serverTime).closesAt, leaderboard: generateDemoLeaderboard(4) },
+      ]
     };
   });
+
+  const [isAuctionSectionsVisible, setIsAuctionSectionsVisible] = useState(true);
+
+  // Force show sections if user has participated
+  useEffect(() => {
+    if (currentAuction.userHasPaidEntry) {
+      setIsAuctionSectionsVisible(true);
+    }
+  }, [currentAuction.userHasPaidEntry]);
 
   // ✅ Update auction state when server time first loads
   useEffect(() => {
@@ -770,7 +725,79 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
   // ✅ NEW: Store live auction data to pass to PrizeShowcase
   const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
   // ✅ NEW: Track if we're currently fetching live auction data
-  const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+    const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+
+    const [upcomingAuctionData, setUpcomingAuctionData] = useState<any>(null);
+    const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
+    const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
+
+      // ✅ Update countdown timer for upcoming auction every second using server time
+      useEffect(() => {
+        if (!serverTime) return;
+
+        const updateCountdown = () => {
+          // Simplified calculation to the next top of the hour (MM:SS)
+          // As per user request: hour will be zero always, so only minutes and seconds
+          const currentMinute = serverTime.minute;
+          const currentSecond = serverTime.second;
+          
+          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+          
+          // If we are at the exact top of the hour, it means an auction just started
+          if (totalSecondsRemaining >= 3600) {
+            setUpcomingCountdown('00:00');
+            return;
+          }
+
+          const minutes = Math.floor(totalSecondsRemaining / 60);
+          const seconds = totalSecondsRemaining % 60;
+          
+          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        };
+
+        updateCountdown();
+        const timer = setInterval(updateCountdown, 1000);
+        return () => clearInterval(timer);
+      }, [serverTime]);
+
+      // Fetch upcoming auction data
+    useEffect(() => {
+      const fetchUpcomingAuction = async () => {
+        try {
+          // First try to fetch the single first upcoming product
+          const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
+          const data = await response.json();
+          
+          if (data.success && data.data) {
+            setUpcomingAuctionData(data.data);
+          } else {
+            // Fallback: Fetch daily auction schedule and find the next one
+            const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
+            const dailyData = await dailyResponse.json();
+            
+            if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
+              const auctions = dailyData.data.dailyAuctionConfig;
+              // Find the first auction that is marked as 'UPCOMING'
+              const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
+              
+              if (nextAuction) {
+                console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
+                setUpcomingAuctionData(nextAuction);
+              } else {
+                console.log('⚠️ No upcoming auctions found in daily schedule');
+                setUpcomingAuctionData(null);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching upcoming auction:', error);
+        }
+      };
+
+      if (serverTime) {
+        fetchUpcomingAuction();
+      }
+    }, [serverTime, liveAuctionData]);
   // ✅ Track if the first load has completed
   const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token
@@ -2440,151 +2467,283 @@ if (currentPage === 'prizeshowcase') {
             </div>
 
                 <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
-                        {/* Current Auction Time Slot Banner */}
-                        {serverTime && liveAuctionData && (() => {
-                          const activeRound = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE');
-                          const activeRoundNum = activeRound ? activeRound.roundNumber : (liveAuctionData?.currentRound || 1);
-                          
-                          // Use TimeSlot from API as requested
-                          const timeSlot = liveAuctionData?.TimeSlot || "00:00";
-                          const [hours, minutes] = timeSlot.split(':').map(Number);
-                          const endHours = (hours + 1) % 24;
-                          const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-                          const displayTime = `${timeSlot} to ${formattedEndTime}`;
-                          
-                            return (
-                                <div className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative">
+                          {/* Auction Banners Section */}
+                          {serverTime && (
+                            <div className="space-y-4">
+                              {/* Current Auction Time Slot Banner */}
+                              {liveAuctionData && (() => {
+                                const activeRound = liveAuctionData?.rounds?.find((r: any) => r.status === 'ACTIVE');
+                                const activeRoundNum = activeRound ? activeRound.roundNumber : (liveAuctionData?.currentRound || 1);
+                                
+                                  // Use TimeSlot from API as requested
+                                  const timeSlot = liveAuctionData?.TimeSlot || "00:00";
+                                  const [hours, minutes] = timeSlot.split(':').map(Number);
+                                  const endHours = (hours + 1) % 24;
+                                  const formattedEndTime = `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                                  const displayTime = `${timeSlot} to ${formattedEndTime}`;
+                                  
+                                  return (
+                                    <>
+                                      <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative"
+                                      >
+                                        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
+                                            <div>
+                                              <div className="text-sm sm:text-base opacity-90">Current Auction</div>
+                                              <div className="text-xl sm:text-2xl font-bold">
+                                                {displayTime}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                                              <div className="text-xs sm:text-sm opacity-90">
+                                                {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
+                                              </div>
+                                              <div className="text-lg sm:text-xl font-bold">
+                                                {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
+                                              </div>
+                                            </div>
 
+                                            {/* Dropdown Arrow for non-participated users */}
+                                            {!currentAuction.userHasPaidEntry && (
+                                              <button 
+                                                onClick={() => setIsAuctionSectionsVisible(!isAuctionSectionsVisible)}
+                                                className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 transform active:scale-95 flex items-center justify-center"
+                                                title={isAuctionSectionsVisible ? "Hide Auction Details" : "Show Auction Details"}
+                                              >
+                                                <motion.div
+                                                  animate={{ rotate: isAuctionSectionsVisible ? 180 : 0 }}
+                                                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                >
+                                                  <ChevronDown className="w-6 h-6 sm:w-8 sm:h-8" />
+                                                </motion.div>
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </motion.div>
 
-                                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <div className="flex items-center gap-3">
-                                  <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
-                                    <div>
-                                      <div className="text-sm sm:text-base opacity-90">Current Auction</div>
-                                      <div className="text-xl sm:text-2xl font-bold">
-                                      {displayTime}
-                                    </div>
+                                        {/* Current Auction Details (Expanded) - Integrated here to appear between banners */}
+                                        <AnimatePresence>
+                                          {isAuctionSectionsVisible && (
+                                            <motion.div
+                                              initial={{ opacity: 0, height: 0 }}
+                                              animate={{ opacity: 1, height: 'auto' }}
+                                              exit={{ opacity: 0, height: 0 }}
+                                              transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                              className="overflow-hidden"
+                                            >
+                                              <div id="six-box-system-container" className="space-y-6 sm:space-y-10 mt-4">
+                                                <div data-whatsnew-target="prize-showcase-section">
+                                                  <PrizeShowcase
+                                                    currentPrize={currentAuction}
+                                                    isLoggedIn={!!currentUser}
+                                                    onLogin={handleShowLogin}
+                                                    serverTime={serverTime}
+                                                    liveAuctionData={liveAuctionData}
+                                                    isLoadingLiveAuction={isLoadingLiveAuction}
+                                                    onPayEntry={(_boxId, totalEntryFee, paymentData) => {
+                                                      if (!currentUser) return;
+                                                      
+                                                      console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
+                                                      
+                                                      // Extract payment method and UPI from paymentData if available
+                                                      const method = paymentData?.payment?.paymentMethod || 'UPI / Card';
+                                                      const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
+                                                      
+                                                      // ✅ Update local state immediately for instant rendering without reload
+                                                      setCurrentAuction(prev => ({
+                                                        ...prev,
+                                                        userHasPaidEntry: true,
+                                                        boxes: prev.boxes.map(box => {
+                                                          if (box.type === 'entry') {
+                                                            return { ...box, hasPaid: true, currentBid: (box as EntryBox).entryFee || 0, bidder: currentUser.username };
+                                                          }
+                                                          return box;
+                                                        })
+                                                      }));
+
+                                                      // ✅ Removed artificial scroll to prevent disturbance
+                                                      // Background refresh continues silently
+                                                      setForceRefetchTrigger(prev => prev + 1);
+                                                      if (currentUser.id) {
+                                                        fetchAndSetUser(currentUser.id);
+                                                      }
+
+                                                        setShowEntrySuccess({
+                                                          entryFee: totalEntryFee,
+                                                          boxNumber: 0,
+                                                          auctionId: currentAuction.id,
+                                                          auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                                          productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                                          productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                                          timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                                          paidBy: currentUser.username || currentUser.email,
+                                                          paymentMethod: upiId ? `${method} (${upiId})` : method
+                                                        });
+                                                      }}
+                                                      onPaymentFailure={(totalEntryFee, errorMessage) => {
+                                                        // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
+                                                        setForceRefetchTrigger(prev => prev + 1);
+                                                        
+                                                        // Smooth scroll to auction boxes in background
+                                                        setTimeout(() => {
+                                                          const element = document.getElementById('auction-grid');
+                                                          if (element) {
+                                                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                          }
+                                                        }, 100);
+                                  
+                                                        setShowEntryFailure({
+                                                          entryFee: totalEntryFee,
+                                                          errorMessage,
+                                                          auctionId: currentAuction.id,
+                                                          auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                                          productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
+                                                          productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
+                                                          timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
+                                                          paidBy: currentUser.username || currentUser.email,
+                                                          paymentMethod: 'UPI / Card'
+                                                        });
+
+                                                  }}
+                                                  onUserParticipationChange={handleUserParticipationChange}
+                                                />
+                                              </div>
+
+                                              {currentUser && (
+                                                <WinnersAnnouncedBanner 
+                                                  onBidNow={handleBidNowScroll}
+                                                />
+                                              )}
+
+                                              {currentUser ? (
+                                                <div ref={auctionGridRef} data-auction-grid id="auction-grid">
+                                                  {/* Auction Grid */}
+                                                  <AuctionGrid
+                                                    auction={currentAuction}
+                                                    user={currentUser}
+                                                    onShowLeaderboard={handleShowLeaderboard}
+                                                    onBid={handlePlaceBid}
+                                                    serverTime={serverTime} // ✅ Pass server time to AuctionGrid
+                                                    isJoinWindowOpen={currentAuction.currentRound === 1}
+                                                  />
+                                                </div>
+                                              ) : (
+                                                <div className="bg-purple-50/50 rounded-2xl p-6 text-center border-2 border-dashed border-purple-200">
+                                                  <h3 className="text-xl font-bold text-purple-800 mb-2">Join to See Details</h3>
+                                                  <p className="text-purple-600 mb-4">Log in or create an account to view and participate in this auction.</p>
+                                                  <Button onClick={handleShowLogin} className="bg-purple-600 hover:bg-purple-700">
+                                                    Login / Sign Up
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+
+                                  </>
+                                );
+                              })()}
+
+                              {/* Upcoming Auction Banner - Only for non-participants, placed directly below Current Auction Banner */}
+                              {!currentAuction.userHasPaidEntry && upcomingAuctionData && (() => {
+                                // Calculate end time for upcoming auction
+                                const upcomingTimeSlot = upcomingAuctionData.TimeSlot || upcomingAuctionData.startTime || "00:00";
+                                const [uHours, uMinutes] = upcomingTimeSlot.split(':').map(Number);
+                                const uEndHours = (uHours + 1) % 24;
+                                const formattedUEndTime = `${String(uEndHours).padStart(2, '0')}:${String(uMinutes).padStart(2, '0')}`;
+                                const upcomingDisplayTime = `${upcomingTimeSlot} to ${formattedUEndTime}`;
+
+                                return (
+                                    <div className="space-y-4">
+                                      <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-gradient-to-r from-[#2D3047] via-[#404466] to-[#555B85] text-white rounded-2xl p-4 sm:p-6 shadow-lg overflow-hidden relative"
+                                      >
+                                        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                          <div className="flex items-center gap-3">
+                                            <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-blue-300" />
+                                            <div>
+                                              <div className="text-sm sm:text-base opacity-90">Next Upcoming Auction</div>
+                                                <div className="text-xl sm:text-2xl font-bold">
+                                                  {upcomingDisplayTime}
+                                                </div>
+                                                <div className="text-xs sm:text-sm text-blue-200 font-medium">
+                                                  Starts in: <span className="font-mono font-bold text-white">{upcomingCountdown}</span>
+                                                </div>
+                                              </div>
+                                          </div>
+                                          <div className="flex items-center gap-3">
+                                            <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                                              <div className="text-xs sm:text-sm opacity-90">Status</div>
+                                              <div className="text-lg sm:text-xl font-bold">Upcoming</div>
+                                            </div>
+                                            
+                                            <button 
+                                              onClick={() => setIsUpcomingAuctionVisible(!isUpcomingAuctionVisible)}
+                                              className="p-2 hover:bg-white/20 rounded-full transition-all duration-200 transform active:scale-95 flex items-center justify-center"
+                                              title={isUpcomingAuctionVisible ? "Hide Upcoming Details" : "Show Upcoming Details"}
+                                            >
+                                              <motion.div
+                                                animate={{ rotate: isUpcomingAuctionVisible ? 180 : 0 }}
+                                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                              >
+                                                <ChevronDown className="w-6 h-6 sm:w-8 sm:h-8" />
+                                              </motion.div>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+
+                                      {/* Upcoming PrizeShowcase */}
+                                      <AnimatePresence>
+                                        {isUpcomingAuctionVisible && (
+                                          <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                            className="overflow-hidden"
+                                          >
+                                            <PrizeShowcase
+                                              currentPrize={{
+                                                ...currentAuction,
+                                                prize: upcomingAuctionData.auctionName || upcomingAuctionData.prizeName,
+                                                prizeValue: upcomingAuctionData.prizeValue,
+                                                auctionHour: upcomingAuctionData.TimeSlot
+                                              }}
+                                              isLoggedIn={!!currentUser}
+                                              onLogin={handleShowLogin}
+                                              serverTime={serverTime}
+                                              liveAuctionData={upcomingAuctionData}
+                                              isLoadingLiveAuction={false}
+                                              isUpcoming={true}
+                                              onPayEntry={() => {
+                                                // Scroll to current auction to join
+                                                const element = document.getElementById('six-box-system-container');
+                                                if (element) {
+                                                  element.scrollIntoView({ behavior: 'smooth' });
+                                                }
+                                                toast.info("Please wait for this auction to start or join the live one!");
+                                              }}
+                                            />
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+
                                   </div>
-                                </div>
-                                <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
-                                  <div className="text-xs sm:text-sm opacity-90">
-                                    {liveAuctionData?.winnersAnnounced ? 'Status' : 'Active Round'}
-                                  </div>
-                                  <div className="text-lg sm:text-xl font-bold">
-                                    {liveAuctionData?.winnersAnnounced ? 'Winners Announced' : `Round ${activeRoundNum}`}
-                                  </div>
-                                </div>
-                              </div>
+                                );
+                              })()}
                             </div>
-                          );
-                        })()}
-
-                    {/* 6 Box System Container */}
-                    <div id="six-box-system-container" className="space-y-6 sm:space-y-10">
-                      <div data-whatsnew-target="prize-showcase-section">
-                        <PrizeShowcase
-                          currentPrize={currentAuction}
-                          isLoggedIn={!!currentUser}
-                          onLogin={handleShowLogin}
-                          serverTime={serverTime}
-                          liveAuctionData={liveAuctionData}
-                        isLoadingLiveAuction={isLoadingLiveAuction}
-                          onPayEntry={(_boxId, totalEntryFee, paymentData) => {
-                            if (!currentUser) return;
-                            
-                            console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);
-                            
-                            // Extract payment method and UPI from paymentData if available
-                            const method = paymentData?.payment?.paymentMethod || 'UPI / Card';
-                            const upiId = paymentData?.payment?.paymentDetails?.vpa || '';
-                            
-                            // ✅ Update local state immediately for instant rendering without reload
-                            setCurrentAuction(prev => ({
-                              ...prev,
-                              userHasPaidEntry: true,
-                              boxes: prev.boxes.map(box => {
-                                if (box.type === 'entry') {
-                                  return { ...box, hasPaid: true, currentBid: (box as EntryBox).entryFee || 0, bidder: currentUser.username };
-                                }
-                                return box;
-                              })
-                            }));
-
-                            // ✅ Removed artificial scroll to prevent disturbance
-                            // Background refresh continues silently
-                            setForceRefetchTrigger(prev => prev + 1);
-                            if (currentUser.id) {
-                              fetchAndSetUser(currentUser.id);
-                            }
-
-                              setShowEntrySuccess({
-                                entryFee: totalEntryFee,
-                                boxNumber: 0,
-                                auctionId: currentAuction.id,
-                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
-                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
-                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                paidBy: currentUser.username || currentUser.email,
-                                paymentMethod: upiId ? `${method} (${upiId})` : method
-                              });
-                            }}
-                            onPaymentFailure={(totalEntryFee, errorMessage) => {
-                              // ✅ NEW: Background refresh and smooth scroll to auctionBoxes on failure too
-                              setForceRefetchTrigger(prev => prev + 1);
-                              
-                              // Smooth scroll to auction boxes in background
-                              setTimeout(() => {
-                                const element = document.getElementById('auction-grid');
-                                if (element) {
-                                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                }
-                              }, 100);
-        
-                              setShowEntryFailure({
-                                entryFee: totalEntryFee,
-                                errorMessage,
-                                auctionId: currentAuction.id,
-                                auctionNumber: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                productName: liveAuctionData?.auctionName || currentAuction.prize || 'Auction Prize',
-                                productWorth: liveAuctionData?.prizeValue || currentAuction.prizeValue,
-                                timeSlot: liveAuctionData?.TimeSlot || currentAuction.auctionHour,
-                                paidBy: currentUser.username || currentUser.email,
-                                paymentMethod: 'UPI / Card'
-                              });
-
-                        }}
-                        onUserParticipationChange={handleUserParticipationChange}
-                      />
-                    </div>
-
-                  {currentUser && (
-                  <WinnersAnnouncedBanner 
-                    onBidNow={handleBidNowScroll}
-                  />
-                )}
-
-                {currentUser ? (
-                  <>
-                        <div ref={auctionGridRef} data-auction-grid id="auction-grid">
-                          {/* Auction Grid */}
-                          <AuctionGrid
-                            auction={currentAuction}
-                            user={currentUser}
-                            onShowLeaderboard={handleShowLeaderboard}
-                            onBid={handlePlaceBid}
-                            serverTime={serverTime} // ✅ Pass server time to AuctionGrid
-                            isJoinWindowOpen={currentAuction.currentRound === 1}
-                          />
-                        </div>
-      
-                      </>
-                        ) : (
-                        <>
-                          {/* Guest View - Empty placeholder when not logged in */}
-                        </>
-                      )}
-                    </div> {/* End of six-box-system-container */}
+                          )}
 
                           <AuctionSchedule user={currentUser} onNavigate={handleNavigate} serverTime={serverTime} />
 

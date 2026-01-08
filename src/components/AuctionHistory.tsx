@@ -1083,17 +1083,28 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
 
         {/* NEW: Payment Success Modal */}
         {showSuccessModal && (
-          <PaymentSuccess
-            amount={showSuccessModal.amount}
-            type={showSuccessModal.type}
-            productName={showSuccessModal.productName}
-            productWorth={showSuccessModal.productWorth}
-            auctionId={showSuccessModal.auctionId}
-            paidBy={showSuccessModal.paidBy}
-            paymentMethod={showSuccessModal.paymentMethod}
-            onBackToHome={() => setShowSuccessModal(null)}
-            onClose={() => setShowSuccessModal(null)}
-          />
+            <PaymentSuccess
+              amount={showSuccessModal.amount}
+              type={showSuccessModal.type}
+              productName={showSuccessModal.productName}
+              productWorth={showSuccessModal.productWorth}
+              auctionId={showSuccessModal.auctionId}
+              paidBy={showSuccessModal.paidBy}
+              paymentMethod={showSuccessModal.paymentMethod}
+              onBackToHome={() => {
+                setShowSuccessModal(null);
+                // ✅ REFRESH PAGE after a small delay to ensure everything is perfectly synced
+                // This matches the behavior of the entry fee success modal
+                console.log('🔄 Reloading page after prize claim success to ensure fresh state');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 100);
+              }}
+              onClose={() => {
+                setShowSuccessModal(null);
+                window.location.reload();
+              }}
+            />
         )}
 
         {/* NEW: Payment Failure Modal */}

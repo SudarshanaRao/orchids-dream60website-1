@@ -596,6 +596,12 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   const handleCloseSuccess = useCallback(() => {
     setShowSuccessModal(null);
     onBack();
+    // ✅ REFRESH PAGE after a small delay to ensure everything is perfectly synced
+    // This matches the behavior of the entry fee success modal
+    console.log('🔄 Reloading page after prize claim success to ensure fresh state');
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   }, [onBack]);
   const handleCloseFailure = useCallback(() => setShowFailureModal(null), []);
   const handleRetryFailure = useCallback(() => {

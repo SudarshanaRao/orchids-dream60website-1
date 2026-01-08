@@ -473,10 +473,16 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
         auctionId={showSuccessModal.auctionId}
         paidBy={showSuccessModal.paidBy}
         paymentMethod={showSuccessModal.paymentMethod}
-          onBackToHome={() => {
-            setShowSuccessModal(null);
-            onNavigate('history');
-          }}
+            onBackToHome={() => {
+              setShowSuccessModal(null);
+              onNavigate('history');
+              // ✅ REFRESH PAGE after a small delay to ensure everything is perfectly synced
+              // This matches the behavior of the entry fee success modal
+              console.log('🔄 Reloading page after prize claim success to ensure fresh state');
+              setTimeout(() => {
+                window.location.reload();
+              }, 100);
+            }}
         onClose={() => setShowSuccessModal(null)}
       />
     )}
