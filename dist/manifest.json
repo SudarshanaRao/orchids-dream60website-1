@@ -2,16 +2,14 @@
   "name": "Dream60 - Live Auctions",
   "short_name": "Dream60",
   "description": "Win big with Dream60 live auctions - bid, win, and claim amazing prizes!",
-  "version": "2.0.0",
-  "start_url": "/?source=pwa&v=2",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#53317B",
   "theme_color": "#6B3FA0",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["entertainment", "shopping"],
-  "permissions": ["notifications"],
+  "categories": ["entertainment", "shopping", "games"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -88,16 +86,8 @@
       "description": "Browse live auctions",
       "url": "/?page=auctions",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "My Account",
-      "short_name": "Account",
-      "description": "View account settings",
-      "url": "/profile",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
-  "prefer_related_applications": false,
-  "gcm_sender_id": "103953800507"
+  "prefer_related_applications": false
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { ArrowLeft, HelpCircle, MessageCircle, Book, Clock, Zap, IndianRupee, Trophy, AlertCircle, Search, Send } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';

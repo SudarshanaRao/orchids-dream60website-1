@@ -155,34 +155,8 @@ const sendVoucher = async (req, res) => {
 
         await voucher.save();
 
-        // 6. Send Email Notification to Winner
-        try {
-            const emailHtml = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-                    <h2 style="color: #7c3aed; text-align: center;">Congratulations ${user.username || 'Winner'}!</h2>
-                    <p>Your prize voucher for <strong>${historyEntry.auctionName}</strong> has been issued.</p>
-                    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                        <p style="margin: 5px 0;"><strong>Voucher Amount:</strong> ₹${amount.toLocaleString()}</p>
-                        <p style="margin: 5px 0;"><strong>Voucher SKU:</strong> ${sku}</p>
-                        ${voucher.cardNumber ? `<p style="margin: 5px 0;"><strong>Card Number:</strong> ${voucher.cardNumber}</p>` : ''}
-                        ${voucher.cardPin ? `<p style="margin: 5px 0;"><strong>Card PIN:</strong> ${voucher.cardPin}</p>` : ''}
-                        ${voucher.activationUrl ? `<p style="margin: 20px 0; text-align: center;"><a href="${voucher.activationUrl}" style="background-color: #7c3aed; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Activate Your Voucher</a></p>` : ''}
-                    </div>
-                    <p>If you don't see the card details above, they will be sent to you in a follow-up email once the order is fully processed, or you can check your "My Claims" section on the website.</p>
-                    <p style="font-size: 12px; color: #666; text-align: center; margin-top: 30px;">Thank you for participating in Dream60!</p>
-                </div>
-            `;
-
-            await sendEmail({
-                to: user.email,
-                subject: `Congratulations! Your ₹${amount} Voucher is Here - Dream60`,
-                html: emailHtml
-            });
-            console.log(`Voucher email sent to ${user.email}`);
-        } catch (emailError) {
-            console.error('Error sending voucher email:', emailError);
-            // Don't fail the whole request if email fails
-        }
+        // 6. Send Email/Message (Optional, can be triggered separately or auto)
+        // For now, let's mark it as ready
         
         return res.status(200).json({
             success: true,
@@ -271,56 +245,10 @@ const getWoohooTransactions = async (req, res) => {
     }
 };
 
-/**
- * Get Woohoo Categories
- */
-const getWoohooCategories = async (req, res) => {
-    try {
-        const categories = await woohooService.getCategories();
-        return res.status(200).json({
-            success: true,
-            data: categories
-        });
-    } catch (error) {
-        console.error('Error fetching Woohoo categories:', error.response?.data || error.message);
-        return res.status(500).json({
-            success: false,
-            message: 'Error fetching categories from Woohoo API',
-            error: error.response?.data || error.message
-        });
-    }
-};
-
-/**
- * Get Woohoo Products by Category
- */
-const getWoohooProducts = async (req, res) => {
-    try {
-        const { categoryId } = req.params;
-        if (!categoryId) {
-            return res.status(400).json({ success: false, message: 'Category ID is required' });
-        }
-        const products = await woohooService.getProducts(categoryId);
-        return res.status(200).json({
-            success: true,
-            data: products
-        });
-    } catch (error) {
-        console.error('Error fetching Woohoo products:', error.response?.data || error.message);
-        return res.status(500).json({
-            success: false,
-            message: 'Error fetching products from Woohoo API',
-            error: error.response?.data || error.message
-        });
-    }
-};
-
 module.exports = {
     getEligibleWinners,
     sendVoucher,
     getIssuedVouchers,
     getWoohooBalance,
-    getWoohooTransactions,
-    getWoohooCategories,
-    getWoohooProducts
+    getWoohooTransactions
 };

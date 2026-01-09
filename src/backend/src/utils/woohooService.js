@@ -29,12 +29,10 @@ class WoohooService {
 
         try {
             // Step 1: Get Authorization Code
-            // Using both camelCase and snake_case for maximum compatibility
-            // Trimming values to avoid hidden space issues
             const authResponse = await axios.post(this.verifyUrl, {
-                client_id: this.clientId?.trim(),
-                username: this.username?.trim(),
-                password: this.password?.trim()
+                clientId: this.clientId,
+                username: this.username,
+                password: this.password
             });
 
             if (!authResponse.data || !authResponse.data.authorizationCode) {
@@ -45,10 +43,8 @@ class WoohooService {
 
             // Step 2: Get Access Token
             const tokenResponse = await axios.post(this.tokenUrl, {
-                clientId: this.clientId?.trim(),
-                client_id: this.clientId?.trim(),
-                clientSecret: this.clientSecret?.trim(),
-                client_secret: this.clientSecret?.trim(),
+                clientId: this.clientId,
+                clientSecret: this.clientSecret,
                 authorizationCode: authCode
             });
 
@@ -75,29 +71,15 @@ class WoohooService {
 
         try {
             const url = `${this.baseUrl}${endpoint}`;
-            const date = new Date().toISOString();
             
-            // For Woohoo V3, clientId and client_id are often mandatory in the request body for POST/PUT 
-            // especially for the Order API. Adding both for maximum compatibility.
+            // For Woohoo V3, clientId is often mandatory in the request body for POST/PUT 
+            // even if it's in the headers. Adding it to data if it's an object.
             let requestData = data;
             if (data && typeof data === 'object' && !Array.isArray(data) && (method === 'POST' || method === 'PUT')) {
                 requestData = {
                     ...data,
-                    clientId: this.clientId?.trim(),
-                    client_id: this.clientId?.trim()
+                    clientId: this.clientId?.trim()
                 };
-            }
-
-            // Calculate signature for V3 Revamp
-            // Pattern: clientId + date + requestBody (if exists)
-            let signature = '';
-            if (this.clientSecret) {
-                const bodyStr = requestData ? JSON.stringify(requestData) : '';
-                const signStr = (this.clientId?.trim() || '') + date + bodyStr;
-                signature = crypto
-                    .createHmac('sha256', this.clientSecret.trim())
-                    .update(signStr)
-                    .digest('hex');
             }
 
             const response = await axios({
@@ -108,11 +90,7 @@ class WoohooService {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    'clientId': this.clientId?.trim(),
-                    'client_id': this.clientId?.trim(),
-                    'date': date,
-                    'signature': signature,
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    'clientId': this.clientId?.trim() // Also adding to headers just in case
                 }
             });
 
@@ -155,55 +133,30 @@ class WoohooService {
         const referenceNumber = `D60_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`.substring(0, 25);
         
         const payload = {
-            clientId: this.clientId?.trim(),
-            client_id: this.clientId?.trim(),
             address: {
-                firstname: orderDetails.firstname || 'Customer',
-                lastname: orderDetails.lastname || 'Dream60',
-                email: orderDetails.email || 'support@dream60.com',
-                mobile: orderDetails.phone || '0000000000',
-                billing: {
-                    firstname: orderDetails.billingAddress?.firstname || orderDetails.firstname || 'Customer',
-                    lastname: orderDetails.billingAddress?.lastname || orderDetails.lastname || 'Dream60',
-                    email: orderDetails.billingAddress?.email || orderDetails.email || 'support@dream60.com',
-                    mobile: orderDetails.billingAddress?.mobile || orderDetails.phone || '0000000000',
-                    line1: orderDetails.billingAddress?.line1 || 'Dream60 Office',
-                    city: orderDetails.billingAddress?.city || 'Bangalore',
-                    region: orderDetails.billingAddress?.region || 'Karnataka',
-                    country: orderDetails.billingAddress?.country || 'IN',
-                    postcode: orderDetails.billingAddress?.postcode || '560001'
-                },
-                shipping: {
-                    firstname: orderDetails.shippingAddress?.firstname || orderDetails.firstname || 'Customer',
-                    lastname: orderDetails.shippingAddress?.lastname || orderDetails.lastname || 'Dream60',
-                    email: orderDetails.shippingAddress?.email || orderDetails.email || 'support@dream60.com',
-                    mobile: orderDetails.shippingAddress?.mobile || orderDetails.phone || '0000000000',
-                    line1: orderDetails.shippingAddress?.line1 || 'Dream60 Office',
-                    city: orderDetails.shippingAddress?.city || 'Bangalore',
-                    region: orderDetails.shippingAddress?.region || 'Karnataka',
-                    country: orderDetails.shippingAddress?.country || 'IN',
-                    postcode: orderDetails.shippingAddress?.postcode || '560001'
-                }
+                firstname: orderDetails.firstname,
+                lastname: orderDetails.lastname,
+                email: orderDetails.email,
+                mobile: orderDetails.phone,
+                billing: orderDetails.billingAddress,
+                shipping: orderDetails.shippingAddress
             },
             products: [
                 {
                     sku: orderDetails.sku,
                     price: orderDetails.amount,
-                    quantity: 1,
-                    currency: 'INR' // V3 Revamp often prefers string code
+                    quantity: 1
                 }
             ],
             payments: [
                 {
-                    code: this.svc?.trim(),
-                    amount: orderDetails.amount,
-                    currency: 'INR'
+                    code: this.svc,
+                    amount: orderDetails.amount
                 }
             ],
             refno: referenceNumber,
-            sync_only: true,
-            deliveryMode: 'API',
-            fulfillmentMode: 'DIRECT'
+            sync_only: true, // For quantity 1
+            deliveryMode: 'API'
         };
 
         return this.request('POST', '/v3/orders', payload);

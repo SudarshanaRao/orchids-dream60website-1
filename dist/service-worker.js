@@ -1,9 +1,8 @@
-const VERSION = '1.0.3';
-const CACHE_NAME = `dream60-v${VERSION}`;
-const STATIC_CACHE = `dream60-static-v${VERSION}`;
-const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
-const IMAGE_CACHE = `dream60-images-v${VERSION}`;
-const API_CACHE = `dream60-api-v${VERSION}`;
+const CACHE_NAME = 'dream60-v1';
+const STATIC_CACHE = 'dream60-static-v1';
+const DYNAMIC_CACHE = 'dream60-dynamic-v1';
+const IMAGE_CACHE = 'dream60-images-v1';
+const API_CACHE = 'dream60-api-v1';
 
 const STATIC_ASSETS = [
   '/',
@@ -143,12 +142,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip service worker for Vite HMR and dev server requests
-  if ((url.hostname === 'test.dream60.com' || url.hostname === 'localhost') && 
-      url.pathname.includes('__vite')) {
-    return fetch(event.request);
-  }
-
   if (isApiRequest(request.url)) {
     event.respondWith(
       networkFirst(request, API_CACHE, 5000)
@@ -231,195 +224,43 @@ self.addEventListener('message', (event) => {
   }
 });
 
-/**
- * Push Event Handler
- * Handles incoming push notifications with professional design
- * Compatible with Android, Desktop, and iOS Safari (16.4+)
- */
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received');
+  if (!event.data) return;
   
-  if (!event.data) {
-    console.warn('[SW] Push event but no data');
-    return;
-  }
+  const data = event.data.json();
+  const options = {
+    body: data.body || 'New notification from Dream60',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-72x72.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    },
+    actions: data.actions || []
+  };
   
-  try {
-    const data = event.data.json();
-    console.log('[SW] Push data:', data);
-    
-      // Professional notification options with brand styling
-      const options = {
-        // Core content
-        body: data.body || 'New notification from Dream60',
-        
-        // Visual branding
-        icon: data.icon || '/icons/icon-192x192.png',           // App icon (Square)
-        badge: '/icons/icon-72x72.png',            // Monochrome badge icon (Android)
-        
-        // iOS Safari 16.4+ does not support rich images in notifications
-        // Only include image for Android/Desktop Chrome/Edge
-        ...(data.image && !/(iPhone|iPad|iPod)/.test(navigator.userAgent) ? { image: data.image } : {}),
-        
-        // Interaction settings
-      vibrate: [200, 100, 200, 100, 200],        // Vibration pattern
-      tag: data.tag || 'dream60-notification',   // Notification grouping
-      requireInteraction: data.requireInteraction || false, // Keep notification visible
-      renotify: true,                             // Alert on replace
-      silent: data.silent || false,               // Sound on/off
-      
-      // Data payload for click handling
-      data: {
-        url: data.url || '/',
-        timestamp: Date.now(),
-        notificationId: data.notificationId || `notif-${Date.now()}`,
-        clickAction: data.clickAction || 'open_app',
-        ...data.customData
-      },
-      
-      // Action buttons (Android, Desktop - not iOS)
-      actions: data.actions || [
-        {
-          action: 'open',
-          title: '🎯 Open',
-          icon: '/icons/icon-96x96.png'
-        },
-        {
-          action: 'close',
-          title: '❌ Dismiss',
-          icon: '/icons/icon-72x72.png'
-        }
-      ],
-      
-      // Localization
-      dir: data.dir || 'ltr',
-      lang: data.lang || 'en-US',
-      
-      // Timestamp (for sorting)
-      timestamp: data.timestamp || Date.now()
-    };
-    
-    // Show notification
-    event.waitUntil(
-      self.registration.showNotification(
-        data.title || '🎁 Dream60 Auction',
-        options
-      ).then(() => {
-        console.log('[SW] Notification displayed successfully');
-      }).catch((error) => {
-        console.error('[SW] Failed to show notification:', error);
-      })
-    );
-  } catch (error) {
-    console.error('[SW] Error parsing push data:', error);
-  }
-});
-
-/**
- * Notification Click Handler
- * Handles notification and action button clicks with deep linking
- * Opens app in existing window or creates new window
- */
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
-  console.log('[SW] Action:', event.action);
-  console.log('[SW] Notification data:', event.notification.data);
-  
-  // Close the notification
-  event.notification.close();
-  
-  const action = event.action;
-  const notificationData = event.notification.data || {};
-  const targetUrl = notificationData.url || '/';
-  const clickAction = notificationData.clickAction || 'open_app';
-  
-  // Handle "Dismiss" action - just close
-  if (action === 'close' || action === 'dismiss') {
-    console.log('[SW] Notification dismissed');
-    return;
-  }
-  
-  // Handle "Open" action or notification body click
   event.waitUntil(
-    (async () => {
-      try {
-        // Get all window clients
-        const clientList = await clients.matchAll({
-          type: 'window',
-          includeUncontrolled: true
-        });
-        
-        console.log('[SW] Found', clientList.length, 'open windows');
-        
-        // Try to find existing client with matching URL
-        for (const client of clientList) {
-          const clientUrl = new URL(client.url);
-          const targetUrlObj = new URL(targetUrl, self.location.origin);
-          
-          // Check if client is on the same domain
-          if (clientUrl.origin === targetUrlObj.origin) {
-            console.log('[SW] Found existing window, focusing and navigating...');
-            
-            // Focus the existing window
-            await client.focus();
-            
-            // Navigate to the target URL
-            if (client.url !== targetUrlObj.href) {
-              await client.navigate(targetUrlObj.href);
-            }
-            
-            // Send message to client about the notification click
-            client.postMessage({
-              type: 'NOTIFICATION_CLICKED',
-              data: notificationData
-            });
-            
-            return;
-          }
-        }
-        
-        // No existing window found, open new window
-        console.log('[SW] No existing window found, opening new window...');
-        
-        if (clients.openWindow) {
-          const fullUrl = new URL(targetUrl, self.location.origin).href;
-          const newClient = await clients.openWindow(fullUrl);
-          
-          console.log('[SW] New window opened:', fullUrl);
-          
-          // Send message to new client (after a short delay to ensure it's ready)
-          if (newClient) {
-            setTimeout(() => {
-              newClient.postMessage({
-                type: 'NOTIFICATION_CLICKED',
-                data: notificationData
-              });
-            }, 1000);
-          }
-        }
-      } catch (error) {
-        console.error('[SW] Error handling notification click:', error);
-        
-        // Fallback: try to open window anyway
-        try {
-          const fullUrl = new URL(targetUrl, self.location.origin).href;
-          await clients.openWindow(fullUrl);
-        } catch (fallbackError) {
-          console.error('[SW] Fallback window open failed:', fallbackError);
-        }
-      }
-    })()
+    self.registration.showNotification(data.title || 'Dream60', options)
   );
 });
 
-/**
- * Notification Close Handler (Optional)
- * Track when users dismiss notifications without clicking
- */
-self.addEventListener('notificationclose', (event) => {
-  console.log('[SW] Notification closed without action');
-  console.log('[SW] Notification data:', event.notification.data);
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
   
-  // Optional: Send analytics or tracking event
-  // This can be useful for understanding engagement
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        const url = event.notification.data?.url || '/';
+        
+        for (const client of clientList) {
+          if (client.url === url && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
+      })
+  );
 });

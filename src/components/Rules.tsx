@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee, Gift } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';

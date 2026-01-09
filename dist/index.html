@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192x192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dream60 - Live Hourly Auctions</title>
-    <meta name="description" content="Join Dream60 - Win amazing prizes every hour in live 60-minute auctions!" />
+    <title>Dream60 - Premium Auction Game</title>
+    <meta name="description" content="Join Dream60 - The ultimate 60-minute auction game. Win amazing prizes every hour!" />
     
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#6B3FA0" />
@@ -20,57 +20,9 @@
     <script>
       // Disable right-click
       document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-      // PWA v2.0.0 Global Prompt Capture
-      window.deferredPWAPrompt = null;
-      window.pwaInstallReady = false;
-      
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        window.deferredPWAPrompt = e;
-        window.pwaInstallReady = true;
-        console.log('✅ [PWA v2] Global beforeinstallprompt captured at:', new Date().toISOString());
-        window.dispatchEvent(new CustomEvent('pwa-prompt-captured', { detail: { prompt: e } }));
-      });
-
-      window.addEventListener('appinstalled', () => {
-        console.log('✅ [PWA v2] App installed successfully');
-        window.deferredPWAPrompt = null;
-        window.pwaInstallReady = false;
-        window.dispatchEvent(new CustomEvent('pwa-installed'));
-      });
-
-      // Debug helper for devtools
-      window.triggerPWAInstall = async function() {
-        console.log('[PWA Debug] Manual trigger called');
-        console.log('[PWA Debug] deferredPWAPrompt:', window.deferredPWAPrompt);
-        console.log('[PWA Debug] pwaInstallReady:', window.pwaInstallReady);
-        
-        if (window.deferredPWAPrompt) {
-          try {
-            await window.deferredPWAPrompt.prompt();
-            const result = await window.deferredPWAPrompt.userChoice;
-            console.log('[PWA Debug] User choice:', result.outcome);
-            return result;
-          } catch (err) {
-            console.error('[PWA Debug] Error:', err);
-            return { error: err.message };
-          }
-        } else {
-          console.log('[PWA Debug] No install prompt available. Possible reasons:');
-          console.log('  - App already installed');
-          console.log('  - Not served over HTTPS');
-          console.log('  - Manifest not valid');
-          console.log('  - Already shown prompt in this session');
-          return { error: 'No prompt available' };
-        }
-      };
-      
-      console.log('🚀 [PWA v2] Dream60 PWA v2.0.0 initialized');
-      console.log('💡 [PWA v2] Use window.triggerPWAInstall() in DevTools to test install');
     </script>
-    <script type="module" crossorigin src="/assets/index-DQGm_REw.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BYVqg6LN.css">
+    <script type="module" crossorigin src="/assets/index-DaeSl4dv.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BFTLynVf.css">
     <script>(() => {
             try {
               const logOverlay = () => {
@@ -115,6 +67,6 @@
           })();</script>
   </head>
   <body oncontextmenu="return false;">
-    <div id="root"></div>
+    <div id="root"></div>
   </body>
 </html>

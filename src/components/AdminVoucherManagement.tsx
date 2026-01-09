@@ -58,20 +58,6 @@ interface WoohooTransaction {
   type: string;
 }
 
-interface WoohooCategory {
-  id: number;
-  name: string;
-  description: string;
-}
-
-interface WoohooProduct {
-  sku: string;
-  name: string;
-  description: string;
-  minPrice: number;
-  maxPrice: number;
-}
-
 interface AdminVoucherManagementProps {
   adminUserId: string;
 }
@@ -81,12 +67,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const [issuedVouchers, setIssuedVouchers] = useState<IssuedVoucher[]>([]);
   const [woohooBalance, setWoohooBalance] = useState<number | null>(null);
   const [woohooTransactions, setWoohooTransactions] = useState<WoohooTransaction[]>([]);
-  const [woohooCategories, setWoohooCategories] = useState<WoohooCategory[]>([]);
-  const [woohooProducts, setWoohooProducts] = useState<WoohooProduct[]>([]);
-    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
-    const [selectedSku, setSelectedSku] = useState<string>('EGCGBAMG001');
-    const [isLoading, setIsLoading] = useState(true);
-  const [isFetchingProducts, setIsFetchingProducts] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
@@ -126,6 +107,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
       const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-balance?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
+        // Woohoo API v3 balance is usually in data.balance or data[0].balance
         const balance = data.data?.balance || data.data?.[0]?.balance || 0;
         setWoohooBalance(balance);
       }
@@ -146,43 +128,13 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const fetchWoohooCategories = async () => {
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-categories?user_id=${adminUserId}`);
-      const data = await response.json();
-      if (data.success) {
-        setWoohooCategories(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching Woohoo categories:', error);
-    }
-  };
-
-  const fetchWoohooProducts = async (categoryId: string) => {
-    if (!categoryId) return;
-    setIsFetchingProducts(true);
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-products/${categoryId}?user_id=${adminUserId}`);
-      const data = await response.json();
-      if (data.success) {
-        setWoohooProducts(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching Woohoo products:', error);
-      toast.error('Failed to fetch products for this category');
-    } finally {
-      setIsFetchingProducts(false);
-    }
-  };
-
   const loadData = async () => {
     setIsLoading(true);
     await Promise.all([
       fetchEligibleWinners(), 
       fetchIssuedVouchers(),
       fetchWoohooBalance(),
-      fetchWoohooTransactions(),
-      fetchWoohooCategories()
+      fetchWoohooTransactions()
     ]);
     setIsLoading(false);
   };
@@ -190,14 +142,6 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   useEffect(() => {
     loadData();
   }, [adminUserId]);
-
-  useEffect(() => {
-    if (selectedCategoryId) {
-      fetchWoohooProducts(selectedCategoryId);
-    } else {
-      setWoohooProducts([]);
-    }
-  }, [selectedCategoryId]);
 
   const handleSendVoucher = async (winner: EligibleWinner) => {
     if (!selectedSku) {
@@ -221,7 +165,7 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
         body: JSON.stringify({
           user_id: adminUserId,
           claimId: winner._id,
-          sku: selectedSku,
+          sku: 'AMAZON_GC', // Generic SKU for now, should be configurable
           amount: winner.prizeAmountWon
         }),
       });
@@ -623,9 +567,9 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                 </button>
               </div>
               
-              <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">Are you sure?</h3>
-              <p className="text-gray-600 mb-6 text-center">
-                You are about to send a <span className="font-bold text-purple-700">₹{showConfirmModal.winner.prizeAmountWon.toLocaleString()}</span> Amazon voucher to <span className="font-bold text-gray-900">{showConfirmModal.winner.userName}</span>.
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Voucher Distribution</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to send a <span className="font-bold text-purple-700">₹{showConfirmModal.winner.prizeAmountWon.toLocaleString()}</span> {selectedSku} voucher to <span className="font-bold text-gray-900">{showConfirmModal.winner.userName}</span>?
               </p>
 
               <div className="flex gap-3">
@@ -633,14 +577,14 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                   onClick={() => setShowConfirmModal({ show: false, winner: null })}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
                 >
-                  No, Cancel
+                  Cancel
                 </button>
                 <button
                   onClick={confirmSendVoucher}
                   className="flex-1 px-4 py-3 bg-purple-700 text-white font-semibold rounded-xl hover:bg-purple-800 transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4" />
-                  Yes, Send it!
+                  Confirm & Send
                 </button>
               </div>
             </div>

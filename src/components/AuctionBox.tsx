@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Lock, Crown, Clock, Zap, Target, TrendingUp, Sparkles, Trophy, CheckCircle2, AlertCircle, Timer, IndianRupee, Users, Award, ChevronRight, Info } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import {
@@ -557,11 +557,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5, type: "spring" }}
-                className="flex flex-col items-center gap-1"
               >
-                <span className="text-[10px] sm:text-xs font-medium text-purple-700">
-                  {box.isOpen ? 'Round Closes In' : 'Round Opens In'}
-                </span>
                 <div className="bg-purple-600 backdrop-blur-sm px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-lg border-2 border-purple-300/60">
                   <div className="flex items-center gap-1 sm:gap-1.5 text-white">
                     <Timer className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -884,12 +880,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                     </span>
                     <span className="text-purple-900 font-bold text-base sm:text-lg flex items-center gap-0.5 shrink-0">
                       <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>
-                        {(box.type === 'entry' 
-                          ? box.entryFee 
-                          : Math.max(box.minBid || 0, box.entryFee || 0)
-                        )?.toLocaleString('en-IN')}
-                      </span>
+                      <span>{(box.type === 'entry' ? box.entryFee : box.minBid)?.toLocaleString('en-IN')}</span>
                     </span>
                   </div>
                 </div>

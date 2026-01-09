@@ -5,7 +5,7 @@ require('dotenv').config();
 const brandStyles = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { 
-    background-color: #221432; 
+    background-color: #050505; 
     font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     margin: 0; 
     padding: 20px; 
@@ -18,8 +18,8 @@ const brandStyles = `
     padding: 20px 0;
   }
   .card { 
-    background-color: #3A2257; 
-    border: 1px solid rgba(159, 122, 203, 0.2); 
+    background-color: #0d0d0d; 
+    border: 1px solid rgba(124, 58, 237, 0.2); 
     border-radius: 24px; 
     overflow: hidden; 
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
@@ -27,17 +27,17 @@ const brandStyles = `
   .header { 
     padding: 40px 40px 30px; 
     text-align: center;
-    background: linear-gradient(180deg, rgba(159, 122, 203, 0.1) 0%, rgba(159, 122, 203, 0) 100%);
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.1) 0%, rgba(124, 58, 237, 0) 100%);
   }
   .logo-wrapper {
     margin-bottom: 20px;
   }
   .logo-img {
-    width: 80px;
-    height: 80px;
-    border-radius: 20px;
-    background: transparent;
-    padding: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #7C3AED 0%, #C026D3 100%);
+    padding: 12px;
     display: inline-block;
   }
   .brand-text {
@@ -45,15 +45,17 @@ const brandStyles = `
     font-weight: 900;
     letter-spacing: -1px;
     margin: 0;
-    color: #ffffff;
+    background: linear-gradient(to right, #ffffff, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
   .status-badge {
     display: inline-block;
     padding: 6px 16px;
-    background: rgba(159, 122, 203, 0.15);
-    border: 1px solid rgba(159, 122, 203, 0.3);
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.3);
     border-radius: 99px;
-    color: #C8B3E5;
+    color: #a78bfa;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -73,7 +75,7 @@ const brandStyles = `
   }
   .hero-text { 
     font-size: 16px; 
-    color: #B99FD9; 
+    color: #9ca3af; 
     line-height: 1.6; 
     margin-bottom: 24px; 
   }
@@ -87,7 +89,7 @@ const brandStyles = `
   }
   .feature-label {
     font-size: 13px;
-    color: #9F7ACB;
+    color: #7c3aed;
     text-transform: uppercase;
     letter-spacing: 2px;
     font-weight: 700;
@@ -102,7 +104,7 @@ const brandStyles = `
   }
   .feature-sub {
     font-size: 14px;
-    color: #B99FD9;
+    color: #6b7280;
     margin-top: 8px;
   }
   .otp-code { 
@@ -111,8 +113,8 @@ const brandStyles = `
     font-weight: 800; 
     letter-spacing: 12px; 
     color: #ffffff; 
-    background: rgba(159, 122, 203, 0.1); 
-    border: 2px dashed rgba(159, 122, 203, 0.4); 
+    background: rgba(124, 58, 237, 0.1); 
+    border: 2px dashed rgba(124, 58, 237, 0.4); 
     border-radius: 16px; 
     padding: 24px;
     margin: 20px 0;
@@ -121,13 +123,13 @@ const brandStyles = `
     .action-button { 
       display: inline-block; 
       padding: 18px 36px; 
-      background: linear-gradient(135deg, #9F7ACB 0%, #6B3FA0 100%); 
+      background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); 
       color: #ffffff !important; 
       text-decoration: none; 
       border-radius: 14px; 
       font-weight: 700; 
       font-size: 16px;
-      box-shadow: 0 10px 15px -3px rgba(107, 63, 160, 0.3);
+      box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
       margin: 20px 0;
     }
     .data-table {
@@ -141,8 +143,8 @@ const brandStyles = `
     .data-table th {
       text-align: left;
       padding: 12px 16px;
-      background: rgba(159, 122, 203, 0.1);
-      color: #C8B3E5;
+      background: rgba(124, 58, 237, 0.1);
+      color: #a78bfa;
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -176,7 +178,7 @@ const brandStyles = `
   }
   .info-label { 
     font-size: 11px; 
-    color: #B99FD9; 
+    color: #6b7280; 
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 6px; 
@@ -209,12 +211,12 @@ const brandStyles = `
   .alert-success .alert-title { color: #10b981; }
   .alert-desc {
     font-size: 13px;
-    color: #B99FD9;
+    color: #9ca3af;
     line-height: 1.4;
   }
   .footer { 
     padding: 40px; 
-    background-color: #221432;
+    background-color: #080808;
     text-align: center;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
   }
@@ -222,16 +224,16 @@ const brandStyles = `
     margin-bottom: 24px;
   }
   .footer-link { 
-    color: #B99FD9; 
+    color: #6b7280; 
     font-size: 13px;
     text-decoration: none; 
     margin: 0 12px;
   }
   .footer-link:hover {
-    color: #9F7ACB;
+    color: #7c3aed;
   }
   .copyright {
-    color: #6B3FA0;
+    color: #4b5563;
     font-size: 12px;
   }
   /* Winner Special Styling */
@@ -273,60 +275,58 @@ const createTransporter = () => {
 
 const getPrimaryClientUrl = () => {
   // Always prioritize the environment variables, fallback to test domain
-  const raw = process.env.FRONTEND_URL || 'https://test.dream60.com';
+  const raw = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'https://test.dream60.com';
   // Take first if it's a list (some configs might have multiple)
   return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
-  const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
-    const baseUrl = primaryClientUrl;
-    const termsHref = `${baseUrl}/terms`;
-    const privacyHref = `${baseUrl}/privacy`;
-    const supportHref = `${baseUrl}/support`;
-    const helpHref = `${baseUrl}/support`;
-    const rulesHref = `${baseUrl}/rules`;
-    const contactHref = `${baseUrl}/contact`;
-    const logoUrl = `https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/render/image/public/project-uploads/1811a3c1-620a-4c8b-a119-34f19f40817b/logo-1-1767714888861.png?width=400&height=400&resize=contain`;
+const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
+  const baseUrl = primaryClientUrl;
+  const termsHref = `${baseUrl}/terms`;
+  const privacyHref = `${baseUrl}/privacy`;
+  const supportHref = `${baseUrl}/support`;
+  const contactHref = `${baseUrl}/contact`;
+  const logoUrl = `${baseUrl}/icons/icon-192x192.png`;
 
-    return `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>${title}</title>
-        <style>${brandStyles}</style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="card ${isWinner ? 'winner-card' : ''}">
-            <div class="header ${isWinner ? 'winner-header' : ''}">
-              <div class="logo-wrapper">
-                <img src="${logoUrl}" alt="Dream60" class="logo-img" />
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${title}</title>
+      <style>${brandStyles}</style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="card ${isWinner ? 'winner-card' : ''}">
+          <div class="header ${isWinner ? 'winner-header' : ''}">
+            <div class="logo-wrapper">
+              <div class="logo-img">
+                <img src="${logoUrl}" alt="D60" style="width: 100%; height: 100%; object-fit: contain;" />
               </div>
-              <h1 class="brand-text">Dream60</h1>
-              ${isWinner ? `<div class="winner-badge">CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
             </div>
-            <div class="content">
-              ${bodyHtml}
+            <h1 class="brand-text">Dream60</h1>
+            ${isWinner ? `<div class="winner-badge">CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
+          </div>
+          <div class="content">
+            ${bodyHtml}
+          </div>
+          <div class="footer">
+            <div class="footer-nav">
+              <a href="${supportHref}" class="footer-link">Help</a>
+              <a href="${contactHref}" class="footer-link">Contact</a>
+              <a href="${termsHref}" class="footer-link">Terms</a>
+              <a href="${privacyHref}" class="footer-link">Privacy</a>
             </div>
-            <div class="footer">
-              <div class="footer-nav">
-                <a href="${helpHref}" class="footer-link">Help</a>
-                <a href="${rulesHref}" class="footer-link">Rules</a>
-                <a href="${supportHref}" class="footer-link">Support</a>
-                <a href="${contactHref}" class="footer-link">Contact</a>
-                <a href="${termsHref}" class="footer-link">Terms</a>
-                <a href="${privacyHref}" class="footer-link">Privacy</a>
-              </div>
-              <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-            </div>
+            <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
           </div>
         </div>
-      </body>
-      </html>
-    `;
-  };
+      </div>
+    </body>
+    </html>
+  `;
+};
 
 /**
  * Send OTP Email
@@ -380,44 +380,34 @@ const sendWelcomeEmail = async (email, username) => {
     const primaryClientUrl = getPrimaryClientUrl();
 
     const bodyHtml = `
-      <h2 class="hero-title">Welcome to the Arena, ${username}!</h2>
-      <p class="hero-text">Your Dream60 account is verified and ready. You've just joined India's most innovative auction platform where strategy leads to victory.</p>
+      <h2 class="hero-title">The Game is On, ${username}!</h2>
+      <p class="hero-text">Your Dream60 account is ready. You've just entered the most exciting auction platform where skill meets rewards.</p>
       
       <div class="info-grid">
         <div class="info-cell">
-          <div class="info-label">STRATEGIZE</div>
-          <div class="info-value">Unique Highest Bids</div>
+          <div class="info-label">Bid</div>
+          <div class="info-value">Unique Low</div>
         </div>
         <div class="info-cell">
-          <div class="info-label">COMPETE</div>
-          <div class="info-value">Live Rounds</div>
+          <div class="info-label">Win</div>
+          <div class="info-value">Big Prizes</div>
         </div>
         <div class="info-cell">
-          <div class="info-label">CONQUER</div>
-          <div class="info-value">Premium Prizes</div>
+          <div class="info-label">Play</div>
+          <div class="info-value">24/7 Live</div>
         </div>
-      </div>
-
-      <div class="feature-box">
-        <div class="feature-label">Your Journey Starts Now</div>
-        <p class="hero-text" style="font-size: 14px; margin-bottom: 0;">Participate in live auctions every hour and win amazing Amazon vouchers by placing the highest unique bids.</p>
       </div>
 
       <div style="text-align: center; margin-top: 30px;">
-        <a href="${primaryClientUrl}" class="action-button">Launch Dashboard</a>
-      </div>
-
-      <div class="alert-box alert-success">
-        <div class="alert-title">Pro Tip</div>
-        <div class="alert-desc">The key to winning is uniqueness. Try to find the highest amount that no one else is bidding!</div>
+        <a href="${primaryClientUrl}" class="action-button">Go to Dashboard</a>
       </div>
     `;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Welcome to Dream60 - Your Journey Begins!',
-      html: buildEmailTemplate({ primaryClientUrl, title: 'Welcome', status: 'Onboarding Complete', bodyHtml }),
+      subject: 'Welcome to Dream60!',
+      html: buildEmailTemplate({ primaryClientUrl, title: 'Welcome', status: 'Registration Success', bodyHtml }),
     };
 
     const info = await transporter.sendMail(mailOptions);
