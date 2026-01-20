@@ -9,8 +9,8 @@ class WoohooService {
         this.username = process.env.WOOHOO_USERNAME;
         this.password = process.env.WOOHOO_PASSWORD;
         this.baseUrl = process.env.WOOHOO_BASE_URL || 'https://sandbox.woohoo.in';
-        this.tokenUrl = process.env.WOOHOO_TOKEN_URL;
-        this.verifyUrl = process.env.WOOHOO_AUTH_VERIFY_URL;
+        this.tokenUrl = process.env.WOOHOO_TOKEN_URL || 'https://sandbox.woohoo.in/oauth2/token';
+        this.verifyUrl = process.env.WOOHOO_AUTH_VERIFY_URL || 'https://sandbox.woohoo.in/oauth2/verify';
         this.svc = process.env.WOOHOO_SVC;
         
         if (this.baseUrl.endsWith('/rest')) {
@@ -27,71 +27,78 @@ class WoohooService {
         }
 
         try {
-            console.log('Woohoo Auth Attempt:', {
-                verifyUrl: this.verifyUrl,
-                clientId: this.clientId,
-                username: this.username,
-                password: this.password,
-                passwordLength: this.password?.length
-            });
+            console.log('=== Woohoo OAuth2.0 Step 1: Get Authorization Code ===');
+            console.log('Verify URL:', this.verifyUrl);
+            console.log('Client ID:', this.clientId);
+            console.log('Username:', this.username);
             
-            const authPayload = {
+            const authResponse = await axios.post(this.verifyUrl, {
                 clientId: this.clientId,
                 username: this.username,
                 password: this.password
-            };
-            
-            console.log('Woohoo Auth Payload:', JSON.stringify(authPayload));
-            
-            const authResponse = await axios.post(this.verifyUrl, authPayload, {
+            }, {
                 headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 }
             });
 
+            console.log('Auth Response:', JSON.stringify(authResponse.data, null, 2));
+
             if (!authResponse.data || !authResponse.data.authorizationCode) {
-                throw new Error('Failed to get authorization code from Woohoo');
+                throw new Error('Failed to get authorization code from Woohoo: ' + JSON.stringify(authResponse.data));
             }
 
             const authCode = authResponse.data.authorizationCode;
+            console.log('=== Woohoo OAuth2.0 Step 2: Get Bearer Token ===');
+            console.log('Token URL:', this.tokenUrl);
+            console.log('Authorization Code:', authCode);
 
             const tokenResponse = await axios.post(this.tokenUrl, {
                 clientId: this.clientId,
                 clientSecret: this.clientSecret,
                 authorizationCode: authCode
             }, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                    'Content-Type': 'application/json'
+                }
             });
 
+            console.log('Token Response:', JSON.stringify(tokenResponse.data, null, 2));
+
             if (!tokenResponse.data || !tokenResponse.data.token) {
-                throw new Error('Failed to get bearer token from Woohoo');
+                throw new Error('Failed to get bearer token from Woohoo: ' + JSON.stringify(tokenResponse.data));
             }
 
             this.accessToken = tokenResponse.data.token;
             this.tokenExpiry = Date.now() + (6 * 24 * 3600 * 1000);
             
+            console.log('=== Woohoo OAuth2.0 Authentication Successful ===');
+            console.log('Token expires in 6 days');
+            
             return this.accessToken;
         } catch (error) {
-            console.error('Woohoo Auth Error:', error.response?.data || error.message);
+            console.error('=== Woohoo Auth Error ===');
+            console.error('Status:', error.response?.status);
+            console.error('Data:', JSON.stringify(error.response?.data, null, 2));
+            console.error('Message:', error.message);
             throw error;
         }
     }
 
-    _sortObject(object) {
-        if (typeof object !== 'object' || object === null) {
-            return object;
+    _sortObjectKeys(obj) {
+        if (obj === null || typeof obj !== 'object') {
+            return obj;
         }
 
-        if (Array.isArray(object)) {
-            return object.map(item => this._sortObject(item));
+        if (Array.isArray(obj)) {
+            return obj.map(item => this._sortObjectKeys(item));
         }
 
         const sortedObj = {};
-        const keys = Object.keys(object).sort();
+        const keys = Object.keys(obj).sort();
 
         for (const key of keys) {
-            sortedObj[key] = this._sortObject(object[key]);
+            sortedObj[key] = this._sortObjectKeys(obj[key]);
         }
         return sortedObj;
     }
@@ -108,17 +115,17 @@ class WoohooService {
     _generateSignature(method, fullUrl, body = null) {
         const urlObj = new URL(fullUrl);
         
-        let normalizedUrl = `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}`;
-        
         const params = [];
         urlObj.searchParams.forEach((value, key) => {
             params.push({ key, value });
         });
         
+        let normalizedUrl = `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}`;
+        
         if (params.length > 0) {
             params.sort((a, b) => a.key.localeCompare(b.key));
-            const queryString = params.map(p => `${p.key}=${p.value}`).join('&');
-            normalizedUrl += `?${queryString}`;
+            const sortedQueryString = params.map(p => `${p.key}=${p.value}`).join('&');
+            normalizedUrl += `?${sortedQueryString}`;
         }
         
         const encodedUrl = this._encodeRFC3986(normalizedUrl);
@@ -126,15 +133,23 @@ class WoohooService {
         let baseString = `${method.toUpperCase()}&${encodedUrl}`;
         
         if (body && typeof body === 'object' && Object.keys(body).length > 0) {
-            const sortedBody = this._sortObject(body);
+            const sortedBody = this._sortObjectKeys(body);
             const bodyString = JSON.stringify(sortedBody);
             const encodedBody = this._encodeRFC3986(bodyString);
             baseString += `&${encodedBody}`;
         }
 
-        return crypto.createHmac('sha512', this.clientSecret)
+        const signature = crypto.createHmac('sha512', this.clientSecret)
             .update(baseString)
             .digest('hex');
+        
+        console.log('=== Signature Generation ===');
+        console.log('Method:', method.toUpperCase());
+        console.log('URL:', normalizedUrl);
+        console.log('Base String:', baseString.substring(0, 200) + '...');
+        console.log('Signature:', signature.substring(0, 50) + '...');
+        
+        return signature;
     }
 
     async request(method, endpoint, data = null, queryParams = {}) {
@@ -150,6 +165,11 @@ class WoohooService {
             const dateAtClient = new Date().toISOString();
             const signature = this._generateSignature(method, fullUrl.toString(), data);
 
+            console.log('=== Woohoo API Request ===');
+            console.log('Method:', method);
+            console.log('URL:', fullUrl.toString());
+            console.log('dateAtClient:', dateAtClient);
+            
             const response = await axios({
                 method,
                 url: fullUrl.toString(),
@@ -163,9 +183,15 @@ class WoohooService {
                 }
             });
 
+            console.log('=== Woohoo API Response ===');
+            console.log('Status:', response.status);
+            
             return response.data;
         } catch (error) {
-            console.error(`Woohoo API Error (${endpoint}):`, error.response?.data || error.message);
+            console.error('=== Woohoo API Error ===');
+            console.error('Endpoint:', endpoint);
+            console.error('Status:', error.response?.status);
+            console.error('Data:', JSON.stringify(error.response?.data, null, 2));
             if (error.response?.status === 401) {
                 this.accessToken = null;
             }
