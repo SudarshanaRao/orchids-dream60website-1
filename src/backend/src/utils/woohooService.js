@@ -1,4 +1,3 @@
-// src/backend/src/utils/woohooService.js
 const axios = require('axios');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -9,29 +8,31 @@ class WoohooService {
         this.clientSecret = process.env.WOOHOO_CLIENT_SECRET;
         this.username = process.env.WOOHOO_USERNAME;
         this.password = process.env.WOOHOO_PASSWORD;
-        this.baseUrl = process.env.WOOHOO_BASE_URL;
+        this.baseUrl = process.env.WOOHOO_BASE_URL || 'https://sandbox.woohoo.in';
         this.tokenUrl = process.env.WOOHOO_TOKEN_URL;
         this.verifyUrl = process.env.WOOHOO_AUTH_VERIFY_URL;
         this.svc = process.env.WOOHOO_SVC;
+        
+        if (this.baseUrl.endsWith('/rest')) {
+            this.baseUrl = this.baseUrl.replace(/\/rest$/, '');
+        }
         
         this.accessToken = null;
         this.tokenExpiry = null;
     }
 
-    /**
-     * Get OAuth 2.0 Token
-     */
     async getAccessToken() {
         if (this.accessToken && this.tokenExpiry && Date.now() < this.tokenExpiry) {
             return this.accessToken;
         }
 
         try {
-            // Step 1: Get Authorization Code
             const authResponse = await axios.post(this.verifyUrl, {
                 clientId: this.clientId,
                 username: this.username,
                 password: this.password
+            }, {
+                headers: { 'Content-Type': 'application/json' }
             });
 
             if (!authResponse.data || !authResponse.data.authorizationCode) {
@@ -40,21 +41,20 @@ class WoohooService {
 
             const authCode = authResponse.data.authorizationCode;
 
-            // Step 2: Get Bearer Token
             const tokenResponse = await axios.post(this.tokenUrl, {
                 clientId: this.clientId,
                 clientSecret: this.clientSecret,
                 authorizationCode: authCode
+            }, {
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            // V3 uses 'token' instead of 'accessToken'
             if (!tokenResponse.data || !tokenResponse.data.token) {
                 throw new Error('Failed to get bearer token from Woohoo');
             }
 
             this.accessToken = tokenResponse.data.token;
-            // Token usually valid for 1 week based on docs, but we use a safe expiry
-            this.tokenExpiry = Date.now() + (7 * 24 * 3600 * 1000) - (60 * 60 * 1000); 
+            this.tokenExpiry = Date.now() + (6 * 24 * 3600 * 1000);
             
             return this.accessToken;
         } catch (error) {
@@ -63,9 +63,6 @@ class WoohooService {
         }
     }
 
-    /**
-     * Sort object keys recursively for signature
-     */
     _sortObject(object) {
         if (typeof object !== 'object' || object === null) {
             return object;
@@ -84,54 +81,40 @@ class WoohooService {
         return sortedObj;
     }
 
-    /**
-     * Normalize and encode URL for signature
-     */
-    _normalizeUrl(urlWithParams) {
-        const url = new URL(urlWithParams);
-        const scheme = url.protocol.toLowerCase();
-        const host = url.hostname.toLowerCase();
-        let port = url.port;
-
-        // Remove default ports
-        if ((scheme === 'http:' && port === '80') || (scheme === 'https:' && port === '443')) {
-            port = '';
-        }
-
-        let normalizedPath = `${scheme}//${host}${port ? ':' + port : ''}${url.pathname}`;
-        
-        // Remove trailing slash from path if it exists
-        if (normalizedPath.endsWith('/') && url.pathname !== '/') {
-            normalizedPath = normalizedPath.slice(0, -1);
-        }
-
-        // Handle query params
-        const params = [];
-        url.searchParams.forEach((value, key) => {
-            params.push({ key, value });
-        });
-
-        if (params.length > 0) {
-            // Sort params by key
-            params.sort((a, b) => a.key.localeCompare(b.key));
-            const queryString = params.map(p => `${p.key}=${p.value}`).join('&');
-            normalizedPath += `?${queryString}`;
-        }
-
-        return encodeURIComponent(normalizedPath);
+    _encodeRFC3986(str) {
+        return encodeURIComponent(str)
+            .replace(/!/g, '%21')
+            .replace(/'/g, '%27')
+            .replace(/\(/g, '%28')
+            .replace(/\)/g, '%29')
+            .replace(/\*/g, '%2A');
     }
 
-    /**
-     * Generate HMAC SHA-512 Signature
-     */
-    _generateSignature(method, url, body) {
-        const encodedUrl = this._normalizeUrl(url);
+    _generateSignature(method, fullUrl, body = null) {
+        const urlObj = new URL(fullUrl);
+        
+        let normalizedUrl = `${urlObj.protocol}//${urlObj.hostname}${urlObj.pathname}`;
+        
+        const params = [];
+        urlObj.searchParams.forEach((value, key) => {
+            params.push({ key, value });
+        });
+        
+        if (params.length > 0) {
+            params.sort((a, b) => a.key.localeCompare(b.key));
+            const queryString = params.map(p => `${p.key}=${p.value}`).join('&');
+            normalizedUrl += `?${queryString}`;
+        }
+        
+        const encodedUrl = this._encodeRFC3986(normalizedUrl);
+        
         let baseString = `${method.toUpperCase()}&${encodedUrl}`;
         
-        if (body && Object.keys(body).length > 0) {
+        if (body && typeof body === 'object' && Object.keys(body).length > 0) {
             const sortedBody = this._sortObject(body);
-            const requestData = encodeURIComponent(JSON.stringify(sortedBody));
-            baseString += `&${requestData}`;
+            const bodyString = JSON.stringify(sortedBody);
+            const encodedBody = this._encodeRFC3986(bodyString);
+            baseString += `&${encodedBody}`;
         }
 
         return crypto.createHmac('sha512', this.clientSecret)
@@ -139,47 +122,27 @@ class WoohooService {
             .digest('hex');
     }
 
-    /**
-     * Generic API Request with Auto-Token Refresh, Signature and Date headers
-     */
-    async request(method, endpoint, data = null, params = {}) {
-        let token = await this.getAccessToken();
+    async request(method, endpoint, data = null, queryParams = {}) {
+        const token = await this.getAccessToken();
 
         try {
-            // Build full URL with query params for signature calculation
-            const urlObj = new URL(`${this.baseUrl}${endpoint}`);
-            Object.entries(params).forEach(([key, value]) => {
-                urlObj.searchParams.append(key, value);
+            const fullUrl = new URL(`${this.baseUrl}${endpoint}`);
+            
+            Object.entries(queryParams).forEach(([key, value]) => {
+                fullUrl.searchParams.append(key, String(value));
             });
-            
-            // Add clientId to params for GET if not present
-            if (method === 'GET' && !urlObj.searchParams.has('clientId')) {
-                urlObj.searchParams.append('clientId', this.clientId?.trim());
-            }
 
-            const fullUrl = urlObj.toString();
             const dateAtClient = new Date().toISOString();
-            
-            // Add clientId to data for POST/PUT if not present
-            let requestData = data;
-            if (data && typeof data === 'object' && !Array.isArray(data) && (method === 'POST' || method === 'PUT')) {
-                if (!requestData.clientId) {
-                    requestData = {
-                        ...data,
-                        clientId: this.clientId?.trim()
-                    };
-                }
-            }
-
-            const signature = this._generateSignature(method, fullUrl, requestData);
+            const signature = this._generateSignature(method, fullUrl.toString(), data);
 
             const response = await axios({
                 method,
-                url: fullUrl,
-                data: requestData,
+                url: fullUrl.toString(),
+                data: data,
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
+                    'Accept': '*/*',
                     'dateAtClient': dateAtClient,
                     'signature': signature
                 }
@@ -188,40 +151,26 @@ class WoohooService {
             return response.data;
         } catch (error) {
             console.error(`Woohoo API Error (${endpoint}):`, error.response?.data || error.message);
-            // Handle token rejection
             if (error.response?.status === 401) {
-                this.accessToken = null; // Force refresh next time
+                this.accessToken = null;
             }
             throw error;
         }
     }
 
-    /**
-     * Get Categories
-     */
     async getCategories() {
         return this.request('GET', '/rest/v3/catalog/categories');
     }
 
-    /**
-     * Get Products by Category
-     */
     async getProducts(categoryId) {
         return this.request('GET', `/rest/v3/catalog/categories/${categoryId}/products`);
     }
 
-    /**
-     * Get Product Details
-     */
     async getProductDetails(sku) {
         return this.request('GET', `/rest/v3/catalog/products/${sku}`);
     }
 
-    /**
-     * Create Order
-     */
     async createOrder(orderDetails) {
-        // refno must be unique and up to 25 chars
         const referenceNumber = orderDetails.refno || `D60${Date.now()}`.substring(0, 25);
         
         const payload = {
@@ -243,12 +192,12 @@ class WoohooService {
                     sku: orderDetails.sku,
                     price: orderDetails.amount,
                     qty: orderDetails.qty || 1,
-                    currency: 356 // INR
+                    currency: 356
                 }
             ],
             payments: [
                 {
-                    code: 'svc', // Fixed as svc per doc
+                    code: 'svc',
                     amount: orderDetails.amount * (orderDetails.qty || 1)
                 }
             ],
@@ -260,53 +209,43 @@ class WoohooService {
         return this.request('POST', '/rest/v3/orders', payload);
     }
 
-    /**
-     * Check Order Status
-     */
     async getOrderStatus(orderId) {
         return this.request('GET', `/rest/v3/order/${orderId}/status`);
     }
 
-    /**
-     * Get Order Details
-     */
     async getOrderDetails(orderId) {
         return this.request('GET', `/rest/v3/orders/${orderId}`);
     }
 
-    /**
-     * Get Card Balance
-     */
-    async getCardBalance(cardNumber) {
-        return this.request('POST', '/rest/v3/balance', { cardNumber });
+    async getCardBalance(cardNumber, pin = null, sku = null) {
+        const payload = { cardNumber };
+        if (pin) payload.pin = pin;
+        if (sku) payload.sku = sku;
+        return this.request('POST', '/rest/v3/balance', payload);
     }
 
-    /**
-     * Get Activated Cards
-     */
-    async getActivatedCards(orderId, offset = 0, limit = 0) {
+    async getActivatedCards(orderId, offset = 0, limit = 100) {
         return this.request('GET', `/rest/v3/order/${orderId}/cards/`, null, { offset, limit });
     }
 
-    /**
-     * Resend Order Email/Voucher
-     */
     async resendVoucher(orderId, cards) {
         return this.request('POST', `/rest/v3/orders/${orderId}/resend`, { cards });
     }
 
-    /**
-     * Get Account Balance (Partner Wallet)
-     */
     async getAccountBalance() {
         return this.request('GET', '/rest/v3/accounts');
     }
 
-    /**
-     * Get Transaction History
-     */
     async getTransactionHistory() {
         return this.request('GET', '/rest/v3/orders');
+    }
+
+    async getSVCBalance() {
+        const svcCardNumber = this.svc;
+        if (!svcCardNumber) {
+            throw new Error('WOOHOO_SVC environment variable not set');
+        }
+        return this.request('POST', '/rest/v3/balance', { cardNumber: svcCardNumber });
     }
 }
 

@@ -185,11 +185,11 @@ const getIssuedVouchers = async (req, res) => {
 };
 
 /**
- * Get Woohoo Account Balance
+ * Get Woohoo SVC Account Balance
  */
 const getWoohooBalance = async (req, res) => {
     try {
-        const balanceData = await woohooService.getAccountBalance();
+        const balanceData = await woohooService.getSVCBalance();
         return res.status(200).json({
             success: true,
             data: balanceData
