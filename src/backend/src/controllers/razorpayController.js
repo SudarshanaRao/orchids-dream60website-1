@@ -9,10 +9,21 @@ const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
 const { syncUserStats } = require('./userController');
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+let razorpay = null;
+
+const getRazorpayInstance = () => {
+  if (!razorpay) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new Error('Razorpay credentials not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
+    }
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+    console.log('✅ Razorpay instance initialized with key:', process.env.RAZORPAY_KEY_ID);
+  }
+  return razorpay;
+};
 
 // UUID validation helper function 
 const isValidUUID = (uuid) => {
@@ -119,7 +130,7 @@ const fetchServerTime = async () => {
 // Fetch Razorpay payment details for method & metadata
 const fetchRazorpayPaymentDetails = async (paymentId) => {
   try {
-    const payment = await razorpay.payments.fetch(paymentId);
+    const payment = await getRazorpayInstance().payments.fetch(paymentId);
     if (!payment) return null;
 
   const paidAt = payment.captured_at
@@ -352,7 +363,7 @@ exports.createHourlyAuctionOrder = async (req, res) => {
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpayInstance().orders.create(options);
 
     const paymentDoc = await RazorpayPayment.create({
       userId, // UUID string
@@ -827,7 +838,7 @@ exports.createPrizeClaimOrder = async (req, res) => {
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpayInstance().orders.create(options);
 
     const paymentDoc = await RazorpayPayment.create({
       userId,
