@@ -1,5 +1,12 @@
 // server.js 
 require('dotenv').config();
+
+// Check for required Razorpay environment variables on startup
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  console.warn('⚠️ WARNING: Razorpay credentials (RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET) are missing from environment variables.');
+  console.warn('   Ensure they are set in your .env file or environment.');
+}
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');

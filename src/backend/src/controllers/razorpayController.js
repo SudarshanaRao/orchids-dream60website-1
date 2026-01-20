@@ -13,9 +13,10 @@ let razorpay = null;
 
 const getRazorpayInstance = () => {
   if (!razorpay) {
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      throw new Error('Razorpay credentials not configured. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
-    }
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+console.error('❌ Razorpay configuration error: RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET missing');
+throw new Error('Razorpay credentials not configured on the server. Please ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in the .env file on the EC2 server and the backend is restarted.');
+}
     razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET,
