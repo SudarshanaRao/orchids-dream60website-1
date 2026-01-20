@@ -9,6 +9,8 @@ const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
 const { syncUserStats } = require('./userController');
 
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'Dream60';
+
 let razorpay = null;
 
 const getRazorpayInstance = () => {
@@ -1124,9 +1126,166 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
   }
 };
 
+/**
+ * Razorpay Webhook Handler
+ * POST /api/razorpay/webhook
+ * Handles payment events from Razorpay (payment.captured, payment.failed, etc.)
+ */
+exports.handleWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const body = JSON.stringify(req.body);
+
+    // Verify webhook signature
+    const expectedSignature = crypto
+      .createHmac('sha256', RAZORPAY_WEBHOOK_SECRET)
+      .update(body)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.error('❌ [WEBHOOK] Invalid signature');
+      return res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    console.log(`📩 [WEBHOOK] Received event: ${event}`);
+
+    switch (event) {
+      case 'payment.captured': {
+        const paymentEntity = payload.payment?.entity;
+        if (paymentEntity) {
+          const orderId = paymentEntity.order_id;
+          const paymentId = paymentEntity.id;
+          const amount = paymentEntity.amount / 100; // Convert paise to rupees
+
+          console.log(`✅ [WEBHOOK] Payment captured:`, {
+            orderId,
+            paymentId,
+            amount,
+            method: paymentEntity.method,
+            email: paymentEntity.email,
+            contact: paymentEntity.contact
+          });
+
+          // Update payment record if exists
+          const payment = await RazorpayPayment.findOneAndUpdate(
+            { razorpayOrderId: orderId },
+            {
+              status: 'paid',
+              razorpayPaymentId: paymentId,
+              paymentMethod: paymentEntity.method,
+              paidAt: new Date(),
+              webhookVerified: true,
+              paymentDetails: {
+                method: paymentEntity.method,
+                vpa: paymentEntity.vpa,
+                bank: paymentEntity.bank,
+                wallet: paymentEntity.wallet,
+                email: paymentEntity.email,
+                contact: paymentEntity.contact
+              }
+            },
+            { new: true }
+          );
+
+          if (payment) {
+            console.log(`✅ [WEBHOOK] Payment record updated for order: ${orderId}`);
+          } else {
+            console.warn(`⚠️ [WEBHOOK] No payment record found for order: ${orderId}`);
+          }
+        }
+        break;
+      }
+
+      case 'payment.failed': {
+        const paymentEntity = payload.payment?.entity;
+        if (paymentEntity) {
+          const orderId = paymentEntity.order_id;
+          const paymentId = paymentEntity.id;
+          const errorCode = paymentEntity.error_code;
+          const errorDescription = paymentEntity.error_description;
+
+          console.error(`❌ [WEBHOOK] Payment failed:`, {
+            orderId,
+            paymentId,
+            errorCode,
+            errorDescription
+          });
+
+          // Update payment record
+          await RazorpayPayment.findOneAndUpdate(
+            { razorpayOrderId: orderId },
+            {
+              status: 'failed',
+              razorpayPaymentId: paymentId,
+              webhookVerified: true,
+              failureReason: errorDescription || errorCode
+            },
+            { new: true }
+          );
+        }
+        break;
+      }
+
+      case 'order.paid': {
+        const orderEntity = payload.order?.entity;
+        if (orderEntity) {
+          console.log(`✅ [WEBHOOK] Order paid:`, {
+            orderId: orderEntity.id,
+            amount: orderEntity.amount / 100,
+            status: orderEntity.status
+          });
+        }
+        break;
+      }
+
+      case 'refund.created':
+      case 'refund.processed': {
+        const refundEntity = payload.refund?.entity;
+        if (refundEntity) {
+          console.log(`💰 [WEBHOOK] Refund ${event}:`, {
+            refundId: refundEntity.id,
+            paymentId: refundEntity.payment_id,
+            amount: refundEntity.amount / 100,
+            status: refundEntity.status
+          });
+
+          // Update payment record with refund info
+          await RazorpayPayment.findOneAndUpdate(
+            { razorpayPaymentId: refundEntity.payment_id },
+            {
+              $set: {
+                refundStatus: refundEntity.status,
+                refundId: refundEntity.id,
+                refundAmount: refundEntity.amount / 100,
+                refundedAt: new Date()
+              }
+            }
+          );
+        }
+        break;
+      }
+
+      default:
+        console.log(`ℹ️ [WEBHOOK] Unhandled event: ${event}`);
+    }
+
+    // Always respond with 200 to acknowledge receipt
+    return res.status(200).json({ success: true, message: 'Webhook received' });
+
+  } catch (error) {
+    console.error('❌ [WEBHOOK] Error processing webhook:', error);
+    // Still return 200 to prevent Razorpay from retrying
+    return res.status(200).json({ success: true, message: 'Webhook processed with errors' });
+  }
+};
+
 module.exports = {
   createHourlyAuctionOrder: exports.createHourlyAuctionOrder,
   verifyHourlyAuctionPayment: exports.verifyHourlyAuctionPayment,
   createPrizeClaimOrder: exports.createPrizeClaimOrder,
   verifyPrizeClaimPayment: exports.verifyPrizeClaimPayment,
+  handleWebhook: exports.handleWebhook,
 };

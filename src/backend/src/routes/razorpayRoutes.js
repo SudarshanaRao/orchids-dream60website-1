@@ -244,4 +244,28 @@ router.post('/hourly/verify-payment', razorpayController.verifyHourlyAuctionPaym
 router.post('/prize-claim/create-order', razorpayController.createPrizeClaimOrder);
 router.post('/prize-claim/verify-payment', razorpayController.verifyPrizeClaimPayment);
 
+/**
+ * @swagger
+ * /api/razorpay/webhook:
+ *   post:
+ *     summary: Razorpay Webhook Handler
+ *     description: >
+ *       Handles payment events from Razorpay dashboard (payment.captured, payment.failed, refund.processed, etc.)
+ *       Webhook URL: https://dev-api.dream60.com/api/razorpay/webhook
+ *       Secret: Dream60
+ *     tags: [Razorpay]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Webhook received successfully
+ *       400:
+ *         description: Invalid signature
+ */
+router.post('/webhook', razorpayController.handleWebhook);
+
 module.exports = router;
