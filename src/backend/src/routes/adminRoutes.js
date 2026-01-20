@@ -789,38 +789,39 @@ router.get('/vouchers/eligible-winners', getEligibleWinners);
  *                 type: string
  *                 description: The claim ID from AuctionHistory
  *                 example: "507f1f77bcf86cd799439011"
- *               sku:
- *                 type: string
- *                 description: Woohoo product SKU (e.g., Amazon gift card SKU)
- *                 example: "AMAZON_GC"
- *               amount:
- *                 type: number
- *                 description: Voucher amount in INR
- *                 example: 1000
- *     responses:
- *       200:
- *         description: Voucher order placed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Voucher order placed successfully"
- *                 data:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                     woohooOrderId:
- *                       type: string
- *                     status:
- *                       type: string
- *                       enum: [processing, complete, failed]
+   *               sku:
+   *                 type: string
+   *                 description: Woohoo product SKU (e.g., Amazon gift card SKU)
+   *                 example: "CNPIN"
+   *               amount:
+   *                 type: number
+   *                 description: Voucher amount in INR
+   *                 example: 10
+   *     responses:
+   *       200:
+   *         description: Voucher order placed successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 success:
+   *                   type: boolean
+   *                   example: true
+   *                 message:
+   *                   type: string
+   *                   example: "Voucher order placed successfully"
+   *                 data:
+   *                   type: object
+   *                   properties:
+   *                     _id:
+   *                       type: string
+   *                     woohooOrderId:
+   *                       type: string
+   *                       example: "3182427590"
+   *                     status:
+   *                       type: string
+   *                       enum: [processing, complete, failed]
  *       400:
  *         description: Missing required fields or voucher already issued
  *       404:

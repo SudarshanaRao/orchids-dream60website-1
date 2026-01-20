@@ -104,30 +104,9 @@ const sendVoucher = async (req, res) => {
             lastname: 'Dream60',
             email: user.email || 'support@dream60.com',
             phone: user.mobile || '0000000000',
-            billingAddress: {
-                firstname: user.username || 'Customer',
-                lastname: 'Dream60',
-                email: user.email || 'support@dream60.com',
-                mobile: user.mobile || '0000000000',
-                line1: 'Dream60 Office',
-                city: 'Bangalore',
-                region: 'Karnataka',
-                country: 'IN',
-                postcode: '560001'
-            },
-            shippingAddress: {
-                firstname: user.username || 'Customer',
-                lastname: 'Dream60',
-                email: user.email || 'support@dream60.com',
-                mobile: user.mobile || '0000000000',
-                line1: 'Dream60 Office',
-                city: 'Bangalore',
-                region: 'Karnataka',
-                country: 'IN',
-                postcode: '560001'
-            },
             sku: sku,
-            amount: amount
+            amount: amount,
+            syncOnly: true // Default to true for immediate card details
         };
 
         const woohooResponse = await woohooService.createOrder(orderDetails);
@@ -140,7 +119,7 @@ const sendVoucher = async (req, res) => {
             woohooOrderId: woohooResponse.orderId || woohooResponse.refno,
             sku: sku,
             amount: amount,
-            status: woohooResponse.status === 'COMPLETE' ? 'complete' : 'processing',
+            status: woohooResponse.status === 'COMPLETE' ? 'complete' : (woohooResponse.status === 'FAILED' ? 'failed' : 'processing'),
             orderResponse: woohooResponse
         });
 
