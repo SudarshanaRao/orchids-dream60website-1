@@ -33,7 +33,8 @@ export function Footer({ onNavigate }: FooterProps) {
         links: [
           { label: 'About Us', action: 'about' },
           { label: 'Terms of Use', action: 'terms' },
-          { label: 'Privacy Policy', action: 'privacy' }
+          { label: 'Privacy Policy', action: 'privacy' },
+          { label: 'Refund & Cancellation', action: 'refund' }
         ]
       }
   ];
@@ -90,13 +91,15 @@ export function Footer({ onNavigate }: FooterProps) {
             <p className="text-purple-500 text-[11px] font-semibold text-center md:text-left">
               © 2025 DREAM60 INDIA. ALL RIGHTS RESERVED.
             </p>
-            <div className="flex items-center gap-4 text-[10px] text-purple-400 font-bold uppercase tracking-widest">
-              <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('terms')}>Terms</span>
-              <span className="w-1 h-1 bg-purple-200 rounded-full" />
-              <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('privacy')}>Privacy</span>
-              <span className="w-1 h-1 bg-purple-200 rounded-full" />
-              <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('contact')}>Help</span>
-            </div>
+              <div className="flex items-center gap-4 text-[10px] text-purple-400 font-bold uppercase tracking-widest">
+                <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('terms')}>Terms</span>
+                <span className="w-1 h-1 bg-purple-200 rounded-full" />
+                <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('privacy')}>Privacy</span>
+                <span className="w-1 h-1 bg-purple-200 rounded-full" />
+                <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('refund')}>Refund</span>
+                <span className="w-1 h-1 bg-purple-200 rounded-full" />
+                <span className="hover:text-purple-600 cursor-pointer transition-colors" onClick={() => onNavigate?.('contact')}>Help</span>
+              </div>
           </div>
 
             <div className="flex flex-col items-center md:items-end gap-3">
