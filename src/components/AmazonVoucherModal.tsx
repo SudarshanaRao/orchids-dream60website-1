@@ -91,22 +91,21 @@ export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalPro
                 </motion.div>
 
                 {/* Content */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-amber-200"
-                >
-                  <p className="text-gray-800 text-center text-lg leading-relaxed">
-                    Get a chance to win{' '}
-                    <span className="font-bold text-amber-600">Amazon Gift Vouchers</span>{' '}
-                    worth up to{' '}
-                    <span className="font-bold text-orange-600 text-xl">₹1000</span>!
-                  </p>
-                  <p className="text-gray-600 text-center mt-3 text-sm">
-                    Participate in our auctions and stand a chance to win exciting prizes!
-                  </p>
-                </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-amber-200"
+                  >
+                    <p className="text-gray-800 text-center text-lg leading-relaxed">
+                      Get a chance to win{' '}
+                      <span className="font-bold text-amber-600">Amazon Gift Vouchers</span>{' '}
+                      worth the total prize value!
+                    </p>
+                    <p className="text-gray-600 text-center mt-3 text-sm">
+                      Participate in our auctions and stand a chance to win exciting prizes!
+                    </p>
+                  </motion.div>
 
                 {/* CTA Button */}
                 <motion.button

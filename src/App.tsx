@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Sonner } from '@/components/ui/sonner';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
