@@ -82,15 +82,21 @@ class WoohooService {
                 };
             }
 
+            // For GET requests, clientId needs to be in query params
+            let requestParams = { ...params };
+            if (method === 'GET') {
+                requestParams.clientId = this.clientId?.trim();
+            }
+
             const response = await axios({
                 method,
                 url,
                 data: requestData,
-                params,
+                params: requestParams,
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    'clientId': this.clientId?.trim() // Also adding to headers just in case
+                    'clientId': this.clientId?.trim()
                 }
             });
 

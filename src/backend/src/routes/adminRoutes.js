@@ -25,7 +25,14 @@ const {
   sendVoucher,
   getIssuedVouchers,
   getWoohooBalance,
-  getWoohooTransactions
+  getWoohooTransactions,
+  getWoohooCategories,
+  getWoohooProducts,
+  getWoohooProductDetails,
+  getWoohooOrderStatus,
+  getWoohooOrderCards,
+  resendVoucherEmail,
+  syncVoucherStatus
 } = require('../controllers/adminVoucherController');
 
 /**
@@ -704,10 +711,519 @@ router.put('/users/super-admin', updateUserSuperAdminStatus);
 router.post('/set-super-admin', setSuperAdminByEmail);
 
 // Voucher Management Routes
+/**
+ * @swagger
+ * tags:
+ *   - name: Voucher Management
+ *     description: Woohoo voucher management APIs for admin panel
+ */
+
+/**
+ * @swagger
+ * /admin/vouchers/eligible-winners:
+ *   get:
+ *     summary: GET ELIGIBLE WINNERS FOR VOUCHER
+ *     description: Get list of winners who have claimed their prize and paid, eligible for voucher distribution
+ *     tags: [Voucher Management]
+ *     responses:
+ *       200:
+ *         description: Eligible winners retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 count:
+ *                   type: number
+ *                   example: 5
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       userId:
+ *                         type: string
+ *                       hourlyAuctionId:
+ *                         type: string
+ *                       prizeClaimStatus:
+ *                         type: string
+ *                         example: "CLAIMED"
+ *                       remainingFeesPaid:
+ *                         type: boolean
+ *                         example: true
+ *                       userEmail:
+ *                         type: string
+ *                       userMobile:
+ *                         type: string
+ *                       userName:
+ *                         type: string
+ *       500:
+ *         description: Server error
+ */
 router.get('/vouchers/eligible-winners', getEligibleWinners);
+
+/**
+ * @swagger
+ * /admin/vouchers/send:
+ *   post:
+ *     summary: SEND VOUCHER TO WINNER
+ *     description: Send a Woohoo gift voucher to a winner via the Woohoo API
+ *     tags: [Voucher Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - claimId
+ *               - sku
+ *               - amount
+ *             properties:
+ *               claimId:
+ *                 type: string
+ *                 description: The claim ID from AuctionHistory
+ *                 example: "507f1f77bcf86cd799439011"
+ *               sku:
+ *                 type: string
+ *                 description: Woohoo product SKU (e.g., Amazon gift card SKU)
+ *                 example: "AMAZON_GC"
+ *               amount:
+ *                 type: number
+ *                 description: Voucher amount in INR
+ *                 example: 1000
+ *     responses:
+ *       200:
+ *         description: Voucher order placed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Voucher order placed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                     woohooOrderId:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [processing, complete, failed]
+ *       400:
+ *         description: Missing required fields or voucher already issued
+ *       404:
+ *         description: Winner or user not found
+ *       500:
+ *         description: Woohoo API error
+ */
 router.post('/vouchers/send', sendVoucher);
+
+/**
+ * @swagger
+ * /admin/vouchers/issued:
+ *   get:
+ *     summary: GET ALL ISSUED VOUCHERS
+ *     description: Get list of all vouchers that have been issued
+ *     tags: [Voucher Management]
+ *     responses:
+ *       200:
+ *         description: Issued vouchers retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       userId:
+ *                         type: string
+ *                       claimId:
+ *                         type: string
+ *                       woohooOrderId:
+ *                         type: string
+ *                       sku:
+ *                         type: string
+ *                       amount:
+ *                         type: number
+ *                       status:
+ *                         type: string
+ *                         enum: [processing, complete, failed]
+ *                       cardNumber:
+ *                         type: string
+ *                       cardPin:
+ *                         type: string
+ *                       expiry:
+ *                         type: string
+ *                         format: date-time
+ *                       sentToUser:
+ *                         type: boolean
+ *                       userName:
+ *                         type: string
+ *                       userEmail:
+ *                         type: string
+ *       500:
+ *         description: Server error
+ */
 router.get('/vouchers/issued', getIssuedVouchers);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-balance:
+ *   get:
+ *     summary: GET WOOHOO ACCOUNT BALANCE
+ *     description: Get the current SVC (Stored Value Card) balance from Woohoo
+ *     tags: [Voucher Management]
+ *     responses:
+ *       200:
+ *         description: Balance retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   description: Woohoo account balance data
+ *       500:
+ *         description: Woohoo API error
+ */
 router.get('/vouchers/woohoo-balance', getWoohooBalance);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-transactions:
+ *   get:
+ *     summary: GET WOOHOO TRANSACTION HISTORY
+ *     description: Get transaction history from Woohoo API
+ *     tags: [Voucher Management]
+ *     responses:
+ *       200:
+ *         description: Transactions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   description: List of Woohoo transactions
+ *       500:
+ *         description: Woohoo API error
+ */
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-categories:
+ *   get:
+ *     summary: GET WOOHOO PRODUCT CATEGORIES
+ *     description: Get all available gift card categories from Woohoo
+ *     tags: [Voucher Management]
+ *     responses:
+ *       200:
+ *         description: Categories retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *       500:
+ *         description: Woohoo API error
+ */
+router.get('/vouchers/woohoo-categories', getWoohooCategories);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-products/{categoryId}:
+ *   get:
+ *     summary: GET PRODUCTS BY CATEGORY
+ *     description: Get all products (gift cards) in a specific Woohoo category
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: categoryId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Woohoo category ID
+ *     responses:
+ *       200:
+ *         description: Products retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       sku:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       price:
+ *                         type: object
+ *                       images:
+ *                         type: array
+ *       400:
+ *         description: Category ID is required
+ *       500:
+ *         description: Woohoo API error
+ */
+router.get('/vouchers/woohoo-products/:categoryId', getWoohooProducts);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-product/{sku}:
+ *   get:
+ *     summary: GET PRODUCT DETAILS BY SKU
+ *     description: Get detailed information about a specific Woohoo product
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: sku
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product SKU
+ *         example: "AMAZON_GC"
+ *     responses:
+ *       200:
+ *         description: Product details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sku:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     price:
+ *                       type: object
+ *                     images:
+ *                       type: array
+ *       400:
+ *         description: SKU is required
+ *       500:
+ *         description: Woohoo API error
+ */
+router.get('/vouchers/woohoo-product/:sku', getWoohooProductDetails);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-order-status/{orderId}:
+ *   get:
+ *     summary: GET WOOHOO ORDER STATUS
+ *     description: Get the current status of a Woohoo order
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: orderId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Woohoo order ID
+ *     responses:
+ *       200:
+ *         description: Order status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     orderId:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [PROCESSING, COMPLETE, FAILED]
+ *       400:
+ *         description: Order ID is required
+ *       500:
+ *         description: Woohoo API error
+ */
+router.get('/vouchers/woohoo-order-status/:orderId', getWoohooOrderStatus);
+
+/**
+ * @swagger
+ * /admin/vouchers/woohoo-order-cards/{orderId}:
+ *   get:
+ *     summary: GET ACTIVATED CARDS FOR ORDER
+ *     description: Get the activated gift card details for a completed Woohoo order
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: orderId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Woohoo order ID
+ *     responses:
+ *       200:
+ *         description: Card details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       cardNumber:
+ *                         type: string
+ *                       cardPin:
+ *                         type: string
+ *                       expiry:
+ *                         type: string
+ *                         format: date-time
+ *                       activationUrl:
+ *                         type: string
+ *       400:
+ *         description: Order ID is required
+ *       500:
+ *         description: Woohoo API error
+ */
+router.get('/vouchers/woohoo-order-cards/:orderId', getWoohooOrderCards);
+
+/**
+ * @swagger
+ * /admin/vouchers/{voucherId}/resend-email:
+ *   post:
+ *     summary: RESEND VOUCHER EMAIL
+ *     description: Resend the voucher details email to the winner
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: voucherId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Voucher ID from database
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Voucher email sent successfully"
+ *       400:
+ *         description: Voucher ID is required or voucher not complete
+ *       404:
+ *         description: Voucher or user not found
+ *       500:
+ *         description: Email sending error
+ */
+router.post('/vouchers/:voucherId/resend-email', resendVoucherEmail);
+
+/**
+ * @swagger
+ * /admin/vouchers/{voucherId}/sync:
+ *   post:
+ *     summary: SYNC VOUCHER STATUS WITH WOOHOO
+ *     description: Sync the local voucher status with Woohoo API and update card details if order is complete
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: voucherId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Voucher ID from database
+ *     responses:
+ *       200:
+ *         description: Voucher status synced successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Voucher status synced successfully"
+ *                 data:
+ *                   type: object
+ *                   description: Updated voucher data
+ *       400:
+ *         description: Voucher ID is required
+ *       404:
+ *         description: Voucher not found
+ *       500:
+ *         description: Sync error
+ */
+router.post('/vouchers/:voucherId/sync', syncVoucherStatus);
 
 module.exports = router;
