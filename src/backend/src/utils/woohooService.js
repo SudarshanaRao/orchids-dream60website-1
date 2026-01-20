@@ -27,12 +27,27 @@ class WoohooService {
         }
 
         try {
-            const authResponse = await axios.post(this.verifyUrl, {
+            console.log('Woohoo Auth Attempt:', {
+                verifyUrl: this.verifyUrl,
+                clientId: this.clientId,
+                username: this.username,
+                password: this.password,
+                passwordLength: this.password?.length
+            });
+            
+            const authPayload = {
                 clientId: this.clientId,
                 username: this.username,
                 password: this.password
-            }, {
-                headers: { 'Content-Type': 'application/json' }
+            };
+            
+            console.log('Woohoo Auth Payload:', JSON.stringify(authPayload));
+            
+            const authResponse = await axios.post(this.verifyUrl, authPayload, {
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
             });
 
             if (!authResponse.data || !authResponse.data.authorizationCode) {
