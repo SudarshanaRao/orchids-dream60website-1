@@ -1355,6 +1355,13 @@ const placeBid = async (req, res) => {
     // Get current round number
     const currentRound = auction.currentRound;
     
+    // ✅ NEW: Logic for minimum bid validation
+    // 1. Minimum bid amount should be the entry fee paid for that auction
+    // 2. Safe bid should be two times of entry fee (UI concern, but backend ensures validity)
+    // 3. Remove 1 rupee logic and use entry fee instead
+    let minAllowedBid = participant.entryFee || 0;
+    let userPreviousBid = 0;
+
     // ✅ NEW: Check if player qualified from previous round (for rounds 2, 3, 4)
     if (currentRound > 1) {
       const previousRound = auction.rounds.find(r => r.roundNumber === currentRound - 1);
@@ -1383,8 +1390,24 @@ const placeBid = async (req, res) => {
           message: `You did not qualify from round ${currentRound - 1}. Only top 3 ranked players can proceed to the next round.`,
         });
       }
+
+      // Get user's previous bid to enforce higher bid in current round
+      const previousBidData = previousRound.playersData.find(p => p.playerId === playerId);
+      if (previousBidData) {
+        userPreviousBid = previousBidData.auctionPlacedAmount;
+        // Minimum bid = previous bid + entry fee
+        minAllowedBid = userPreviousBid + (participant.entryFee || 0);
+      }
       
-      console.log(`✅ [BID] Player ${playerUsername} qualified from round ${currentRound - 1}, allowed to bid in round ${currentRound}`);
+      console.log(`✅ [BID] Player ${playerUsername} qualified from round ${currentRound - 1}, allowed to bid in round ${currentRound}. Min required: ₹${minAllowedBid}`);
+    }
+
+    // Validate bid amount against minAllowedBid
+    if (auctionValue < minAllowedBid) {
+      return res.status(400).json({
+        success: false,
+        message: `Your bid must be at least ₹${minAllowedBid.toLocaleString()}. ${currentRound > 1 ? `(Previous bid ₹${userPreviousBid} + entry fee ₹${participant.entryFee})` : `(Minimum bid = entry fee ₹${participant.entryFee})`}`,
+      });
     }
     
     // Find the current round in rounds array

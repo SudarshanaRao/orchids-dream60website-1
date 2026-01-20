@@ -38,12 +38,14 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
   const baseminBidAmount = isEntryBox 
     ? entryFeeAmount 
-    : (box.roundNumber === 1 ? (userEntryFee || entryFeeAmount) : (box.minBid || 10));
+    : (userEntryFee || entryFeeAmount);
   
-  // ✅ CRITICAL: Ensure minimum bid is ALWAYS higher than user's previous round bid
-  // If user bid ₹1000 in Round 1, they MUST bid ₹1000 + entry fee (₹34) = ₹1034 in Round 2
+  // ✅ NEW: Logic for minimum bid validation
+  // 1. Minimum bid amount should be the entry fee paid for that auction
+  // 2. Safe bid should be two times of entry fee
+  // 3. Remove 1 rupee logic and use entry fee instead
   const minBidAmount = userPreviousBid 
-    ? Math.max(baseminBidAmount, userPreviousBid + (userEntryFee || 1))
+    ? userPreviousBid + (userEntryFee || entryFeeAmount)
     : baseminBidAmount;
   
   // Max bid calculation: prizeValue - 10% discount = 90% of prize value
@@ -57,8 +59,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   // Check if user is not qualified for this round (rounds 2, 3, 4)
   const isNotQualified = !isEntryBox && box.roundNumber && box.roundNumber > 1 && isUserQualified === false;
   
-  const isValidBid = bidAmount !== '' && bidAmount >= minBidAmount && bidAmount <= maxBidAmount && 
-    (!userPreviousBid || bidAmount > userPreviousBid);
+  const isValidBid = bidAmount !== '' && bidAmount >= minBidAmount && bidAmount <= maxBidAmount;
 
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -99,8 +100,8 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     }
     
     // ✅ CRITICAL: Validate bid must be higher than previous round bid + entry fee
-    if (userPreviousBid && bidAmount < userPreviousBid + (userEntryFee || 1)) {
-      setError(`Your bid must be at least ₹${(userPreviousBid + (userEntryFee || 1)).toLocaleString()} (Round ${box.roundNumber! - 1} bid + entry fee)`);
+    if (userPreviousBid && bidAmount < userPreviousBid + (userEntryFee || entryFeeAmount)) {
+      setError(`Your bid must be at least ₹${(userPreviousBid + (userEntryFee || entryFeeAmount)).toLocaleString()} (Round ${box.roundNumber! - 1} bid + entry fee)`);
       return;
     }
     
@@ -153,7 +154,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     return `Round ${box.id - 2}`;
   };
 
-  const effectiveMin = Math.max(minBidAmount, (userPreviousBid || 0) + 1);
+  const effectiveMin = minBidAmount;
 
   // Calculate bid strength
   const getBidStrength = (amount: number | '') => {
@@ -161,7 +162,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     
     const range = maxBidAmount - effectiveMin;
     const position = amount - effectiveMin;
-    const percentage = (position / range) * 100;
+    const percentage = range > 0 ? (position / range) * 100 : 100;
     
     if (percentage >= 80) return { label: 'Maximum', color: 'red', percentage };
     if (percentage >= 60) return { label: 'Strong', color: 'orange', percentage };
@@ -181,9 +182,11 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
 
   const recommendedBid = getRecommendedBid();
 
+  const safeAmount = (userEntryFee || entryFeeAmount) * 2;
+
   // Quick bid options with smart labels
   const quickBidOptions = [
-    { label: 'Safe', amount: effectiveMin, icon: Target },
+    { label: 'Safe', amount: Math.max(effectiveMin, safeAmount), icon: Target },
     { label: 'Smart', amount: Math.min(recommendedBid, maxBidAmount), icon: Sparkles },
     { label: 'Bold', amount: Math.min(Math.floor(maxBidAmount * 0.7), maxBidAmount), icon: TrendingUp },
     { label: 'Max', amount: maxBidAmount, icon: Award }
