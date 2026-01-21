@@ -180,7 +180,14 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const response = await fetch(`${API_BASE}/admin/sms/rest/templates?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
-        setRestTemplates(data.data || []);
+        // Deduplicate templates by TemplateId
+        const uniqueTemplates = (data.data || []).reduce((acc: RestTemplate[], curr: RestTemplate) => {
+          if (!acc.find(t => t.TemplateId === curr.TemplateId)) {
+            acc.push(curr);
+          }
+          return acc;
+        }, []);
+        setRestTemplates(uniqueTemplates);
       }
     } catch (error) {
       console.error('Error loading REST templates:', error);

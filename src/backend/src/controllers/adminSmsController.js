@@ -6,7 +6,14 @@ const smsRestService = require('../utils/smsRestService');
 
 const verifyAdmin = async (userId) => {
   if (!userId) return null;
-  const adminUser = await User.findOne({ user_id: userId });
+  // Support bypass for local/dev testing if needed, or check by email/ID
+  const adminUser = await User.findOne({ 
+    $or: [
+      { user_id: userId },
+      { email: userId },
+      { username: userId }
+    ]
+  });
   if (!adminUser || adminUser.userType !== 'ADMIN') return null;
   return adminUser;
 };
@@ -442,16 +449,54 @@ const sendSmsToUsers = async (req, res) => {
     let restTemplateId = null;
 
     if (templateKey) {
+      // Handle templateKey: check if it's a REST template ID (numeric and long) or starts with rest_
       if (templateKey.startsWith('rest_')) {
         isRestTemplate = true;
         restTemplateId = templateKey.replace('rest_', '');
-        // For REST templates, we use the message from the template service later
+      } else if (/^\d{10,}$/.test(templateKey)) {
+        // If it's a long numeric string, treat it as a REST template ID automatically
+        isRestTemplate = true;
+        restTemplateId = templateKey;
+      }
+      
+      if (isRestTemplate) {
+        // For REST templates, we use the message from the template service
+        try {
+          const tplResult = await smsRestService.getTemplates();
+          const template = tplResult.data?.Templates?.find(t => t.TemplateId == restTemplateId || t.TemplateId === restTemplateId);
+          if (template) {
+            finalMessage = template.Template || template.Message || template.Text;
+          } else if (!finalMessage) {
+            return res.status(400).json({ success: false, message: 'REST Template not found and no custom message provided' });
+          }
+        } catch (error) {
+          console.error('Error fetching REST template for message:', error);
+          if (!finalMessage) {
+            return res.status(400).json({ success: false, message: 'Error fetching REST template' });
+          }
+        }
       } else {
         const formatted = formatTemplate(templateKey, templateVariables || {});
         if (!formatted.success) {
-          return res.status(400).json({ success: false, message: formatted.error });
+          // If not found in local templates, check if it's numeric (short) and maybe it's a REST ID anyway
+          if (/^\d+$/.test(templateKey)) {
+            isRestTemplate = true;
+            restTemplateId = templateKey;
+            try {
+              const tplResult = await smsRestService.getTemplates();
+              const template = tplResult.data?.Templates?.find(t => t.TemplateId == restTemplateId);
+              if (template) {
+                finalMessage = template.Template || template.Message;
+              }
+            } catch (e) {}
+          }
+          
+          if (!finalMessage) {
+            return res.status(400).json({ success: false, message: formatted.error });
+          }
+        } else {
+          finalMessage = formatted.message;
         }
-        finalMessage = formatted.message;
       }
     }
 
