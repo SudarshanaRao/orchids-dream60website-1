@@ -152,7 +152,7 @@ const getSmsBalance = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const result = await getBalance();
+    const result = await smsRestService.getBalance();
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get SMS Balance Error:', error);

@@ -410,7 +410,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
         body: JSON.stringify({
           mobileNumbers,
           senderId: selectedSenderId || undefined,
-          message: selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined,
+          message: message,
           templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
           templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
         }),
@@ -453,7 +453,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
         body: JSON.stringify({
           filter: selectedFilter,
           senderId: selectedSenderId || undefined,
-          message: selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined,
+          message: message,
           templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
           templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
         }),

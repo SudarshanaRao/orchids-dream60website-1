@@ -169,6 +169,24 @@ class SmsRestService {
     }
   }
 
+  /**
+   * Get account balance/credits
+   */
+  async getBalance() {
+    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+
+    try {
+      const response = await this.client.get('/');
+      if (response.data && response.data.Balance !== undefined) {
+        return { success: true, balance: parseFloat(response.data.Balance) || 0 };
+      }
+      return { success: true, balance: 0, data: response.data };
+    } catch (error) {
+      console.error('SMS Rest Balance Error:', error.response?.data || error.message);
+      return { success: false, error: error.response?.data?.Message || error.message };
+    }
+  }
+
   formatNumber(num) {
     let cleaned = num.toString().replace(/[\s\-\+]/g, '');
     if (!cleaned.startsWith('91') && cleaned.length === 10) {
