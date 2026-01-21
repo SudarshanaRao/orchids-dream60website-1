@@ -31,6 +31,7 @@ import {
       ToggleRight,
       AlertCircle,
       Timer,
+      MessageSquare,
     } from 'lucide-react';
 
   import { toast } from 'sonner';
@@ -40,6 +41,7 @@ import {
   import { AdminAnalyticsDashboard } from './AdminAnalyticsDashboard';
   import { SuperAdminUserAnalytics } from './SuperAdminUserAnalytics';
   import { AdminVoucherManagement } from './AdminVoucherManagement';
+  import { AdminSmsManagement } from './AdminSmsManagement';
 
 
 interface AdminUser {
@@ -147,7 +149,7 @@ interface CombinedUser {
 
 
 export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-    const validTabs = ['overview', 'users', 'auctions', 'analytics', 'emails', 'notifications', 'userAnalytics', 'vouchers'] as const;
+    const validTabs = ['overview', 'users', 'auctions', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
     type TabType = typeof validTabs[number];
     
     const getInitialTab = (): TabType => {
@@ -581,6 +583,17 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
               >
                 <Mail className="w-5 h-5 mr-2" />
                 Email Management
+              </button>
+              <button
+                onClick={() => setActiveTab('sms')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                  activeTab === 'sms'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <MessageSquare className="w-5 h-5 mr-2" />
+                SMS Management
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -1163,6 +1176,10 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             <>
               <AdminEmailManagement adminUserId={adminUser.user_id} />
             </>
+          )}
+
+          {activeTab === 'sms' && (
+            <AdminSmsManagement adminUserId={adminUser.user_id} />
           )}
 
           {activeTab === 'analytics' && (

@@ -35,6 +35,16 @@ const {
   syncVoucherStatus
 } = require('../controllers/adminVoucherController');
 
+const {
+  getSmsTemplates,
+  getSmsBalance,
+  getUsersForSms,
+  getRecentAuctions,
+  sendSmsToUsers,
+  sendBulkSmsToFilter,
+  getFilterStats,
+} = require('../controllers/adminSmsController');
+
 /**
  * @swagger
  * tags:
@@ -1226,5 +1236,13 @@ router.post('/vouchers/:voucherId/resend-email', resendVoucherEmail);
  *         description: Sync error
  */
 router.post('/vouchers/:voucherId/sync', syncVoucherStatus);
+
+router.get('/sms/templates', getSmsTemplates);
+router.get('/sms/balance', getSmsBalance);
+router.get('/sms/users', getUsersForSms);
+router.get('/sms/auctions', getRecentAuctions);
+router.get('/sms/filter-stats', getFilterStats);
+router.post('/sms/send', sendSmsToUsers);
+router.post('/sms/send-bulk', sendBulkSmsToFilter);
 
 module.exports = router;

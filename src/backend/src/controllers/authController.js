@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const OTP = require('../models/OTP');
 const { sendOtpEmail, sendWelcomeEmail } = require('../utils/emailService');
+const { sendSms, formatTemplate } = require('../utils/smsService');
 require('dotenv').config();
 
 // -----------------------------
@@ -231,14 +232,22 @@ const forgotPassword = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
+    } else if (type === 'mobile') {
+      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message);
+      if (!smsResult.success) {
+        console.warn('SMS send failed:', smsResult.error);
+        // In development we might still want to return the OTP if SMS fails
+      }
     }
 
     // ✅ In development, return OTP in response for testing
     const responseData = {
       success: true,
-      message: type === 'email' ? 'OTP sent to your email' : 'OTP generated',
+      message: type === 'email' ? 'OTP sent to your email' : 'OTP sent to your mobile',
       userExists: !!user,
-      ...(type === 'mobile' ? { otp: otpCode } : {})
+      // Still returning OTP for now to help development/testing if SMS fails or is slow
+      otp: otpCode 
     };
 
     return res.status(200).json(responseData);
@@ -304,13 +313,19 @@ const resendOtp = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
+    } else if (type === 'mobile') {
+      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message);
+      if (!smsResult.success) {
+        console.warn('SMS send failed:', smsResult.error);
+      }
     }
 
     // ✅ In development, return OTP in response for testing
     const responseData = {
       success: true,
-      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent',
-      ...(type === 'mobile' ? { otp: otpCode } : {})
+      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent to your mobile',
+      otp: otpCode
     };
 
     return res.status(200).json(responseData);
@@ -475,12 +490,18 @@ const sendVerificationOtp = async (req, res) => {
       if (!emailResult.success) {
         console.warn('Email send failed:', emailResult.message);
       }
+    } else if (type === 'mobile') {
+      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message);
+      if (!smsResult.success) {
+        console.warn('SMS send failed:', smsResult.error);
+      }
     }
 
     const responseData = {
       success: true,
       message: `OTP sent to your ${type}`,
-      ...(type === 'mobile' ? { otp: otpCode } : {})
+      otp: otpCode
     };
 
     return res.status(200).json(responseData);
