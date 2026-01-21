@@ -118,49 +118,53 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
   const [restTemplates, setRestTemplates] = useState<RestTemplate[]>([]);
   const [senderIds, setSenderIds] = useState<SenderId[]>([]);
-  const [reports, setReports] = useState<SmsReport[]>([]);
+  const [reports, setReports] = useState<any[]>([]);
+  
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [selectedAuction, setSelectedAuction] = useState('');
+  const [selectedRound, setSelectedRound] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
+  const [customMessage, setCustomMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [filterStats, setFilterStats] = useState<FilterStats | null>(null);
+  const [smsBalance, setSmsBalance] = useState<number | null>(null);
+  const [selectedSenderId, setSelectedSenderId] = useState('');
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState<string | null>(null);
   
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateMessage, setNewTemplateMessage] = useState('');
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   
-  const [reportDateRange, setReportDateRange] = useState({ 
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-    to: new Date().toISOString().split('T')[0] 
+  const [reportDateRange, setReportDateRange] = useState({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    to: new Date().toISOString().split('T')[0]
   });
-  
-  const [selectedSenderId, setSelectedSenderId] = useState('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [auctions, setAuctions] = useState<Auction[]>([]);
-  const [filterStats, setFilterStats] = useState<FilterStats | null>(null);
-  const [smsBalance, setSmsBalance] = useState<number | null>(null);
-  
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [selectedAuction, setSelectedAuction] = useState<string>('');
-  const [selectedRound, setSelectedRound] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
-  
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [customMessage, setCustomMessage] = useState('');
-  const [templateVariables, setTemplateVariables] = useState<Record<string, string>>({});
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [showFilters, setShowFilters] = useState(true);
-  const [showPreview, setShowPreview] = useState(false);
 
-  const API_BASE = 'https://dev-api.dream60.com';
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    loadUsers();
-  }, [selectedFilter, selectedAuction, selectedRound, searchTerm]);
+  const formatSmsDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   const loadInitialData = async () => {
     setIsLoading(true);
@@ -403,12 +407,14 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   };
 
   const handleSendSms = async () => {
+    console.log('handleSendSms called, selectedUsers:', selectedUsers.size);
     if (selectedUsers.size === 0) {
       toast.error('Please select at least one user');
       return;
     }
 
     const message = getPreviewMessage();
+    console.log('Preview message:', message, 'selectedTemplate:', selectedTemplate);
     if (!message || message.trim().length === 0) {
       toast.error('Please enter a message or select a template');
       return;
@@ -418,6 +424,8 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     try {
       const selectedUsersList = users.filter(u => selectedUsers.has(u.user_id));
       const mobileNumbers = selectedUsersList.map(u => u.mobile).filter(Boolean);
+      
+      console.log('Sending SMS to:', mobileNumbers, 'with message:', message);
 
       const response = await fetch(`${API_BASE}/admin/sms/send?user_id=${adminUserId}`, {
         method: 'POST',
@@ -432,6 +440,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       });
 
       const data = await response.json();
+      console.log('SMS send response:', data);
       if (data.success) {
         toast.success(`SMS sent to ${mobileNumbers.length} recipients`);
         setSelectedUsers(new Set());
@@ -754,15 +763,15 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stats</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {users.map((user) => (
-                        <tr 
-                          key={user.user_id}
-                          onClick={() => handleSelectUser(user.user_id)}
-                          className={`cursor-pointer transition-colors ${
-                            selectedUsers.has(user.user_id) ? 'bg-purple-50' : 'hover:bg-gray-50'
-                          }`}
-                        >
+                      <tbody className="divide-y divide-gray-100">
+                        {users.map((user, idx) => (
+                          <tr 
+                            key={user.user_id || `user-${idx}`}
+                            onClick={() => handleSelectUser(user.user_id)}
+                            className={`cursor-pointer transition-colors ${
+                              selectedUsers.has(user.user_id) ? 'bg-purple-50' : 'hover:bg-gray-50'
+                            }`}
+                          >
                           <td className="px-4 py-3">
                             <input
                               type="checkbox"
@@ -852,16 +861,16 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="">-- Select Template --</option>
-                    <optgroup label="Local Templates">
-                      {templates.map((template) => (
-                        <option key={template.key} value={template.key}>{template.name}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="SMSCountry Templates">
-                      {restTemplates.map((template) => (
-                        <option key={template.TemplateId} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
-                      ))}
-                    </optgroup>
+                      <optgroup label="Local Templates">
+                        {templates.map((template, idx) => (
+                          <option key={template.key || `temp-${idx}`} value={template.key}>{template.name}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="SMSCountry Templates">
+                        {restTemplates.map((template, idx) => (
+                          <option key={template.TemplateId || `rest-${idx}`} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
+                        ))}
+                      </optgroup>
                     <option value="CUSTOM">Custom Message</option>
                   </select>
                 </div>
@@ -1096,25 +1105,25 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                       <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No reports found for the selected period</td>
                     </tr>
                   ) : (
-                    reports.map((report) => (
-                      <tr key={report.MessageId} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-mono text-xs">{report.MessageId}</td>
-                        <td className="px-6 py-4 font-medium">{report.Number}</td>
-                        <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{report.Text}</td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            report.Status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                            report.Status === 'Failed' ? 'bg-red-100 text-red-700' :
-                            'bg-blue-100 text-blue-700'
-                          }`}>
-                            {report.Status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(report.SubmittedDate).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
+                        reports.map((report, index) => (
+                          <tr key={report.MessageUUID || report.MessageId || index} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 font-mono text-xs">{report.MessageUUID || report.MessageId}</td>
+                            <td className="px-6 py-4 font-medium">{report.Number}</td>
+                            <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{report.Text}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                report.Status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                                report.Status === 'Failed' ? 'bg-red-100 text-red-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {report.Status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-500">
+                              {formatSmsDate(report.ProcessTime || report.SubmittedDate)}
+                            </td>
+                          </tr>
+                        ))
                   )}
                 </tbody>
               </table>
