@@ -248,6 +248,73 @@ const {
  *           items:
  *             $ref: '#/components/schemas/DailyAuctionConfig'
  *           description: Array of daily auction configurations
+ *
+ *     SmsTemplate:
+ *       type: object
+ *       properties:
+ *         TemplateId:
+ *           type: string
+ *           example: "100"
+ *         TemplateName:
+ *           type: string
+ *           example: "Welcome Template"
+ *         Message:
+ *           type: string
+ *           example: "Welcome to Dream60! Your OTP is {otp}"
+ *         CreatedDate:
+ *           type: string
+ *           format: date-time
+ *
+ *     SmsSenderId:
+ *       type: object
+ *       properties:
+ *         SenderId:
+ *           type: string
+ *           example: "FINPGS"
+ *         Status:
+ *           type: string
+ *           example: "Active"
+ *
+ *     SmsSendRequest:
+ *       type: object
+ *       required:
+ *         - message
+ *       properties:
+ *         userIds:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of user IDs to send SMS to
+ *         mobileNumbers:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: List of mobile numbers to send SMS to
+ *         message:
+ *           type: string
+ *           description: Custom message to send
+ *         templateKey:
+ *           type: string
+ *           description: Template key (internal or rest_ID)
+ *         senderId:
+ *           type: string
+ *           description: Sender ID to use
+ *
+ *     SmsBulkSendRequest:
+ *       type: object
+ *       required:
+ *         - filter
+ *         - message
+ *       properties:
+ *         filter:
+ *           type: string
+ *           enum: [all, active_players, winners, never_played]
+ *         message:
+ *           type: string
+ *         templateKey:
+ *           type: string
+ *         senderId:
+ *           type: string
  */
 
 /**
@@ -1243,20 +1310,212 @@ router.post('/vouchers/:voucherId/resend-email', resendVoucherEmail);
  */
 router.post('/vouchers/:voucherId/sync', syncVoucherStatus);
 
+/**
+ * @swagger
+ * tags:
+ *   - name: SMS Management
+ *     description: SMS Country and internal SMS management APIs
+ */
+
+/**
+ * @swagger
+ * /admin/sms/rest/templates:
+ *   get:
+ *     summary: GET REST TEMPLATES
+ *     description: Get all SMS templates from SMS Country account
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Templates retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/SmsTemplate'
+ *   post:
+ *     summary: CREATE REST TEMPLATE
+ *     description: Create a new SMS template in SMS Country account
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [templateName, message]
+ *             properties:
+ *               user_id:
+ *                 type: string
+ *               templateName:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Template created successfully
+ */
+router.get('/sms/rest/templates', getRestTemplates);
+router.post('/sms/rest/templates', createRestTemplate);
+
+/**
+ * @swagger
+ * /admin/sms/rest/templates/{templateId}:
+ *   delete:
+ *     summary: DELETE REST TEMPLATE
+ *     description: Delete an SMS template from SMS Country account
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: templateId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Template deleted successfully
+ */
+router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
+
+/**
+ * @swagger
+ * /admin/sms/rest/sender-ids:
+ *   get:
+ *     summary: GET SENDER IDS
+ *     description: Get all approved Sender IDs from SMS Country account
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sender IDs retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/SmsSenderId'
+ */
+router.get('/sms/rest/sender-ids', getSenderIds);
+
+/**
+ * @swagger
+ * /admin/sms/rest/reports:
+ *   get:
+ *     summary: GET SMS REPORTS
+ *     description: Get detailed SMS delivery reports from SMS Country
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: fromDate
+ *         in: query
+ *         schema:
+ *           type: string
+ *       - name: toDate
+ *         in: query
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reports retrieved successfully
+ */
+router.get('/sms/rest/reports', getSmsReports);
+
+/**
+ * @swagger
+ * /admin/sms/rest/status/{messageId}:
+ *   get:
+ *     summary: GET SMS STATUS
+ *     description: Get status of a specific SMS message
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: messageId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Status retrieved successfully
+ */
+router.get('/sms/rest/status/:messageId', getSmsStatus);
+
+/**
+ * @swagger
+ * /admin/sms/send:
+ *   post:
+ *     summary: SEND SMS
+ *     description: Send custom or template-based SMS to specific users or mobile numbers
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SmsSendRequest'
+ *     responses:
+ *       200:
+ *         description: SMS sent successfully
+ */
+router.post('/sms/send', sendSmsToUsers);
+
+/**
+ * @swagger
+ * /admin/sms/send-bulk:
+ *   post:
+ *     summary: SEND BULK SMS
+ *     description: Send bulk SMS to users matching a specific filter
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SmsBulkSendRequest'
+ *     responses:
+ *       200:
+ *         description: Bulk SMS sent successfully
+ */
+router.post('/sms/send-bulk', sendBulkSmsToFilter);
+
 router.get('/sms/templates', getSmsTemplates);
 router.get('/sms/balance', getSmsBalance);
 router.get('/sms/users', getUsersForSms);
 router.get('/sms/auctions', getRecentAuctions);
 router.get('/sms/filter-stats', getFilterStats);
-router.post('/sms/send', sendSmsToUsers);
-router.post('/sms/send-bulk', sendBulkSmsToFilter);
-
-// REST API SMS Management
-router.get('/sms/rest/templates', getRestTemplates);
-router.post('/sms/rest/templates', createRestTemplate);
-router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
-router.get('/sms/rest/sender-ids', getSenderIds);
-router.get('/sms/rest/reports', getSmsReports);
-router.get('/sms/rest/status/:messageId', getSmsStatus);
 
 module.exports = router;
