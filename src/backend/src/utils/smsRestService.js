@@ -139,8 +139,8 @@ class SmsRestService {
 
     try {
       const payload = {
-        TemplateName: templateName,
-        Message: message
+        Name: templateName,
+        Template: message
       };
       const response = await this.client.post('/Templates/', payload);
       return { success: true, data: response.data };

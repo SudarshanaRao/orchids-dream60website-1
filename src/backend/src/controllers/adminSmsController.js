@@ -22,6 +22,16 @@ const getRestTemplates = async (req, res) => {
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
     const result = await smsRestService.getTemplates();
+    if (result.success && result.data && result.data.Templates) {
+      // Map SMSCountry fields (Name, Template) to frontend fields (TemplateName, Message)
+      const mappedTemplates = result.data.Templates.map(t => ({
+        TemplateId: t.TemplateId,
+        TemplateName: t.Name || t.TemplateName,
+        Message: t.Template || t.Message,
+        CreatedDate: t.CreatedDate || new Date().toISOString()
+      }));
+      return res.status(200).json({ success: true, data: mappedTemplates });
+    }
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get REST Templates Error:', error);
@@ -457,9 +467,9 @@ const sendSmsToUsers = async (req, res) => {
       // SMSCountry REST API doesn't support sending by TemplateId directly in the simple SMS endpoint 
       // in the way specified, so we fetch the template message first
       const tplResult = await smsRestService.getTemplates();
-      const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
+      const template = tplResult.data?.Templates?.find(t => t.TemplateId == restTemplateId);
       if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
-      finalMessage = template.Message;
+      finalMessage = template.Template || template.Message;
       
       // Now send using REST service
       if (recipients.length === 1) {
@@ -552,9 +562,9 @@ const sendBulkSmsToFilter = async (req, res) => {
 
     if (isRestTemplate && !finalMessage) {
       const tplResult = await smsRestService.getTemplates();
-      const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
+      const template = tplResult.data?.Templates?.find(t => t.TemplateId == restTemplateId);
       if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
-      finalMessage = template.Message;
+      finalMessage = template.Template || template.Message;
     }
 
     const result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
