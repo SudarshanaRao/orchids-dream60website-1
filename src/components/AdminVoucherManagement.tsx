@@ -70,13 +70,56 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
-  const [showConfirmModal, setShowConfirmModal] = useState<{show: boolean, winner: EligibleWinner | null}>({
-    show: false,
-    winner: null
-  });
+    const [activeSubTab, setActiveSubTab] = useState<'eligible' | 'issued' | 'woohoo-history'>('eligible');
+    const [showConfirmModal, setShowConfirmModal] = useState<{show: boolean, winner: EligibleWinner | null}>({
+      show: false,
+      winner: null
+    });
 
-  const fetchEligibleWinners = async () => {
+    const [selectedSku, setSelectedSku] = useState('AMAZON_GC');
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [isFetchingProducts, setIsFetchingProducts] = useState(false);
+    const [woohooCategories, setWoohooCategories] = useState<any[]>([]);
+    const [woohooProducts, setWoohooProducts] = useState<any[]>([]);
+
+    const fetchWoohooCategories = async () => {
+      try {
+        const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-categories?user_id=${adminUserId}`);
+        const data = await response.json();
+        if (data.success) {
+          setWoohooCategories(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching Woohoo categories:', error);
+      }
+    };
+
+    const fetchWoohooProducts = async (categoryId: string) => {
+      if (!categoryId) return;
+      setIsFetchingProducts(true);
+      try {
+        const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-products/${categoryId}?user_id=${adminUserId}`);
+        const data = await response.json();
+        if (data.success) {
+          setWoohooProducts(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching Woohoo products:', error);
+      } finally {
+        setIsFetchingProducts(false);
+      }
+    };
+
+    useEffect(() => {
+      if (selectedCategoryId) {
+        fetchWoohooProducts(selectedCategoryId);
+      } else {
+        setWoohooProducts([]);
+      }
+    }, [selectedCategoryId]);
+
+    const fetchEligibleWinners = async () => {
+
     try {
       const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/eligible-winners?user_id=${adminUserId}`);
       const data = await response.json();
@@ -128,16 +171,18 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const loadData = async () => {
-    setIsLoading(true);
-    await Promise.all([
-      fetchEligibleWinners(), 
-      fetchIssuedVouchers(),
-      fetchWoohooBalance(),
-      fetchWoohooTransactions()
-    ]);
-    setIsLoading(false);
-  };
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        fetchEligibleWinners(), 
+        fetchIssuedVouchers(),
+        fetchWoohooBalance(),
+        fetchWoohooTransactions(),
+        fetchWoohooCategories()
+      ]);
+      setIsLoading(false);
+    };
+
 
   useEffect(() => {
     loadData();

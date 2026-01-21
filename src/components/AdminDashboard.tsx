@@ -5,29 +5,33 @@ import {
   Trophy,
   IndianRupee,
   LogOut,
-  Plus,
-  Activity,
-  UserCheck,
-  UserX,
-  Shield,
-  RefreshCw,
-  Search,
-  Calendar,
-  Clock,
-  Trash2,
-  Edit,
-  X,
-  Mail,
-    Bell,
-    BarChart3,
-    Eye,
-    Ticket,
-    ChevronDown,
-    ChevronUp,
-    Power,
-    ToggleLeft,
-    ToggleRight,
-  } from 'lucide-react';
+    Plus,
+    Activity,
+    UserCheck,
+    UserX,
+    Shield,
+    RefreshCw,
+    Search,
+    Calendar,
+    Clock,
+    Trash2,
+    Edit,
+    X,
+    Mail,
+      Bell,
+      BarChart3,
+      Eye,
+      Ticket,
+      ChevronDown,
+      ChevronUp,
+      ChevronLeft,
+      ChevronRight,
+      Power,
+      ToggleLeft,
+      ToggleRight,
+      AlertCircle,
+    } from 'lucide-react';
+
   import { toast } from 'sonner';
   import { AdminEmailManagement } from './AdminEmailManagement';
   import { AdminPushNotifications } from './AdminPushNotifications';
@@ -153,8 +157,39 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     const analyticsRef = useRef<{ refresh: () => Promise<void> }>(null);
     const [expandedAuctions, setExpandedAuctions] = useState<Set<string>>(new Set());
     const [togglingAuction, setTogglingAuction] = useState<string | null>(null);
+    const [showStatusConfirm, setShowStatusConfirm] = useState<{show: boolean, auction: MasterAuction | null}>({
+      show: false,
+      auction: null
+    });
+    const tabsRef = useRef<HTMLDivElement>(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
     
     const isSuperAdmin = adminUser.isSuperAdmin === true;
+
+    const checkScroll = () => {
+      if (tabsRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+        setShowLeftArrow(scrollLeft > 0);
+        setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 5);
+      }
+    };
+
+    useEffect(() => {
+      checkScroll();
+      window.addEventListener('resize', checkScroll);
+      return () => window.removeEventListener('resize', checkScroll);
+    }, []);
+
+    const scrollTabs = (direction: 'left' | 'right') => {
+      if (tabsRef.current) {
+        const scrollAmount = 200;
+        tabsRef.current.scrollBy({
+          left: direction === 'left' ? -scrollAmount : scrollAmount,
+          behavior: 'smooth'
+        });
+      }
+    };
 
   const fetchStatistics = async () => {
     try {
@@ -396,101 +431,123 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mt-4 border-b border-purple-200 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
+          {/* Tabs with Arrows */}
+          <div className="relative mt-4 group">
+            {showLeftArrow && (
+              <button
+                onClick={() => scrollTabs('left')}
+                className="absolute left-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-r from-white via-white to-transparent text-purple-700 hover:text-purple-900 transition-all flex items-center"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+            
+            <div 
+              ref={tabsRef}
+              onScroll={checkScroll}
+              className="flex gap-2 border-b border-purple-200 overflow-x-auto scrollbar-hide scroll-smooth"
             >
-              <Activity className="w-5 h-5 inline-block mr-2" />
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'users'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-              <Users className="w-5 h-5 inline-block mr-2" />
-              Users
-            </button>
-            <button
-              onClick={() => setActiveTab('auctions')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'auctions'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-              <Trophy className="w-5 h-5 inline-block mr-2" />
-              Master Auctions
-            </button>
-            <button
-              onClick={() => setActiveTab('emails')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'emails'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-<Mail className="w-5 h-5 inline-block mr-2" />
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                  activeTab === 'overview'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Activity className="w-5 h-5 mr-2" />
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                  activeTab === 'users'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Users className="w-5 h-5 mr-2" />
+                Users
+              </button>
+              <button
+                onClick={() => setActiveTab('auctions')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                  activeTab === 'auctions'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Trophy className="w-5 h-5 mr-2" />
+                Master Auctions
+              </button>
+              <button
+                onClick={() => setActiveTab('emails')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                  activeTab === 'emails'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Mail className="w-5 h-5 mr-2" />
                 Email Management
               </button>
-              {/* Added Analytics tab */}
               <button
                 onClick={() => setActiveTab('analytics')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
                   activeTab === 'analytics'
                     ? 'text-purple-700 border-b-2 border-purple-700'
                     : 'text-purple-500 hover:text-purple-700'
                 }`}
               >
-                <BarChart3 className="w-5 h-5 inline-block mr-2" />
+                <BarChart3 className="w-5 h-5 mr-2" />
                 Analytics
               </button>
-              {/* Added Notifications tab */}
-<button
+              <button
                 onClick={() => setActiveTab('notifications')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
                   activeTab === 'notifications'
                     ? 'text-purple-700 border-b-2 border-purple-700'
                     : 'text-purple-500 hover:text-purple-700'
                 }`}
               >
-                <Bell className="w-5 h-5 inline-block mr-2" />
+                <Bell className="w-5 h-5 mr-2" />
                 Push Notifications
               </button>
               {isSuperAdmin && (
                 <button
                   onClick={() => setActiveTab('userAnalytics')}
-                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
                     activeTab === 'userAnalytics'
                       ? 'text-purple-700 border-b-2 border-purple-700'
                       : 'text-purple-500 hover:text-purple-700'
                   }`}
                 >
-                  <Eye className="w-5 h-5 inline-block mr-2" />
+                  <Eye className="w-5 h-5 mr-2" />
                   User Tracking
                 </button>
               )}
               <button
                 onClick={() => setActiveTab('vouchers')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
                   activeTab === 'vouchers'
                     ? 'text-purple-700 border-b-2 border-purple-700'
                     : 'text-purple-500 hover:text-purple-700'
                 }`}
               >
-                <Ticket className="w-5 h-5 inline-block mr-2" />
+                <Ticket className="w-5 h-5 mr-2" />
                 Voucher Management
               </button>
             </div>
+
+            {showRightArrow && (
+              <button
+                onClick={() => scrollTabs('right')}
+                className="absolute right-0 top-0 bottom-0 z-10 px-2 bg-gradient-to-l from-white via-white to-transparent text-purple-700 hover:text-purple-900 transition-all flex items-center"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -835,13 +892,14 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {/* Active/Inactive Toggle Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleActiveStatus(auction);
-                            }}
-                            disabled={togglingAuction === auction.master_id}
+                            {/* Active/Inactive Toggle Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowStatusConfirm({ show: true, auction });
+                              }}
+                              disabled={togglingAuction === auction.master_id}
+
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all ${
                               auction.isActive
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -1045,6 +1103,61 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           }}
         />
       )}
-    </div>
-  );
-};
+        {/* Status Confirmation Modal */}
+        {showStatusConfirm.show && showStatusConfirm.auction && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-3 rounded-xl ${showStatusConfirm.auction.isActive ? 'bg-amber-100' : 'bg-green-100'}`}>
+                    <AlertCircle className={`w-6 h-6 ${showStatusConfirm.auction.isActive ? 'text-amber-700' : 'text-green-700'}`} />
+                  </div>
+                  <button 
+                    onClick={() => setShowStatusConfirm({ show: false, auction: null })}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {showStatusConfirm.auction.isActive ? 'Deactivate Master Auction?' : 'Activate Master Auction?'}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to {showStatusConfirm.auction.isActive ? 'deactivate' : 'activate'} this master auction? 
+                  {showStatusConfirm.auction.isActive 
+                    ? ' This will prevent new daily auctions from being created from this master config.' 
+                    : ' This will allow new daily auctions to be created automatically.'}
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowStatusConfirm({ show: false, auction: null })}
+                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (showStatusConfirm.auction) {
+                        handleToggleActiveStatus(showStatusConfirm.auction);
+                        setShowStatusConfirm({ show: false, auction: null });
+                      }
+                    }}
+                    className={`flex-1 px-4 py-3 text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+                      showStatusConfirm.auction.isActive 
+                        ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-100' 
+                        : 'bg-green-600 hover:bg-green-700 shadow-green-100'
+                    }`}
+                  >
+                    <Power className="w-4 h-4" />
+                    Confirm {showStatusConfirm.auction.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
