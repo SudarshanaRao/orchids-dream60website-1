@@ -1481,6 +1481,13 @@ router.get('/sms/rest/status/:messageId', getSmsStatus);
  *     summary: SEND SMS
  *     description: Send custom or template-based SMS to specific users or mobile numbers
  *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID for authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -1490,6 +1497,8 @@ router.get('/sms/rest/status/:messageId', getSmsStatus);
  *     responses:
  *       200:
  *         description: SMS sent successfully
+ *       403:
+ *         description: Admin access required
  */
 router.post('/sms/send', sendSmsToUsers);
 
@@ -1500,6 +1509,13 @@ router.post('/sms/send', sendSmsToUsers);
  *     summary: SEND BULK SMS
  *     description: Send bulk SMS to users matching a specific filter
  *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID for authentication
  *     requestBody:
  *       required: true
  *       content:
@@ -1509,6 +1525,8 @@ router.post('/sms/send', sendSmsToUsers);
  *     responses:
  *       200:
  *         description: Bulk SMS sent successfully
+ *       403:
+ *         description: Admin access required
  */
 router.post('/sms/send-bulk', sendBulkSmsToFilter);
 

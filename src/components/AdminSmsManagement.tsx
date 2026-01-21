@@ -382,13 +382,21 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
   const getPreviewMessage = () => {
     if (selectedTemplate && selectedTemplate !== 'CUSTOM') {
-      const template = templates.find(t => t.key === selectedTemplate);
-      if (template) {
-        let message = template.template;
-        for (const [key, value] of Object.entries(templateVariables)) {
-          message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), value || `{${key}}`);
+      if (selectedTemplate.startsWith('rest_')) {
+        const restTemplateId = selectedTemplate.replace('rest_', '');
+        const restTemplate = restTemplates.find(t => t.TemplateId === restTemplateId);
+        if (restTemplate) {
+          return restTemplate.Message;
         }
-        return message;
+      } else {
+        const template = templates.find(t => t.key === selectedTemplate);
+        if (template) {
+          let message = template.template;
+          for (const [key, value] of Object.entries(templateVariables)) {
+            message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), value || `{${key}}`);
+          }
+          return message;
+        }
       }
     }
     return customMessage;
