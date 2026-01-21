@@ -30,6 +30,7 @@ import {
   } from 'lucide-react';
 
 import { toast } from 'sonner';
+import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 
 interface SmsTemplate {
   key: string;
@@ -166,18 +167,19 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     }
   };
 
-  const loadInitialData = async () => {
-    setIsLoading(true);
-    await Promise.all([
-      loadTemplates(),
-      loadRestTemplates(),
-      loadSenderIds(),
-      loadAuctions(),
-      loadFilterStats(),
-      loadBalance(),
-    ]);
-    setIsLoading(false);
-  };
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        loadTemplates(),
+        loadRestTemplates(),
+        loadSenderIds(),
+        loadAuctions(),
+        loadFilterStats(),
+        loadBalance(),
+        loadUsers(),
+      ]);
+      setIsLoading(false);
+    };
 
   const loadRestTemplates = async () => {
     try {
@@ -289,7 +291,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const response = await fetch(`${API_BASE}/admin/sms/templates?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
-        setTemplates(data.data);
+        setTemplates(data.data || []);
       }
     } catch (error) {
       console.error('Error loading templates:', error);
@@ -301,7 +303,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const response = await fetch(`${API_BASE}/admin/sms/auctions?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
-        setAuctions(data.data);
+        setAuctions(data.data || []);
       }
     } catch (error) {
       console.error('Error loading auctions:', error);
@@ -364,6 +366,14 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     }
   };
 
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [selectedFilter, selectedAuction, selectedRound, searchTerm]);
+
   const handleSelectAll = () => {
     if (selectAll) {
       setSelectedUsers(new Set());
@@ -425,19 +435,20 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const selectedUsersList = users.filter(u => selectedUsers.has(u.user_id));
       const mobileNumbers = selectedUsersList.map(u => u.mobile).filter(Boolean);
       
-      console.log('Sending SMS to:', mobileNumbers, 'with message:', message);
+        console.log('Sending SMS to:', mobileNumbers, 'with message:', message);
 
-      const response = await fetch(`${API_BASE}/admin/sms/send?user_id=${adminUserId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mobileNumbers,
-          senderId: selectedSenderId || undefined,
-          message: message,
-          templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
-          templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
-        }),
-      });
+        const response = await fetch(`${API_BASE}/admin/sms/send?user_id=${adminUserId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mobileNumbers,
+            senderId: selectedSenderId || undefined,
+            message: message,
+            templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
+            templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
+          }),
+        });
+
 
       const data = await response.json();
       console.log('SMS send response:', data);

@@ -8,6 +8,7 @@ const AuctionHistory = require('../models/AuctionHistory');
 const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
 const { syncUserStats } = require('./userController');
+const { sendPrizeClaimedEmail } = require('../utils/emailService');
 
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'Dream60';
 
@@ -1084,10 +1085,26 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
       }
 
       // ✅ SYNC: Ensure HourlyAuction data is updated with actual claimer info
-      await AuctionHistory.syncClaimStatus(payment.auctionId);
+        await AuctionHistory.syncClaimStatus(payment.auctionId);
 
+      // ✅ Send Prize Claimed confirmation email
+      try {
+        const user = await User.findOne({ user_id: payment.userId });
+        if (user && user.email) {
+          await sendPrizeClaimedEmail(user.email, {
+            username: updatedEntry.username || user.username,
+            auctionName: updatedEntry.auctionName || payment.auctionName,
+            prizeAmount: updatedEntry.prizeAmountWon || 0,
+            claimDate: updatedEntry.claimedAt || new Date(),
+            transactionId: razorpay_payment_id,
+            rewardType: 'Cash Prize',
+          });
+        }
+      } catch (emailError) {
+        console.error('⚠️ [EMAIL] Failed to send prize claimed email:', emailError);
+      }
 
-    const getRankSuffix = (rank) => {
+      const getRankSuffix = (rank) => {
       if (rank === 1) return '1st';
       if (rank === 2) return '2nd';
       if (rank === 3) return '3rd';

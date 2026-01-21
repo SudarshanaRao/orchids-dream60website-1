@@ -15,6 +15,9 @@ import {
   Loader2,
   Users,
   Tag,
+  Download,
+  Sparkles,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,7 +58,8 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateCategory, setTemplateCategory] = useState<EmailTemplate['category']>('CUSTOM');
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+    const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+    const [previewExistingTemplate, setPreviewExistingTemplate] = useState<EmailTemplate | null>(null);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -354,9 +358,9 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
             </div>
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Main Content Grid */}
+        {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column - User Selection */}
         <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
@@ -483,31 +487,39 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingTemplate(template);
-                          setTemplateName(template.name);
-                          setTemplateCategory(template.category);
-                          setSubject(template.subject);
-                          setBody(template.body);
-                          setShowTemplateModal(true);
-                        }}
-                        className="p-2 hover:bg-purple-200 rounded-lg transition-colors"
-                        title="Edit template"
-                      >
-                        <Edit className="w-4 h-4 text-purple-600" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteTemplate(template.template_id)}
-                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        title="Delete template"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewExistingTemplate(template)}
+                          className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
+                          title="Preview template"
+                        >
+                          <Eye className="w-4 h-4 text-amber-600" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTemplate(template);
+                            setTemplateName(template.name);
+                            setTemplateCategory(template.category);
+                            setSubject(template.subject);
+                            setBody(template.body);
+                            setShowTemplateModal(true);
+                          }}
+                          className="p-2 hover:bg-purple-200 rounded-lg transition-colors"
+                          title="Edit template"
+                        >
+                          <Edit className="w-4 h-4 text-purple-600" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTemplate(template.template_id)}
+                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Delete template"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
                   </div>
                 ))}
               </div>
@@ -599,7 +611,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
       {/* Template Save/Edit Modal */}
       {showTemplateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-purple-900">
                 {editingTemplate ? 'Update Template' : 'Save as Template'}
@@ -646,14 +658,30 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
                 </select>
               </div>
 
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <p className="text-sm font-semibold text-purple-900 mb-1">Preview:</p>
-                <p className="text-sm text-purple-700 mb-2">
-                  <strong>Subject:</strong> {subject || '(empty)'}
-                </p>
-                <p className="text-xs text-purple-600">
-                  Body: {body.substring(0, 100)}...
-                </p>
+              <div>
+                <label className="block text-sm font-semibold text-purple-700 mb-2">
+                  Subject *
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Enter email subject..."
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-purple-700 mb-2">
+                  Body (HTML Supported) *
+                </label>
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Enter email body (HTML supported)..."
+                  rows={10}
+                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-mono text-sm"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -687,6 +715,78 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
           </div>
         </div>
       )}
-    </div>
-  );
+
+        {/* Existing Template Preview Modal */}
+        {previewExistingTemplate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{previewExistingTemplate.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{previewExistingTemplate.subject}</p>
+                </div>
+                <button
+                  onClick={() => setPreviewExistingTemplate(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-700" />
+                </button>
+              </div>
+              
+              <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="text-sm font-semibold text-gray-700">Category:</span>
+                  <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">
+                    {previewExistingTemplate.category}
+                  </span>
+                  
+                  {/* Extract variables from body/subject */}
+                  {(() => {
+                    const vars = new Set<string>();
+                    const regex = /\{\{([^}]+)\}\}/g;
+                    let match;
+                    while ((match = regex.exec(previewExistingTemplate.subject + previewExistingTemplate.body)) !== null) {
+                      vars.add(match[1]);
+                    }
+                    if (vars.size > 0) {
+                      return (
+                        <>
+                          <span className="text-sm font-semibold text-gray-700 ml-4">Detected Variables:</span>
+                          {Array.from(vars).map((variable) => (
+                            <span
+                              key={variable}
+                              className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-mono"
+                            >
+                              {`{{${variable}}}`}
+                            </span>
+                          ))}
+                        </>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto p-4 bg-gray-100">
+                <div
+                  className="bg-white rounded-lg shadow-sm"
+                  dangerouslySetInnerHTML={{ __html: previewExistingTemplate.body }}
+                />
+              </div>
+
+              <div className="p-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setPreviewExistingTemplate(null)}
+                  className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
 };
