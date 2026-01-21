@@ -37,8 +37,10 @@ class SmsRestService {
       const payload = {
         Text: message,
         Number: this.formatNumber(mobileNumber),
-        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'DREAM60',
-        DR: 'Y'
+        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+        DRNotifyUrl: '',
+        DRNotifyHttpMethod: 'POST',
+        Tool: 'API'
       };
 
       const response = await this.client.post('/SMSes/', payload);
@@ -59,8 +61,10 @@ class SmsRestService {
       const payload = {
         Text: message,
         Numbers: numbers.map(n => this.formatNumber(n)),
-        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'DREAM60',
-        DR: 'Y'
+        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+        DRNotifyUrl: '',
+        DRNotifyHttpMethod: 'POST',
+        Tool: 'API'
       };
 
       const response = await this.client.post('/BulkSMSes/', payload);

@@ -76,6 +76,9 @@ const getSenderIds = async (req, res) => {
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
     const result = await smsRestService.getSenderIds();
+    if (result.success && result.data && result.data.SenderIds) {
+      return res.status(200).json({ success: true, data: result.data.SenderIds });
+    }
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get Sender IDs Error:', error);
@@ -96,6 +99,9 @@ const getSmsReports = async (req, res) => {
       Page: page, 
       Limit: limit 
     });
+    if (result.success && result.data && result.data.SMSes) {
+      return res.status(200).json({ success: true, data: result.data.SMSes });
+    }
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get SMS Reports Error:', error);
