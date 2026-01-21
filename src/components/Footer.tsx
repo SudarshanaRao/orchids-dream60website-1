@@ -113,8 +113,8 @@ export function Footer({ onNavigate }: FooterProps) {
                   SECURE PLATFORM
                 </div>
               </div>
-          <p className="text-[9px] text-purple-400 font-medium text-center md:text-right max-w-[280px]">
-                Please play responsibly. Skill-based auctions involve financial risk. 18+ only.
+            <p className="text-[9px] text-purple-400 font-medium text-center md:text-right max-w-[280px]">
+                Please participate responsibly. Live auctions involve financial risk. 18+ only.
               </p>
             </div>
           </div>

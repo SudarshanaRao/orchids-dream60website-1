@@ -171,28 +171,32 @@ class SmsRestService {
 
   /**
    * Get account balance/credits
+   * Uses SMSCountry ASP API: https://api.smscountry.com/SMSCwebservice_User_GetBal.asp
    */
   async getBalance() {
     try {
-      // Use the provided ASP API for balance as requested
       const user = process.env.SMSCOUNTRY_USER || 'FINPAGES';
       const password = process.env.SMSCOUNTRY_PASSWORD || 'Finnifty$2024';
-      const url = `https://api.smscountry.com/SMSCwebservice_User_GetBal.asp?User=${user}&passwd=${password}`;
+      const url = `https://api.smscountry.com/SMSCwebservice_User_GetBal.asp?User=${encodeURIComponent(user)}&passwd=${encodeURIComponent(password)}`;
       
-      const response = await axios.get(url);
+      console.log('Fetching SMS balance from:', url.replace(encodeURIComponent(password), '****'));
       
-      // The response is just the balance as a string, e.g., "123.45"
-      // or error like "Invalid User Name!!"
-      const responseText = response.data.toString().trim();
+      const response = await axios.get(url, { timeout: 15000 });
+      const responseText = (response.data || '').toString().trim();
       
-      if (!isNaN(parseFloat(responseText))) {
+      console.log('SMS Balance API Response:', responseText);
+      
+      if (responseText && !isNaN(parseFloat(responseText))) {
         return { success: true, balance: parseFloat(responseText) };
+      }
+      
+      if (responseText.includes('Invalid')) {
+        return { success: false, error: responseText };
       }
       
       return { success: false, error: responseText || 'Failed to get balance' };
     } catch (error) {
       console.error('SMS Balance API Error:', error.message);
-      // Fallback to REST API if ASP fails
       if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
       try {
         const response = await this.client.get('/');
@@ -200,7 +204,7 @@ class SmsRestService {
           return { success: true, balance: parseFloat(response.data.Balance) || 0 };
         }
       } catch (restError) {
-        return { success: false, error: error.message };
+        console.error('SMS REST Balance fallback failed:', restError.message);
       }
       return { success: false, error: error.message };
     }
