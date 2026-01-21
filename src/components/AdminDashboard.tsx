@@ -30,6 +30,7 @@ import {
       ToggleLeft,
       ToggleRight,
       AlertCircle,
+      Timer,
     } from 'lucide-react';
 
   import { toast } from 'sonner';
@@ -146,7 +147,22 @@ interface CombinedUser {
 
 
 export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'auctions' | 'analytics' | 'emails' | 'notifications' | 'userAnalytics' | 'vouchers'>('overview');
+    const validTabs = ['overview', 'users', 'auctions', 'analytics', 'emails', 'notifications', 'userAnalytics', 'vouchers'] as const;
+    type TabType = typeof validTabs[number];
+    
+    const getInitialTab = (): TabType => {
+      const hash = window.location.hash.replace('#', '');
+      if (validTabs.includes(hash as TabType)) {
+        return hash as TabType;
+      }
+      const stored = localStorage.getItem('admin_active_tab');
+      if (stored && validTabs.includes(stored as TabType)) {
+        return stored as TabType;
+      }
+      return 'overview';
+    };
+
+    const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
     const [statistics, setStatistics] = useState<Statistics | null>(null);
     const [masterAuctions, setMasterAuctions] = useState<MasterAuction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -164,8 +180,67 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     const tabsRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(false);
+    const [sessionTimeLeft, setSessionTimeLeft] = useState<number | null>(null);
     
     const isSuperAdmin = adminUser.isSuperAdmin === true;
+    const SESSION_DURATION = 15 * 60 * 1000;
+
+    useEffect(() => {
+      localStorage.setItem('admin_active_tab', activeTab);
+      window.location.hash = activeTab;
+    }, [activeTab]);
+
+    useEffect(() => {
+      const handleHashChange = () => {
+        const hash = window.location.hash.replace('#', '');
+        if (validTabs.includes(hash as TabType)) {
+          setActiveTab(hash as TabType);
+        }
+      };
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
+    useEffect(() => {
+      if (isSuperAdmin) {
+        setSessionTimeLeft(null);
+        return;
+      }
+
+      const loginTimeKey = 'admin_login_time';
+      let loginTime = parseInt(localStorage.getItem(loginTimeKey) || '0', 10);
+      
+      if (!loginTime || loginTime === 0) {
+        loginTime = Date.now();
+        localStorage.setItem(loginTimeKey, loginTime.toString());
+      }
+
+      const checkSession = () => {
+        const elapsed = Date.now() - loginTime;
+        const remaining = SESSION_DURATION - elapsed;
+
+        if (remaining <= 0) {
+          toast.error('Session expired. Please log in again.');
+          localStorage.removeItem(loginTimeKey);
+          localStorage.removeItem('admin_active_tab');
+          onLogout();
+          return;
+        }
+
+        setSessionTimeLeft(Math.ceil(remaining / 1000));
+      };
+
+      checkSession();
+      const interval = setInterval(checkSession, 1000);
+
+      return () => clearInterval(interval);
+    }, [isSuperAdmin, onLogout]);
+
+    const formatSessionTime = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const checkScroll = () => {
       if (tabsRef.current) {
@@ -369,6 +444,8 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
   const handleLogout = () => {
     localStorage.removeItem('admin_user_id');
     localStorage.removeItem('admin_email');
+    localStorage.removeItem('admin_login_time');
+    localStorage.removeItem('admin_active_tab');
     toast.success('Logged out successfully');
     onLogout();
   };
@@ -401,15 +478,29 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                className="flex items-center gap-2 px-4 py-2 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
+              <div className="flex items-center gap-4">
+                {sessionTimeLeft !== null && !isSuperAdmin && (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                    sessionTimeLeft <= 60 
+                      ? 'bg-red-50 border-red-300 text-red-700' 
+                      : sessionTimeLeft <= 300 
+                        ? 'bg-amber-50 border-amber-300 text-amber-700' 
+                        : 'bg-purple-50 border-purple-200 text-purple-700'
+                  }`}>
+                    <Timer className="w-4 h-4" />
+                    <span className="text-sm font-semibold">
+                      Session: {formatSessionTime(sessionTimeLeft)}
+                    </span>
+                  </div>
+                )}
+                <button
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="flex items-center gap-2 px-4 py-2 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Refresh</span>
+                </button>
               <div className="flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-lg border border-purple-200">
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-sm">
