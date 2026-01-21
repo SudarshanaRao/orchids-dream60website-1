@@ -18,6 +18,8 @@ import {
   Download,
   Sparkles,
   Eye,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +42,8 @@ interface EmailTemplate {
   isActive: boolean;
 }
 
+type EmailTheme = 'dark' | 'light';
+
 interface AdminEmailManagementProps {
   adminUserId: string;
 }
@@ -60,6 +64,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const [templateCategory, setTemplateCategory] = useState<EmailTemplate['category']>('CUSTOM');
     const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
     const [previewExistingTemplate, setPreviewExistingTemplate] = useState<EmailTemplate | null>(null);
+  const [emailTheme, setEmailTheme] = useState<EmailTheme>('dark');
 
   // Fetch users
   const fetchUsers = async () => {
@@ -173,6 +178,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
           subject,
           body,
           templateId: selectedTemplate || undefined,
+          theme: emailTheme,
         }),
       });
 
@@ -526,12 +532,42 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
             )}
           </div>
 
-          {/* Email Composition */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-            <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              Compose Email
-            </h3>
+{/* Email Composition */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  Compose Email
+                </h3>
+                <div className="flex items-center gap-2 bg-purple-100 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setEmailTheme('dark')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      emailTheme === 'dark'
+                        ? 'bg-purple-700 text-white shadow-md'
+                        : 'text-purple-700 hover:bg-purple-200'
+                    }`}
+                    title="Dark theme email"
+                  >
+                    <Moon className="w-4 h-4" />
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailTheme('light')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      emailTheme === 'light'
+                        ? 'bg-purple-700 text-white shadow-md'
+                        : 'text-purple-700 hover:bg-purple-200'
+                    }`}
+                    title="Light theme email"
+                  >
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </button>
+                </div>
+              </div>
 
             <div className="space-y-4">
               {/* Subject */}

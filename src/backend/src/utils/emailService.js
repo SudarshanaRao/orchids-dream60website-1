@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 const EmailTemplate = require('../models/EmailTemplate');
 
-const brandStyles = `
+const darkBrandStyles = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { 
     background-color: #050505; 
@@ -33,12 +33,9 @@ const brandStyles = `
   .logo-wrapper {
     margin-bottom: 20px;
   }
-  .logo-img {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #7C3AED 0%, #C026D3 100%);
-    padding: 12px;
+  .logo-emoji {
+    font-size: 64px;
+    line-height: 1;
     display: inline-block;
   }
   .brand-text {
@@ -261,6 +258,263 @@ const brandStyles = `
   }
 `;
 
+const lightBrandStyles = `
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { 
+    background-color: #f3f4f6; 
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+    margin: 0; 
+    padding: 20px; 
+    color: #1f2937; 
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 0;
+  }
+  .card { 
+    background-color: #ffffff; 
+    border: 1px solid rgba(124, 58, 237, 0.2); 
+    border-radius: 24px; 
+    overflow: hidden; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); 
+  }
+  .header { 
+    padding: 40px 40px 30px; 
+    text-align: center;
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, rgba(124, 58, 237, 0) 100%);
+  }
+  .logo-wrapper {
+    margin-bottom: 20px;
+  }
+  .logo-emoji {
+    font-size: 64px;
+    line-height: 1;
+    display: inline-block;
+  }
+  .brand-text {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin: 0;
+    background: linear-gradient(to right, #7c3aed, #c026d3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: rgba(124, 58, 237, 0.1);
+    border: 1px solid rgba(124, 58, 237, 0.2);
+    border-radius: 99px;
+    color: #7c3aed;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 12px;
+  }
+  .content { 
+    padding: 0 40px 40px; 
+  }
+  .hero-title { 
+    font-size: 28px; 
+    font-weight: 800; 
+    color: #1f2937; 
+    margin-bottom: 16px; 
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .hero-text { 
+    font-size: 16px; 
+    color: #6b7280; 
+    line-height: 1.6; 
+    margin-bottom: 24px; 
+  }
+  .feature-box { 
+    background: #f9fafb; 
+    border: 1px solid #e5e7eb; 
+    border-radius: 20px; 
+    padding: 32px; 
+    margin: 24px 0; 
+    text-align: center;
+  }
+  .feature-label {
+    font-size: 13px;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature-value {
+    font-size: 40px;
+    font-weight: 900;
+    color: #1f2937;
+    margin: 0;
+    letter-spacing: -1px;
+  }
+  .feature-sub {
+    font-size: 14px;
+    color: #9ca3af;
+    margin-top: 8px;
+  }
+  .otp-code { 
+    font-family: 'Courier New', monospace;
+    font-size: 48px; 
+    font-weight: 800; 
+    letter-spacing: 12px; 
+    color: #7c3aed; 
+    background: rgba(124, 58, 237, 0.08); 
+    border: 2px dashed rgba(124, 58, 237, 0.3); 
+    border-radius: 16px; 
+    padding: 24px;
+    margin: 20px 0;
+    display: inline-block;
+  }
+    .action-button { 
+      display: inline-block; 
+      padding: 18px 36px; 
+      background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); 
+      color: #ffffff !important; 
+      text-decoration: none; 
+      border-radius: 14px; 
+      font-weight: 700; 
+      font-size: 16px;
+      box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+      margin: 20px 0;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: #f9fafb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(124, 58, 237, 0.08);
+      color: #7c3aed;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .data-table td {
+      padding: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      color: #1f2937;
+      font-size: 14px;
+    }
+    .winner-highlight {
+      color: #d97706;
+      font-weight: 700;
+    }
+
+  .info-grid { 
+    display: table;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10px;
+    margin: 24px -10px;
+  }
+  .info-cell { 
+    display: table-cell;
+    background: #f9fafb; 
+    border: 1px solid #e5e7eb; 
+    border-radius: 16px; 
+    padding: 20px; 
+    text-align: center;
+    width: 33.33%;
+  }
+  .info-label { 
+    font-size: 11px; 
+    color: #9ca3af; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px; 
+    font-weight: 600;
+  }
+  .info-value { 
+    font-size: 16px; 
+    font-weight: 700; 
+    color: #1f2937; 
+  }
+  .alert-box {
+    border-radius: 16px;
+    padding: 20px;
+    margin: 24px 0;
+  }
+  .alert-warning {
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+  .alert-success {
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+  .alert-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .alert-warning .alert-title { color: #d97706; }
+  .alert-success .alert-title { color: #059669; }
+  .alert-desc {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
+  .footer { 
+    padding: 40px; 
+    background-color: #f9fafb;
+    text-align: center;
+    border-top: 1px solid #e5e7eb;
+  }
+  .footer-nav {
+    margin-bottom: 24px;
+  }
+  .footer-link { 
+    color: #6b7280; 
+    font-size: 13px;
+    text-decoration: none; 
+    margin: 0 12px;
+  }
+  .footer-link:hover {
+    color: #7c3aed;
+  }
+  .copyright {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+  /* Winner Special Styling */
+  .winner-card {
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 40px rgba(251, 191, 36, 0.15);
+  }
+  .winner-header {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0) 100%);
+  }
+  .winner-badge {
+    background: #fbbf24;
+    color: #000;
+    padding: 6px 16px;
+    border-radius: 99px;
+    font-weight: 800;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-top: 12px;
+    display: inline-block;
+  }
+  .winner-amount {
+    color: #d97706;
+  }
+`;
+
+const brandStyles = darkBrandStyles;
+
 // Create reusable transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -281,13 +535,13 @@ const getPrimaryClientUrl = () => {
   return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
-const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false }) => {
+const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false, theme = 'dark' }) => {
   const baseUrl = primaryClientUrl;
   const termsHref = `${baseUrl}/terms`;
   const privacyHref = `${baseUrl}/privacy`;
   const supportHref = `${baseUrl}/support`;
   const contactHref = `${baseUrl}/contact`;
-  const logoUrl = `${baseUrl}/icons/icon-192x192.png`;
+  const styles = theme === 'light' ? lightBrandStyles : darkBrandStyles;
 
   return `
     <!DOCTYPE html>
@@ -296,19 +550,17 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${title}</title>
-      <style>${brandStyles}</style>
+      <style>${styles}</style>
     </head>
     <body>
       <div class="container">
         <div class="card ${isWinner ? 'winner-card' : ''}">
           <div class="header ${isWinner ? 'winner-header' : ''}">
             <div class="logo-wrapper">
-              <div class="logo-img">
-                <img src="${logoUrl}" alt="D60" style="width: 100%; height: 100%; object-fit: contain;" />
-              </div>
+              <span class="logo-emoji">🎯</span>
             </div>
             <h1 class="brand-text">Dream60</h1>
-            ${isWinner ? `<div class="winner-badge">CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
+            ${isWinner ? `<div class="winner-badge">🏆 CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
           </div>
           <div class="content">
             ${bodyHtml}
@@ -970,18 +1222,56 @@ const sendSupportReceiptEmail = async (email, details) => {
 /**
  * Send Custom Email
  */
-const sendCustomEmail = async (recipients, subject, body, attachments = []) => {
+const sendCustomEmail = async (recipients, subject, body, attachments = [], theme = 'dark') => {
   try {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return { success: false };
 
     const transporter = createTransporter();
     const recipientList = Array.isArray(recipients) ? recipients : [recipients];
+    const primaryClientUrl = getPrimaryClientUrl();
+    
+    const styles = theme === 'light' ? lightBrandStyles : darkBrandStyles;
+    const wrappedBody = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dream60</title>
+        <style>${styles}</style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="card">
+            <div class="header">
+              <div class="logo-wrapper">
+                <span class="logo-emoji">🎯</span>
+              </div>
+              <h1 class="brand-text">Dream60</h1>
+            </div>
+            <div class="content">
+              ${body}
+            </div>
+            <div class="footer">
+              <div class="footer-nav">
+                <a href="${primaryClientUrl}/support" class="footer-link">Help</a>
+                <a href="${primaryClientUrl}/contact" class="footer-link">Contact</a>
+                <a href="${primaryClientUrl}/terms" class="footer-link">Terms</a>
+                <a href="${primaryClientUrl}/privacy" class="footer-link">Privacy</a>
+              </div>
+              <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
       to: recipientList.join(', '),
       subject: subject,
-      html: body,
+      html: wrappedBody,
       text: body.replace(/<[^>]*>/g, ''),
       attachments: attachments,
     };
@@ -1057,4 +1347,6 @@ module.exports = {
   buildEmailTemplate,
   getPrimaryClientUrl,
   brandStyles,
+  darkBrandStyles,
+  lightBrandStyles,
 };
