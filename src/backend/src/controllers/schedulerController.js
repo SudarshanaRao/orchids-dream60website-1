@@ -1204,7 +1204,7 @@ const manualTriggerAutoActivate = async (req, res) => {
     // ✅ OPTION 1: Return success and let the cron job handle it
     return res.status(200).json({
       success: true,
-      message: 'Auto-activation is handled by the scheduled cron job that runs every minute. Please wait for the next scheduled run.',
+      message: 'Auto-activation is handled by the scheduled cron job that runs at 00:00 AM daily.',
       note: 'Manual trigger removed to prevent circular dependency issues',
       timestamp: new Date().toISOString(),
     });

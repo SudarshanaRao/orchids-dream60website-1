@@ -1179,8 +1179,8 @@ const initializeScheduler = () => {
     timezone: process.env.TIMEZONE || 'Asia/Kolkata',
   });
 
-  // Job 2: Auto-activate auctions every minute
-  const statusUpdateJob = cron.schedule('* * * * *', async () => {
+  // Job 2: Auto-activate auctions at midnight
+  const statusUpdateJob = cron.schedule('0 0 * * *', async () => {
     await autoActivateAuctions();
   }, {
     scheduled: true,
@@ -1205,7 +1205,7 @@ const initializeScheduler = () => {
 
   console.log('✅ [SCHEDULER] Jobs scheduled:');
   console.log('   - midnightJob: Runs at 00:00 AM daily (reset old auctions + create new ones)');
-  console.log('   - statusUpdateJob: Runs every minute (auto-activate auctions)');
+    console.log('   - statusUpdateJob: Runs at 00:00 AM daily (auto-activate auctions)');
   console.log('   - prizeExpirationJob: Runs every minute (expire unclaimed prizes + advance claim queue)');
   
   return {
