@@ -333,7 +333,7 @@ const trackBatch = async (req, res) => {
     const now = new Date();
     const todayStr = getDateStrIST(now);
 
-    const userActivity = await UserActivity.findOne({ userId });
+    const userActivity = await UserActivity.findOne({ userId }).lean();
     if (!userActivity) {
       return res.status(404).json({ success: false, message: 'User activity not found' });
     }
@@ -350,6 +350,21 @@ const trackBatch = async (req, res) => {
       return res.status(200).json({ success: true, message: 'Session not found, skipping' });
     }
 
+    const updateOps = {
+      $set: {
+        [`dailyActivities.${todayIdx}.lastActivity`]: now,
+        'lifetimeStats.lastSeen': now,
+        'currentSession.lastHeartbeat': now,
+      },
+      $inc: {},
+      $push: {},
+    };
+
+    const pageViewsToAdd = [];
+    const interactionsToAdd = [];
+    let pageViewCount = 0;
+    let interactionCount = 0;
+
     if (pageViews && Array.isArray(pageViews)) {
       for (const pv of pageViews) {
         const pageView = {
@@ -360,23 +375,15 @@ const trackBatch = async (req, res) => {
           duration: pv.duration || 0,
           scrollDepth: pv.scrollDepth || 0,
         };
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].pageViews.push(pageView);
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalPageViews += 1;
-        userActivity.dailyActivities[todayIdx].totalPageViews += 1;
+        pageViewsToAdd.push(pageView);
+        pageViewCount += 1;
 
         const path = pv.path || '/';
-        if (!userActivity.dailyActivities[todayIdx].pageStats[path]) {
-          userActivity.dailyActivities[todayIdx].pageStats[path] = { views: 0, totalTime: 0 };
-        }
-        userActivity.dailyActivities[todayIdx].pageStats[path].views += 1;
-        userActivity.dailyActivities[todayIdx].pageStats[path].totalTime += pv.duration || 0;
-
-        userActivity.lifetimeStats.totalPageViews += 1;
-        if (!userActivity.lifetimeStats.favoritePages[path]) {
-          userActivity.lifetimeStats.favoritePages[path] = { views: 0, totalTime: 0 };
-        }
-        userActivity.lifetimeStats.favoritePages[path].views += 1;
-        userActivity.lifetimeStats.favoritePages[path].totalTime += pv.duration || 0;
+        const safePath = path.replace(/\./g, '_');
+        updateOps.$inc[`dailyActivities.${todayIdx}.pageStats.${safePath}.views`] = 1;
+        updateOps.$inc[`dailyActivities.${todayIdx}.pageStats.${safePath}.totalTime`] = pv.duration || 0;
+        updateOps.$inc[`lifetimeStats.favoritePages.${safePath}.views`] = 1;
+        updateOps.$inc[`lifetimeStats.favoritePages.${safePath}.totalTime`] = pv.duration || 0;
       }
     }
 
@@ -390,18 +397,29 @@ const trackBatch = async (req, res) => {
           timestamp: inter.timestamp || now,
           metadata: inter.metadata || {},
         };
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].interactions.push(interaction);
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalInteractions += 1;
-        userActivity.dailyActivities[todayIdx].totalInteractions += 1;
-        userActivity.lifetimeStats.totalInteractions += 1;
+        interactionsToAdd.push(interaction);
+        interactionCount += 1;
       }
     }
 
-    userActivity.dailyActivities[todayIdx].lastActivity = now;
-    userActivity.lifetimeStats.lastSeen = now;
-    userActivity.currentSession.lastHeartbeat = now;
+    if (pageViewsToAdd.length > 0) {
+      updateOps.$push[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.pageViews`] = { $each: pageViewsToAdd };
+      updateOps.$inc[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.totalPageViews`] = pageViewCount;
+      updateOps.$inc[`dailyActivities.${todayIdx}.totalPageViews`] = pageViewCount;
+      updateOps.$inc['lifetimeStats.totalPageViews'] = pageViewCount;
+    }
 
-    await userActivity.save();
+    if (interactionsToAdd.length > 0) {
+      updateOps.$push[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.interactions`] = { $each: interactionsToAdd };
+      updateOps.$inc[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.totalInteractions`] = interactionCount;
+      updateOps.$inc[`dailyActivities.${todayIdx}.totalInteractions`] = interactionCount;
+      updateOps.$inc['lifetimeStats.totalInteractions'] = interactionCount;
+    }
+
+    if (Object.keys(updateOps.$inc).length === 0) delete updateOps.$inc;
+    if (Object.keys(updateOps.$push).length === 0) delete updateOps.$push;
+
+    await UserActivity.updateOne({ userId }, updateOps);
 
     return res.status(200).json({ success: true, message: 'Batch tracked' });
   } catch (err) {
