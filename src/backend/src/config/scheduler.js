@@ -1179,8 +1179,8 @@ const initializeScheduler = () => {
     timezone: process.env.TIMEZONE || 'Asia/Kolkata',
   });
 
-  // Job 2: Auto-activate auctions at midnight
-  const statusUpdateJob = cron.schedule('0 0 * * *', async () => {
+  // Job 2: Auto-activate auctions every minute
+  const statusUpdateJob = cron.schedule('* * * * *', async () => {
     await autoActivateAuctions();
   }, {
     scheduled: true,

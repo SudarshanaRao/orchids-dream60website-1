@@ -43,6 +43,12 @@ const {
   sendSmsToUsers,
   sendBulkSmsToFilter,
   getFilterStats,
+  getRestTemplates,
+  createRestTemplate,
+  deleteRestTemplate,
+  getSenderIds,
+  getSmsReports,
+  getSmsStatus,
 } = require('../controllers/adminSmsController');
 
 /**
@@ -1244,5 +1250,13 @@ router.get('/sms/auctions', getRecentAuctions);
 router.get('/sms/filter-stats', getFilterStats);
 router.post('/sms/send', sendSmsToUsers);
 router.post('/sms/send-bulk', sendBulkSmsToFilter);
+
+// REST API SMS Management
+router.get('/sms/rest/templates', getRestTemplates);
+router.post('/sms/rest/templates', createRestTemplate);
+router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
+router.get('/sms/rest/sender-ids', getSenderIds);
+router.get('/sms/rest/reports', getSmsReports);
+router.get('/sms/rest/status/:messageId', getSmsStatus);
 
 module.exports = router;

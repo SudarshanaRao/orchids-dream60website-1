@@ -2,12 +2,110 @@ const User = require('../models/user');
 const AuctionHistory = require('../models/AuctionHistory');
 const HourlyAuction = require('../models/HourlyAuction');
 const { sendSms, sendBulkSms, getBalance, getDeliveryReports, SMS_TEMPLATES, formatTemplate } = require('../utils/smsService');
+const smsRestService = require('../utils/smsRestService');
 
 const verifyAdmin = async (userId) => {
   if (!userId) return null;
   const adminUser = await User.findOne({ user_id: userId });
   if (!adminUser || adminUser.userType !== 'ADMIN') return null;
   return adminUser;
+};
+
+/**
+ * REST API Methods for SMSCountry
+ */
+
+const getRestTemplates = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const result = await smsRestService.getTemplates();
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get REST Templates Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const createRestTemplate = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const { templateName, message } = req.body;
+    const result = await smsRestService.createTemplate(templateName, message);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Create REST Template Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const deleteRestTemplate = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const { templateId } = req.params;
+    const result = await smsRestService.deleteTemplate(templateId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Delete REST Template Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getSenderIds = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const result = await smsRestService.getSenderIds();
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get Sender IDs Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getSmsReports = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const { fromDate, toDate, page, limit } = req.query;
+    const result = await smsRestService.getDetailedReports({ 
+      FromDate: fromDate, 
+      ToDate: toDate, 
+      Page: page, 
+      Limit: limit 
+    });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get SMS Reports Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+const getSmsStatus = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    const admin = await verifyAdmin(adminId);
+    if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+    const { messageId } = req.params;
+    const result = await smsRestService.getSmsReport(messageId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get SMS Status Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
 };
 
 const getSmsTemplates = async (req, res) => {
@@ -317,19 +415,28 @@ const sendSmsToUsers = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const { userIds, mobileNumbers, message, templateKey, templateVariables } = req.body;
+    const { userIds, mobileNumbers, message, templateKey, templateVariables, senderId } = req.body;
 
     if (!message && !templateKey) {
       return res.status(400).json({ success: false, message: 'Message or template required' });
     }
 
     let finalMessage = message;
+    let isRestTemplate = false;
+    let restTemplateId = null;
+
     if (templateKey) {
-      const formatted = formatTemplate(templateKey, templateVariables || {});
-      if (!formatted.success) {
-        return res.status(400).json({ success: false, message: formatted.error });
+      if (templateKey.startsWith('rest_')) {
+        isRestTemplate = true;
+        restTemplateId = templateKey.replace('rest_', '');
+        // For REST templates, we use the message from the template service later
+      } else {
+        const formatted = formatTemplate(templateKey, templateVariables || {});
+        if (!formatted.success) {
+          return res.status(400).json({ success: false, message: formatted.error });
+        }
+        finalMessage = formatted.message;
       }
-      finalMessage = formatted.message;
     }
 
     let recipients = [];
@@ -346,10 +453,27 @@ const sendSmsToUsers = async (req, res) => {
     }
 
     let result;
-    if (recipients.length === 1) {
-      result = await sendSms(recipients[0], finalMessage);
+    if (isRestTemplate) {
+      // SMSCountry REST API doesn't support sending by TemplateId directly in the simple SMS endpoint 
+      // in the way specified, so we fetch the template message first
+      const tplResult = await smsRestService.getTemplates();
+      const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
+      if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
+      finalMessage = template.Message;
+      
+      // Now send using REST service
+      if (recipients.length === 1) {
+        result = await smsRestService.sendSms(recipients[0], finalMessage, senderId);
+      } else {
+        result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
+      }
     } else {
-      result = await sendBulkSms(recipients, finalMessage);
+      // Use existing service or REST service for custom messages
+      if (recipients.length === 1) {
+        result = await smsRestService.sendSms(recipients[0], finalMessage, senderId);
+      } else {
+        result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
+      }
     }
 
     return res.status(200).json({
@@ -374,19 +498,27 @@ const sendBulkSmsToFilter = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
-    const { filter, filterParams, message, templateKey, templateVariables } = req.body;
+    const { filter, filterParams, message, templateKey, templateVariables, senderId } = req.body;
 
     if (!message && !templateKey) {
       return res.status(400).json({ success: false, message: 'Message or template required' });
     }
 
     let finalMessage = message;
+    let isRestTemplate = false;
+    let restTemplateId = null;
+
     if (templateKey) {
-      const formatted = formatTemplate(templateKey, templateVariables || {});
-      if (!formatted.success) {
-        return res.status(400).json({ success: false, message: formatted.error });
+      if (templateKey.startsWith('rest_')) {
+        isRestTemplate = true;
+        restTemplateId = templateKey.replace('rest_', '');
+      } else {
+        const formatted = formatTemplate(templateKey, templateVariables || {});
+        if (!formatted.success) {
+          return res.status(400).json({ success: false, message: formatted.error });
+        }
+        finalMessage = formatted.message;
       }
-      finalMessage = formatted.message;
     }
 
     let query = { isDeleted: false, userType: 'USER', mobile: { $exists: true, $ne: '' } };
@@ -418,7 +550,14 @@ const sendBulkSmsToFilter = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No users match the filter criteria' });
     }
 
-    const result = await sendBulkSms(recipients, finalMessage);
+    if (isRestTemplate && !finalMessage) {
+      const tplResult = await smsRestService.getTemplates();
+      const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
+      if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
+      finalMessage = template.Message;
+    }
+
+    const result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
 
     return res.status(200).json({
       success: result.success,
@@ -476,6 +615,12 @@ const getFilterStats = async (req, res) => {
 };
 
 module.exports = {
+  getRestTemplates,
+  createRestTemplate,
+  deleteRestTemplate,
+  getSenderIds,
+  getSmsReports,
+  getSmsStatus,
   getSmsTemplates,
   getSmsBalance,
   getUsersForSms,
