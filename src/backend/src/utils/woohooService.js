@@ -258,11 +258,45 @@ class WoohooService {
         return this.request('GET', `/rest/v3/orders/${orderId}`);
     }
 
+    /**
+     * Check balance of a specific gift card
+     * documentation: baseurl/rest/v3/balance
+     * Method: POST
+     * Success: 201 Created
+     * Failure: 400 Bad Request (Business Failure)
+     */
     async getCardBalance(cardNumber, pin = null, sku = null) {
+        if (!cardNumber) {
+            throw new Error('Card number is mandatory for balance check');
+        }
+
         const payload = { cardNumber };
-        if (pin) payload.pin = pin;
-        if (sku) payload.sku = sku;
-        return this.request('POST', '/rest/v3/balance', payload);
+        
+        // Optional parameters: only include if they are not blank/null
+        if (pin && pin.trim() !== '') {
+            payload.pin = pin;
+        }
+        
+        if (sku && sku.trim() !== '') {
+            payload.sku = sku;
+        }
+
+        try {
+            return await this.request('POST', '/rest/v3/balance', payload);
+        } catch (error) {
+            // Special handling for Balance API failures (Status 400)
+            if (error.response?.status === 400) {
+                const errorData = error.response.data;
+                console.error('Woohoo Balance API Business Failure:', errorData.message || 'Unknown error');
+                // Re-throw with more context if available
+                const customError = new Error(errorData.message || 'Balance Enquiry Failed');
+                customError.code = errorData.code;
+                customError.status = 400;
+                customError.additionalTxnFields = errorData.additionalTxnFields;
+                throw customError;
+            }
+            throw error;
+        }
     }
 
     async getActivatedCards(orderId, offset = 0, limit = 100) {
@@ -286,7 +320,7 @@ class WoohooService {
         if (!svcCardNumber) {
             throw new Error('WOOHOO_SVC environment variable not set');
         }
-        return this.request('POST', '/rest/v3/balance', { cardNumber: svcCardNumber });
+        return this.getCardBalance(svcCardNumber);
     }
 }
 
