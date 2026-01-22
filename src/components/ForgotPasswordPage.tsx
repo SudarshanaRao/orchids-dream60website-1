@@ -24,7 +24,6 @@ export function ForgotPasswordPage({
         "enter"
     );
     const [isLoading, setIsLoading] = useState(false);
-    const [hintOtp, setHintOtp] = useState<string | null>(null);
     const [errors, setErrors] = useState<{
         mobile?: string;
         otp?: string;
@@ -77,7 +76,6 @@ export function ForgotPasswordPage({
     const requestOtp = async () => {
         if (!validateMobile()) return;
         setIsLoading(true);
-        setHintOtp(null); // clear previous hint
         try {
             const res = await fetch(
                 API_ENDPOINTS.auth.sendOtp,
@@ -100,11 +98,6 @@ export function ForgotPasswordPage({
             if (res.ok) {
                 setStep("verify");
                 setResendTimer(RESEND_DELAY);
-
-                // show backend-provided otp as hint (for dev/testing)
-                if (data && data.otp) {
-                    setHintOtp(String(data.otp));
-                }
             } else {
                 alert(data.message || "Failed to send OTP");
             }
@@ -174,7 +167,6 @@ export function ForgotPasswordPage({
     const resendOtp = async () => {
         if (resendTimer > 0) return;
         setIsLoading(true);
-        setHintOtp(null);
         try {
             const res = await fetch(API_ENDPOINTS.auth.resendOtp, {
                 method: "POST",
@@ -192,9 +184,6 @@ export function ForgotPasswordPage({
 
             if (res.ok) {
                 setResendTimer(RESEND_DELAY);
-                if (data && data.otp) {
-                    setHintOtp(String(data.otp));
-                }
             } else {
                 alert(data.message || "Failed to resend OTP");
             }
@@ -297,14 +286,6 @@ export function ForgotPasswordPage({
                                         placeholder="Enter the OTP sent to your mobile"
                                         className="bg-white border-purple-300 text-purple-800 placeholder-purple-400 focus:border-purple-500"
                                     />
-                                    {hintOtp && (
-                                        <p className="text-xs text-purple-600 mt-1">
-                                            Hint otp:{" "}
-                                            <span className="font-mono text-sm text-purple-800 bg-purple-50 px-1 rounded">
-                        {hintOtp}
-                      </span>
-                                        </p>
-                                    )}
                                     {errors.otp && (
                                         <p className="text-red-500 text-sm">{errors.otp}</p>
                                     )}

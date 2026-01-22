@@ -241,13 +241,12 @@ const forgotPassword = async (req, res) => {
       }
     }
 
-    // ✅ In development, return OTP in response for testing
+    // ✅ Response (removed OTP for security as per user request)
     const responseData = {
       success: true,
       message: type === 'email' ? 'OTP sent to your email' : 'OTP sent to your mobile',
       userExists: !!user,
-      // Still returning OTP for now to help development/testing if SMS fails or is slow
-      otp: otpCode 
+      emailSent: type === 'email'
     };
 
     return res.status(200).json(responseData);
@@ -321,11 +320,10 @@ const resendOtp = async (req, res) => {
       }
     }
 
-    // ✅ In development, return OTP in response for testing
+    // ✅ Response (removed OTP for security as per user request)
     const responseData = {
       success: true,
-      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent to your mobile',
-      otp: otpCode
+      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent to your mobile'
     };
 
     return res.status(200).json(responseData);
@@ -500,8 +498,7 @@ const sendVerificationOtp = async (req, res) => {
 
     const responseData = {
       success: true,
-      message: `OTP sent to your ${type}`,
-      otp: otpCode
+      message: `OTP sent to your ${type}`
     };
 
     return res.status(200).json(responseData);

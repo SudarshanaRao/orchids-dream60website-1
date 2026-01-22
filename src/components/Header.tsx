@@ -682,7 +682,7 @@ interface HeaderProps {
                                 className="w-full flex items-center space-x-3 px-4 py-2.5 hover:bg-purple-50 text-purple-700 transition-colors"
                               >
                                 <Download className="w-4 h-4" />
-                                <span className="text-sm font-medium">Install APK</span>
+                                    <span className="text-sm font-medium">Install APP</span>
                               </button>
                             )}
                           </motion.div>
@@ -1020,7 +1020,7 @@ interface HeaderProps {
                                 <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                                   <Download className="w-5 h-5 text-purple-600" />
                                 </div>
-                                <span className="font-medium text-purple-900">Install APK</span>
+                                <span className="font-medium text-purple-900">Install APP</span>
                               </button>
                             </motion.div>
 
