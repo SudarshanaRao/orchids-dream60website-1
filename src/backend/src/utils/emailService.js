@@ -515,17 +515,28 @@ const lightBrandStyles = `
 
 const brandStyles = darkBrandStyles;
 
-// Create reusable transporter
+// Global transporter instance
+let transporterInstance = null;
+
+// Create reusable transporter with pooling for better performance
 const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT || '587'),
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
+  if (!transporterInstance) {
+    transporterInstance = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: false,
+      pool: true, // Enable connection pooling
+      maxConnections: 5,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 5,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+  }
+  return transporterInstance;
 };
 
 const getPrimaryClientUrl = () => {
@@ -584,18 +595,30 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
 /**
  * Get template from database by name
  */
-const getTemplateByName = async (templateName) => {
-  try {
-    const template = await EmailTemplate.findOne({ 
-      name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
-      isActive: true 
-    }).lean();
-    return template;
-  } catch (error) {
-    console.error(`Failed to fetch template "${templateName}":`, error);
-    return null;
-  }
-};
+  const getTemplateByName = async (templateName) => {
+    try {
+      // Special handling for OTP verification to ensure we use the specific template ID mentioned
+      if (templateName.toLowerCase() === 'otp verification') {
+        const template = await EmailTemplate.findOne({ 
+          $or: [
+            { _id: '6970bbcb23cce053a4f63b55' },
+            { name: { $regex: new RegExp(`^${templateName}$`, 'i') } }
+          ],
+          isActive: true 
+        }).lean();
+        if (template) return template;
+      }
+
+      const template = await EmailTemplate.findOne({ 
+        name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
+        isActive: true 
+      }).lean();
+      return template;
+    } catch (error) {
+      console.error(`Failed to fetch template "${templateName}":`, error);
+      return null;
+    }
+  };
 
 /**
  * Replace template variables with actual values
