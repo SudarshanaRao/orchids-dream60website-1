@@ -201,11 +201,8 @@ export function OTPVerificationModal({
           <div className="space-y-4">
             <div className="flex justify-center gap-1.5 sm:gap-2.5 max-w-full overflow-hidden" onPaste={handlePaste}>
               {otp.map((digit, index) => (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.04 }}
                   className="relative flex-1 max-w-[44px] sm:max-w-[52px]"
                 >
                   <input
@@ -226,16 +223,7 @@ export function OTPVerificationModal({
                       disabled:opacity-50 disabled:cursor-not-allowed`}
                     disabled={loading}
                   />
-                  {!digit && !loading && (
-                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                      <motion.div 
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                        className="w-0.5 h-6 sm:h-8 bg-purple-400/30 rounded-full"
-                      />
-                    </div>
-                  )}
-                </motion.div>
+                </div>
               ))}
             </div>
 

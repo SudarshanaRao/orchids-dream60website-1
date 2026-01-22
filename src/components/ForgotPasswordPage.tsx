@@ -59,16 +59,8 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value
   return (
     <div className="flex justify-center gap-1.5 sm:gap-3 py-6 max-w-full overflow-hidden" onPaste={handlePaste}>
       {Array.from({ length }).map((_, i) => (
-        <motion.div
+        <div
           key={i}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ 
-            delay: i * 0.04, 
-            type: "spring", 
-            stiffness: 400, 
-            damping: 25 
-          }}
           className="relative flex-1 max-w-[48px] sm:max-w-[64px]"
         >
           <input
@@ -82,33 +74,12 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value
             onKeyDown={(e) => handleKeyDown(i, e)}
             className={`w-full h-12 sm:h-16 text-center text-2xl sm:text-3xl font-black rounded-xl sm:rounded-2xl border-2 transition-all duration-300 outline-none
               ${value[i] 
-                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_8px_20px_-4px_rgba(147,51,234,0.3)] ring-4 ring-purple-500/10' 
-                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-500 focus:bg-white focus:shadow-[0_4px_12px_-4px_rgba(147,51,234,0.2)] focus:ring-4 focus:ring-purple-500/5'
+                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_4px_12px_-2px_rgba(147,51,234,0.2)] ring-4 ring-purple-500/5' 
+                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-500/5'
               }
               disabled:opacity-50 disabled:cursor-not-allowed select-none`}
           />
-          <AnimatePresence>
-            {value[i] && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-600 rounded-full"
-              >
-                <div className="absolute inset-0 bg-purple-400 rounded-full animate-ping opacity-75" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {!value[i] && !disabled && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <motion.div 
-                animate={{ opacity: [0, 1, 0], scaleY: [0.7, 1, 0.7] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="w-0.5 h-6 sm:h-8 bg-purple-500/40 rounded-full"
-              />
-            </div>
-          )}
-        </motion.div>
+        </div>
       ))}
     </div>
   );
