@@ -519,6 +519,18 @@ const brandStyles = darkBrandStyles;
 let transporterInstance = null;
 let templateCache = new Map();
 
+// Official Template IDs from database
+const TEMPLATE_IDS = {
+  OTP: 'd8b8202a-747c-45e2-a24b-ada0c1876bf2',
+  WELCOME: '7df3280e-8982-4284-80d8-f92713c6a361',
+  WINNER_RANK_1: 'b30cdfbd-a37e-49cc-9155-6456634d2c46',
+  WAITING_QUEUE: '66dc01a3-9d2f-4cd7-9f9f-3d8685e3d52e',
+  PASSWORD_CHANGED: '33f8ad7d-0550-480a-aa1b-41bd89cb682d',
+  AUCTION_RESULTS: '3d0f9f1a-596c-4855-a5f6-2992e9eb728a',
+  PRIZE_CLAIM: '2d60f3df-6278-49b1-94e8-e5b67214ce73',
+  SUPPORT_TICKET: '9acdff1b-81fb-43a8-8c5a-28d015e6bb81'
+};
+
 // Create reusable transporter with pooling for better performance
 const createTransporter = () => {
   if (!transporterInstance) {
@@ -601,10 +613,48 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
 };
 
 /**
+ * Get template from database by template_id with caching
+ */
+const getTemplateById = async (templateId) => {
+  if (!templateId) return null;
+  
+  const cacheKey = `id:${templateId}`;
+  
+  // Use cache if available (5 minute TTL)
+  const cached = templateCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < 300000)) {
+    return cached.data;
+  }
+
+  try {
+    const template = await EmailTemplate.findOne({ 
+      template_id: templateId, 
+      isActive: true 
+    }).lean();
+    
+    if (template) {
+      templateCache.set(cacheKey, { data: template, timestamp: Date.now() });
+    }
+    return template;
+  } catch (error) {
+    console.error(`Failed to fetch template by ID "${templateId}":`, error);
+    return null;
+  }
+};
+
+/**
  * Get template from database by name with caching
  */
 const getTemplateByName = async (templateName) => {
-  const cacheKey = templateName.toLowerCase();
+  if (!templateName) return null;
+
+  // If it looks like a UUID, try fetching by ID first
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(templateName)) {
+    return await getTemplateById(templateName);
+  }
+
+  const cacheKey = `name:${templateName.toLowerCase()}`;
   
   // Use cache if available (5 minute TTL)
   const cached = templateCache.get(cacheKey);
@@ -614,21 +664,11 @@ const getTemplateByName = async (templateName) => {
 
   try {
     let template = null;
-    // Special handling for OTP verification
-    if (cacheKey === 'otp verification') {
-      template = await EmailTemplate.findOne({ 
-        $or: [
-          { _id: '6970bbcb23cce053a4f63b55' },
-          { name: { $regex: new RegExp(`^${templateName}$`, 'i') } }
-        ],
-        isActive: true 
-      }).lean();
-    } else {
-      template = await EmailTemplate.findOne({ 
-        name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
-        isActive: true 
-      }).lean();
-    }
+    // Special handling for legacy names or direct lookups
+    template = await EmailTemplate.findOne({ 
+      name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
+      isActive: true 
+    }).lean();
     
     if (template) {
       templateCache.set(cacheKey, { data: template, timestamp: Date.now() });
@@ -667,7 +707,7 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
     const transporter = createTransporter();
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('otp verification');
+    const template = await getTemplateById(TEMPLATE_IDS.OTP);
     
     let subject, htmlBody;
     
@@ -722,7 +762,7 @@ const sendWelcomeEmail = async (email, username) => {
     const transporter = createTransporter();
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Welcome Email');
+    const template = await getTemplateById(TEMPLATE_IDS.WELCOME);
     
     let subject, htmlBody;
     
@@ -789,7 +829,7 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
     const { username, auctionName, prizeAmount, claimDeadline, paymentAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Prize Winner');
+    const template = await getTemplateById(TEMPLATE_IDS.WINNER_RANK_1);
     
     let subject, htmlBody;
     
@@ -890,7 +930,7 @@ const sendWaitingQueueEmail = async (email, details) => {
     const { username, auctionName, rank, prizeAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Waiting Queue');
+    const template = await getTemplateById(TEMPLATE_IDS.WAITING_QUEUE);
     
     let subject, htmlBody;
     
@@ -958,7 +998,7 @@ const sendPasswordChangeEmail = async (email, username) => {
     const transporter = createTransporter();
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Password Changed');
+    const template = await getTemplateById(TEMPLATE_IDS.PASSWORD_CHANGED);
     
     let subject, htmlBody;
     
@@ -1023,7 +1063,7 @@ const sendWinnersAnnouncementEmail = async (email, details) => {
     const { username, auctionName, prizeAmount, rank } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Auction Results');
+    const template = await getTemplateById(TEMPLATE_IDS.AUCTION_RESULTS);
     
     let subject, htmlBody;
     
@@ -1114,7 +1154,7 @@ const sendPrizeClaimedEmail = async (email, details) => {
     const { username, auctionName, prizeAmount, claimDate, transactionId, rewardType } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Prize Claimed');
+    const template = await getTemplateById(TEMPLATE_IDS.PRIZE_CLAIM);
     
     let subject, htmlBody;
     
@@ -1208,7 +1248,7 @@ const sendSupportReceiptEmail = async (email, details) => {
     const primaryClientUrl = getPrimaryClientUrl();
     const generatedTicketId = ticketId || 'D60-' + Math.floor(Math.random() * 10000);
     
-    const template = await getTemplateByName('Support Ticket');
+    const template = await getTemplateById(TEMPLATE_IDS.SUPPORT_TICKET);
     
     let subject, htmlBody;
     
