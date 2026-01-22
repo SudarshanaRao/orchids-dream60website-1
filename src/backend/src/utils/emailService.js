@@ -517,6 +517,7 @@ const brandStyles = darkBrandStyles;
 
 // Global transporter instance
 let transporterInstance = null;
+let templateCache = new Map();
 
 // Create reusable transporter with pooling for better performance
 const createTransporter = () => {
@@ -526,14 +527,21 @@ const createTransporter = () => {
       port: parseInt(process.env.EMAIL_PORT || '587'),
       secure: false,
       pool: true, // Enable connection pooling
-      maxConnections: 5,
-      maxMessages: 100,
+      maxConnections: 10, // Increased for better throughput
+      maxMessages: Infinity,
       rateDelta: 1000,
-      rateLimit: 5,
+      rateLimit: 10, // Increased rate limit
+      socketTimeout: 30000, // 30 seconds timeout
+      connectionTimeout: 15000, // 15 seconds connection timeout
+      greetingTimeout: 15000,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
+      tls: {
+        // Do not fail on invalid certs
+        rejectUnauthorized: false
+      }
     });
   }
   return transporterInstance;
@@ -593,32 +601,44 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
 };
 
 /**
- * Get template from database by name
+ * Get template from database by name with caching
  */
-  const getTemplateByName = async (templateName) => {
-    try {
-      // Special handling for OTP verification to ensure we use the specific template ID mentioned
-      if (templateName.toLowerCase() === 'otp verification') {
-        const template = await EmailTemplate.findOne({ 
-          $or: [
-            { _id: '6970bbcb23cce053a4f63b55' },
-            { name: { $regex: new RegExp(`^${templateName}$`, 'i') } }
-          ],
-          isActive: true 
-        }).lean();
-        if (template) return template;
-      }
+const getTemplateByName = async (templateName) => {
+  const cacheKey = templateName.toLowerCase();
+  
+  // Use cache if available (5 minute TTL)
+  const cached = templateCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < 300000)) {
+    return cached.data;
+  }
 
-      const template = await EmailTemplate.findOne({ 
+  try {
+    let template = null;
+    // Special handling for OTP verification
+    if (cacheKey === 'otp verification') {
+      template = await EmailTemplate.findOne({ 
+        $or: [
+          { _id: '6970bbcb23cce053a4f63b55' },
+          { name: { $regex: new RegExp(`^${templateName}$`, 'i') } }
+        ],
+        isActive: true 
+      }).lean();
+    } else {
+      template = await EmailTemplate.findOne({ 
         name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
         isActive: true 
       }).lean();
-      return template;
-    } catch (error) {
-      console.error(`Failed to fetch template "${templateName}":`, error);
-      return null;
     }
-  };
+    
+    if (template) {
+      templateCache.set(cacheKey, { data: template, timestamp: Date.now() });
+    }
+    return template;
+  } catch (error) {
+    console.error(`Failed to fetch template "${templateName}":`, error);
+    return null;
+  }
+};
 
 /**
  * Replace template variables with actual values

@@ -360,11 +360,59 @@ const deleteEmailTemplate = async (req, res) => {
   }
 };
 
-module.exports = {
-  sendEmailToUsers,
-  createEmailTemplate,
-  getAllEmailTemplates,
-  getEmailTemplateById,
-  updateEmailTemplate,
-  deleteEmailTemplate,
-};
+  /**
+   * Get Public Email Templates (No Admin Check)
+   */
+  const getPublicEmailTemplates = async (req, res) => {
+    try {
+      const { page = 1, limit = 20, category, isActive } = req.query;
+      
+      const query = {};
+      
+      if (category) {
+        query.category = category;
+      }
+      
+      if (typeof isActive !== 'undefined') {
+        query.isActive = isActive === 'true';
+      }
+
+      const l = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+      const p = Math.max(parseInt(page, 10) || 1, 1);
+      const skip = (p - 1) * l;
+
+      const [templates, total] = await Promise.all([
+        EmailTemplate.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(l)
+          .lean(),
+        EmailTemplate.countDocuments(query),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: templates,
+        meta: {
+          total,
+          page: p,
+          limit: l,
+          pages: Math.ceil(total / l),
+        },
+      });
+    } catch (err) {
+      console.error('Get Public Email Templates Error:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+  };
+
+  module.exports = {
+    sendEmailToUsers,
+    createEmailTemplate,
+    getAllEmailTemplates,
+    getEmailTemplateById,
+    updateEmailTemplate,
+    deleteEmailTemplate,
+    getPublicEmailTemplates,
+  };
+

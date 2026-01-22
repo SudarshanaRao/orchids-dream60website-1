@@ -77,22 +77,22 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
           key={i}
           className="relative flex-1 max-w-[48px] sm:max-w-[64px]"
         >
-          <input
-            ref={(el) => (inputsRef.current[i] = el)}
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            value={value[i] || ''}
-            disabled={disabled}
-            onChange={(e) => handleInput(i, e)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`w-full h-12 sm:h-16 text-center text-2xl sm:text-3xl font-black rounded-xl sm:rounded-2xl border-2 transition-all duration-300 outline-none
-              ${value[i] 
-                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_4px_12px_-2px_rgba(147,51,234,0.2)] ring-4 ring-purple-500/5' 
-                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-500/5'
-              }
-              disabled:opacity-50 disabled:cursor-not-allowed select-none`}
-          />
+            <input
+              ref={(el) => (inputsRef.current[i] = el)}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={value[i] || ''}
+              disabled={disabled}
+              onChange={(e) => handleInput(i, e)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              className={`w-full h-12 sm:h-16 text-center text-2xl sm:text-3xl font-black rounded-xl sm:rounded-2xl border-2 transition-all outline-none
+                ${value[i] 
+                  ? 'border-purple-600 bg-white text-purple-900' 
+                  : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-500 focus:bg-white'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed select-none`}
+            />
         </div>
       ))}
     </div>

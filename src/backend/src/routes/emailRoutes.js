@@ -7,8 +7,10 @@ const {
   getAllEmailTemplates,
   getEmailTemplateById,
   updateEmailTemplate,
-  deleteEmailTemplate,
-} = require('../controllers/emailController');
+    deleteEmailTemplate,
+    getPublicEmailTemplates,
+  } = require('../controllers/emailController');
+
 
 /**
  * @swagger
@@ -157,6 +159,75 @@ const {
  *         isActive:
  *           type: boolean
  */
+
+/**
+ * @swagger
+ * /admin/emails/all-templates:
+ *   get:
+ *     summary: GET ALL EMAIL TEMPLATES (PUBLIC)
+ *     description: |
+ *       Retrieve all saved email templates with pagination and filtering.
+ *       
+ *       **Public Feature:**
+ *       - No admin user_id required
+ *       - Pagination support (page, limit)
+ *       - Filter by category
+ *       - Filter by active status
+ *       - Sorted by creation date (newest first)
+ *     tags: [Email Management]
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema:
+ *           type: number
+ *           default: 1
+ *         description: Page number
+ *       - name: limit
+ *         in: query
+ *         schema:
+ *           type: number
+ *           default: 20
+ *         description: Results per page (max 100)
+ *       - name: category
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [PRIZE_CLAIM, GENERAL, MARKETING, NOTIFICATION, CUSTOM]
+ *         description: Filter by category
+ *       - name: isActive
+ *         in: query
+ *         schema:
+ *           type: boolean
+ *         description: Filter by active status
+ *     responses:
+ *       200:
+ *         description: Templates retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/EmailTemplate'
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: number
+ *                     page:
+ *                       type: number
+ *                     limit:
+ *                       type: number
+ *                     pages:
+ *                       type: number
+ *       500:
+ *         description: Server error
+ */
+router.get('/all-templates', getPublicEmailTemplates);
 
 /**
  * @swagger
