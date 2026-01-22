@@ -30,29 +30,32 @@ interface BidModalProps {
 
 export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, userHasBidInRound, isUserQualified, userEntryFee }: BidModalProps) {
   const isEntryBox = box.type === 'entry';
-  const entryFeeAmount = box.entryFee || 0;
-  
-  // Min bid calculation:
-  // - Entry box: use entry fee
-  // - Round 1: use user's entry fee as minimum
-  // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
-  const baseminBidAmount = isEntryBox 
-    ? entryFeeAmount 
-    : (userEntryFee || entryFeeAmount);
-  
-  // ✅ NEW: Logic for minimum bid validation
-  // 1. Minimum bid amount should be the entry fee paid for that auction
-  // 2. Safe bid should be two times of entry fee
-  // 3. Remove 1 rupee logic and use entry fee instead
-  const minBidAmount = userPreviousBid 
-    ? userPreviousBid + (userEntryFee || entryFeeAmount)
-    : baseminBidAmount;
-  
-  // Max bid calculation: prizeValue - 10% discount = 90% of prize value
-  // If prizeValue is 10000, max bid is 9000 (90%)
-  const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
-  
-  const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount);
+    const entryFeeAmount = box.entryFee || 0;
+    
+    // Min bid calculation:
+    // - Entry box: use entry fee
+    // - Round 1: use user's entry fee as minimum
+    // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
+    const effectiveEntryFee = (userEntryFee && userEntryFee > 0) ? userEntryFee : (entryFeeAmount > 0 ? entryFeeAmount : 0);
+    
+    const baseminBidAmount = isEntryBox 
+      ? entryFeeAmount 
+      : effectiveEntryFee;
+    
+    // ✅ NEW: Logic for minimum bid validation
+    // 1. Minimum bid amount should be the entry fee paid for that auction for Round 1
+    // 2. Safe bid should be entry fee
+    // 3. For Round 2+, use previous bid + entry fee
+    const minBidAmount = userPreviousBid 
+      ? userPreviousBid + effectiveEntryFee
+      : (box.roundNumber === 1 ? effectiveEntryFee : baseminBidAmount);
+    
+    // Max bid calculation: prizeValue - 10% discount = 90% of prize value
+    // If prizeValue is 10000, max bid is 9000 (90%)
+    const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
+    
+    // Initialize bidAmount with minBidAmount
+    const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount || effectiveEntryFee);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
