@@ -259,12 +259,17 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
     const setSending = type === 'mobile' ? setIsSendingMobileOtp : setIsSendingEmailOtp;
     setSending(true);
 
-    try {
-      const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, type, reason: 'Signup Verification' }),
-      });
+      try {
+        const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            identifier, 
+            type, 
+            reason: 'Signup Verification',
+            username: formData.username
+          }),
+        });
 
       const data = await response.json();
       if (data.success) {
