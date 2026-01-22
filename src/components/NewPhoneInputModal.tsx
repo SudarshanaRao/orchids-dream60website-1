@@ -114,7 +114,7 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
     setError(null);
 
     try {
-      const verifyRes = await fetch(API_ENDPOINTS.auth.verifyOTP, {
+      const response = await fetch(API_ENDPOINTS.auth.verifyOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

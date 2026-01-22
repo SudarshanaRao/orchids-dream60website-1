@@ -15,6 +15,7 @@ interface ForgotPasswordProps {
 // Reusable Aesthetic OTP Input
 function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void; disabled?: boolean; length?: number }) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const lastCompletedOtp = useRef<string>('');
 
   const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -31,8 +32,11 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value
   };
 
   useEffect(() => {
-    if (value.length === length && onComplete) {
+    if (value.length === length && onComplete && value !== lastCompletedOtp.current) {
+      lastCompletedOtp.current = value;
       onComplete(value);
+    } else if (value.length !== length) {
+      lastCompletedOtp.current = '';
     }
   }, [value, length, onComplete]);
 
@@ -182,11 +186,11 @@ export function ForgotPasswordPage({
     };
 
     // Verify OTP
-    const verifyOtp = async () => {
+    const verifyOtp = useCallback(async () => {
         if (!validateOtp()) return;
         setIsLoading(true);
         try {
-            const res = await fetch(API_ENDPOINTS.auth.verifyOTP, {
+            const res = await fetch(API_ENDPOINTS.auth.verifyOtp, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ mobile, otp }),
@@ -203,7 +207,7 @@ export function ForgotPasswordPage({
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [mobile, otp, validateOtp, API_ENDPOINTS.auth.verifyOtp]);
 
     // Reset password
     const resetPassword = async () => {

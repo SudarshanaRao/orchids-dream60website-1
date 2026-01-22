@@ -71,7 +71,7 @@ export function ChangeEmailModal({ currentEmail, onClose, onOldEmailVerified, on
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(API_ENDPOINTS.auth.verifyOTP, {
+      const response = await fetch(API_ENDPOINTS.auth.verifyOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

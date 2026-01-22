@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Lock, Mail, User, ArrowLeft, Phone, CheckCircle2, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
@@ -28,6 +28,7 @@ interface OTPInputProps {
 
 function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  const lastCompletedOtp = useRef<string>('');
 
   const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -42,14 +43,14 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
     if (val && index < length - 1) {
       inputsRef.current[index + 1]?.focus();
     }
-
-    // Auto-complete trigger - moved inside to ensure it happens after state update if possible
-    // But since we are in React, we'll check length in a useEffect or here
   };
 
   useEffect(() => {
-    if (value.length === length && onComplete) {
+    if (value.length === length && onComplete && value !== lastCompletedOtp.current) {
+      lastCompletedOtp.current = value;
       onComplete(value);
+    } else if (value.length !== length) {
+      lastCompletedOtp.current = '';
     }
   }, [value, length, onComplete]);
 
@@ -292,24 +293,24 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
     }
   };
 
-  const handleVerifyOtp = async (type: 'mobile' | 'email') => {
-    const otp = type === 'mobile' ? mobileOtp : emailOtp;
-    const identifier = type === 'mobile' ? formData.mobile : formData.email;
+const handleVerifyOtp = useCallback(async (type: 'mobile' | 'email') => {
+const otp = type === 'mobile' ? mobileOtp : emailOtp;
+const identifier = type === 'mobile' ? formData.mobile : formData.email;
 
-    if (!otp || otp.length !== 6) {
-      toast.error('Please enter a valid 6-digit OTP');
-      return;
-    }
+if (!otp || otp.length !== 6) {
+toast.error('Please enter a valid 6-digit OTP');
+return;
+}
 
-    const setVerifying = type === 'mobile' ? setIsVerifyingMobileOtp : setIsVerifyingEmailOtp;
-    setVerifying(true);
+const setVerifying = type === 'mobile' ? setIsVerifyingMobileOtp : setIsVerifyingEmailOtp;
+setVerifying(true);
 
-    try {
-      const response = await fetch(API_ENDPOINTS.auth.verifyOtp, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [type]: identifier, otp }),
-      });
+try {
+const response = await fetch(API_ENDPOINTS.auth.verifyOtp, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ [type]: identifier, otp }),
+});
 
       const data = await response.json();
       if (data.success) {
@@ -329,7 +330,7 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
     } finally {
       setVerifying(false);
     }
-  };
+  }, [mobileOtp, emailOtp, formData.mobile, formData.email, setIsVerifyingMobileOtp, setIsVerifyingEmailOtp]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
