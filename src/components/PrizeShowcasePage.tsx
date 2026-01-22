@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Gift, Clock, IndianRupee, Loader2, ArrowLeft } from 'lucide-react';
+import { Gift, Clock, IndianRupee, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
 import { ProductFlipCard } from './ProductFlipCard';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { Button } from './ui/button';
@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 
 interface ProductImage {
   imageUrl: string;
-  description: string[];
+  description: (string | { key: string; value: string })[];
 }
 
 interface UpcomingProduct {
@@ -18,6 +18,7 @@ interface UpcomingProduct {
   auctionName: string;
   prizeValue: number;
   imageUrl: string | null;
+  description: (string | { key: string; value: string })[];
   productImages: ProductImage[];
   TimeSlot: string;
   auctionDate: string;
@@ -176,13 +177,14 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
             productImages={productImagesToShow}
             productName={product.auctionName}
             prizeValue={product.prizeValue}
+            description={product.description}
           />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-purple-100 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <IndianRupee className="w-4 h-4 text-purple-500" />
+              <IndianRupee className="w-4 h-4 text-purple-50" />
               <span className="text-xs font-medium text-purple-600">Prize Value</span>
             </div>
             <p className="text-xl font-bold text-purple-900">
@@ -221,6 +223,49 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
             </p>
           </div>
         </div>
+
+        {/* Product Description Table */}
+        {product.description && product.description.length > 0 && (
+          <motion.div 
+            className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-purple-100 shadow-sm mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <h3 className="text-lg font-bold text-purple-900">Product Specifications</h3>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-purple-100">
+              <table className="w-full text-left border-collapse">
+                <tbody>
+                  {product.description.map((item, idx) => {
+                    const isString = typeof item === 'string';
+                    const key = isString ? `${idx + 1}` : item.key;
+                    const value = isString ? item : item.value;
+                    
+                    if (!value) return null;
+
+                    return (
+                      <tr key={idx} className="border-b border-purple-50 last:border-0 hover:bg-purple-50/50 transition-colors">
+                        <td className="py-3 px-4 w-[40%] bg-purple-50/30">
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-purple-600 block">
+                            {key}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="text-sm text-purple-900 font-semibold">
+                            {value}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
 
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 text-center text-white">
             <h3 className="text-xl font-bold mb-2">Ready to Win?</h3>

@@ -336,7 +336,24 @@ const getWoohooBalance = async (req, res) => {
  */
 const getWoohooTransactions = async (req, res) => {
     try {
-        const transactions = await woohooService.getTransactionHistory();
+        // Support both query params and body for flexibility
+        const options = {
+            startDate: req.query.startDate || req.body.startDate,
+            endDate: req.query.endDate || req.body.endDate,
+            limit: req.query.limit || req.body.limit || 10,
+            offset: req.query.offset || req.body.offset || 0,
+            cards: req.body.cards || []
+        };
+
+        // If cards provided as string in query, try to parse or create single card object
+        if (req.query.cardNumber) {
+            options.cards = [{
+                cardNumber: req.query.cardNumber,
+                pin: req.query.pin
+            }];
+        }
+
+        const transactions = await woohooService.getTransactionHistory(options);
         return res.status(200).json({
             success: true,
             data: transactions
