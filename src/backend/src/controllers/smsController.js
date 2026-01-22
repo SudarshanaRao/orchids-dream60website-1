@@ -2,6 +2,18 @@ const OTP = require('../models/OTP');
 const smsRestService = require('../utils/smsRestService');
 
 /**
+ * Standardize mobile number to 91XXXXXXXXXX format
+ */
+const formatMobile = (num) => {
+  if (!num) return num;
+  let cleaned = num.toString().replace(/[\s\-\+]/g, '');
+  if (!cleaned.startsWith('91') && cleaned.length === 10) {
+    cleaned = '91' + cleaned;
+  }
+  return cleaned;
+};
+
+/**
  * Send OTP to a mobile number for signup/verification
  * Body: { username, mobile }
  */
@@ -13,12 +25,14 @@ const sendOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
     }
 
+    const formattedMobile = formatMobile(mobile);
+
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Save/Update OTP in DB (expires in 5 mins as per model)
     await OTP.findOneAndUpdate(
-      { identifier: mobile, type: 'mobile' },
+      { identifier: formattedMobile, type: 'mobile' },
       { otp, createdAt: new Date() },
       { upsert: true, new: true }
     );
@@ -27,7 +41,7 @@ const sendOtp = async (req, res) => {
     // Use the exact requested template
     const message = `Dear ${name}, use this One Time Password(OTP) ${otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages`;
     
-    const result = await smsRestService.sendSms(mobile, message, 'FINPGS', {
+    const result = await smsRestService.sendSms(formattedMobile, message, 'FINPGS', {
       templateId: '1207172612396743269'
     });
 
@@ -35,7 +49,7 @@ const sendOtp = async (req, res) => {
       return res.status(200).json({ 
         success: true, 
         message: 'OTP sent successfully',
-        data: { mobile } 
+        data: { mobile: formattedMobile } 
       });
     } else {
       return res.status(500).json({ success: false, message: result.error || 'Failed to send OTP' });
@@ -58,7 +72,9 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
     }
 
-    const otpRecord = await OTP.findOne({ identifier: mobile, type: 'mobile' });
+    const formattedMobile = formatMobile(mobile);
+
+    const otpRecord = await OTP.findOne({ identifier: formattedMobile, type: 'mobile' });
 
     if (!otpRecord) {
       return res.status(400).json({ success: false, message: 'OTP expired or not found' });

@@ -13,7 +13,7 @@ interface ForgotPasswordProps {
 }
 
 // Reusable Aesthetic OTP Input
-function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; onChange: (v: string) => void; disabled?: boolean; length?: number }) {
+function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void; disabled?: boolean; length?: number }) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,6 +30,12 @@ function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; on
     }
   };
 
+  useEffect(() => {
+    if (value.length === length && onComplete) {
+      onComplete(value);
+    }
+  }, [value, length, onComplete]);
+
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !value[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
@@ -37,9 +43,15 @@ function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; on
   };
 
   return (
-    <div className="flex justify-between gap-2 py-4">
+    <div className="flex justify-between gap-1.5 sm:gap-2.5 py-4">
       {Array.from({ length }).map((_, i) => (
-        <motion.div key={i} className="relative flex-1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 25 }}
+          className="relative flex-1"
+        >
           <input
             ref={(el) => (inputsRef.current[i] = el)}
             type="text"
@@ -49,13 +61,22 @@ function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; on
             disabled={disabled}
             onChange={(e) => handleInput(i, e)}
             onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`w-full h-12 text-center text-xl font-bold rounded-xl border-2 transition-all duration-300 outline-none
+            className={`w-full h-14 sm:h-16 text-center text-2xl font-black rounded-xl border-2 transition-all duration-300 outline-none
               ${value[i] 
-                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_0_15px_rgba(147,51,234,0.1)] scale-105' 
-                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-400 focus:bg-white'
+                ? 'border-purple-600 bg-purple-50 text-purple-900 shadow-[0_8px_20px_-6px_rgba(147,51,234,0.3)]' 
+                : 'border-slate-200 bg-slate-50/50 text-slate-400 focus:border-purple-400 focus:bg-white focus:shadow-[0_4px_12px_-4px_rgba(147,51,234,0.2)]'
               }
-              disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled:opacity-50 disabled:cursor-not-allowed select-none`}
           />
+          <AnimatePresence>
+            {value[i] && (
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '60%' }}
+                className="absolute bottom-2 left-[20%] h-1 bg-purple-600 rounded-full"
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
       ))}
     </div>
@@ -325,34 +346,37 @@ export function ForgotPasswordPage({
 
                         {step === "verify" && (
                             <div className="space-y-4">
-                                <div className="space-y-2 text-center">
-                                    <Label className="text-purple-700 font-semibold">
-                                        Verify Mobile Number
-                                    </Label>
-                                    <p className="text-xs text-purple-500 mb-2">
-                                        We've sent a 6-digit code to {mobile}
-                                    </p>
-                                    <OTPInput 
-                                        value={otp} 
-                                        onChange={setOtp} 
-                                        disabled={isLoading}
-                                    />
-                                    {errors.otp && (
-                                        <p className="text-red-500 text-sm">{errors.otp}</p>
-                                    )}
-                                </div>
+                                    <div className="space-y-2 text-center">
+                                        <Label className="text-purple-700 font-semibold">
+                                            Verify Mobile Number
+                                        </Label>
+                                        <p className="text-xs text-purple-500 mb-2">
+                                            We've sent a 6-digit code to {mobile}
+                                        </p>
+                                        <OTPInput 
+                                            value={otp} 
+                                            onChange={setOtp} 
+                                            onComplete={verifyOtp}
+                                            disabled={isLoading}
+                                        />
+                                        {isLoading && (
+                                            <motion.div 
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="flex items-center justify-center gap-2 text-purple-600 text-xs font-medium mt-2"
+                                            >
+                                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                                Verifying...
+                                            </motion.div>
+                                        )}
+                                        {errors.otp && (
+                                            <p className="text-red-500 text-sm">{errors.otp}</p>
+                                        )}
+                                    </div>
 
-                                <div className="space-y-3">
-                                    <Button
-                                        onClick={verifyOtp}
-                                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-500 hover:to-purple-600 h-11 rounded-xl shadow-lg shadow-purple-200"
-                                        disabled={isLoading || otp.length !== 6}
-                                    >
-                                        {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-                                        {isLoading ? "Verifying..." : "Verify OTP"}
-                                    </Button>
+                                    <div className="space-y-3 pt-2">
+                                        <div className="text-center">
 
-                                    <div className="text-center">
                                         <p className="text-xs text-purple-600">
                                             Didn't receive?{" "}
                                             <Button

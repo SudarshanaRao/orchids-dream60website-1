@@ -209,12 +209,18 @@ const login = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { mobile, email } = req.body || {};
-    const identifier = (mobile || email || '').toString().trim();
+    let identifier = (mobile || email || '').toString().trim();
     if (!identifier) {
       return res.status(400).json({ success: false, message: 'Mobile or email is required' });
     }
 
     const type = mobile ? 'mobile' : 'email';
+    
+    // Normalize mobile identifier
+    if (type === 'mobile') {
+      identifier = normalizeMobile(identifier);
+    }
+
     const user = await findUserByIdentifier(identifier, type);
 
     const otpCode = generateOtp();
@@ -262,11 +268,16 @@ const forgotPassword = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { mobile, email, otp } = req.body || {};
-    const identifier = (mobile || email || '').toString().trim();
+    let identifier = (mobile || email || '').toString().trim();
     if (!identifier || !otp) {
       return res.status(400).json({ success: false, message: 'Identifier and OTP are required' });
     }
     const type = mobile ? 'mobile' : 'email';
+
+    // Normalize mobile identifier
+    if (type === 'mobile') {
+      identifier = normalizeMobile(identifier);
+    }
 
     const record = await OTP.findOne({ identifier, type });
     if (!record) {
@@ -292,11 +303,17 @@ const verifyOtp = async (req, res) => {
 const resendOtp = async (req, res) => {
   try {
     const { mobile, email } = req.body || {};
-    const identifier = (mobile || email || '').toString().trim();
+    let identifier = (mobile || email || '').toString().trim();
     if (!identifier) {
       return res.status(400).json({ success: false, message: 'Mobile or email is required' });
     }
     const type = mobile ? 'mobile' : 'email';
+
+    // Normalize mobile identifier
+    if (type === 'mobile') {
+      identifier = normalizeMobile(identifier);
+    }
+
     const user = await findUserByIdentifier(identifier, type);
 
     const otpCode = generateOtp();
