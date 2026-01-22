@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Upload, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface DescriptionItem {
+  key: string;
+  value: string;
+}
+
 interface ProductImage {
   imageUrl: string;
-  description: string[];
+  description: (string | DescriptionItem)[];
 }
 
 interface DailyAuctionConfigItem {
@@ -147,7 +152,7 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
-  const handleProductImageChange = (configIndex: number, imageIndex: number, field: 'imageUrl' | 'description', value: string | string[]) => {
+  const handleProductImageChange = (configIndex: number, imageIndex: number, field: 'imageUrl' | 'description', value: string | (string | DescriptionItem)[]) => {
     const updated = [...auctionConfigs];
     if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
       (updated[configIndex].productImages![imageIndex] as any)[field] = value;
@@ -158,7 +163,7 @@ export function CreateMasterAuctionModal({
   const handleAddDescriptionPoint = (configIndex: number, imageIndex: number) => {
     const updated = [...auctionConfigs];
     if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      updated[configIndex].productImages![imageIndex].description.push('');
+      updated[configIndex].productImages![imageIndex].description.push({ key: '', value: '' });
     }
     setAuctionConfigs(updated);
   };
@@ -171,10 +176,49 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
-  const handleDescriptionPointChange = (configIndex: number, imageIndex: number, descIndex: number, value: string) => {
+  const handleDescriptionPointChange = (configIndex: number, imageIndex: number, descIndex: number, field: 'key' | 'value', value: string) => {
     const updated = [...auctionConfigs];
     if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      updated[configIndex].productImages![imageIndex].description[descIndex] = value;
+      const item = updated[configIndex].productImages![imageIndex].description[descIndex];
+      if (typeof item === 'string') {
+        // Migration: convert string to object if editing
+        updated[configIndex].productImages![imageIndex].description[descIndex] = { key: 'Feature', value: item };
+      } else {
+        item[field] = value;
+      }
+    }
+    setAuctionConfigs(updated);
+  };
+
+  const handleBulkDescriptionPaste = (configIndex: number, imageIndex: number, text: string) => {
+    const lines = text.split('\n').filter(line => line.trim());
+    const newItems: DescriptionItem[] = lines.map(line => {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex !== -1) {
+        return {
+          key: line.substring(0, colonIndex).trim(),
+          value: line.substring(colonIndex + 1).trim()
+        };
+      }
+      const dashIndex = line.indexOf('-');
+      if (dashIndex !== -1) {
+        return {
+          key: line.substring(0, dashIndex).trim(),
+          value: line.substring(dashIndex + 1).trim()
+        };
+      }
+      return { key: 'Feature', value: line.trim() };
+    });
+
+    const updated = [...auctionConfigs];
+    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
+      updated[configIndex].productImages![imageIndex].description = [
+        ...updated[configIndex].productImages![imageIndex].description.filter(d => {
+            if (typeof d === 'string') return d.trim() !== '';
+            return d.key.trim() !== '' || d.value.trim() !== '';
+        }),
+        ...newItems
+      ];
     }
     setAuctionConfigs(updated);
   };
@@ -539,43 +583,74 @@ export function CreateMasterAuctionModal({
                                 </div>
                               )}
 
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <label className="block text-xs font-semibold text-purple-700">
-                                    Description Points (shown on card back)
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAddDescriptionPoint(index, imgIndex)}
-                                    className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
-                                  >
-                                    + Add Point
-                                  </button>
-                                </div>
-                                <div className="space-y-2">
-                                  {productImage.description.map((desc, descIndex) => (
-                                    <div key={descIndex} className="flex items-center gap-2">
-                                      <span className="text-xs text-purple-500 w-4">{descIndex + 1}.</span>
-                                      <input
-                                        type="text"
-                                        value={desc}
-                                        onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, e.target.value)}
-                                        placeholder="Enter description point..."
-                                        className="flex-1 px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                                      />
-                                      {productImage.description.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
-                                          className="text-red-400 hover:text-red-600"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
-                                      )}
+                                <div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="block text-xs font-semibold text-purple-700">
+                                      Description Points (Key-Value Table)
+                                    </label>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAddDescriptionPoint(index, imgIndex)}
+                                      className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
+                                    >
+                                      + Add Point
+                                    </button>
+                                  </div>
+
+                                  <div className="mb-3">
+                                    <textarea
+                                      placeholder="Bulk Paste: Brand: Apple\nModel: iPhone 15..."
+                                      className="w-full px-2 py-1 border border-dashed border-purple-300 rounded-lg bg-white text-xs focus:outline-none focus:border-purple-500 min-h-[60px]"
+                                      onChange={(e) => {
+                                        if (e.target.value.trim()) {
+                                          handleBulkDescriptionPaste(index, imgIndex, e.target.value);
+                                          e.target.value = ''; // Clear after paste
+                                        }
+                                      }}
+                                    />
+                                    <p className="text-[10px] text-purple-400 mt-1">Paste multiple lines (Key: Value or Key - Value) to add at once</p>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <div className="grid grid-cols-12 gap-2 px-1">
+                                      <div className="col-span-4 text-[10px] font-bold text-purple-400 uppercase">Key</div>
+                                      <div className="col-span-7 text-[10px] font-bold text-purple-400 uppercase">Value</div>
                                     </div>
-                                  ))}
+                                    {productImage.description.map((desc, descIndex) => (
+                                      <div key={descIndex} className="grid grid-cols-12 items-center gap-2">
+                                        <div className="col-span-4">
+                                          <input
+                                            type="text"
+                                            value={typeof desc === 'string' ? 'Feature' : desc.key}
+                                            onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, 'key', e.target.value)}
+                                            placeholder="Key"
+                                            className="w-full px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                          />
+                                        </div>
+                                        <div className="col-span-7">
+                                          <input
+                                            type="text"
+                                            value={typeof desc === 'string' ? desc : desc.value}
+                                            onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, 'value', e.target.value)}
+                                            placeholder="Value"
+                                            className="w-full px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                          />
+                                        </div>
+                                        <div className="col-span-1">
+                                          {productImage.description.length > 1 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
+                                              className="text-red-400 hover:text-red-600"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
                             </div>
                           </div>
                         ))}

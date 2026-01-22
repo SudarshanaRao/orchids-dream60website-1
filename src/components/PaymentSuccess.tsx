@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, Trophy, Home, IndianRupee, Sparkles, CheckCircle2, Star, Clock, X, Download } from 'lucide-react';
 import { Button } from './ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import jsPDF from 'jspdf';
 
 interface PaymentSuccessProps {
@@ -35,6 +35,12 @@ export function PaymentSuccess({
 }: PaymentSuccessProps) {
   const [countdown, setCountdown] = useState(3);
   const [isMobile, setIsMobile] = useState(false);
+  const onBackToHomeRef = useRef(onBackToHome);
+
+  // Update ref when onBackToHome changes
+  useEffect(() => {
+    onBackToHomeRef.current = onBackToHome;
+  }, [onBackToHome]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -48,7 +54,7 @@ export function PaymentSuccess({
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onBackToHome();
+          onBackToHomeRef.current();
           return 0;
         }
         return prev - 1;
@@ -56,7 +62,7 @@ export function PaymentSuccess({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [onBackToHome]);
+  }, []);
 
   const downloadReceipt = () => {
     const doc = jsPDF ? new jsPDF() : null;

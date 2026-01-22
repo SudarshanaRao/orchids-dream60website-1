@@ -20,7 +20,7 @@ const FeeSplitsSchema = new mongoose.Schema(
 const ProductImageSchema = new mongoose.Schema(
   {
     imageUrl: { type: String, required: true },
-    description: { type: [String], default: [] },
+    description: { type: [mongoose.Schema.Types.Mixed], default: [] },
   },
   { _id: false }
 );

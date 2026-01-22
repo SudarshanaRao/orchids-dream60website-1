@@ -81,16 +81,16 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-purple-100 text-purple-600 text-xs font-bold uppercase tracking-wider mb-8">
                 <Sparkles className="w-4 h-4" />
-                India's Premier Auction Platform
+                Dream60 Live Auction Platform
               </div>
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-[1.1]">
                 India's Favorite <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
-                  Live Auction Hub
+                  Live Auction Platform
                 </span>
               </h1>
               <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
-                Dream60 is India's leading live auction platform designed to make premium products accessible. Experience the thrill of real-time bidding with transparent, fair auctions every hour.
+                Dream60 Live Auction Platform is India's leading live auction destination designed to make premium products accessible. Experience the thrill of real-time bidding with transparent, fair auctions every hour.
               </p>
             </motion.div>
         </div>

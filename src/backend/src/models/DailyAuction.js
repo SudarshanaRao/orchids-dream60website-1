@@ -107,7 +107,7 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 const ProductImageSchema = new mongoose.Schema(
   {
     imageUrl: { type: String, required: true },
-    description: { type: [String], default: [] },
+    description: { type: [mongoose.Schema.Types.Mixed], default: [] },
   },
   { _id: false }
 );

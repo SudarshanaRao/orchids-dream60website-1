@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee, Gift } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -47,8 +47,8 @@ export function Rules({ onBack }: RulesProps) {
                 <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
-                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+                  <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
+                  <p className="text-[10px] text-purple-600">Live Auction Platform</p>
               </div>
             </div>
           </div>

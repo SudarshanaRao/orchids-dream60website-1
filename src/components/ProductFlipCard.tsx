@@ -3,9 +3,14 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+interface DescriptionItem {
+  key: string;
+  value: string;
+}
+
 interface ProductImage {
   imageUrl: string;
-  description: string[];
+  description: (string | DescriptionItem)[];
 }
 
 interface ProductFlipCardProps {
@@ -174,20 +179,36 @@ interface ProductFlipCardProps {
                     <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar">
+                   <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {productDescription && productDescription.length > 0 ? (
-                      <ul className="space-y-2.5">
-                        {productDescription.filter(d => d.trim()).map((point, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
-                              <span className="text-xs font-bold text-white">{idx + 1}</span>
-                            </span>
-                            <span className="text-sm text-white/90 leading-relaxed">
-                              {point}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="space-y-3">
+                        <table className="w-full text-left border-collapse">
+                          <tbody>
+                            {productDescription.map((item, idx) => {
+                              const isString = typeof item === 'string';
+                              const key = isString ? `${idx + 1}` : item.key;
+                              const value = isString ? item : item.value;
+                              
+                              if (!value) return null;
+
+                              return (
+                                <tr key={idx} className="border-b border-white/10 last:border-0">
+                                  <td className="py-2 pr-3 align-top">
+                                    <span className="text-[10px] uppercase font-bold text-white/50 whitespace-nowrap">
+                                      {key}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 align-top">
+                                    <span className="text-sm text-white/90 leading-relaxed font-medium">
+                                      {value}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     ) : (
                       <p className="text-white/70 text-sm italic">
                         No description available for this product.
