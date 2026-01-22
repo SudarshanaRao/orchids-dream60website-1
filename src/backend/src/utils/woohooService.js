@@ -32,15 +32,46 @@ class WoohooService {
             console.log('Client ID:', this.clientId);
             console.log('Username:', this.username);
             
-            const authResponse = await axios.post(this.verifyUrl, {
-                clientId: this.clientId,
-                username: this.username,
-                password: this.password
-            }, {
-                headers: { 
-                    'Content-Type': 'application/json'
+            let authResponse;
+            try {
+                authResponse = await axios.post(this.verifyUrl, {
+                    clientId: this.clientId,
+                    username: this.username,
+                    password: this.password
+                }, {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } catch (err) {
+                // If 8308 error, try with client_id (snake_case) or email field
+                if (err.response?.data?.code === 8308) {
+                    console.log('Got 8308, trying fallback with client_id and email...');
+                    try {
+                        authResponse = await axios.post(this.verifyUrl, {
+                            client_id: this.clientId,
+                            email: this.username,
+                            password: this.password
+                        }, {
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    } catch (err2) {
+                        // If still failing, try one more combination
+                        if (err2.response?.data?.code === 8308) {
+                            console.log('Still got 8308, trying with clientId and email...');
+                            authResponse = await axios.post(this.verifyUrl, {
+                                clientId: this.clientId,
+                                email: this.username,
+                                password: this.password
+                            }, {
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                        } else {
+                            throw err2;
+                        }
+                    }
+                } else {
+                    throw err;
                 }
-            });
+            }
 
             console.log('Auth Response:', JSON.stringify(authResponse.data, null, 2));
 

@@ -33,6 +33,33 @@ const WoohooProductSchema = new mongoose.Schema({
     type: String,
     brandName: String,
     brandCode: String,
+    kycEnabled: String,
+    allowed_fulfillments: [{ code: String }],
+    rewardsDescription: String,
+    additionalForm: mongoose.Schema.Types.Mixed,
+    metaInformation: mongoose.Schema.Types.Mixed,
+    schedulingEnabled: Boolean,
+    categories: [Number],
+    themes: [{
+        sku: String,
+        price: String,
+        image: String
+    }],
+    handlingCharges: {
+        amount: String,
+        label: String
+    },
+    reloadCardNumber: Boolean,
+    expiry: String,
+    formatExpiry: String,
+    discounts: mongoose.Schema.Types.Mixed,
+    corporateDiscounts: mongoose.Schema.Types.Mixed,
+    relatedProducts: mongoose.Schema.Types.Mixed,
+    storeLocatorUrl: String,
+    etaMessage: String,
+    payout: mongoose.Schema.Types.Mixed,
+    convenience_charges: mongoose.Schema.Types.Mixed,
+    cpg: mongoose.Schema.Types.Mixed,
     updatedAt: { type: Date, default: Date.now },
     rawData: mongoose.Schema.Types.Mixed // Store full response just in case
 }, { timestamps: true });

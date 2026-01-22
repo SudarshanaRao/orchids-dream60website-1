@@ -239,7 +239,7 @@ const forgotPassword = async (req, res) => {
         // Continue anyway - OTP still generated
       }
       } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { username: user ? user.username : 'User', otp: otpCode });
         const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
@@ -332,7 +332,7 @@ const resendOtp = async (req, res) => {
         // Continue anyway - OTP still generated
       }
       } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { username: user ? user.username : 'User', otp: otpCode });
         const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
@@ -508,9 +508,9 @@ const checkMobile = async (req, res) => {
       if (!emailResult.success) {
         console.warn('Email send failed:', emailResult.message);
       }
-      } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: username || 'User', otp: otpCode });
-        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+        } else if (type === 'mobile') {
+          const { message, template } = formatTemplate('OTP_VERIFICATION', { username: username || 'User', otp: otpCode });
+          const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
 
       if (!smsResult.success) {
