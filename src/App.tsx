@@ -1520,16 +1520,16 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
                   return box;
                 });
                 
-                return {
-                  ...prev,
-                  prize: liveAuction.auctionName || prev.prize,
-                  prizeValue: liveAuction.prizeValue || prev.prizeValue,
-                  totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
-                  boxes: updatedBoxes,
-                  userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
-                  userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
-                  winnersAnnounced: liveAuction.winnersAnnounced || false,
-                    userEntryFeeFromAPI: userEntryFeeFromAPI,
+                  return {
+                    ...prev,
+                    prize: liveAuction.auctionName || prev.prize,
+                    prizeValue: liveAuction.prizeValue || prev.prizeValue,
+                    totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+                    boxes: updatedBoxes,
+                    userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
+                    userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
+                    winnersAnnounced: liveAuction.winnersAnnounced || false,
+                    userEntryFee: userEntryFeeFromAPI,
                     userHasPaidEntry: finalUserHasPaidEntry,
                   };
                 });

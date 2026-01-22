@@ -180,13 +180,14 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     return Math.min(effectiveMin + buffer, maxBidAmount);
   };
 
-  const recommendedBid = getRecommendedBid();
-
-  const safeAmount = (userEntryFee || entryFeeAmount) * 2;
-
-  // Quick bid options with smart labels
-  const quickBidOptions = [
-    { label: 'Safe', amount: Math.max(effectiveMin, safeAmount), icon: Target },
+    const recommendedBid = getRecommendedBid();
+  
+    // ✅ MODIFIED: Safe amount should be the entry fee as requested by user
+    const safeAmount = (userEntryFee || entryFeeAmount);
+  
+    // Quick bid options with smart labels
+    const quickBidOptions = [
+      { label: 'Safe', amount: Math.max(effectiveMin, safeAmount), icon: Target },
     { label: 'Smart', amount: Math.min(recommendedBid, maxBidAmount), icon: Sparkles },
     { label: 'Bold', amount: Math.min(Math.floor(maxBidAmount * 0.7), maxBidAmount), icon: TrendingUp },
     { label: 'Max', amount: maxBidAmount, icon: Award }
