@@ -1,0 +1,84 @@
+const OTP = require('../models/OTP');
+const smsRestService = require('../utils/smsRestService');
+
+/**
+ * Send OTP to a mobile number for signup/verification
+ * Body: { username, mobile }
+ */
+const sendOtp = async (req, res) => {
+  try {
+    const { username, mobile } = req.body;
+
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: 'Mobile number is required' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save/Update OTP in DB (expires in 5 mins as per model)
+    await OTP.findOneAndUpdate(
+      { identifier: mobile, type: 'mobile' },
+      { otp, createdAt: new Date() },
+      { upsert: true, new: true }
+    );
+
+    const name = username || 'User';
+    // Use the exact requested template
+    const message = `Dear ${name}, use this One Time Password(OTP) ${otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages`;
+    
+    const result = await smsRestService.sendSms(mobile, message, 'FINPGS', {
+      templateId: '1207172612396743269'
+    });
+
+    if (result.success) {
+      return res.status(200).json({ 
+        success: true, 
+        message: 'OTP sent successfully',
+        data: { mobile } 
+      });
+    } else {
+      return res.status(500).json({ success: false, message: result.error || 'Failed to send OTP' });
+    }
+  } catch (error) {
+    console.error('Send OTP Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Verify OTP for a mobile number
+ * Body: { mobile, otp }
+ */
+const verifyOtp = async (req, res) => {
+  try {
+    const { mobile, otp } = req.body;
+
+    if (!mobile || !otp) {
+      return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
+    }
+
+    const otpRecord = await OTP.findOne({ identifier: mobile, type: 'mobile' });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: 'OTP expired or not found' });
+    }
+
+    if (otpRecord.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Success - delete OTP record so it can't be reused
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    return res.status(200).json({ success: true, message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('Verify OTP Error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+module.exports = {
+  sendOtp,
+  verifyOtp
+};

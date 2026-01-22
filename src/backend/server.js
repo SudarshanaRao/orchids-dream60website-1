@@ -32,6 +32,7 @@ const supportChatRoutes = require('./src/routes/supportChat');
 const careersRoutes = require('./src/routes/careersRoutes');
 const feedbackRoutes = require('./src/routes/feedbackRoutes');
 const userActivityRoutes = require('./src/routes/userActivityRoutes');
+const smsRoutes = require('./src/routes/smsRoutes');
 
 const app = express();
 
@@ -180,6 +181,7 @@ app.use('/support-chat', supportChatRoutes);
 app.use('/careers', careersRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/user-activity', userActivityRoutes);
+app.use('/sms', smsRoutes);
 
 // --------------------
 // MongoDB Connection
