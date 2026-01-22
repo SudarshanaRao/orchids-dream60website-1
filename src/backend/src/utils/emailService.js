@@ -68,51 +68,6 @@ const getPrimaryClientUrl = () => {
   return raw.split(',')[0].trim().replace(/\/$/, '');
 };
 
-const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinner = false, theme = 'dark' }) => {
-  const baseUrl = primaryClientUrl;
-  const termsHref = `${baseUrl}/terms`;
-  const privacyHref = `${baseUrl}/privacy`;
-  const supportHref = `${baseUrl}/support`;
-  const contactHref = `${baseUrl}/contact`;
-  const styles = theme === 'light' ? lightBrandStyles : darkBrandStyles;
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${title}</title>
-      <style>${styles}</style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="card ${isWinner ? 'winner-card' : ''}">
-          <div class="header ${isWinner ? 'winner-header' : ''}">
-            <div class="logo-wrapper">
-              <span class="logo-emoji">🎯</span>
-            </div>
-            <h1 class="brand-text">Dream60</h1>
-            ${isWinner ? `<div class="winner-badge">🏆 CHAMPION</div>` : `<div class="status-badge">${status || title}</div>`}
-          </div>
-          <div class="content">
-            ${bodyHtml}
-          </div>
-          <div class="footer">
-            <div class="footer-nav">
-              <a href="${supportHref}" class="footer-link">Help</a>
-              <a href="${contactHref}" class="footer-link">Contact</a>
-              <a href="${termsHref}" class="footer-link">Terms</a>
-              <a href="${privacyHref}" class="footer-link">Privacy</a>
-            </div>
-            <p class="copyright">© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-};
 
 /**
  * Get template from database by template_id with caching
@@ -751,7 +706,7 @@ const sendEmailWithTemplate = async (email, templateName, variables = {}, fallba
   }
 };
 
-module.exports = {
+  module.exports = {
   sendOtpEmail,
   sendWelcomeEmail,
   sendPrizeClaimWinnerEmail,
@@ -764,9 +719,5 @@ module.exports = {
   sendEmailWithTemplate,
   getTemplateByName,
   replaceTemplateVariables,
-  buildEmailTemplate,
   getPrimaryClientUrl,
-  brandStyles,
-  darkBrandStyles,
-  lightBrandStyles,
 };
