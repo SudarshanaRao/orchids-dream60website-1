@@ -232,9 +232,10 @@ const forgotPassword = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
-    } else if (type === 'mobile') {
-      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+      } else if (type === 'mobile') {
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
+        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
         // In development we might still want to return the OTP if SMS fails
@@ -296,6 +297,7 @@ const resendOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile or email is required' });
     }
     const type = mobile ? 'mobile' : 'email';
+    const user = await findUserByIdentifier(identifier, type);
 
     const otpCode = generateOtp();
 
@@ -312,9 +314,10 @@ const resendOtp = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
-    } else if (type === 'mobile') {
-      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+      } else if (type === 'mobile') {
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
+        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
       }
@@ -467,9 +470,9 @@ const checkMobile = async (req, res) => {
 
 // POST /auth/send-verification-otp
 // Body: { identifier, type, reason }
-const sendVerificationOtp = async (req, res) => {
+  const sendVerificationOtp = async (req, res) => {
   try {
-    const { identifier, type, reason = 'Verification' } = req.body || {};
+    const { identifier, type, reason = 'Verification', username } = req.body || {};
     
     if (!identifier || !type) {
       return res.status(400).json({ success: false, message: 'Identifier and type are required' });
@@ -488,9 +491,11 @@ const sendVerificationOtp = async (req, res) => {
       if (!emailResult.success) {
         console.warn('Email send failed:', emailResult.message);
       }
-    } else if (type === 'mobile') {
-      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+      } else if (type === 'mobile') {
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: username || 'User', otp: otpCode });
+        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+
+
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
       }

@@ -8,14 +8,30 @@ const client = axios.create({
   timeout: 15000,
 });
 
+const smsRestService = require('./smsRestService');
+
 const getSmsConfig = () => ({
   user: process.env.SMSCOUNTRY_USER,
   passwd: process.env.SMSCOUNTRY_PASSWORD,
-  sid: process.env.SMSCOUNTRY_SENDER_ID || 'DREAM60',
+  sid: process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
 });
 
 const sendSms = async (mobileNumbers, message, options = {}) => {
   try {
+    // Switch to REST API as requested by user
+    if (smsRestService.isConfigured()) {
+      const numbers = Array.isArray(mobileNumbers) ? mobileNumbers : mobileNumbers.split(',');
+      
+      // If single number, use sendSms
+      if (numbers.length === 1) {
+        return await smsRestService.sendSms(numbers[0], message, options.senderId, options);
+      } else {
+        // For multiple, use bulk
+        return await smsRestService.sendBulkSms(numbers, message, options.senderId, options);
+      }
+    }
+
+    // Fallback to legacy API if REST not configured (though user wants REST)
     const config = getSmsConfig();
     
     if (!config.user || !config.passwd) {
@@ -193,8 +209,8 @@ const SMS_TEMPLATES = {
     OTP_VERIFICATION: {
       id: 'otp_verification',
       name: 'OTP Verification',
-      template: 'Dear User, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
-      variables: ['otp'],
+      template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
+      variables: ['name', 'otp'],
       templateId: '1207172612396743269'
     },
   };

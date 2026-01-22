@@ -30,20 +30,25 @@ class SmsRestService {
   /**
    * Send a single SMS
    */
-  async sendSms(mobileNumber, message, senderId) {
-    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+    async sendSms(mobileNumber, message, senderId, options = {}) {
+      if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+  
+      try {
+        const payload = {
+          Text: message,
+          Number: this.formatNumber(mobileNumber),
+          SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+          DRNotifyUrl: '',
+          DRNotifyHttpMethod: 'POST',
+          Tool: 'API'
+        };
+  
+        if (options.templateId) {
+          payload.TemplateId = options.templateId;
+        }
+  
+        const response = await this.client.post('/SMSes/', payload);
 
-    try {
-      const payload = {
-        Text: message,
-        Number: this.formatNumber(mobileNumber),
-        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
-        DRNotifyUrl: '',
-        DRNotifyHttpMethod: 'POST',
-        Tool: 'API'
-      };
-
-      const response = await this.client.post('/SMSes/', payload);
       return { success: true, data: response.data };
     } catch (error) {
       console.error('SMS Rest Send Error:', error.response?.data || error.message);
@@ -54,20 +59,25 @@ class SmsRestService {
   /**
    * Send bulk SMS
    */
-  async sendBulkSms(numbers, message, senderId) {
-    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+    async sendBulkSms(numbers, message, senderId, options = {}) {
+      if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+  
+      try {
+        const payload = {
+          Text: message,
+          Numbers: numbers.map(n => this.formatNumber(n)),
+          SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+          DRNotifyUrl: '',
+          DRNotifyHttpMethod: 'POST',
+          Tool: 'API'
+        };
+  
+        if (options.templateId) {
+          payload.TemplateId = options.templateId;
+        }
+  
+        const response = await this.client.post('/BulkSMSes/', payload);
 
-    try {
-      const payload = {
-        Text: message,
-        Numbers: numbers.map(n => this.formatNumber(n)),
-        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
-        DRNotifyUrl: '',
-        DRNotifyHttpMethod: 'POST',
-        Tool: 'API'
-      };
-
-      const response = await this.client.post('/BulkSMSes/', payload);
       return { success: true, data: response.data };
     } catch (error) {
       console.error('SMS Rest Bulk Send Error:', error.response?.data || error.message);
