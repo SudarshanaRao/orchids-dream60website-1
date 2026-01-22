@@ -587,7 +587,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
 const getTemplateByName = async (templateName) => {
   try {
     const template = await EmailTemplate.findOne({ 
-      name: templateName, 
+      name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
       isActive: true 
     }).lean();
     return template;
@@ -624,7 +624,7 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
     const transporter = createTransporter();
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('OTP Verification');
+    const template = await getTemplateByName('otp verification');
     
     let subject, htmlBody;
     

@@ -71,13 +71,13 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
   };
 
   return (
-    <div className="flex justify-between gap-1.5 sm:gap-2.5 py-4" onPaste={handlePaste}>
+    <div className="flex justify-between gap-2 sm:gap-3 py-6" onPaste={handlePaste}>
       {Array.from({ length }).map((_, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: i * 0.05, type: "spring", stiffness: 400, damping: 25 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 20 }}
           className="relative flex-1"
         >
           <input
@@ -89,22 +89,35 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
             disabled={disabled}
             onChange={(e) => handleInput(i, e)}
             onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`w-full h-14 sm:h-16 text-center text-2xl font-black rounded-xl border-2 transition-all duration-300 outline-none
+            className={`w-full h-14 sm:h-18 text-center text-3xl font-black rounded-2xl border-2 transition-all duration-300 outline-none
               ${value[i] 
-                ? 'border-purple-600 bg-purple-50 text-purple-900 shadow-[0_8px_20px_-6px_rgba(147,51,234,0.3)]' 
-                : 'border-slate-200 bg-slate-50/50 text-slate-400 focus:border-purple-400 focus:bg-white focus:shadow-[0_4px_12px_-4px_rgba(147,51,234,0.2)]'
+                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_10px_25px_-5px_rgba(147,51,234,0.25)] ring-4 ring-purple-500/10' 
+                : 'border-slate-200 bg-slate-50/30 text-slate-400 focus:border-purple-400 focus:bg-white focus:shadow-[0_4px_15px_-4px_rgba(147,51,234,0.15)] focus:ring-4 focus:ring-purple-500/5'
               }
               disabled:opacity-50 disabled:cursor-not-allowed select-none`}
           />
           <AnimatePresence>
             {value[i] && (
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: '60%' }}
-                className="absolute bottom-2 left-[20%] h-1 bg-purple-600 rounded-full"
-              />
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-purple-600 rounded-full border-2 border-white shadow-sm flex items-center justify-center"
+              >
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              </motion.div>
             )}
           </AnimatePresence>
+          {/* Subtle cursor effect for active input */}
+          {!value[i] && !disabled && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <motion.div 
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="w-0.5 h-8 bg-purple-400/30 rounded-full"
+              />
+            </div>
+          )}
         </motion.div>
       ))}
     </div>
