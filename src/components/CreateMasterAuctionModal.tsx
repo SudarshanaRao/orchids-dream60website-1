@@ -193,20 +193,21 @@ export function CreateMasterAuctionModal({
   const handleBulkDescriptionPaste = (configIndex: number, imageIndex: number, text: string) => {
     const lines = text.split('\n').filter(line => line.trim());
     const newItems: DescriptionItem[] = lines.map(line => {
-      const colonIndex = line.indexOf(':');
-      if (colonIndex !== -1) {
-        return {
-          key: line.substring(0, colonIndex).trim(),
-          value: line.substring(colonIndex + 1).trim()
-        };
+      // Try different delimiters: Colon, Dash, Tab, or 2+ spaces
+      const regex = /[:\-\t]|\s{2,}/;
+      const match = line.match(regex);
+      
+      if (match) {
+        const delimiter = match[0];
+        const index = line.indexOf(delimiter);
+        const key = line.substring(0, index).trim();
+        const value = line.substring(index + delimiter.length).trim();
+        
+        if (key && value) {
+          return { key, value };
+        }
       }
-      const dashIndex = line.indexOf('-');
-      if (dashIndex !== -1) {
-        return {
-          key: line.substring(0, dashIndex).trim(),
-          value: line.substring(dashIndex + 1).trim()
-        };
-      }
+      
       return { key: 'Feature', value: line.trim() };
     });
 

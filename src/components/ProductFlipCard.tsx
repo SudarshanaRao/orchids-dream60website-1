@@ -191,20 +191,20 @@ interface ProductFlipCardProps {
                               
                               if (!value) return null;
 
-                              return (
-                                <tr key={idx} className="border-b border-white/10 last:border-0">
-                                  <td className="py-2 pr-3 align-top">
-                                    <span className="text-[10px] uppercase font-bold text-white/50 whitespace-nowrap">
-                                      {key}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 align-top">
-                                    <span className="text-sm text-white/90 leading-relaxed font-medium">
-                                      {value}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
+                                return (
+                                  <tr key={idx} className="border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors group/row">
+                                    <td className="py-3 pr-4 align-top w-[40%]">
+                                      <span className="text-[10px] uppercase tracking-wider font-bold text-purple-200/60 block leading-tight">
+                                        {key}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 align-top">
+                                      <span className="text-[13px] text-white font-semibold leading-relaxed block">
+                                        {value}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
                             })}
                           </tbody>
                         </table>
