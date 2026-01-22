@@ -193,6 +193,40 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
 };
 
 /**
+ * Helper to get consistent mail options
+ */
+const getMailOptions = (fromName, to, subject, htmlBody, attachments = []) => {
+  const plainText = htmlBody.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  
+  // Add professional footer for compliance and trust
+  const footerHtml = `
+    <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; font-size: 12px; color: #888;">
+      <p>This email was sent by Dream60. If you did not expect this email, please ignore it.</p>
+      <p>Dream60, India | <a href="${getPrimaryClientUrl()}/privacy" style="color: #888;">Privacy Policy</a></p>
+    </div>
+  `;
+  
+  const finalHtml = htmlBody.includes('</body>') 
+    ? htmlBody.replace('</body>', `${footerHtml}</body>`)
+    : `${htmlBody}${footerHtml}`;
+
+  return {
+    from: `"${fromName}" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: finalHtml,
+    text: `${plainText}\n\nDream60, India | Privacy Policy: ${getPrimaryClientUrl()}/privacy`,
+    attachments,
+    headers: {
+      'List-Unsubscribe': `<mailto:${process.env.EMAIL_USER}?subject=unsubscribe>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      'X-Entity-Ref-ID': Date.now().toString(),
+      'Precedence': 'bulk'
+    }
+  };
+};
+
+/**
  * Helper to send OTP email with a loaded template
  */
 const sendOtpEmailWithTemplate = async (email, template, otp, reason) => {
@@ -206,12 +240,7 @@ const sendOtpEmailWithTemplate = async (email, template, otp, reason) => {
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Security", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -258,12 +287,7 @@ const sendWelcomeEmailWithTemplate = async (email, template, username) => {
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -319,12 +343,7 @@ const sendPrizeClaimWinnerEmailWithTemplate = async (email, template, details) =
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Rewards" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Rewards", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -379,12 +398,7 @@ const sendWaitingQueueEmailWithTemplate = async (email, template, details) => {
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Updates" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Updates", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -435,12 +449,7 @@ const sendPasswordChangeEmailWithTemplate = async (email, template, username) =>
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Security", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -496,12 +505,7 @@ const sendWinnersAnnouncementEmailWithTemplate = async (email, template, details
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Results" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Results", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -558,12 +562,7 @@ const sendPrizeClaimedEmailWithTemplate = async (email, template, details) => {
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Rewards" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Rewards", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   console.log(`✅ [EMAIL] Prize claimed confirmation sent to ${email}`);
@@ -619,12 +618,7 @@ const sendSupportReceiptEmailWithTemplate = async (email, template, details) => 
     { $inc: { usageCount: 1 } }
   );
 
-  const mailOptions = {
-    from: `"Dream60 Support" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: subject,
-    html: htmlBody,
-  };
+  const mailOptions = getMailOptions("Dream60 Support", email, subject, htmlBody);
 
   const info = await transporter.sendMail(mailOptions);
   return { success: true, messageId: info.messageId };
@@ -640,16 +634,7 @@ const sendCustomEmail = async (recipients, subject, body, attachments = [], them
     const transporter = createTransporter();
     const recipientList = Array.isArray(recipients) ? recipients : [recipients];
     
-    // ✅ MODIFIED: We no longer wrap the body in hardcoded HTML. 
-    // We use the body as provided, assuming it's either a pure string or a full template.
-    const mailOptions = {
-      from: `"Dream60" <${process.env.EMAIL_USER}>`,
-      to: recipientList.join(', '),
-      subject: subject,
-      html: body,
-      text: body.replace(/<[^>]*>/g, ''),
-      attachments: attachments,
-    };
+    const mailOptions = getMailOptions("Dream60", recipientList.join(', '), subject, body, attachments);
 
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId, recipientCount: recipientList.length };
@@ -690,13 +675,7 @@ const sendEmailWithTemplate = async (email, templateName, variables = {}, fallba
       body = fallbackBody;
     }
 
-    const mailOptions = {
-      from: `"Dream60" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: subject,
-      html: body,
-      text: body.replace(/<[^>]*>/g, ''),
-    };
+    const mailOptions = getMailOptions("Dream60", email, subject, body);
 
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId, usedTemplate: !!template };
