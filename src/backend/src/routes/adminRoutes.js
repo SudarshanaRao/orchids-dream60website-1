@@ -21,6 +21,8 @@ const {
 } = require('../controllers/adminController');
 
 const {
+  refreshWoohooProducts,
+  getDbProducts,
   getEligibleWinners,
   sendVoucher,
   getIssuedVouchers,
@@ -1021,6 +1023,8 @@ router.get('/vouchers/woohoo-balance', getWoohooBalance);
  *         description: Woohoo API error
  */
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
+router.get('/vouchers/refresh-products', refreshWoohooProducts);
+router.get('/vouchers/db-products', getDbProducts);
 
 /**
  * @swagger

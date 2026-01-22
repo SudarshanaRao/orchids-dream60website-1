@@ -506,7 +506,7 @@ interface PrizeShowcaseProps {
   const displayPrizeValue =
     liveAuctions.length > 0 ? liveAuctions[0].prizeValue : currentPrize.prizeValue;
     const currentAuction = liveAuctions.length > 0 ? liveAuctions[0] : null;
-    const displayImageUrl = currentAuction?.imageUrl || displayImage;
+    const displayImageUrl = currentAuction?.imageUrl;
     const displayDescription = currentAuction?.description || [];
     
     const displayProductImages: ProductImage[] = currentAuction?.productImages && currentAuction.productImages.length > 0

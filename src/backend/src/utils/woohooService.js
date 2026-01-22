@@ -203,6 +203,10 @@ class WoohooService {
         return this.request('GET', '/rest/v3/catalog/categories');
     }
 
+    async getProductsList(params = {}) {
+        return this.request('GET', '/rest/v3/catalog/products', null, params);
+    }
+
     async getProducts(categoryId) {
         return this.request('GET', `/rest/v3/catalog/categories/${categoryId}/products`);
     }
