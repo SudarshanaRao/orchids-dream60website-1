@@ -233,8 +233,8 @@ const forgotPassword = async (req, res) => {
         // Continue anyway - OTP still generated
       }
     } else if (type === 'mobile') {
-      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message);
+      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
         // In development we might still want to return the OTP if SMS fails
@@ -313,8 +313,8 @@ const resendOtp = async (req, res) => {
         // Continue anyway - OTP still generated
       }
     } else if (type === 'mobile') {
-      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message);
+      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
       }
@@ -489,8 +489,8 @@ const sendVerificationOtp = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
       }
     } else if (type === 'mobile') {
-      const { message } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
-      const smsResult = await sendSms(identifier, message);
+      const { message, template } = formatTemplate('OTP_VERIFICATION', { otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
       }

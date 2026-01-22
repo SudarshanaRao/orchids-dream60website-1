@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, Lock, Mail, User, ArrowLeft, Phone, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, ArrowLeft, Phone, CheckCircle2, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -15,6 +15,90 @@ interface SignupFormProps {
   onBack: () => void;
   onNavigate?: (page: string) => void;
   isLoading?: boolean;
+}
+
+// Cool Segmented OTP Input Component
+interface OTPInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  length?: number;
+}
+
+function OTPInput({ value, onChange, disabled, length = 6 }: OTPInputProps) {
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!/^\d*$/.test(val)) return;
+
+    const newValue = value.split('');
+    newValue[index] = val.slice(-1);
+    const updatedValue = newValue.join('');
+    onChange(updatedValue);
+
+    // Focus next
+    if (val && index < length - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, length).replace(/\D/g, '');
+    if (pastedData) {
+      onChange(pastedData);
+      const nextIndex = Math.min(pastedData.length, length - 1);
+      inputsRef.current[nextIndex]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between gap-2 sm:gap-3 py-4" onPaste={handlePaste}>
+      {Array.from({ length }).map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 20 }}
+          className="relative flex-1"
+        >
+          <input
+            ref={(el) => (inputsRef.current[i] = el)}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={value[i] || ''}
+            disabled={disabled}
+            onChange={(e) => handleInput(i, e)}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            className={`w-full h-12 sm:h-16 text-center text-xl sm:text-2xl font-bold rounded-2xl border-2 transition-all duration-300 outline-none
+              ${value[i] 
+                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_0_20px_rgba(147,51,234,0.15)] scale-105' 
+                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-400 focus:bg-white focus:shadow-[0_0_15px_rgba(147,51,234,0.1)]'
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed`}
+          />
+          <AnimatePresence>
+            {value[i] && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-600 rounded-full shadow-[0_0_8px_rgba(147,51,234,0.6)]"
+              />
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ))}
+    </div>
+  );
 }
 
 export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLoading: externalLoading }: SignupFormProps) {
@@ -40,6 +124,80 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
   const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
   const [isVerifyingMobileOtp, setIsVerifyingMobileOtp] = useState(false);
   const [isVerifyingEmailOtp, setIsVerifyingEmailOtp] = useState(false);
+
+  // Availability State
+  const [isCheckingMobile, setIsCheckingMobile] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [mobileAvailable, setMobileAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+
+  // Debounced Availability Check
+  useEffect(() => {
+    if (formData.mobile.length === 10 && !isMobileVerified) {
+      const timer = setTimeout(async () => {
+        setIsCheckingMobile(true);
+        try {
+          const response = await fetch(API_ENDPOINTS.auth.checkMobile, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mobile: formData.mobile }),
+          });
+          const data = await response.json();
+          setMobileAvailable(!data.exists);
+          if (data.exists) {
+            setErrors(prev => ({ ...prev, mobile: 'Mobile number already registered' }));
+          } else {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.mobile;
+              return newErrors;
+            });
+          }
+        } catch (error) {
+          console.error('Check mobile error:', error);
+        } finally {
+          setIsCheckingMobile(false);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setMobileAvailable(null);
+    }
+  }, [formData.mobile, isMobileVerified]);
+
+  useEffect(() => {
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (emailRegex.test(formData.email) && !isEmailVerified) {
+      const timer = setTimeout(async () => {
+        setIsCheckingEmail(true);
+        try {
+          const response = await fetch(API_ENDPOINTS.auth.checkEmail, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: formData.email }),
+          });
+          const data = await response.json();
+          setEmailAvailable(!data.exists);
+          if (data.exists) {
+            setErrors(prev => ({ ...prev, email: 'Email already registered' }));
+          } else {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.email;
+              return newErrors;
+            });
+          }
+        } catch (error) {
+          console.error('Check email error:', error);
+        } finally {
+          setIsCheckingEmail(false);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setEmailAvailable(null);
+    }
+  }, [formData.email, isEmailVerified]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -327,10 +485,10 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mobile" className="text-purple-700">Mobile</Label>
+                  <Label htmlFor="mobile" className="text-purple-700">Mobile Number</Label>
                   <div className="relative flex gap-2">
-                    <div className="relative flex-1">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 w-4 h-4" />
+                    <div className="relative flex-1 group">
+                      <Phone className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isMobileVerified ? 'text-green-500' : 'text-purple-500'}`} />
                       <Input
                         id="mobile"
                         type="tel"
@@ -343,122 +501,159 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
                             handleInputChange('mobile', value);
                           }
                         }}
-                        placeholder="Enter mobile number"
-                        className="pl-10 pr-10 bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl"
+                        placeholder="Enter 10-digit number"
+                        className="pl-10 pr-10 bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 transition-all duration-200 rounded-xl"
                       />
-                      {isMobileVerified && (
-                        <CheckCircle2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 w-5 h-5" />
-                      )}
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                        {isCheckingMobile && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
+                        {!isCheckingMobile && mobileAvailable === true && !isMobileVerified && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          </motion.div>
+                        )}
+                        {!isCheckingMobile && mobileAvailable === false && !isMobileVerified && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                          </motion.div>
+                        )}
+                          {isMobileVerified && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            </motion.div>
+                          )}
+                      </div>
                     </div>
-                    {!isMobileVerified && (
-                      <Button
-                        type="button"
-                        onClick={() => handleSendOtp('mobile')}
-                        disabled={isSendingMobileOtp || formData.mobile.length !== 10}
-                        variant="outline"
-                        className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50"
+                    {!isMobileVerified && mobileAvailable === true && (
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
                       >
-                        {isSendingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
-                      </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleSendOtp('mobile')}
+                          disabled={isSendingMobileOtp}
+                          variant="outline"
+                          className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap"
+                        >
+                          {isSendingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
+                        </Button>
+                      </motion.div>
                     )}
                   </div>
                   <AnimatePresence>
                     {showMobileOtpInput && !isMobileVerified && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="space-y-2 overflow-hidden"
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
                       >
-                        <Label htmlFor="mobileOtp" className="text-xs text-purple-600">Enter SMS OTP</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="mobileOtp"
-                            type="text"
-                            maxLength={6}
-                            value={mobileOtp}
-                            onChange={(e) => setMobileOtp(e.target.value.replace(/\D/g, ""))}
-                            placeholder="6-digit OTP"
-                            className="bg-white/50 border-2 border-purple-300 text-center text-lg tracking-widest rounded-xl"
-                          />
-                          <Button
-                            type="button"
-                            onClick={() => handleVerifyOtp('mobile')}
-                            disabled={isVerifyingMobileOtp || mobileOtp.length !== 6}
-                            className="bg-purple-600 text-white rounded-xl"
-                          >
-                            {isVerifyingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                          </Button>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold text-purple-800">Verify Mobile</Label>
+                          <span className="text-[10px] uppercase tracking-wider text-purple-400 font-bold">SMS Sent</span>
                         </div>
+                        <OTPInput 
+                          value={mobileOtp} 
+                          onChange={setMobileOtp} 
+                          disabled={isVerifyingMobileOtp}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => handleVerifyOtp('mobile')}
+                          disabled={isVerifyingMobileOtp || mobileOtp.length !== 6}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-200 h-11 font-bold tracking-wide"
+                        >
+                          {isVerifyingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {isVerifyingMobileOtp ? 'Verifying...' : 'Confirm OTP'}
+                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  {errors.mobile && <p className="text-red-500 text-sm">{errors.mobile}</p>}
+                  {errors.mobile && <p className="text-red-500 text-sm flex items-center gap-1 px-1"><AlertCircle className="w-3 h-3" /> {errors.mobile}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-purple-700">Email</Label>
+                  <Label htmlFor="email" className="text-purple-700">Email Address</Label>
                   <div className="relative flex gap-2">
-                    <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-500 w-4 h-4" />
+                    <div className="relative flex-1 group">
+                      <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isEmailVerified ? 'text-green-500' : 'text-purple-500'}`} />
                       <Input
                         id="email"
                         type="email"
                         value={formData.email}
                         disabled={isEmailVerified}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder="Enter email"
-                        className="pl-10 pr-10 bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl"
+                        placeholder="example@mail.com"
+                        className="pl-10 pr-10 bg-white/50 border-2 border-purple-400 text-purple-900 placeholder-purple-400 focus:border-purple-600 focus:ring-2 focus:ring-purple-400/100 transition-all duration-200 rounded-xl"
                       />
-                      {isEmailVerified && (
-                        <CheckCircle2 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500 w-5 h-5" />
-                      )}
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                        {isCheckingEmail && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
+                        {!isCheckingEmail && emailAvailable === true && !isEmailVerified && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          </motion.div>
+                        )}
+                        {!isCheckingEmail && emailAvailable === false && !isEmailVerified && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                          </motion.div>
+                        )}
+                          {isEmailVerified && (
+                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                              <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            </motion.div>
+                          )}
+                      </div>
                     </div>
-                    {!isEmailVerified && (
-                      <Button
-                        type="button"
-                        onClick={() => handleSendOtp('email')}
-                        disabled={isSendingEmailOtp || !formData.email.includes('@')}
-                        variant="outline"
-                        className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50"
+                    {!isEmailVerified && emailAvailable === true && (
+                      <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
                       >
-                        {isSendingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
-                      </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleSendOtp('email')}
+                          disabled={isSendingEmailOtp}
+                          variant="outline"
+                          className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap"
+                        >
+                          {isSendingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
+                        </Button>
+                      </motion.div>
                     )}
                   </div>
                   <AnimatePresence>
                     {showEmailOtpInput && !isEmailVerified && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="space-y-2 overflow-hidden"
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
                       >
-                        <Label htmlFor="emailOtp" className="text-xs text-purple-600">Enter Email OTP</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            id="emailOtp"
-                            type="text"
-                            maxLength={6}
-                            value={emailOtp}
-                            onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ""))}
-                            placeholder="6-digit OTP"
-                            className="bg-white/50 border-2 border-purple-300 text-center text-lg tracking-widest rounded-xl"
-                          />
-                          <Button
-                            type="button"
-                            onClick={() => handleVerifyOtp('email')}
-                            disabled={isVerifyingEmailOtp || emailOtp.length !== 6}
-                            className="bg-purple-600 text-white rounded-xl"
-                          >
-                            {isVerifyingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Confirm'}
-                          </Button>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold text-purple-800">Verify Email</Label>
+                          <span className="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Mail Sent</span>
                         </div>
+                        <OTPInput 
+                          value={emailOtp} 
+                          onChange={setEmailOtp} 
+                          disabled={isVerifyingEmailOtp}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => handleVerifyOtp('email')}
+                          disabled={isVerifyingEmailOtp || emailOtp.length !== 6}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-200 h-11 font-bold tracking-wide"
+                        >
+                          {isVerifyingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {isVerifyingEmailOtp ? 'Verifying...' : 'Confirm OTP'}
+                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+                  {errors.email && <p className="text-red-500 text-sm flex items-center gap-1 px-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
                 </div>
+
 
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-purple-700">Password</Label>

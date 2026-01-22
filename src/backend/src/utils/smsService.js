@@ -43,6 +43,10 @@ const sendSms = async (mobileNumbers, message, options = {}) => {
       DR: options.deliveryReport !== false ? 'Y' : 'N',
     };
 
+    if (options.templateId) {
+      params.templateid = options.templateId;
+    }
+
     const response = await client.get(SMS_API_URL, { params });
     const responseText = response.data?.trim() || '';
 
@@ -189,8 +193,9 @@ const SMS_TEMPLATES = {
     OTP_VERIFICATION: {
       id: 'otp_verification',
       name: 'OTP Verification',
-      template: 'Your OTP for Dream60 is {otp}. It is valid for 10 minutes. Please do not share this with anyone. - Dream60',
+      template: 'Dear User, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
       variables: ['otp'],
+      templateId: '1207172612396743269'
     },
   };
 

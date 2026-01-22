@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { Eye, EyeOff, Lock, Phone, ArrowLeft } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Eye, EyeOff, Lock, Phone, ArrowLeft, RefreshCw, CheckCircle2 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
@@ -8,13 +9,63 @@ import { API_ENDPOINTS } from '../lib/api-config';
 
 interface ForgotPasswordProps {
     onBack: () => void;
-    onNavigate?: (page: "login") => void; // optional navigation callback
+    onNavigate?: (page: "login") => void;
+}
+
+// Reusable Aesthetic OTP Input
+function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; onChange: (v: string) => void; disabled?: boolean; length?: number }) {
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleInput = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!/^\d*$/.test(val)) return;
+
+    const newValue = value.split('');
+    newValue[index] = val.slice(-1);
+    const updatedValue = newValue.join('');
+    onChange(updatedValue);
+
+    if (val && index < length - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between gap-2 py-4">
+      {Array.from({ length }).map((_, i) => (
+        <motion.div key={i} className="relative flex-1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          <input
+            ref={(el) => (inputsRef.current[i] = el)}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={value[i] || ''}
+            disabled={disabled}
+            onChange={(e) => handleInput(i, e)}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            className={`w-full h-12 text-center text-xl font-bold rounded-xl border-2 transition-all duration-300 outline-none
+              ${value[i] 
+                ? 'border-purple-600 bg-white text-purple-900 shadow-[0_0_15px_rgba(147,51,234,0.1)] scale-105' 
+                : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-400 focus:bg-white'
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed`}
+          />
+        </motion.div>
+      ))}
+    </div>
+  );
 }
 
 export function ForgotPasswordPage({
-                                       onBack,
-                                       onNavigate,
-                                   }: ForgotPasswordProps) {
+                                         onBack,
+                                         onNavigate,
+                                     }: ForgotPasswordProps) {
     const [mobile, setMobile] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -274,43 +325,41 @@ export function ForgotPasswordPage({
 
                         {step === "verify" && (
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="otp" className="text-purple-700">
-                                        Enter OTP
+                                <div className="space-y-2 text-center">
+                                    <Label className="text-purple-700 font-semibold">
+                                        Verify Mobile Number
                                     </Label>
-                                    <Input
-                                        id="otp"
-                                        type="text"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        placeholder="Enter the OTP sent to your mobile"
-                                        className="bg-white border-purple-300 text-purple-800 placeholder-purple-400 focus:border-purple-500"
+                                    <p className="text-xs text-purple-500 mb-2">
+                                        We've sent a 6-digit code to {mobile}
+                                    </p>
+                                    <OTPInput 
+                                        value={otp} 
+                                        onChange={setOtp} 
+                                        disabled={isLoading}
                                     />
                                     {errors.otp && (
                                         <p className="text-red-500 text-sm">{errors.otp}</p>
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <Button
-                                            onClick={verifyOtp}
-                                            variant="default"
-                                            className="bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-500 hover:to-purple-600"
-                                            disabled={isLoading}
-                                        >
-                                            {isLoading ? "Verifying..." : "Verify OTP"}
-                                        </Button>
-                                    </div>
+                                <div className="space-y-3">
+                                    <Button
+                                        onClick={verifyOtp}
+                                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-500 hover:to-purple-600 h-11 rounded-xl shadow-lg shadow-purple-200"
+                                        disabled={isLoading || otp.length !== 6}
+                                    >
+                                        {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                        {isLoading ? "Verifying..." : "Verify OTP"}
+                                    </Button>
 
-                                    <div className="text-sm text-right">
+                                    <div className="text-center">
                                         <p className="text-xs text-purple-600">
                                             Didn't receive?{" "}
                                             <Button
                                                 type="button"
                                                 variant="link"
                                                 onClick={resendOtp}
-                                                className="text-purple-700 hover:text-purple-800 p-0 h-auto"
+                                                className="text-purple-700 hover:text-purple-800 p-0 h-auto font-bold"
                                                 disabled={resendTimer > 0 || isLoading}
                                             >
                                                 {resendTimer > 0
