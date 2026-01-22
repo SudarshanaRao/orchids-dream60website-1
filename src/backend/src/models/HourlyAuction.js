@@ -236,7 +236,10 @@ const hourlyAuctionSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    
+    description: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
+    },
     productImages: {
       type: [ProductImageSchema],
       default: [],

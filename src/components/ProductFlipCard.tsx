@@ -14,31 +14,32 @@ interface ProductImage {
 }
 
 interface ProductFlipCardProps {
-  productImages: ProductImage[];
+  imageUrl?: string;
+  description?: (string | DescriptionItem)[];
+  productImages?: ProductImage[];
   productName: string;
   prizeValue: number;
 }
 
-  export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isFlipped, setIsFlipped] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+export function ProductFlipCard({ imageUrl, description, productImages = [], productName, prizeValue }: ProductFlipCardProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-    useEffect(() => {
-      const checkMobile = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-      checkMobile();
-      window.addEventListener('resize', checkMobile);
-      return () => window.removeEventListener('resize', checkMobile);
-    }, []);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-    // Use the first image's description as the single description for the product
-    const productDescription = productImages[0]?.description || [];
-
-
-  if (!productImages || productImages.length === 0) {
+  // Priority: 1. Top-level props, 2. Current image in gallery, 3. Empty
+  const currentImages = productImages.length > 0 ? productImages : (imageUrl ? [{ imageUrl, description: description || [] }] : []);
+  
+  if (currentImages.length === 0) {
     return (
       <div className="w-full h-80 flex items-center justify-center bg-purple-50 rounded-2xl border border-purple-200">
         <p className="text-purple-500">No product images available</p>
@@ -46,13 +47,14 @@ interface ProductFlipCardProps {
     );
   }
 
-  const currentImage = productImages[currentIndex];
+  const activeImage = currentImages[currentIndex];
+  const activeDescription = activeImage.description || [];
 
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsFlipped(false);
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev === 0 ? productImages.length - 1 : prev - 1));
+      setCurrentIndex((prev) => (prev === 0 ? currentImages.length - 1 : prev - 1));
     }, 150);
   };
 
@@ -60,7 +62,7 @@ interface ProductFlipCardProps {
     e.stopPropagation();
     setIsFlipped(false);
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev === productImages.length - 1 ? 0 : prev + 1));
+      setCurrentIndex((prev) => (prev === currentImages.length - 1 ? 0 : prev + 1));
     }, 150);
   };
 
@@ -85,9 +87,9 @@ interface ProductFlipCardProps {
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
+    <div className="relative w-full max-w-md mx-auto h-full flex flex-col">
       <div 
-        className="relative w-full h-96 cursor-pointer perspective-1000"
+        className="relative w-full flex-1 min-h-[320px] cursor-pointer perspective-1000"
         onClick={handleFlip}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -105,6 +107,7 @@ interface ProductFlipCardProps {
             transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
           }}
         >
+          {/* Front Side: Image */}
           <div
             className="absolute inset-0 w-full h-full backface-hidden rounded-2xl overflow-hidden"
             style={{ backfaceVisibility: 'hidden' }}
@@ -120,11 +123,11 @@ interface ProductFlipCardProps {
                 </div>
               </div>
 
-              {productImages.length > 1 && (
+              {currentImages.length > 1 && (
                 <div className="absolute top-3 right-3 z-10">
                   <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
                     <span className="text-xs text-white font-medium">
-                      {currentIndex + 1}/{productImages.length}
+                      {currentIndex + 1}/{currentImages.length}
                     </span>
                   </div>
                 </div>
@@ -132,7 +135,7 @@ interface ProductFlipCardProps {
 
               <div className="w-full h-full flex items-center justify-center p-8">
                 <img
-                  src={currentImage.imageUrl}
+                  src={activeImage.imageUrl}
                   alt={`${productName} - Image ${currentIndex + 1}`}
                   className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
                   onError={(e) => {
@@ -151,6 +154,7 @@ interface ProductFlipCardProps {
             </div>
           </div>
 
+          {/* Back Side: Details */}
           <div
             className="absolute inset-0 w-full h-full backface-hidden rounded-2xl overflow-hidden"
             style={{ 
@@ -161,11 +165,11 @@ interface ProductFlipCardProps {
               <div className="relative w-full h-full bg-gradient-to-br from-purple-600/95 via-purple-700/95 to-indigo-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
                 
-                {productImages.length > 1 && (
+                {currentImages.length > 1 && (
                   <div className="absolute top-3 right-3">
                     <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-full">
                       <span className="text-xs text-white font-medium">
-                        {currentIndex + 1}/{productImages.length}
+                        {currentIndex + 1}/{currentImages.length}
                       </span>
                     </div>
                   </div>
@@ -173,18 +177,18 @@ interface ProductFlipCardProps {
 
                 <div className="relative h-full flex flex-col p-5">
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                    <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg line-clamp-1">
                       {productName}
                     </h3>
                     <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
                   </div>
 
                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {productDescription && productDescription.length > 0 ? (
+                    {activeDescription && activeDescription.length > 0 ? (
                       <div className="space-y-3">
                         <table className="w-full text-left border-collapse">
                           <tbody>
-                            {productDescription.map((item, idx) => {
+                            {activeDescription.map((item, idx) => {
                               const isString = typeof item === 'string';
                               const key = isString ? `${idx + 1}` : item.key;
                               const value = isString ? item : item.value;
@@ -193,12 +197,12 @@ interface ProductFlipCardProps {
 
                                 return (
                                   <tr key={idx} className="border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors group/row">
-                                    <td className="py-3 pr-4 align-top w-[40%]">
+                                    <td className="py-2.5 pr-4 align-top w-[40%]">
                                       <span className="text-[10px] uppercase tracking-wider font-bold text-purple-200/60 block leading-tight">
                                         {key}
                                       </span>
                                     </td>
-                                    <td className="py-3 align-top">
+                                    <td className="py-2.5 align-top">
                                       <span className="text-[13px] text-white font-semibold leading-relaxed block">
                                         {value}
                                       </span>
@@ -229,44 +233,44 @@ interface ProductFlipCardProps {
         </div>
       </div>
 
-      {productImages.length > 1 && (
-        <>
-          <button
-            onClick={handlePrevious}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-purple-200/50 shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-200"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="w-5 h-5 text-purple-600" />
-          </button>
-          
-          <button
-            onClick={handleNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-purple-200/50 shadow-lg flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-200"
-            aria-label="Next image"
-          >
-            <ChevronRight className="w-5 h-5 text-purple-600" />
-          </button>
-        </>
-      )}
-
-      {productImages.length > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          {productImages.map((_, idx) => (
+      {currentImages.length > 1 && (
+        <div className="mt-4">
+          <div className="flex justify-center items-center gap-4">
             <button
-              key={idx}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsFlipped(false);
-                setCurrentIndex(idx);
-              }}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                idx === currentIndex
-                  ? 'bg-purple-600 w-6'
-                  : 'bg-purple-300 hover:bg-purple-400'
-              }`}
-              aria-label={`Go to image ${idx + 1}`}
-            />
-          ))}
+              onClick={handlePrevious}
+              className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center hover:bg-purple-200 transition-colors"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-4 h-4 text-purple-600" />
+            </button>
+            
+            <div className="flex gap-1.5">
+              {currentImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFlipped(false);
+                    setCurrentIndex(idx);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? 'bg-purple-600 w-4'
+                      : 'bg-purple-300 hover:bg-purple-400'
+                  }`}
+                  aria-label={`Go to image ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={handleNext}
+              className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center hover:bg-purple-200 transition-colors"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-4 h-4 text-purple-600" />
+            </button>
+          </div>
         </div>
       )}
 

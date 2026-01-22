@@ -67,11 +67,13 @@ const DailyAuctionSchema = new mongoose.Schema(
     maxEntryFee: { type: Number, min: 0, default: null },
     FeeSplits: { type: FeeSplitsSchema, default: null },
     roundCount: { type: Number, min: 1, default: 4 },
-    roundConfig: { type: [RoundConfigSchema], default: [] },
-    imageUrl: { type: String, default: null },
-    productImages: { type: [ProductImageSchema], default: [] },
-  },
-  { _id: false }
+      roundConfig: { type: [RoundConfigSchema], default: [] },
+      imageUrl: { type: String, default: null },
+      description: { type: [mongoose.Schema.Types.Mixed], default: [] },
+      productImages: { type: [ProductImageSchema], default: [] },
+    },
+    { _id: false }
+
 );
 
 const masterAuctionSchema = new mongoose.Schema(

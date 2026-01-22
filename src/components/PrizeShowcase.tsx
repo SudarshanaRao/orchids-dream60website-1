@@ -17,6 +17,7 @@ interface AuctionConfig {
   TimeSlot: string;
   auctionName: string;
   imageUrl?: string;
+  description?: any[];
   productImages?: ProductImage[];
   prizeValue: number;
   Status: 'LIVE' | 'UPCOMING' | 'COMPLETED' | 'CANCELLED';
@@ -319,6 +320,7 @@ interface PrizeShowcaseProps {
       TimeSlot: a.TimeSlot,
       auctionName: a.auctionName,
       imageUrl: a.imageUrl,
+      description: a.description || [],
       productImages: a.productImages || [],
       prizeValue: a.prizeValue,
       Status: a.Status,
@@ -503,16 +505,16 @@ interface PrizeShowcaseProps {
     liveAuctions.length > 0 ? liveAuctions[0].auctionName : currentPrize.prize;
   const displayPrizeValue =
     liveAuctions.length > 0 ? liveAuctions[0].prizeValue : currentPrize.prizeValue;
-  const displayImage = liveAuctions.length > 0 ? liveAuctions[0].imageUrl : null;
-  
-  const displayProductImages: ProductImage[] = liveAuctions.length > 0 && liveAuctions[0].productImages && liveAuctions[0].productImages.length > 0
-    ? liveAuctions[0].productImages
-    : displayImage
-    ? [{ imageUrl: displayImage, description: [] }]
-    : [];
+    const currentAuction = liveAuctions.length > 0 ? liveAuctions[0] : null;
+    const displayImageUrl = currentAuction?.imageUrl || displayImage;
+    const displayDescription = currentAuction?.description || [];
+    
+    const displayProductImages: ProductImage[] = currentAuction?.productImages && currentAuction.productImages.length > 0
+      ? currentAuction.productImages
+      : [];
 
-  // ✅ UPDATED: Simplified disable logic - removed timeLoading dependency
-  const isPayButtonDisabled = isLoading || totalEntryFee === 0 || paymentLoading || !isJoinWindowOpen;
+    // ✅ UPDATED: Simplified disable logic - removed timeLoading dependency
+    const isPayButtonDisabled = isLoading || totalEntryFee === 0 || paymentLoading || !isJoinWindowOpen;
 
   // Show "No Live Auction" state when there's no auction
   if (noLiveAuction && !isLoading) {
@@ -888,23 +890,15 @@ interface PrizeShowcaseProps {
               <div className="relative group/image flex-1 flex flex-col">
                 <div className="absolute -inset-[2px] bg-gradient-to-br from-[#8456BC]/40 via-[#9F7ACB]/30 to-[#B99FD9]/40 rounded-[20px] blur-xl opacity-30 group-hover/image:opacity-50 transition-all duration-700 animate-pulse"></div>
 
-                <div className="relative overflow-hidden rounded-2xl backdrop-blur-2xl bg-white/75 border border-purple-200/50 p-2 sm:p-3 md:p-4 shadow-2xl flex-1 flex">
-                  {displayProductImages.length > 0 ? (
+                  <div className="relative overflow-hidden rounded-2xl backdrop-blur-2xl bg-white/75 border border-purple-200/50 p-2 sm:p-3 md:p-4 shadow-2xl flex-1 flex">
                     <ProductFlipCard
+                      imageUrl={displayImageUrl || undefined}
+                      description={displayDescription}
                       productImages={displayProductImages}
                       productName={displayPrize}
                       prizeValue={displayPrizeValue}
                     />
-                  ) : (
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <img
-                        src={displayImage || ''}
-                        alt={displayPrize}
-                        className="w-full h-40 sm:h-56 md:h-72 lg:h-80 object-contain transform group-hover/image:scale-105 transition-transform duration-700"
-                      />
-                    </div>
-                  )}
-                </div>
+                  </div>
               </div>
             </div>
           </div>

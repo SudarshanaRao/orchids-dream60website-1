@@ -141,6 +141,7 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     roundCount: { type: Number, min: 1, default: 4 },
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
+    description: { type: [mongoose.Schema.Types.Mixed], default: [] },
     productImages: { type: [ProductImageSchema], default: [] },
 
     // ========== TRACKING FIELDS ==========
