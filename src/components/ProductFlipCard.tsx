@@ -49,7 +49,10 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
   }
 
   const activeImage = currentImages[currentIndex];
-  const activeDescription = activeImage.description || [];
+  // Fallback to top-level description if current image doesn't have one
+  const activeDescription = (activeImage.description && activeImage.description.length > 0) 
+    ? activeImage.description 
+    : (description || []);
 
   const getFullImageUrl = (url: string | undefined) => {
     if (!url) return '';
@@ -82,13 +85,13 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
   const handleMouseEnter = () => {
     if (isMobile) return;
     setIsHovered(true);
-    // Removed automatic flip on hover to allow seeing the image first
+    setIsFlipped(true);
   };
 
   const handleMouseLeave = () => {
     if (isMobile) return;
     setIsHovered(false);
-    // Removed automatic flip back to avoid sudden movement
+    setIsFlipped(false);
   };
 
   return (
@@ -149,11 +152,11 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
                 />
               </div>
 
-              <div className="absolute bottom-3 left-0 right-0 text-center">
-                  <p className="text-xs text-purple-600 font-bold bg-white/40 backdrop-blur-sm inline-block px-3 py-1 rounded-full border border-purple-200/50 animate-pulse">
-                    Click to see details
-                  </p>
-                </div>
+                <div className="absolute bottom-3 left-0 right-0 text-center">
+                    <p className="text-xs text-purple-600 font-bold bg-white/40 backdrop-blur-sm inline-block px-3 py-1 rounded-full border border-purple-200/50 animate-pulse">
+                      Hover or click for details
+                    </p>
+                  </div>
 
               <div className="absolute inset-0 rounded-2xl ring-2 ring-purple-300/30 ring-inset pointer-events-none" />
             </div>
@@ -230,9 +233,9 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
                     )}
                   </div>
 
-                <div className="mt-4 pt-3 border-t border-white/20 text-center">
+                  <div className="mt-4 pt-3 border-t border-white/20 text-center">
                     <p className="text-xs text-white/60 font-medium">
-                      Move away or tap to see image
+                      Move away or click for image
                     </p>
                   </div>
               </div>
