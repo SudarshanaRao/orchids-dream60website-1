@@ -516,7 +516,7 @@ const lightBrandStyles = `
   }
 `;
 
-const brandStyles = darkBrandStyles;
+const activeBrandStyles = darkBrandStyles;
 
 // Global transporter instance
 let transporterInstance = null;
@@ -572,7 +572,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${title}</title>
-      <style>${brandStyles}</style>
+      <style>${activeBrandStyles}</style>
     </head>
     <body>
       <div class="container">
@@ -1356,5 +1356,5 @@ module.exports = {
   replaceTemplateVariables,
   buildEmailTemplate,
   getPrimaryClientUrl,
-  brandStyles,
+  brandStyles: activeBrandStyles,
 };

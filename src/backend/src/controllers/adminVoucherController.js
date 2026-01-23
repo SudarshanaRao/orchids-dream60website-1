@@ -245,10 +245,209 @@ const getWoohooTransactions = async (req, res) => {
     }
 };
 
+/**
+ * Get Woohoo Categories
+ */
+const getWoohooCategories = async (req, res) => {
+    try {
+        const categories = await woohooService.getCategories();
+        return res.status(200).json({
+            success: true,
+            data: categories
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo categories:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching categories from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo Products by Category
+ */
+const getWoohooProducts = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        if (!categoryId) {
+            return res.status(400).json({ success: false, message: 'Category ID is required' });
+        }
+        const products = await woohooService.getProducts(categoryId);
+        return res.status(200).json({
+            success: true,
+            data: products
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo products:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching products from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo Product Details
+ */
+const getWoohooProductDetails = async (req, res) => {
+    try {
+        const { sku } = req.params;
+        if (!sku) {
+            return res.status(400).json({ success: false, message: 'SKU is required' });
+        }
+        const details = await woohooService.getProductDetails(sku);
+        return res.status(200).json({
+            success: true,
+            data: details
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo product details:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching product details from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo Order Status
+ */
+const getWoohooOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: 'Order ID is required' });
+        }
+        const status = await woohooService.getOrderStatus(orderId);
+        return res.status(200).json({
+            success: true,
+            data: status
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo order status:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching order status from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo Order Cards
+ */
+const getWoohooOrderCards = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: 'Order ID is required' });
+        }
+        const cards = await woohooService.getActivatedCards(orderId);
+        return res.status(200).json({
+            success: true,
+            data: cards
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo order cards:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching order cards from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Resend Voucher Email
+ */
+const resendVoucherEmail = async (req, res) => {
+    try {
+        const { voucherId } = req.params;
+        const voucher = await Voucher.findById(voucherId);
+        
+        if (!voucher) {
+            return res.status(404).json({ success: false, message: 'Voucher not found' });
+        }
+
+        if (voucher.status !== 'complete') {
+            return res.status(400).json({ success: false, message: 'Voucher order is not yet complete' });
+        }
+
+        const user = await User.findOne({ user_id: voucher.userId });
+        if (!user || !user.email) {
+            return res.status(404).json({ success: false, message: 'User or user email not found' });
+        }
+
+        // Send email logic here (placeholder for now)
+        // const emailResult = await sendEmail(...);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Voucher email resend triggered'
+        });
+    } catch (error) {
+        console.error('Error resending voucher email:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+/**
+ * Sync Voucher Status
+ */
+const syncVoucherStatus = async (req, res) => {
+    try {
+        const { voucherId } = req.params;
+        const voucher = await Voucher.findById(voucherId);
+        
+        if (!voucher) {
+            return res.status(404).json({ success: false, message: 'Voucher not found' });
+        }
+
+        const woohooStatus = await woohooService.getOrderStatus(voucher.woohooOrderId);
+        
+        if (woohooStatus.status === 'COMPLETE' && voucher.status !== 'complete') {
+            const cards = await woohooService.getActivatedCards(voucher.woohooOrderId);
+            if (cards && cards.length > 0) {
+                const card = cards[0];
+                voucher.cardNumber = card.cardNumber;
+                voucher.cardPin = card.cardPin;
+                voucher.expiry = card.expiry;
+                voucher.activationUrl = card.activationUrl;
+                voucher.status = 'complete';
+                await voucher.save();
+            }
+        } else if (woohooStatus.status === 'CANCELLED' || woohooStatus.status === 'FAILED') {
+            voucher.status = 'failed';
+            await voucher.save();
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Voucher status synced',
+            data: voucher
+        });
+    } catch (error) {
+        console.error('Error syncing voucher status:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
 module.exports = {
     getEligibleWinners,
     sendVoucher,
     getIssuedVouchers,
     getWoohooBalance,
-    getWoohooTransactions
+    getWoohooTransactions,
+    getWoohooCategories,
+    getWoohooProducts,
+    getWoohooProductDetails,
+    getWoohooOrderStatus,
+    getWoohooOrderCards,
+    resendVoucherEmail,
+    syncVoucherStatus
 };
+

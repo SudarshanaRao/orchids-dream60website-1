@@ -25,7 +25,14 @@ const {
   sendVoucher,
   getIssuedVouchers,
   getWoohooBalance,
-  getWoohooTransactions
+  getWoohooTransactions,
+  getWoohooCategories,
+  getWoohooProducts,
+  getWoohooProductDetails,
+  getWoohooOrderStatus,
+  getWoohooOrderCards,
+  resendVoucherEmail,
+  syncVoucherStatus
 } = require('../controllers/adminVoucherController');
 
 const {
