@@ -209,18 +209,12 @@ const login = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { mobile, email } = req.body || {};
-    let identifier = (mobile || email || '').toString().trim();
+    const identifier = (mobile || email || '').toString().trim();
     if (!identifier) {
       return res.status(400).json({ success: false, message: 'Mobile or email is required' });
     }
 
     const type = mobile ? 'mobile' : 'email';
-    
-    // Normalize mobile identifier
-    if (type === 'mobile') {
-      identifier = normalizeMobile(identifier);
-    }
-
     const user = await findUserByIdentifier(identifier, type);
 
     const otpCode = generateOtp();
@@ -248,12 +242,13 @@ const forgotPassword = async (req, res) => {
       }
     }
 
-    // ✅ Response (removed OTP for security as per user request)
+    // ✅ In development, return OTP in response for testing
     const responseData = {
       success: true,
       message: type === 'email' ? 'OTP sent to your email' : 'OTP sent to your mobile',
       userExists: !!user,
-      emailSent: type === 'email'
+      // Still returning OTP for now to help development/testing if SMS fails or is slow
+      otp: otpCode 
     };
 
     return res.status(200).json(responseData);
@@ -268,16 +263,11 @@ const forgotPassword = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { mobile, email, otp } = req.body || {};
-    let identifier = (mobile || email || '').toString().trim();
+    const identifier = (mobile || email || '').toString().trim();
     if (!identifier || !otp) {
       return res.status(400).json({ success: false, message: 'Identifier and OTP are required' });
     }
     const type = mobile ? 'mobile' : 'email';
-
-    // Normalize mobile identifier
-    if (type === 'mobile') {
-      identifier = normalizeMobile(identifier);
-    }
 
     const record = await OTP.findOne({ identifier, type });
     if (!record) {
@@ -303,17 +293,11 @@ const verifyOtp = async (req, res) => {
 const resendOtp = async (req, res) => {
   try {
     const { mobile, email } = req.body || {};
-    let identifier = (mobile || email || '').toString().trim();
+    const identifier = (mobile || email || '').toString().trim();
     if (!identifier) {
       return res.status(400).json({ success: false, message: 'Mobile or email is required' });
     }
     const type = mobile ? 'mobile' : 'email';
-
-    // Normalize mobile identifier
-    if (type === 'mobile') {
-      identifier = normalizeMobile(identifier);
-    }
-
     const user = await findUserByIdentifier(identifier, type);
 
     const otpCode = generateOtp();
@@ -340,10 +324,11 @@ const resendOtp = async (req, res) => {
       }
     }
 
-    // ✅ Response (removed OTP for security as per user request)
+    // ✅ In development, return OTP in response for testing
     const responseData = {
       success: true,
-      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent to your mobile'
+      message: type === 'email' ? 'OTP resent to your email' : 'OTP resent to your mobile',
+      otp: otpCode
     };
 
     return res.status(200).json(responseData);
@@ -520,7 +505,8 @@ const checkMobile = async (req, res) => {
 
     const responseData = {
       success: true,
-      message: `OTP sent to your ${type}`
+      message: `OTP sent to your ${type}`,
+      otp: otpCode
     };
 
     return res.status(200).json(responseData);

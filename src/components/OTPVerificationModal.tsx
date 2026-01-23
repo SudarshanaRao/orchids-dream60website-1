@@ -199,31 +199,22 @@ export function OTPVerificationModal({
             </div>
 
           <div className="space-y-4">
-            <div className="flex justify-center gap-1.5 sm:gap-2.5 max-w-full overflow-hidden" onPaste={handlePaste}>
+            <div className="flex justify-center gap-2" onPaste={handlePaste}>
               {otp.map((digit, index) => (
-                <div
+                <Input
                   key={index}
-                  className="relative flex-1 max-w-[44px] sm:max-w-[52px]"
-                >
-                  <input
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value.replace(/\D/g, ''))}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    className={`w-full h-11 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-xl border-2 transition-all duration-300 outline-none
-                      ${digit 
-                        ? 'border-purple-600 bg-white text-purple-900 shadow-[0_4px_12px_-2px_rgba(147,51,234,0.2)] ring-4 ring-purple-500/5' 
-                        : 'border-purple-100 bg-purple-50/30 text-purple-400 focus:border-purple-500 focus:bg-white focus:ring-4 focus:ring-purple-500/5'
-                      }
-                      disabled:opacity-50 disabled:cursor-not-allowed`}
-                    disabled={loading}
-                  />
-                </div>
+                  ref={(el) => {
+                    inputRefs.current[index] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleChange(index, e.target.value.replace(/\D/g, ''))}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className="w-12 h-12 text-center border-purple-300 focus:border-purple-600 focus:ring-purple-600"
+                  disabled={loading}
+                />
               ))}
             </div>
 

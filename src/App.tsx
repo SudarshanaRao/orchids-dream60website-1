@@ -10,7 +10,6 @@ import { PrizeShowcase } from './components/PrizeShowcase';
 import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { RefundPolicy } from './components/RefundPolicy';
 import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
@@ -302,7 +301,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
-    if (path === '/refund') return 'refund';
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
@@ -338,7 +336,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
       else if (path === '/careers') setCurrentPage('careers');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
-      else if (path === '/refund') setCurrentPage('refund');
       else if (path === '/support') setCurrentPage('support');
       else if (path === '/contact') setCurrentPage('contact');
       else if (path === '/profile') setCurrentPage('profile');
@@ -737,42 +734,23 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         if (!serverTime) return;
 
         const updateCountdown = () => {
-          if (!serverTime) return;
-
-          let totalSecondsRemaining = 0;
-          const targetTimeSlot = upcomingAuctionData?.TimeSlot;
-
-          if (targetTimeSlot && typeof targetTimeSlot === 'string' && targetTimeSlot.includes(':')) {
-            const [targetHour, targetMinute] = targetTimeSlot.split(':').map(Number);
-            
-            const currentTotalSeconds = serverTime.hour * 3600 + serverTime.minute * 60 + serverTime.second;
-            let targetTotalSeconds = targetHour * 3600 + (targetMinute || 0) * 60;
-            
-            if (targetTotalSeconds <= currentTotalSeconds) {
-              targetTotalSeconds += 24 * 3600;
-            }
-            
-            totalSecondsRemaining = targetTotalSeconds - currentTotalSeconds;
-          } else {
-            const currentMinute = serverTime.minute;
-            const currentSecond = serverTime.second;
-            totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-          }
+          // Simplified calculation to the next top of the hour (MM:SS)
+          // As per user request: hour will be zero always, so only minutes and seconds
+          const currentMinute = serverTime.minute;
+          const currentSecond = serverTime.second;
           
-          if (totalSecondsRemaining <= 0) {
+          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+          
+          // If we are at the exact top of the hour, it means an auction just started
+          if (totalSecondsRemaining >= 3600) {
             setUpcomingCountdown('00:00');
             return;
           }
 
-          const hours = Math.floor(totalSecondsRemaining / 3600);
-          const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+          const minutes = Math.floor(totalSecondsRemaining / 60);
           const seconds = totalSecondsRemaining % 60;
           
-          if (hours > 0) {
-            setUpcomingCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-          } else {
-            setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-          }
+          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
         };
 
         updateCountdown();
@@ -1517,16 +1495,16 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
                   return box;
                 });
                 
-                  return {
-                    ...prev,
-                    prize: liveAuction.auctionName || prev.prize,
-                    prizeValue: liveAuction.prizeValue || prev.prizeValue,
-                    totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
-                    boxes: updatedBoxes,
-                    userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
-                    userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
-                    winnersAnnounced: liveAuction.winnersAnnounced || false,
-                    userEntryFee: userEntryFeeFromAPI,
+                return {
+                  ...prev,
+                  prize: liveAuction.auctionName || prev.prize,
+                  prizeValue: liveAuction.prizeValue || prev.prizeValue,
+                  totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+                  boxes: updatedBoxes,
+                  userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
+                  userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
+                  winnersAnnounced: liveAuction.winnersAnnounced || false,
+                    userEntryFeeFromAPI: userEntryFeeFromAPI,
                     userHasPaidEntry: finalUserHasPaidEntry,
                   };
                 });
@@ -2285,27 +2263,16 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     );
   }
 
-    if (currentPage === 'privacy') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <PrivacyPolicy onBack={handleBackToGame} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'refund') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <RefundPolicy onBack={handleBackToGame} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+  if (currentPage === 'privacy') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <PrivacyPolicy onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
     if (currentPage === 'support') {
       return (

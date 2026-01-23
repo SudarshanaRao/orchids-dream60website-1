@@ -396,42 +396,23 @@ interface PrizeShowcaseProps {
     if (!isUpcoming || !serverTime) return;
 
     const updateUpcomingTimer = () => {
-      if (!serverTime) return;
-
-      let totalSecondsRemaining = 0;
-      const targetTimeSlot = liveAuctionData?.TimeSlot || (currentPrize.auctionHour ? `${currentPrize.auctionHour}:00` : null);
-
-      if (targetTimeSlot && typeof targetTimeSlot === 'string' && targetTimeSlot.includes(':')) {
-        const [targetHour, targetMinute] = targetTimeSlot.split(':').map(Number);
-        
-        const currentTotalSeconds = serverTime.hour * 3600 + serverTime.minute * 60 + serverTime.second;
-        let targetTotalSeconds = targetHour * 3600 + (targetMinute || 0) * 60;
-        
-        if (targetTotalSeconds <= currentTotalSeconds) {
-          targetTotalSeconds += 24 * 3600;
-        }
-        
-        totalSecondsRemaining = targetTotalSeconds - currentTotalSeconds;
-      } else {
-        const currentMinute = serverTime.minute;
-        const currentSecond = serverTime.second;
-        totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-      }
+      // Simplified calculation to the next top of the hour (MM:SS)
+      // As per user request: hour will be zero always, so only minutes and seconds
+      const currentMinute = serverTime.minute;
+      const currentSecond = serverTime.second;
       
-      if (totalSecondsRemaining <= 0) {
+      const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+      
+      // If we are at the exact top of the hour, it means an auction just started
+      if (totalSecondsRemaining >= 3600) {
         setUpcomingTimeLeft('00:00');
         return;
       }
 
-      const hours = Math.floor(totalSecondsRemaining / 3600);
-      const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+      const minutes = Math.floor(totalSecondsRemaining / 60);
       const seconds = totalSecondsRemaining % 60;
       
-      if (hours > 0) {
-        setUpcomingTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      } else {
-        setUpcomingTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      }
+      setUpcomingTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
     };
 
     // Initial call

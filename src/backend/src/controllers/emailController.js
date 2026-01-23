@@ -26,7 +26,7 @@ const sendEmailToUsers = async (req, res) => {
       });
     }
 
-    const { recipients, subject, body, templateId, theme } = req.body;
+    const { recipients, subject, body, templateId } = req.body;
 
     // Validate required fields
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
@@ -54,10 +54,10 @@ const sendEmailToUsers = async (req, res) => {
       });
     }
 
-    // Send emails with theme support
+    // Send emails
     const results = [];
     for (const email of emails) {
-      const result = await sendCustomEmail(email, subject, body, [], theme || 'dark');
+      const result = await sendCustomEmail(email, subject, body);
       results.push({
         email,
         success: result.success,

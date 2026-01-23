@@ -71,12 +71,16 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
   };
 
   return (
-    <div className="flex justify-center gap-1.5 sm:gap-3 py-6 max-w-full overflow-hidden" onPaste={handlePaste}>
-      {Array.from({ length }).map((_, i) => (
-        <div
-          key={i}
-          className="relative flex-1 max-w-[48px] sm:max-w-[64px]"
-        >
+    <div className="flex justify-between gap-2 sm:gap-3 py-4" onPaste={handlePaste}>
+      {Array.from({ length }).map((_, i) => {
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 20 }}
+            className="relative flex-1"
+          >
             <input
               ref={(el) => (inputsRef.current[i] = el)}
               type="text"
@@ -93,8 +97,9 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInpu
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed select-none`}
             />
-        </div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
@@ -130,10 +135,11 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [mobileAvailable, setMobileAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [isUsernameLocked, setIsUsernameLocked] = useState(false);
 
   // Debounced Availability Check
   useEffect(() => {
-    if (formData.username.length >= 3) {
+    if (formData.username.length >= 3 && !isUsernameLocked) {
       const timer = setTimeout(async () => {
         setIsCheckingUsername(true);
         try {
@@ -152,6 +158,13 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
               delete newErrors.username;
               return newErrors;
             });
+            // If available, we can lock it after a small delay or if valid
+            if (formData.username.length >= 3 && !formData.username.includes(' ')) {
+                // We'll let the user lock it or auto-lock it? 
+                // The prompt says "if not then we can accept that same green tick with circle should be displayed and it should be locked"
+                // I'll auto-lock it after it's verified as unique and valid
+                setIsUsernameLocked(true);
+            }
           }
         } catch (error) {
           console.error('Check username error:', error);
@@ -163,7 +176,7 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
     } else {
       setUsernameAvailable(null);
     }
-  }, [formData.username]);
+  }, [formData.username, isUsernameLocked]);
 
   useEffect(() => {
     if (formData.mobile.length === 10 && !isMobileVerified) {
@@ -251,6 +264,7 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
       newErrors.mobile = 'Mobile number must be a valid 10-digit number';
     }
 
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -269,26 +283,11 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (!isMobileVerified) {
-      newErrors.mobile = 'Please verify your mobile number';
-    }
-
-    if (!isEmailVerified) {
-      newErrors.email = 'Please verify your email';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSendOtp = async (type: 'mobile' | 'email') => {
-    // Ensure username is valid and unique first
-    if (!formData.username || formData.username.length < 3 || usernameAvailable !== true) {
-      toast.error('Please choose a valid and unique username first');
-      setErrors(prev => ({ ...prev, username: 'Unique username is required before verification' }));
-      return;
-    }
-
     const identifier = type === 'mobile' ? formData.mobile : formData.email;
     
     if (type === 'mobile' && !/^[0-9]{10}$/.test(formData.mobile)) {
@@ -401,12 +400,14 @@ body: JSON.stringify({ [type]: identifier, otp }),
           duration: 4000,
         });
         
+        // SUCCESS — send data back upward
         onSignup(data.user);
+        
         return;
       }
       if (!response.ok) {
         setErrors({ api: data.message || "Signup failed" });
-        toast.error("Signup Failed", {
+        toast.error("Login Failed", {
           description: data.message || `Unexpected error (${response.status}). Try again.`,
           duration: 4000,
         });
@@ -419,22 +420,24 @@ body: JSON.stringify({ [type]: identifier, otp }),
     }
   };
 
+
+
   const handleInputChange = (field: string, value: string) => {
-    // For username, prevent spaces
+    // For username, prevent spaces and handle lock
     if (field === 'username') {
+      if (isUsernameLocked) return; // Prevent change if locked
       const sanitizedValue = value.replace(/\s/g, ''); // Remove spaces
       setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
       return;
     }
 
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Reset verification if identifier changes
-    if (field === 'mobile') setIsMobileVerified(false);
-    if (field === 'email') setIsEmailVerified(false);
   };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-3 sm:p-4 py-6 relative overflow-hidden">
+      
+
       <motion.div
         className="w-full max-w-md space-y-5 sm:space-y-6 relative z-10"
         initial={{ opacity: 0, y: 40 }}
@@ -506,6 +509,18 @@ body: JSON.stringify({ [type]: identifier, otp }),
           transition={{ delay: 0.2, duration: 0.7, ease: [0.6, -0.05, 0.01, 0.99] }}
         >
           <Card className="bg-white/70 backdrop-blur-xl border border-purple-200/50 shadow-2xl shadow-purple-500/10 overflow-hidden">
+            {/* Card shine effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
+              initial={{ x: '-100%', y: '-100%' }}
+              animate={{ x: '100%', y: '100%' }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                repeatDelay: 5,
+                ease: "easeInOut"
+              }}
+            />
             <CardHeader className="relative">
               <CardTitle className="text-purple-800 text-center text-xl sm:text-2xl">Create Account</CardTitle>
               <motion.div
@@ -517,43 +532,57 @@ body: JSON.stringify({ [type]: identifier, otp }),
             </CardHeader>
             <CardContent className="relative">
               <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-purple-700">Username</Label>
-                    <div className="relative">
-                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${usernameAvailable === true ? 'text-green-500' : 'text-purple-500'}`} />
-                      <Input
-                        id="username"
-                        type="text"
-                        value={formData.username}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value.length <= 20) {
-                            handleInputChange('username', value);
-                          }
-                        }}
-                        placeholder="Choose a username"
-                        className={`pl-10 pr-10 bg-white/50 border-2 text-purple-900 placeholder-purple-400 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl ${
-                          usernameAvailable === true 
-                            ? 'border-green-400 bg-green-50/30' 
-                            : 'border-purple-400 focus:border-purple-600'
-                        }`}
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                        {isCheckingUsername && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
-                        {!isCheckingUsername && usernameAvailable === true && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                          </motion.div>
-                        )}
-                        {!isCheckingUsername && usernameAvailable === false && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                            <AlertCircle className="w-5 h-5 text-red-500" />
-                          </motion.div>
-                        )}
-                      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-purple-700">Username</Label>
+                  <div className="relative">
+                    <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isUsernameLocked ? 'text-green-500' : 'text-purple-500'}`} />
+                    <Input
+                      id="username"
+                      type="text"
+                      value={formData.username}
+                      disabled={isUsernameLocked}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value.length <= 20) {
+                          handleInputChange('username', value);
+                        }
+                      }}
+                      placeholder="Choose a username"
+                      className={`pl-10 pr-10 bg-white/50 border-2 text-purple-900 placeholder-purple-400 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl ${
+                        isUsernameLocked 
+                          ? 'border-green-400 bg-green-50/30' 
+                          : 'border-purple-400 focus:border-purple-600'
+                      }`}
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                      {isCheckingUsername && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
+                      {!isCheckingUsername && usernameAvailable === true && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        </motion.div>
+                      )}
+                      {!isCheckingUsername && usernameAvailable === false && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                          <AlertCircle className="w-5 h-5 text-red-500" />
+                        </motion.div>
+                      )}
+                      {isUsernameLocked && (
+                        <motion.div 
+                          initial={{ scale: 0 }} 
+                          animate={{ scale: 1 }}
+                          whileHover={{ scale: 1.1 }}
+                          className="cursor-pointer"
+                          onClick={() => setIsUsernameLocked(false)}
+                          title="Click to unlock and change"
+                        >
+                          <Lock className="w-4 h-4 text-green-600" />
+                        </motion.div>
+                      )}
                     </div>
-                    {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
                   </div>
+                  {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
+
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="mobile" className="text-purple-700">Mobile Number</Label>
@@ -611,49 +640,38 @@ body: JSON.stringify({ [type]: identifier, otp }),
                       </motion.div>
                     )}
                   </div>
-                    <AnimatePresence>
-                      {showMobileOtpInput && !isMobileVerified && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                          animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                          exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                          className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
+                  <AnimatePresence>
+                    {showMobileOtpInput && !isMobileVerified && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold text-purple-800">Verify Mobile</Label>
+                          <span className="text-[10px] uppercase tracking-wider text-purple-400 font-bold">SMS Sent</span>
+                        </div>
+                        <OTPInput 
+                          value={mobileOtp} 
+                          onChange={setMobileOtp} 
+                          disabled={isVerifyingMobileOtp}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => handleVerifyOtp('mobile')}
+                          disabled={isVerifyingMobileOtp || mobileOtp.length !== 6}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-200 h-11 font-bold tracking-wide"
                         >
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm font-semibold text-purple-800">Verify Mobile</Label>
-                            <Button
-                              type="button"
-                              variant="link"
-                              size="sm"
-                              onClick={() => handleSendOtp('mobile')}
-                              disabled={isSendingMobileOtp}
-                              className="text-purple-600 hover:text-purple-800 p-0 h-auto text-[10px] font-bold uppercase tracking-wider"
-                            >
-                              {isSendingMobileOtp ? 'Sending...' : 'Resend OTP'}
-                            </Button>
-                          </div>
-                          <OTPInput 
-                            value={mobileOtp} 
-                            onChange={setMobileOtp} 
-                            onComplete={() => handleVerifyOtp('mobile')}
-                            disabled={isVerifyingMobileOtp}
-                          />
-                          {isVerifyingMobileOtp && (
-                            <motion.div 
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="flex items-center justify-center gap-2 text-purple-600 text-xs font-medium"
-                            >
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                              Verifying...
-                            </motion.div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
+                          {isVerifyingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {isVerifyingMobileOtp ? 'Verifying...' : 'Confirm OTP'}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   {errors.mobile && <p className="text-red-500 text-sm flex items-center gap-1 px-1"><AlertCircle className="w-3 h-3" /> {errors.mobile}</p>}
                 </div>
+
 
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-purple-700">Email Address</Label>
@@ -705,47 +723,35 @@ body: JSON.stringify({ [type]: identifier, otp }),
                       </motion.div>
                     )}
                   </div>
-                    <AnimatePresence>
-                      {showEmailOtpInput && !isEmailVerified && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                          animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                          exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                          className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
+                  <AnimatePresence>
+                    {showEmailOtpInput && !isEmailVerified && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        className="space-y-4 overflow-hidden bg-purple-50/50 p-4 rounded-2xl border border-purple-100"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold text-purple-800">Verify Email</Label>
+                          <span className="text-[10px] uppercase tracking-wider text-purple-400 font-bold">Mail Sent</span>
+                        </div>
+                        <OTPInput 
+                          value={emailOtp} 
+                          onChange={setEmailOtp} 
+                          disabled={isVerifyingEmailOtp}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => handleVerifyOtp('email')}
+                          disabled={isVerifyingEmailOtp || emailOtp.length !== 6}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-200 h-11 font-bold tracking-wide"
                         >
-                          <div className="flex items-center justify-between">
-                            <Label className="text-sm font-semibold text-purple-800">Verify Email</Label>
-                            <Button
-                              type="button"
-                              variant="link"
-                              size="sm"
-                              onClick={() => handleSendOtp('email')}
-                              disabled={isSendingEmailOtp}
-                              className="text-purple-600 hover:text-purple-800 p-0 h-auto text-[10px] font-bold uppercase tracking-wider"
-                            >
-                              {isSendingEmailOtp ? 'Sending...' : 'Resend OTP'}
-                            </Button>
-                          </div>
-                          <OTPInput 
-                            value={emailOtp} 
-                            onChange={setEmailOtp} 
-                            onComplete={() => handleVerifyOtp('email')}
-                            disabled={isVerifyingEmailOtp}
-                          />
-                          {isVerifyingEmailOtp && (
-                            <motion.div 
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              className="flex items-center justify-center gap-2 text-purple-600 text-xs font-medium"
-                            >
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                              Verifying...
-                            </motion.div>
-                          )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
+                          {isVerifyingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          {isVerifyingEmailOtp ? 'Verifying...' : 'Confirm OTP'}
+                        </Button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   {errors.email && <p className="text-red-500 text-sm flex items-center gap-1 px-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
                 </div>
 
@@ -831,7 +837,7 @@ body: JSON.stringify({ [type]: identifier, otp }),
                 >
                   <Button
                     type="submit"
-                    disabled={externalLoading || !isMobileVerified || !isEmailVerified}
+                    disabled={externalLoading}
                     className="w-full rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-[1.02]"
                   >
                     {externalLoading ? (
@@ -848,6 +854,7 @@ body: JSON.stringify({ [type]: identifier, otp }),
                     )}
                   </Button>
                 </motion.div>
+
               </form>
 
               <div className="mt-6 text-center">

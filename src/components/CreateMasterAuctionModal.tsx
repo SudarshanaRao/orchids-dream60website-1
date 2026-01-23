@@ -71,8 +71,8 @@ export function CreateMasterAuctionModal({
           Status: 'UPCOMING',
           maxDiscount: 0,
           EntryFee: 'RANDOM',
-          minEntryFee: 10,
-          maxEntryFee: 100,
+          minEntryFee: null,
+          maxEntryFee: null,
           FeeSplits: { BoxA: 50, BoxB: 50 },
           roundCount: 4,
           roundConfig: [
@@ -101,8 +101,8 @@ export function CreateMasterAuctionModal({
         Status: 'UPCOMING',
         maxDiscount: 0,
         EntryFee: 'RANDOM',
-        minEntryFee: 10,
-        maxEntryFee: 100,
+        minEntryFee: null,
+        maxEntryFee: null,
         FeeSplits: { BoxA: 50, BoxB: 50 },
         roundCount: 4,
         roundConfig: [
@@ -178,7 +178,6 @@ export function CreateMasterAuctionModal({
           return { key, value };
         }
       }
-      
       return { key: 'Feature', value: line.trim() };
     });
 
@@ -199,29 +198,6 @@ export function CreateMasterAuctionModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    for (let i = 0; i < auctionConfigs.length; i++) {
-      const config = auctionConfigs[i];
-      if (config.EntryFee === 'RANDOM') {
-        if (!config.minEntryFee || !config.maxEntryFee) {
-          toast.error(`Auction #${config.auctionNumber}: Min and Max Entry Fee are required for RANDOM type`);
-          setIsSubmitting(false);
-          return;
-        }
-        if (config.minEntryFee > config.maxEntryFee) {
-          toast.error(`Auction #${config.auctionNumber}: Min Entry Fee cannot be greater than Max Entry Fee`);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      if (config.EntryFee === 'MANUAL') {
-        if (!config.FeeSplits || typeof config.FeeSplits.BoxA !== 'number' || typeof config.FeeSplits.BoxB !== 'number') {
-          toast.error(`Auction #${config.auctionNumber}: Fee Splits (Box A and Box B) are required for MANUAL type`);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-    }
 
     try {
       const url = editingAuction
@@ -369,104 +345,19 @@ export function CreateMasterAuctionModal({
                     />
                   </div>
 
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Round Count
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={config.roundCount}
-                        onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Entry Fee Type
-                      </label>
-                      <select
-                        value={config.EntryFee}
-                        onChange={(e) => {
-                          const newType = e.target.value as 'RANDOM' | 'MANUAL';
-                          handleConfigChange(index, 'EntryFee', newType);
-                          if (newType === 'RANDOM') {
-                            handleConfigChange(index, 'minEntryFee', config.minEntryFee || 10);
-                            handleConfigChange(index, 'maxEntryFee', config.maxEntryFee || 100);
-                          }
-                        }}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="RANDOM">Random</option>
-                        <option value="MANUAL">Manual</option>
-                      </select>
-                    </div>
-
-                    {config.EntryFee === 'RANDOM' && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Min Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={config.minEntryFee || ''}
-                            onChange={(e) => handleConfigChange(index, 'minEntryFee', parseInt(e.target.value) || null)}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Max Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={config.maxEntryFee || ''}
-                            onChange={(e) => handleConfigChange(index, 'maxEntryFee', parseInt(e.target.value) || null)}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {config.EntryFee === 'MANUAL' && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Fee Split - Box A (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={config.FeeSplits?.BoxA || 50}
-                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxA: parseInt(e.target.value) })}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Fee Split - Box B (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={config.FeeSplits?.BoxB || 50}
-                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxB: parseInt(e.target.value) })}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Round Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={config.roundCount}
+                      onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      required
+                    />
+                  </div>
 
                   <div className="col-span-2">
                     <label className="block text-sm font-semibold text-purple-900 mb-2">

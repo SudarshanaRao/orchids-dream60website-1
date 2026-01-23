@@ -56,15 +56,12 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
 
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24">
-        <SupportCenterHeader 
-          title="About Dream60" 
-          icon={<Trophy className="w-6 h-6 text-yellow-500" />} 
-          onBack={() => {
-            onNavigate?.('game');
-            window.history.pushState({}, '', '/');
-          }} 
-          backLabel="Back to Auction"
-        />
+      <SupportCenterHeader 
+        title="About Dream60" 
+        icon={<Trophy className="w-6 h-6 text-yellow-500" />} 
+        onBack={onBack} 
+        backLabel="Back to Game"
+      />
 
       {/* Hero Section */}
       <div className="relative pt-12 pb-20 px-4 overflow-hidden">
@@ -130,19 +127,19 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
               <h2 className="text-3xl md:text-4xl font-black text-slate-900">Our Journey</h2>
               <div className="w-20 h-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full" />
             </div>
-              <p className="text-slate-600 text-lg leading-relaxed">
-                Founded with a vision to revolutionize online auctions in India, Dream60 introduced a unique live auction model that rewards timing and strategy. We've built a community of thousands who share the thrill of winning premium products.
+            <p className="text-slate-600 text-lg leading-relaxed">
+              Founded with a vision to revolutionize online shopping in India, Dream60 introduced a unique auction model that rewards skill and timing. We've built a community of thousands who share the thrill of the win.
             </p>
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="p-6 bg-purple-50 rounded-2xl border border-purple-100">
                 <Target className="w-8 h-8 text-purple-600 mb-4" />
                 <h3 className="text-lg font-black text-slate-900 mb-2">Our Vision</h3>
-                <p className="text-slate-600 text-sm">To be India's #1 live auction destination.</p>
+                <p className="text-slate-600 text-sm">To be India's #1 interactive commerce destination.</p>
               </div>
               <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
                 <Smartphone className="w-8 h-8 text-blue-600 mb-4" />
                 <h3 className="text-lg font-black text-slate-900 mb-2">Our Mission</h3>
-                <p className="text-slate-600 text-sm">Making premium products accessible through transparent auctions.</p>
+                <p className="text-slate-600 text-sm">Democratizing luxury through transparent tech.</p>
               </div>
             </div>
           </motion.div>
@@ -213,9 +210,9 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
               <Briefcase className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-3xl md:text-5xl font-black text-white mb-6">Want to Build the Future?</h2>
-              <p className="text-slate-400 text-lg md:text-xl mb-10 leading-relaxed">
-                We're looking for dreamers, makers, and innovators to join our rapidly growing team. Come help us build the future of live auctions in India.
-              </p>
+            <p className="text-slate-400 text-lg md:text-xl mb-10 leading-relaxed">
+              We're looking for dreamers, makers, and innovators to join our rapidly growing team. Come help us redefine commerce in India.
+            </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button 
                 onClick={() => {

@@ -186,14 +186,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const response = await fetch(`${API_BASE}/admin/sms/rest/templates?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success) {
-        // Deduplicate templates by TemplateId
-        const uniqueTemplates = (data.data || []).reduce((acc: RestTemplate[], curr: RestTemplate) => {
-          if (!acc.find(t => t.TemplateId === curr.TemplateId)) {
-            acc.push(curr);
-          }
-          return acc;
-        }, []);
-        setRestTemplates(uniqueTemplates);
+        setRestTemplates(data.data || []);
       }
     } catch (error) {
       console.error('Error loading REST templates:', error);
@@ -396,21 +389,13 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
   const getPreviewMessage = () => {
     if (selectedTemplate && selectedTemplate !== 'CUSTOM') {
-      if (selectedTemplate.startsWith('rest_')) {
-        const restTemplateId = selectedTemplate.replace('rest_', '');
-        const restTemplate = restTemplates.find(t => t.TemplateId === restTemplateId);
-        if (restTemplate) {
-          return restTemplate.Message;
+      const template = templates.find(t => t.key === selectedTemplate);
+      if (template) {
+        let message = template.template;
+        for (const [key, value] of Object.entries(templateVariables)) {
+          message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), value || `{${key}}`);
         }
-      } else {
-        const template = templates.find(t => t.key === selectedTemplate);
-        if (template) {
-          let message = template.template;
-          for (const [key, value] of Object.entries(templateVariables)) {
-            message = message.replace(new RegExp(`\\{${key}\\}`, 'g'), value || `{${key}}`);
-          }
-          return message;
-        }
+        return message;
       }
     }
     return customMessage;
@@ -488,7 +473,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
         body: JSON.stringify({
           filter: selectedFilter,
           senderId: selectedSenderId || undefined,
-          message: message,
+          message: selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined,
           templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
           templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
         }),

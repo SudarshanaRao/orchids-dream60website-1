@@ -20,22 +20,22 @@ const {
   setSuperAdminByEmail,
 } = require('../controllers/adminController');
 
-const {
-  refreshWoohooProducts,
-  getDbProducts,
-  getEligibleWinners,
-  sendVoucher,
-  getIssuedVouchers,
-  getWoohooBalance,
-  getWoohooTransactions,
-  getWoohooCategories,
-  getWoohooProducts,
-  getWoohooProductDetails,
-  getWoohooOrderStatus,
-  getWoohooOrderCards,
-  resendVoucherEmail,
-  syncVoucherStatus
-} = require('../controllers/adminVoucherController');
+  const {
+    refreshWoohooProducts,
+    getDbProducts,
+    getEligibleWinners,
+    sendVoucher,
+    getIssuedVouchers,
+    getWoohooBalance,
+    getWoohooTransactions,
+    getWoohooCategories,
+    getWoohooProducts,
+    getWoohooProductDetails,
+    getWoohooOrderStatus,
+    getWoohooOrderCards,
+    resendVoucherEmail,
+    syncVoucherStatus
+  } = require('../controllers/adminVoucherController');
 
 const {
   getSmsTemplates,
@@ -250,73 +250,6 @@ const {
  *           items:
  *             $ref: '#/components/schemas/DailyAuctionConfig'
  *           description: Array of daily auction configurations
- *
- *     SmsTemplate:
- *       type: object
- *       properties:
- *         TemplateId:
- *           type: string
- *           example: "100"
- *         TemplateName:
- *           type: string
- *           example: "Welcome Template"
- *         Message:
- *           type: string
- *           example: "Welcome to Dream60! Your OTP is {otp}"
- *         CreatedDate:
- *           type: string
- *           format: date-time
- *
- *     SmsSenderId:
- *       type: object
- *       properties:
- *         SenderId:
- *           type: string
- *           example: "FINPGS"
- *         Status:
- *           type: string
- *           example: "Active"
- *
- *     SmsSendRequest:
- *       type: object
- *       required:
- *         - message
- *       properties:
- *         userIds:
- *           type: array
- *           items:
- *             type: string
- *           description: List of user IDs to send SMS to
- *         mobileNumbers:
- *           type: array
- *           items:
- *             type: string
- *           description: List of mobile numbers to send SMS to
- *         message:
- *           type: string
- *           description: Custom message to send
- *         templateKey:
- *           type: string
- *           description: Template key (internal or rest_ID)
- *         senderId:
- *           type: string
- *           description: Sender ID to use
- *
- *     SmsBulkSendRequest:
- *       type: object
- *       required:
- *         - filter
- *         - message
- *       properties:
- *         filter:
- *           type: string
- *           enum: [all, active_players, winners, never_played]
- *         message:
- *           type: string
- *         templateKey:
- *           type: string
- *         senderId:
- *           type: string
  */
 
 /**
@@ -796,232 +729,10 @@ router.put('/users/super-admin', updateUserSuperAdminStatus);
 router.post('/set-super-admin', setSuperAdminByEmail);
 
 // Voucher Management Routes
-/**
- * @swagger
- * tags:
- *   - name: Voucher Management
- *     description: Woohoo voucher management APIs for admin panel
- */
-
-/**
- * @swagger
- * /admin/vouchers/eligible-winners:
- *   get:
- *     summary: GET ELIGIBLE WINNERS FOR VOUCHER
- *     description: Get list of winners who have claimed their prize and paid, eligible for voucher distribution
- *     tags: [Voucher Management]
- *     responses:
- *       200:
- *         description: Eligible winners retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 count:
- *                   type: number
- *                   example: 5
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       userId:
- *                         type: string
- *                       hourlyAuctionId:
- *                         type: string
- *                       prizeClaimStatus:
- *                         type: string
- *                         example: "CLAIMED"
- *                       remainingFeesPaid:
- *                         type: boolean
- *                         example: true
- *                       userEmail:
- *                         type: string
- *                       userMobile:
- *                         type: string
- *                       userName:
- *                         type: string
- *       500:
- *         description: Server error
- */
 router.get('/vouchers/eligible-winners', getEligibleWinners);
-
-/**
- * @swagger
- * /admin/vouchers/send:
- *   post:
- *     summary: SEND VOUCHER TO WINNER
- *     description: Send a Woohoo gift voucher to a winner via the Woohoo API
- *     tags: [Voucher Management]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - claimId
- *               - sku
- *               - amount
- *             properties:
- *               claimId:
- *                 type: string
- *                 description: The claim ID from AuctionHistory
- *                 example: "507f1f77bcf86cd799439011"
-   *               sku:
-   *                 type: string
-   *                 description: Woohoo product SKU (e.g., Amazon gift card SKU)
-   *                 example: "CNPIN"
-   *               amount:
-   *                 type: number
-   *                 description: Voucher amount in INR
-   *                 example: 10
-   *     responses:
-   *       200:
-   *         description: Voucher order placed successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: object
-   *               properties:
-   *                 success:
-   *                   type: boolean
-   *                   example: true
-   *                 message:
-   *                   type: string
-   *                   example: "Voucher order placed successfully"
-   *                 data:
-   *                   type: object
-   *                   properties:
-   *                     _id:
-   *                       type: string
-   *                     woohooOrderId:
-   *                       type: string
-   *                       example: "3182427590"
-   *                     status:
-   *                       type: string
-   *                       enum: [processing, complete, failed]
- *       400:
- *         description: Missing required fields or voucher already issued
- *       404:
- *         description: Winner or user not found
- *       500:
- *         description: Woohoo API error
- */
 router.post('/vouchers/send', sendVoucher);
-
-/**
- * @swagger
- * /admin/vouchers/issued:
- *   get:
- *     summary: GET ALL ISSUED VOUCHERS
- *     description: Get list of all vouchers that have been issued
- *     tags: [Voucher Management]
- *     responses:
- *       200:
- *         description: Issued vouchers retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                       userId:
- *                         type: string
- *                       claimId:
- *                         type: string
- *                       woohooOrderId:
- *                         type: string
- *                       sku:
- *                         type: string
- *                       amount:
- *                         type: number
- *                       status:
- *                         type: string
- *                         enum: [processing, complete, failed]
- *                       cardNumber:
- *                         type: string
- *                       cardPin:
- *                         type: string
- *                       expiry:
- *                         type: string
- *                         format: date-time
- *                       sentToUser:
- *                         type: boolean
- *                       userName:
- *                         type: string
- *                       userEmail:
- *                         type: string
- *       500:
- *         description: Server error
- */
 router.get('/vouchers/issued', getIssuedVouchers);
-
-/**
- * @swagger
- * /admin/vouchers/woohoo-balance:
- *   get:
- *     summary: GET WOOHOO ACCOUNT BALANCE
- *     description: Get the current SVC (Stored Value Card) balance from Woohoo
- *     tags: [Voucher Management]
- *     responses:
- *       200:
- *         description: Balance retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   description: Woohoo account balance data
- *       500:
- *         description: Woohoo API error
- */
 router.get('/vouchers/woohoo-balance', getWoohooBalance);
-
-/**
- * @swagger
- * /admin/vouchers/woohoo-transactions:
- *   get:
- *     summary: GET WOOHOO TRANSACTION HISTORY
- *     description: Get transaction history from Woohoo API
- *     tags: [Voucher Management]
- *     responses:
- *       200:
- *         description: Transactions retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   description: List of Woohoo transactions
- *       500:
- *         description: Woohoo API error
- */
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
 router.get('/vouchers/refresh-products', refreshWoohooProducts);
 router.get('/vouchers/db-products', getDbProducts);
@@ -1314,230 +1025,20 @@ router.post('/vouchers/:voucherId/resend-email', resendVoucherEmail);
  */
 router.post('/vouchers/:voucherId/sync', syncVoucherStatus);
 
-/**
- * @swagger
- * tags:
- *   - name: SMS Management
- *     description: SMS Country and internal SMS management APIs
- */
-
-/**
- * @swagger
- * /admin/sms/rest/templates:
- *   get:
- *     summary: GET REST TEMPLATES
- *     description: Get all SMS templates from SMS Country account
- *     tags: [SMS Management]
- *     parameters:
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Templates retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/SmsTemplate'
- *   post:
- *     summary: CREATE REST TEMPLATE
- *     description: Create a new SMS template in SMS Country account
- *     tags: [SMS Management]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [templateName, message]
- *             properties:
- *               user_id:
- *                 type: string
- *               templateName:
- *                 type: string
- *               message:
- *                 type: string
- *     responses:
- *       200:
- *         description: Template created successfully
- */
-router.get('/sms/rest/templates', getRestTemplates);
-router.post('/sms/rest/templates', createRestTemplate);
-
-/**
- * @swagger
- * /admin/sms/rest/templates/{templateId}:
- *   delete:
- *     summary: DELETE REST TEMPLATE
- *     description: Delete an SMS template from SMS Country account
- *     tags: [SMS Management]
- *     parameters:
- *       - name: templateId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Template deleted successfully
- */
-router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
-
-/**
- * @swagger
- * /admin/sms/rest/sender-ids:
- *   get:
- *     summary: GET SENDER IDS
- *     description: Get all approved Sender IDs from SMS Country account
- *     tags: [SMS Management]
- *     parameters:
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Sender IDs retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/SmsSenderId'
- */
-router.get('/sms/rest/sender-ids', getSenderIds);
-
-/**
- * @swagger
- * /admin/sms/rest/reports:
- *   get:
- *     summary: GET SMS REPORTS
- *     description: Get detailed SMS delivery reports from SMS Country
- *     tags: [SMS Management]
- *     parameters:
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *       - name: fromDate
- *         in: query
- *         schema:
- *           type: string
- *       - name: toDate
- *         in: query
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Reports retrieved successfully
- */
-router.get('/sms/rest/reports', getSmsReports);
-
-/**
- * @swagger
- * /admin/sms/rest/status/{messageId}:
- *   get:
- *     summary: GET SMS STATUS
- *     description: Get status of a specific SMS message
- *     tags: [SMS Management]
- *     parameters:
- *       - name: messageId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Status retrieved successfully
- */
-router.get('/sms/rest/status/:messageId', getSmsStatus);
-
-/**
- * @swagger
- * /admin/sms/send:
- *   post:
- *     summary: SEND SMS
- *     description: Send custom or template-based SMS to specific users or mobile numbers
- *     tags: [SMS Management]
- *     parameters:
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *         description: Admin user ID for authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/SmsSendRequest'
- *     responses:
- *       200:
- *         description: SMS sent successfully
- *       403:
- *         description: Admin access required
- */
-router.post('/sms/send', sendSmsToUsers);
-
-/**
- * @swagger
- * /admin/sms/send-bulk:
- *   post:
- *     summary: SEND BULK SMS
- *     description: Send bulk SMS to users matching a specific filter
- *     tags: [SMS Management]
- *     parameters:
- *       - name: user_id
- *         in: query
- *         required: true
- *         schema:
- *           type: string
- *         description: Admin user ID for authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/SmsBulkSendRequest'
- *     responses:
- *       200:
- *         description: Bulk SMS sent successfully
- *       403:
- *         description: Admin access required
- */
-router.post('/sms/send-bulk', sendBulkSmsToFilter);
-
 router.get('/sms/templates', getSmsTemplates);
 router.get('/sms/balance', getSmsBalance);
 router.get('/sms/users', getUsersForSms);
 router.get('/sms/auctions', getRecentAuctions);
 router.get('/sms/filter-stats', getFilterStats);
+router.post('/sms/send', sendSmsToUsers);
+router.post('/sms/send-bulk', sendBulkSmsToFilter);
+
+// REST API SMS Management
+router.get('/sms/rest/templates', getRestTemplates);
+router.post('/sms/rest/templates', createRestTemplate);
+router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
+router.get('/sms/rest/sender-ids', getSenderIds);
+router.get('/sms/rest/reports', getSmsReports);
+router.get('/sms/rest/status/:messageId', getSmsStatus);
 
 module.exports = router;

@@ -516,17 +516,16 @@ const createDailyAuction = async () => {
     const dailyAuctionConfigForToday = activeMasterAuction.dailyAuctionConfig.map(config => {
       const configObj = config.toObject ? config.toObject() : { ...config };
       const newHourlyAuctionId = uuidv4(); // Generate hourlyAuctionId upfront
-        return {
-          ...configObj,
-          auctionId: uuidv4(), // Generate NEW UUID for each config entry
-          Status: 'UPCOMING', // Force all to UPCOMING
-          isAuctionCompleted: false,
-          completedAt: null,
-          topWinners: [],
-          hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
-          description: config.description || [], // ✅ Explicitly copy description from master
-          productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
-        };
+      return {
+        ...configObj,
+        auctionId: uuidv4(), // Generate NEW UUID for each config entry
+        Status: 'UPCOMING', // Force all to UPCOMING
+        isAuctionCompleted: false,
+        completedAt: null,
+        topWinners: [],
+        hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
+        productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
+      };
     });
     
     // Create daily auction as complete replica of master auction for TODAY
@@ -658,11 +657,10 @@ const createHourlyAuctions = async (dailyAuction) => {
           maxEntryFee: config.maxEntryFee,
           FeeSplits: config.FeeSplits,
           roundCount: config.roundCount || 4,
-            roundConfig: config.roundConfig || [],
-            imageUrl: config.imageUrl || null,
-            description: config.description || [],
-            productImages: config.productImages || [],
-            rounds: roundTimes, // ✅ Use pre-calculated round times
+          roundConfig: config.roundConfig || [],
+          imageUrl: config.imageUrl || null,
+          productImages: config.productImages || [],
+          rounds: roundTimes, // ✅ Use pre-calculated round times
           participants: [], // ✅ Start with empty participants
           winners: [], // ✅ Start with empty winners
           totalParticipants: 0,
@@ -1025,10 +1023,9 @@ const getLiveHourlyAuction = async (req, res) => {
           roundConfig: 1,
           completedAt: 1,
         TimeSlot: 1,
-          imageUrl: 1,
-          productImages: 1,
-          description: 1,
-          EntryFee: 1,
+        imageUrl: 1,
+        productImages: 1,
+        EntryFee: 1,
           minEntryFee: 1,
           maxEntryFee: 1,
           auctionDate: 1,
@@ -1224,7 +1221,7 @@ const manualTriggerAutoActivate = async (req, res) => {
     // ✅ OPTION 1: Return success and let the cron job handle it
     return res.status(200).json({
       success: true,
-      message: 'Auto-activation is handled by the scheduled cron job that runs at 00:00 AM daily.',
+      message: 'Auto-activation is handled by the scheduled cron job that runs every minute. Please wait for the next scheduled run.',
       note: 'Manual trigger removed to prevent circular dependency issues',
       timestamp: new Date().toISOString(),
     });
@@ -1375,13 +1372,6 @@ const placeBid = async (req, res) => {
     // Get current round number
     const currentRound = auction.currentRound;
     
-    // ✅ NEW: Logic for minimum bid validation
-    // 1. Minimum bid amount should be the entry fee paid for that auction
-    // 2. Safe bid should be two times of entry fee (UI concern, but backend ensures validity)
-    // 3. Remove 1 rupee logic and use entry fee instead
-    let minAllowedBid = participant.entryFee || 0;
-    let userPreviousBid = 0;
-
     // ✅ NEW: Check if player qualified from previous round (for rounds 2, 3, 4)
     if (currentRound > 1) {
       const previousRound = auction.rounds.find(r => r.roundNumber === currentRound - 1);
@@ -1410,24 +1400,8 @@ const placeBid = async (req, res) => {
           message: `You did not qualify from round ${currentRound - 1}. Only top 3 ranked players can proceed to the next round.`,
         });
       }
-
-      // Get user's previous bid to enforce higher bid in current round
-      const previousBidData = previousRound.playersData.find(p => p.playerId === playerId);
-      if (previousBidData) {
-        userPreviousBid = previousBidData.auctionPlacedAmount;
-        // Minimum bid = previous bid + entry fee
-        minAllowedBid = userPreviousBid + (participant.entryFee || 0);
-      }
       
-      console.log(`✅ [BID] Player ${playerUsername} qualified from round ${currentRound - 1}, allowed to bid in round ${currentRound}. Min required: ₹${minAllowedBid}`);
-    }
-
-    // Validate bid amount against minAllowedBid
-    if (auctionValue < minAllowedBid) {
-      return res.status(400).json({
-        success: false,
-        message: `Your bid must be at least ₹${minAllowedBid.toLocaleString()}. ${currentRound > 1 ? `(Previous bid ₹${userPreviousBid} + entry fee ₹${participant.entryFee})` : `(Minimum bid = entry fee ₹${participant.entryFee})`}`,
-      });
+      console.log(`✅ [BID] Player ${playerUsername} qualified from round ${currentRound - 1}, allowed to bid in round ${currentRound}`);
     }
     
     // Find the current round in rounds array
@@ -2485,7 +2459,6 @@ const getFirstUpcomingProduct = async (req, res) => {
       prizeValue: 1,
       imageUrl: 1,
       productImages: 1,
-      description: 1,
       TimeSlot: 1,
       auctionDate: 1,
       Status: 1,
