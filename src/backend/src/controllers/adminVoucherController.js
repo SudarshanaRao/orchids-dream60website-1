@@ -389,6 +389,98 @@ const getWoohooTransactions = async (req, res) => {
     }
 };
 
+/**
+ * Get Woohoo categories
+ */
+const getWoohooCategories = async (req, res) => {
+    try {
+        const categories = await woohooService.getCategories();
+        return res.status(200).json({
+            success: true,
+            data: categories
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo categories:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching categories from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo products by category
+ */
+const getWoohooProducts = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        if (!categoryId) {
+            return res.status(400).json({ success: false, message: 'Category ID is required' });
+        }
+        const products = await woohooService.getProducts(categoryId);
+        return res.status(200).json({
+            success: true,
+            data: products
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo products:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching products from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo product details
+ */
+const getWoohooProductDetails = async (req, res) => {
+    try {
+        const { sku } = req.params;
+        if (!sku) {
+            return res.status(400).json({ success: false, message: 'Product SKU is required' });
+        }
+        const details = await woohooService.getProductDetails(sku);
+        return res.status(200).json({
+            success: true,
+            data: details
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo product details:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching product details from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Get Woohoo order status
+ */
+const getWoohooOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: 'Order ID is required' });
+        }
+        const status = await woohooService.getOrderStatus(orderId);
+        return res.status(200).json({
+            success: true,
+            data: status
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo order status:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching order status from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
 module.exports = {
     refreshWoohooProducts,
     getDbProducts,
@@ -396,5 +488,9 @@ module.exports = {
     sendVoucher,
     getIssuedVouchers,
     getWoohooBalance,
-    getWoohooTransactions
+    getWoohooTransactions,
+    getWoohooCategories,
+    getWoohooProducts,
+    getWoohooProductDetails,
+    getWoohooOrderStatus
 };
