@@ -731,34 +731,53 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
     const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
 
-      // ✅ Update countdown timer for upcoming auction every second using server time
-      useEffect(() => {
-        if (!serverTime) return;
+        // ✅ Update countdown timer for upcoming auction every second using server time
+        useEffect(() => {
+          if (!serverTime) return;
+  
+          const updateCountdown = () => {
+            let totalSecondsRemaining = 0;
 
-        const updateCountdown = () => {
-          // Simplified calculation to the next top of the hour (MM:SS)
-          // As per user request: hour will be zero always, so only minutes and seconds
-          const currentMinute = serverTime.minute;
-          const currentSecond = serverTime.second;
-          
-          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-          
-          // If we are at the exact top of the hour, it means an auction just started
-          if (totalSecondsRemaining >= 3600) {
-            setUpcomingCountdown('00:00');
-            return;
-          }
+            if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
+              // Calculate distance to specific upcoming auction
+              const [targetHours, targetMinutes] = upcomingAuctionData.TimeSlot.split(':').map(Number);
+              const target = new Date(serverTime.timestamp);
+              target.setUTCHours(targetHours, targetMinutes, 0, 0);
 
-          const minutes = Math.floor(totalSecondsRemaining / 60);
-          const seconds = totalSecondsRemaining % 60;
-          
-          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-        };
+              // If target time has passed today, it must be for tomorrow
+              if (target.getTime() <= serverTime.timestamp) {
+                target.setUTCDate(target.getUTCDate() + 1);
+              }
 
-        updateCountdown();
-        const timer = setInterval(updateCountdown, 1000);
-        return () => clearInterval(timer);
-      }, [serverTime]);
+              totalSecondsRemaining = Math.floor((target.getTime() - serverTime.timestamp) / 1000);
+            } else {
+              // Fallback: Simplified calculation to the next top of the hour
+              const currentMinute = serverTime.minute;
+              const currentSecond = serverTime.second;
+              totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+              if (totalSecondsRemaining >= 3600) totalSecondsRemaining = 0;
+            }
+            
+            if (totalSecondsRemaining <= 0) {
+              setUpcomingCountdown('00:00');
+              return;
+            }
+  
+            const hours = Math.floor(totalSecondsRemaining / 3600);
+            const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+            const seconds = totalSecondsRemaining % 60;
+            
+            if (hours > 0) {
+              setUpcomingCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            } else {
+              setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            }
+          };
+  
+          updateCountdown();
+          const timer = setInterval(updateCountdown, 1000);
+          return () => clearInterval(timer);
+        }, [serverTime, upcomingAuctionData]);
 
       // Fetch upcoming auction data
     useEffect(() => {
