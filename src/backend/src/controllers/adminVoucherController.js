@@ -481,6 +481,124 @@ const getWoohooOrderStatus = async (req, res) => {
     }
 };
 
+/**
+ * Get Activated Cards for a Woohoo order
+ */
+const getWoohooOrderCards = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        if (!orderId) {
+            return res.status(400).json({ success: false, message: 'Order ID is required' });
+        }
+        const cards = await woohooService.getActivatedCards(orderId);
+        return res.status(200).json({
+            success: true,
+            data: cards
+        });
+    } catch (error) {
+        console.error('Error fetching Woohoo order cards:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching card details from Woohoo API',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+/**
+ * Resend voucher email to the winner
+ */
+const resendVoucherEmail = async (req, res) => {
+    try {
+        const { voucherId } = req.params;
+        const voucher = await Voucher.findById(voucherId);
+        if (!voucher) {
+            return res.status(404).json({ success: false, message: 'Voucher not found' });
+        }
+
+        if (!voucher.cardNumber) {
+            return res.status(400).json({ success: false, message: 'Voucher details not yet available. Sync status first.' });
+        }
+
+        const user = await User.findOne({ user_id: voucher.userId });
+        if (!user || !user.email) {
+            return res.status(404).json({ success: false, message: 'User or user email not found' });
+        }
+
+        // Fetch product details for better email
+        const product = await WoohooProduct.findOne({ sku: voucher.sku });
+
+        await sendEmail(user.email, `Your ${product?.name || 'Gift Card'} Voucher Details`, '', `
+            <h1>Congratulations!</h1>
+            <p>Here are your voucher details for ${product?.name || 'Gift Card'}:</p>
+            <ul>
+                <li><strong>Amount:</strong> ₹${voucher.amount}</li>
+                <li><strong>Card Number:</strong> ${voucher.cardNumber}</li>
+                <li><strong>PIN:</strong> ${voucher.cardPin}</li>
+                <li><strong>Expiry:</strong> ${voucher.expiry || 'N/A'}</li>
+                ${voucher.activationUrl ? `<li><strong>Activation Link:</strong> <a href="${voucher.activationUrl}">${voucher.activationUrl}</a></li>` : ''}
+            </ul>
+        `);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Voucher email resent successfully'
+        });
+    } catch (error) {
+        console.error('Error resending voucher email:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error resending voucher email',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Sync voucher status with Woohoo
+ */
+const syncVoucherStatus = async (req, res) => {
+    try {
+        const { voucherId } = req.params;
+        const voucher = await Voucher.findById(voucherId);
+        if (!voucher) {
+            return res.status(404).json({ success: false, message: 'Voucher not found' });
+        }
+
+        const orderId = voucher.woohooOrderId;
+        const statusResponse = await woohooService.getOrderStatus(orderId);
+        
+        voucher.status = statusResponse.status?.toLowerCase() || voucher.status;
+        voucher.orderResponse = statusResponse;
+
+        if (statusResponse.status === 'COMPLETE' || statusResponse.status === 'SUCCESS') {
+            const cardsResponse = await woohooService.getActivatedCards(orderId);
+            if (cardsResponse && Array.isArray(cardsResponse) && cardsResponse.length > 0) {
+                const card = cardsResponse[0];
+                voucher.cardNumber = card.cardNumber;
+                voucher.cardPin = card.cardPin;
+                voucher.expiry = card.expiry;
+                voucher.activationUrl = card.activationUrl;
+            }
+        }
+
+        await voucher.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Voucher status synced successfully',
+            data: voucher
+        });
+    } catch (error) {
+        console.error('Error syncing voucher status:', error.response?.data || error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Error syncing voucher status with Woohoo',
+            error: error.response?.data || error.message
+        });
+    }
+};
+
 module.exports = {
     refreshWoohooProducts,
     getDbProducts,
@@ -492,5 +610,8 @@ module.exports = {
     getWoohooCategories,
     getWoohooProducts,
     getWoohooProductDetails,
-    getWoohooOrderStatus
+    getWoohooOrderStatus,
+    getWoohooOrderCards,
+    resendVoucherEmail,
+    syncVoucherStatus
 };

@@ -20,19 +20,22 @@ const {
   setSuperAdminByEmail,
 } = require('../controllers/adminController');
 
-const {
-  refreshWoohooProducts,
-  getDbProducts,
-  getEligibleWinners,
-  sendVoucher,
-  getIssuedVouchers,
-  getWoohooBalance,
-  getWoohooTransactions,
-  getWoohooCategories,
-  getWoohooProducts,
-  getWoohooProductDetails,
-  getWoohooOrderStatus
-} = require('../controllers/adminVoucherController');
+  const {
+    refreshWoohooProducts,
+    getDbProducts,
+    getEligibleWinners,
+    sendVoucher,
+    getIssuedVouchers,
+    getWoohooBalance,
+    getWoohooTransactions,
+    getWoohooCategories,
+    getWoohooProducts,
+    getWoohooProductDetails,
+    getWoohooOrderStatus,
+    getWoohooOrderCards,
+    resendVoucherEmail,
+    syncVoucherStatus
+  } = require('../controllers/adminVoucherController');
 
 const {
   getSmsTemplates,
