@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface DescriptionItem {
   key: string;
@@ -91,7 +92,7 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto h-full flex flex-col">
+    <div className="relative w-full max-w-md mx-auto h-full flex flex-col min-h-[320px]">
       <div 
         className="relative w-full flex-1 min-h-[320px] cursor-pointer perspective-1000"
         onClick={handleFlip}
@@ -103,7 +104,7 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
         aria-label={isFlipped ? 'Show product image' : 'Show product details'}
       >
         <div
-          className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${
+          className={`relative w-full h-full min-h-[320px] transition-transform duration-700 transform-style-3d ${
             isFlipped ? 'rotate-y-180' : ''
           }`}
           style={{
@@ -116,7 +117,7 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
             className="absolute inset-0 w-full h-full backface-hidden rounded-2xl overflow-hidden"
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <div className="relative w-full h-full bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl overflow-hidden group">
+            <div className="relative w-full h-full min-h-[320px] bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
               
               <div className="absolute top-3 left-3 z-10">
@@ -137,9 +138,9 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
                 </div>
               )}
 
-              <div className="w-full h-full flex items-center justify-center p-8">
+              <div className="w-full h-full min-h-[320px] flex items-center justify-center p-8">
                 <img
-                  src={activeImage.imageUrl}
+                  src={getFullImageUrl(activeImage.imageUrl)}
                   alt={`${productName} - Image ${currentIndex + 1}`}
                   className="max-w-full max-h-full object-contain transition-transform duration-300 group-hover:scale-105"
                   onError={(e) => {
@@ -166,7 +167,12 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
               transform: 'rotateY(180deg)',
             }}
           >
-              <div className="relative w-full h-full bg-gradient-to-br from-purple-600/95 via-purple-700/95 to-indigo-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="relative w-full h-full min-h-[320px] bg-gradient-to-br from-purple-600/95 via-purple-700/95 to-indigo-800/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Product Image Background for Back Side */}
+                <div 
+                  className="absolute inset-0 opacity-10 bg-center bg-no-repeat bg-contain blur-[2px]"
+                  style={{ backgroundImage: `url(${getFullImageUrl(activeImage.imageUrl)})` }}
+                />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
                 
                 {currentImages.length > 1 && (
