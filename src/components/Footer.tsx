@@ -8,13 +8,14 @@ interface FooterProps {
 export function Footer({ onNavigate }: FooterProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    const linkGroups = [
+  const linkGroups = [
     {
       title: 'Platform',
       links: [
+        { label: 'Live Auctions', action: 'game' },
+        { label: 'Winners List', action: 'winners' },
           { label: 'Auction Rules', action: 'rules' },
-          { label: 'Play Guide', action: 'participation' },
-          { label: 'Winning Tips', action: 'winning-tips' }
+          { label: 'Play Guide', action: 'participation' }
         ]
       },
       {
@@ -22,6 +23,8 @@ export function Footer({ onNavigate }: FooterProps) {
         links: [
           { label: 'Support Center', action: 'support' },
           { label: 'Contact Us', action: 'contact' },
+          { label: 'How to Play', action: 'view-guide' },
+          { label: 'Winning Tips', action: 'winning-tips' },
           { label: 'Tester Feedback', action: 'tester-feedback' }
         ]
       },

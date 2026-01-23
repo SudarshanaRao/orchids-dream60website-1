@@ -32,8 +32,5 @@ jobs:
           port: 21
           protocol: ftp
           timeout: 120000
-          # Improved stability for Hostinger
-          security: loose
-          log-level: verbose
           local-dir: ./dist/
           server-dir: /public_html/test/

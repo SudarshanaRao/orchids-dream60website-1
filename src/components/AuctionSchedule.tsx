@@ -127,9 +127,10 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
               
               const currentAuctionData = isLiveMatch ? { ...auction, ...liveAuctionData } : auction;
               
-                const [auctionHour, auctionMinute] = currentAuctionData.TimeSlot.split(':').map(Number);
-                const timeStr = `${auctionHour.toString().padStart(2, '0')}:${auctionMinute?.toString().padStart(2, '0') || '00'}`;
-
+              const [auctionHour, auctionMinute] = currentAuctionData.TimeSlot.split(':').map(Number);
+              const hour12 = auctionHour > 12 ? auctionHour - 12 : (auctionHour === 0 ? 12 : auctionHour);
+              const period = auctionHour >= 12 ? 'PM' : 'AM';
+              const timeStr = `${hour12}:${auctionMinute?.toString().padStart(2, '0') || '00'} ${period}`;
               
                 let status = 'upcoming';
                 let winner = null;

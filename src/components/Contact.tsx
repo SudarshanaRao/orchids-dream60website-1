@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import  { useState } from 'react';
 import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, Users, Headphones, Shield, Globe, Zap, Building2, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -12,13 +12,9 @@ import { API_ENDPOINTS } from '../lib/api-config';
 
 interface ContactProps {
   onBack: () => void;
-  currentUser?: {
-    username: string;
-    email?: string;
-  } | null;
 }
 
-export function Contact({ onBack, currentUser }: ContactProps) {
+export function Contact({ onBack }: ContactProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [formData, setFormData] = useState({
     name: '',
@@ -29,21 +25,7 @@ export function Contact({ onBack, currentUser }: ContactProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      setFormData(prev => ({
-        ...prev,
-        name: currentUser.username || '',
-        email: currentUser.email || ''
-      }));
-    }
-  }, [currentUser]);
-
   const handleInputChange = (field: string, value: string) => {
-    // Prevent manual editing of name/email if user is logged in
-    if (currentUser && (field === 'name' || field === 'email')) {
-      return;
-    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -233,31 +215,29 @@ export function Contact({ onBack, currentUser }: ContactProps) {
                   <CardContent className="relative z-10 font-medium">
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                       <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                          <div>
-                            <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
-                            <Input
-                              type="text"
-                              value={formData.name}
-                              onChange={(e) => handleInputChange('name', e.target.value)}
-                              placeholder="Enter your full name"
-                              className={`bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm ${currentUser ? 'bg-purple-50/50 cursor-not-allowed opacity-80' : ''}`}
-                              required
-                              readOnly={!!currentUser}
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
-                            <Input
-                              type="email"
-                              value={formData.email}
-                              onChange={(e) => handleInputChange('email', e.target.value)}
-                              placeholder="your.email@example.com"
-                              className={`bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm ${currentUser ? 'bg-purple-50/50 cursor-not-allowed opacity-80' : ''}`}
-                              required
-                              readOnly={!!currentUser}
-                            />
-                          </div>
+                        <div>
+                          <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
+                          <Input
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            placeholder="Enter your full name"
+                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
+                            required
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
+                          <Input
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            placeholder="your.email@example.com"
+                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
+                            required
+                          />
+                        </div>
                       </div>
 
                       <div>

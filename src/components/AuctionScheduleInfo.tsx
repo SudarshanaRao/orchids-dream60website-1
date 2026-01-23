@@ -28,12 +28,12 @@ export function AuctionScheduleInfo() {
                 <Lock className="w-4 h-4 text-purple-700" />
                 <span className="text-sm font-bold text-purple-800">Entry Fee Boxes (Open at auction start)</span>
               </div>
-                  <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4 relative z-10">
-                    <p className="text-sm text-purple-700 flex items-start gap-2">
-                      <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-                      <span><span className="font-bold">One Payment:</span> Pay single entry fee (company decided) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
-                    </p>
-                  </div>
+                <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4 relative z-10">
+                  <p className="text-sm text-purple-700 flex items-start gap-2">
+                    <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
+                    <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
+                  </p>
+                </div>
                 
                   <div className="grid grid-cols-2 gap-4 relative z-10">
                     {[

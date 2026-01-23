@@ -92,8 +92,8 @@ export function Support({ user, onBack, onNavigate }: SupportProps) {
           },
           {
             question: 'How much is the entry fee?',
-            answer: 'Entry fees are company decided and fixed for each auction. You can see the exact fee on the auction box when the join window opens.'
-          },
+            answer: 'Entry fees are randomly generated based on the product market value. For example, a product worth ₹10,000 might have an entry fee between ₹9 and ₹99. You only know the exact fee when the auction opens.'
+        },
         {
           question: 'Are there subscriptions?',
           answer: 'No, Dream60 is entirely pay-as-you-go. You only pay for the auctions you choose to join.'

@@ -31,7 +31,3 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
-
-# PHP / Composer
-vendor/
-composer.lock

@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 const EmailTemplate = require('../models/EmailTemplate');
 
-const darkBrandStyles = `
+const brandStyles = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { 
     background-color: #050505; 
