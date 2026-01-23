@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
@@ -91,69 +91,69 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
 
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={size} height={size} className="transform -rotate-90 overflow-visible">
-        {/* Background circle */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          fill="none"
-          className="text-purple-200/30"
-        />
-        {/* Progress circle */}
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={`url(#${id})`}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: "easeInOut" }}
-        />
-        <defs>
-          <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="50%" stopColor="#A78BFA" />
-            <stop offset="100%" stopColor="#C4B5FD" />
-          </linearGradient>
-        </defs>
-      </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
-          <span className="text-[10px] sm:text-xs text-purple-600 font-semibold uppercase tracking-wider">Success</span>
-        </div>
-    </div>
-  );
-};
+    return (
+      <div className="relative inline-flex items-center justify-center">
+        <svg width={size} height={size} className="transform -rotate-90 overflow-visible">
+          {/* Background circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            fill="none"
+            className="text-purple-200/30"
+          />
+          {/* Progress circle */}
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={`url(#${id})`}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+          />
+          <defs>
+            <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#8B5CF6" />
+              <stop offset="50%" stopColor="#A78BFA" />
+              <stop offset="100%" stopColor="#C4B5FD" />
+            </linearGradient>
+          </defs>
+        </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
+            <span className="text-[10px] sm:text-xs text-purple-600 font-semibold uppercase tracking-wider">Success</span>
+          </div>
+      </div>
+    );
+  };
 
-// Separate AuctionCard Component (fixes hooks error)
-  const AuctionCard = ({ 
-    auction, 
-    index, 
-    tabPrefix, 
-    user, 
-    onViewDetails,
-    onClaimSuccess,
-    userProfile,
-    serverTime
-  }: { 
-    auction: AuctionHistoryItem; 
-    index: number; 
-    tabPrefix: string;
-    user: { id: string; username: string };
-    onViewDetails: (auction: AuctionHistoryItem) => void;
-    onClaimSuccess: () => void;
-    userProfile: { mobile: string; email: string; username: string } | null;
-    serverTime: any;
-  }) => {
+  // Separate AuctionCard Component (fixes hooks error)
+    const AuctionCard = memo(({ 
+      auction, 
+      index, 
+      tabPrefix, 
+      user, 
+      onViewDetails,
+      onClaimSuccess,
+      userProfile,
+      serverTime
+    }: { 
+      auction: AuctionHistoryItem; 
+      index: number; 
+      tabPrefix: string;
+      user: { id: string; username: string };
+      onViewDetails: (auction: AuctionHistoryItem) => void;
+      onClaimSuccess: () => void;
+      userProfile: { mobile: string; email: string; username: string } | null;
+      serverTime: any;
+    }) => {
     const { initiatePrizeClaimPayment, loading: globalPaymentLoading } = usePrizeClaimPayment();
     const [timeLeft, setTimeLeft] = useState('');
     const [showClaimForm, setShowClaimForm] = useState(false);
@@ -1126,7 +1126,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
         )}
       </motion.div>
     );
-  };
+  });
 
 
 export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
@@ -1154,15 +1154,15 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
     netGain: 0,
   });
   
-    // ✅ Computed values from stats and history
-    const wonAuctions = history.filter(a => a.status === 'won');
-    const lostAuctions = history.filter(a => a.status === 'lost');
-    const claimedAuctions = history.filter(a => a.prizeClaimStatus === 'CLAIMED');
-    
-    // ✅ Calculate success rate based on claims as requested
-    const successRate = history.length > 0 
-      ? Math.round((claimedAuctions.length / history.length) * 100) 
-      : 0;
+      // ✅ Computed values from stats and history
+      const wonAuctions = useMemo(() => history.filter(a => a.status === 'won'), [history]);
+      const lostAuctions = useMemo(() => history.filter(a => a.status === 'lost'), [history]);
+      const claimedAuctions = useMemo(() => history.filter(a => a.prizeClaimStatus === 'CLAIMED'), [history]);
+      
+      // ✅ Calculate success rate based on claims as requested
+      const successRate = useMemo(() => history.length > 0 
+        ? Math.round((claimedAuctions.length / history.length) * 100) 
+        : 0, [history.length, claimedAuctions.length]);
       
     const { totalSpent, totalWon, netGain } = stats;
   
@@ -1974,7 +1974,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 <TabsContent value="all" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
                   {history.length > 0 ? (
                   history.map((auction, index) => <AuctionCard 
-                        key={`${activeTab}-${auction.id}`}
+                        key={auction.id}
                         auction={auction}
                         index={index}
                         tabPrefix={activeTab}
@@ -2011,7 +2011,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 <TabsContent value="won" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
                   {wonAuctions.length > 0 ? (
                   wonAuctions.map((auction, index) => <AuctionCard 
-                        key={`${activeTab}-${auction.id}`}
+                        key={auction.id}
                         auction={auction}
                         index={index}
                         tabPrefix={activeTab}
@@ -2048,7 +2048,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 <TabsContent value="lost" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
                   {lostAuctions.length > 0 ? (
                     lostAuctions.map((auction, index) => <AuctionCard 
-                      key={`${activeTab}-${auction.id}`}
+                      key={auction.id}
                       auction={auction}
                       index={index}
                       tabPrefix={activeTab}

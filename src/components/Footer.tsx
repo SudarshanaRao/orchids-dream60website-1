@@ -13,7 +13,8 @@ export function Footer({ onNavigate }: FooterProps) {
       title: 'Platform',
       links: [
           { label: 'Auction Rules', action: 'rules' },
-          { label: 'Play Guide', action: 'participation' }
+          { label: 'Play Guide', action: 'participation' },
+          { label: 'Winning Tips', action: 'winning-tips' }
         ]
       },
       {
@@ -21,8 +22,6 @@ export function Footer({ onNavigate }: FooterProps) {
         links: [
           { label: 'Support Center', action: 'support' },
           { label: 'Contact Us', action: 'contact' },
-          { label: 'How to Play', action: 'view-guide' },
-          { label: 'Winning Tips', action: 'winning-tips' },
           { label: 'Tester Feedback', action: 'tester-feedback' }
         ]
       },
