@@ -130,11 +130,10 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [mobileAvailable, setMobileAvailable] = useState<boolean | null>(null);
   const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
-  const [isUsernameLocked, setIsUsernameLocked] = useState(false);
 
   // Debounced Availability Check
   useEffect(() => {
-    if (formData.username.length >= 3 && !isUsernameLocked) {
+    if (formData.username.length >= 3) {
       const timer = setTimeout(async () => {
         setIsCheckingUsername(true);
         try {
@@ -153,13 +152,6 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
               delete newErrors.username;
               return newErrors;
             });
-            // If available, we can lock it after a small delay or if valid
-            if (formData.username.length >= 3 && !formData.username.includes(' ')) {
-                // We'll let the user lock it or auto-lock it? 
-                // The prompt says "if not then we can accept that same green tick with circle should be displayed and it should be locked"
-                // I'll auto-lock it after it's verified as unique and valid
-                setIsUsernameLocked(true);
-            }
           }
         } catch (error) {
           console.error('Check username error:', error);
@@ -171,7 +163,7 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
     } else {
       setUsernameAvailable(null);
     }
-  }, [formData.username, isUsernameLocked]);
+  }, [formData.username]);
 
   useEffect(() => {
     if (formData.mobile.length === 10 && !isMobileVerified) {
@@ -290,6 +282,13 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
   };
 
   const handleSendOtp = async (type: 'mobile' | 'email') => {
+    // Ensure username is valid and unique first
+    if (!formData.username || formData.username.length < 3 || usernameAvailable !== true) {
+      toast.error('Please choose a valid and unique username first');
+      setErrors(prev => ({ ...prev, username: 'Unique username is required before verification' }));
+      return;
+    }
+
     const identifier = type === 'mobile' ? formData.mobile : formData.email;
     
     if (type === 'mobile' && !/^[0-9]{10}$/.test(formData.mobile)) {
@@ -421,9 +420,8 @@ body: JSON.stringify({ [type]: identifier, otp }),
   };
 
   const handleInputChange = (field: string, value: string) => {
-    // For username, prevent spaces and handle lock
+    // For username, prevent spaces
     if (field === 'username') {
-      if (isUsernameLocked) return; // Prevent change if locked
       const sanitizedValue = value.replace(/\s/g, ''); // Remove spaces
       setFormData(prev => ({ ...prev, [field]: sanitizedValue }));
       return;
@@ -519,56 +517,43 @@ body: JSON.stringify({ [type]: identifier, otp }),
             </CardHeader>
             <CardContent className="relative">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-purple-700">Username</Label>
-                  <div className="relative">
-                    <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isUsernameLocked ? 'text-green-500' : 'text-purple-500'}`} />
-                    <Input
-                      id="username"
-                      type="text"
-                      value={formData.username}
-                      disabled={isUsernameLocked}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value.length <= 20) {
-                          handleInputChange('username', value);
-                        }
-                      }}
-                      placeholder="Choose a username"
-                      className={`pl-10 pr-10 bg-white/50 border-2 text-purple-900 placeholder-purple-400 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl ${
-                        isUsernameLocked 
-                          ? 'border-green-400 bg-green-50/30' 
-                          : 'border-purple-400 focus:border-purple-600'
-                      }`}
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                      {isCheckingUsername && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
-                      {!isCheckingUsername && usernameAvailable === true && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        </motion.div>
-                      )}
-                      {!isCheckingUsername && usernameAvailable === false && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <AlertCircle className="w-5 h-5 text-red-500" />
-                        </motion.div>
-                      )}
-                      {isUsernameLocked && (
-                        <motion.div 
-                          initial={{ scale: 0 }} 
-                          animate={{ scale: 1 }}
-                          whileHover={{ scale: 1.1 }}
-                          className="cursor-pointer"
-                          onClick={() => setIsUsernameLocked(false)}
-                          title="Click to unlock and change"
-                        >
-                          <Lock className="w-4 h-4 text-green-600" />
-                        </motion.div>
-                      )}
+                  <div className="space-y-2">
+                    <Label htmlFor="username" className="text-purple-700">Username</Label>
+                    <div className="relative">
+                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${usernameAvailable === true ? 'text-green-500' : 'text-purple-500'}`} />
+                      <Input
+                        id="username"
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length <= 20) {
+                            handleInputChange('username', value);
+                          }
+                        }}
+                        placeholder="Choose a username"
+                        className={`pl-10 pr-10 bg-white/50 border-2 text-purple-900 placeholder-purple-400 focus:ring-2 focus:ring-purple-400/100 focus:outline-none transition-all duration-200 rounded-xl ${
+                          usernameAvailable === true 
+                            ? 'border-green-400 bg-green-50/30' 
+                            : 'border-purple-400 focus:border-purple-600'
+                        }`}
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                        {isCheckingUsername && <RefreshCw className="w-4 h-4 text-purple-400 animate-spin" />}
+                        {!isCheckingUsername && usernameAvailable === true && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          </motion.div>
+                        )}
+                        {!isCheckingUsername && usernameAvailable === false && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                            <AlertCircle className="w-5 h-5 text-red-500" />
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
+                    {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
                   </div>
-                  {errors.username && <p className="text-red-500 text-sm">{errors.username}</p>}
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="mobile" className="text-purple-700">Mobile Number</Label>
