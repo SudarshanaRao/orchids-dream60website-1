@@ -30,39 +30,35 @@ interface BidModalProps {
 
 export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, userHasBidInRound, isUserQualified, userEntryFee }: BidModalProps) {
   const isEntryBox = box.type === 'entry';
-    const entryFeeAmount = box.entryFee || 0;
-    
-    // Min bid calculation:
-    // - Entry box: use entry fee
-    // - Round 1: use user's entry fee as minimum
-    // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
-    const effectiveEntryFee = (userEntryFee && userEntryFee > 0) ? userEntryFee : (entryFeeAmount > 0 ? entryFeeAmount : 0);
-    
-    const baseminBidAmount = isEntryBox 
-      ? entryFeeAmount 
-      : effectiveEntryFee;
-    
-    // ✅ NEW: Logic for minimum bid validation
-    // 1. Minimum bid amount should be the entry fee paid for that auction for Round 1
-    // 2. Safe bid should be entry fee
-    // 3. For Round 2+, use previous bid + entry fee
-    const minBidAmount = userPreviousBid 
-      ? userPreviousBid + effectiveEntryFee
-      : (box.roundNumber === 1 ? effectiveEntryFee : baseminBidAmount);
-    
-    // Max bid calculation: prizeValue - 10% discount = 90% of prize value
-    // If prizeValue is 10000, max bid is 9000 (90%)
-    const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
-    
-    // Initialize bidAmount with minBidAmount
-    const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount || effectiveEntryFee);
+  const entryFeeAmount = box.entryFee || 0;
+  
+  // Min bid calculation:
+  // - Entry box: use entry fee
+  // - Round 1: use user's entry fee as minimum
+  // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
+  const baseminBidAmount = isEntryBox 
+    ? entryFeeAmount 
+    : (box.roundNumber === 1 ? (userEntryFee || entryFeeAmount) : (box.minBid || 10));
+  
+  // ✅ CRITICAL: Ensure minimum bid is ALWAYS higher than user's previous round bid
+  // If user bid ₹1000 in Round 1, they MUST bid ₹1000 + entry fee (₹34) = ₹1034 in Round 2
+  const minBidAmount = userPreviousBid 
+    ? Math.max(baseminBidAmount, userPreviousBid + (userEntryFee || 1))
+    : baseminBidAmount;
+  
+  // Max bid calculation: prizeValue - 10% discount = 90% of prize value
+  // If prizeValue is 10000, max bid is 9000 (90%)
+  const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
+  
+  const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
   // Check if user is not qualified for this round (rounds 2, 3, 4)
   const isNotQualified = !isEntryBox && box.roundNumber && box.roundNumber > 1 && isUserQualified === false;
   
-  const isValidBid = bidAmount !== '' && bidAmount >= minBidAmount && bidAmount <= maxBidAmount;
+  const isValidBid = bidAmount !== '' && bidAmount >= minBidAmount && bidAmount <= maxBidAmount && 
+    (!userPreviousBid || bidAmount > userPreviousBid);
 
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -103,8 +99,8 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     }
     
     // ✅ CRITICAL: Validate bid must be higher than previous round bid + entry fee
-    if (userPreviousBid && bidAmount < userPreviousBid + (userEntryFee || entryFeeAmount)) {
-      setError(`Your bid must be at least ₹${(userPreviousBid + (userEntryFee || entryFeeAmount)).toLocaleString()} (Round ${box.roundNumber! - 1} bid + entry fee)`);
+    if (userPreviousBid && bidAmount < userPreviousBid + (userEntryFee || 1)) {
+      setError(`Your bid must be at least ₹${(userPreviousBid + (userEntryFee || 1)).toLocaleString()} (Round ${box.roundNumber! - 1} bid + entry fee)`);
       return;
     }
     
@@ -157,7 +153,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     return `Round ${box.id - 2}`;
   };
 
-  const effectiveMin = minBidAmount;
+  const effectiveMin = Math.max(minBidAmount, (userPreviousBid || 0) + 1);
 
   // Calculate bid strength
   const getBidStrength = (amount: number | '') => {
@@ -165,7 +161,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     
     const range = maxBidAmount - effectiveMin;
     const position = amount - effectiveMin;
-    const percentage = range > 0 ? (position / range) * 100 : 100;
+    const percentage = (position / range) * 100;
     
     if (percentage >= 80) return { label: 'Maximum', color: 'red', percentage };
     if (percentage >= 60) return { label: 'Strong', color: 'orange', percentage };
@@ -183,14 +179,11 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     return Math.min(effectiveMin + buffer, maxBidAmount);
   };
 
-    const recommendedBid = getRecommendedBid();
-  
-    // ✅ MODIFIED: Safe amount should be the entry fee as requested by user
-    const safeAmount = (userEntryFee || entryFeeAmount);
-  
-    // Quick bid options with smart labels
-    const quickBidOptions = [
-      { label: 'Safe', amount: Math.max(effectiveMin, safeAmount), icon: Target },
+  const recommendedBid = getRecommendedBid();
+
+  // Quick bid options with smart labels
+  const quickBidOptions = [
+    { label: 'Safe', amount: effectiveMin, icon: Target },
     { label: 'Smart', amount: Math.min(recommendedBid, maxBidAmount), icon: Sparkles },
     { label: 'Bold', amount: Math.min(Math.floor(maxBidAmount * 0.7), maxBidAmount), icon: TrendingUp },
     { label: 'Max', amount: maxBidAmount, icon: Award }

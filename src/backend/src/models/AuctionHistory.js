@@ -450,18 +450,17 @@ auctionHistorySchema.statics.markWinners = async function(hourlyAuctionId, winne
           if (user && user.email) {
             const auctionName = update.auctionName || 'Auction';
 
-              if (winner.rank === 1) {
-                // Send prize claim winner email to rank 1
-                console.log(`📧 [EMAIL] Sending prize claim email to ${user.email} (Rank 1)`);
-                await sendPrizeClaimWinnerEmail(user.email, {
-                  username: winner.playerUsername,
-                  auctionName: auctionName,
-                  prizeAmount: winner.prizeAmount || 0,
-                  claimDeadline: claimDeadline,
-                  paymentAmount: winner.finalAuctionAmount || 0,
-                  upiId: null // Not claimed yet
-                });
-              } else {
+            if (winner.rank === 1) {
+              // Send prize claim winner email to rank 1
+              console.log(`📧 [EMAIL] Sending prize claim email to ${user.email} (Rank 1)`);
+              await sendPrizeClaimWinnerEmail(user.email, {
+                username: winner.playerUsername,
+                auctionName: auctionName,
+                prizeAmount: winner.prizeAmount || 0,
+                claimDeadline: claimDeadline,
+                upiId: null // Not claimed yet
+              });
+            } else {
               // Send waiting queue email to rank 2 and 3
               console.log(`📧 [EMAIL] Sending waiting queue email to ${user.email} (Rank ${winner.rank})`);
               await sendWaitingQueueEmail(user.email, {
@@ -567,10 +566,28 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
       { new: true }
     );
 
-      console.log(`🎁 [AUCTION_HISTORY] Prize claimed by ${entry.username} (Rank ${entry.finalRank}) for auction ${hourlyAuctionId}`);
-      
-      return updated;
-    } catch (error) {
+    console.log(`🎁 [AUCTION_HISTORY] Prize claimed by ${entry.username} (Rank ${entry.finalRank}) for auction ${hourlyAuctionId}`);
+
+    // ✅ Send confirmation email
+    try {
+      const user = await User.findOne({ user_id: userId });
+      if (user && user.email) {
+        console.log(`📧 [EMAIL] Sending prize claimed confirmation to ${user.email}`);
+        await sendPrizeClaimWinnerEmail(user.email, {
+          username: entry.username,
+          auctionName: entry.auctionName || 'Auction',
+          prizeAmount: entry.prizeAmountWon || 0,
+          claimDeadline: entry.claimDeadline,
+          upiId: upiId // Now claimed
+        });
+      }
+    } catch (emailError) {
+      console.error(`❌ [EMAIL] Error sending confirmation email:`, emailError.message);
+      // Don't fail the operation if email fails
+    }
+
+    return updated;
+  } catch (error) {
     console.error(`❌ [AUCTION_HISTORY] Error submitting prize claim:`, error);
     throw error;
   }

@@ -52,9 +52,8 @@ export interface Auction {
   endTime: Date;
   currentRound: number;
   totalParticipants: number;
-    userHasPaidEntry: boolean;
-    userEntryFee?: number; // User's entry fee amount
-    auctionHour: number;
+  userHasPaidEntry: boolean;
+  auctionHour: number;
   userBidsPerRound: Record<number, number>;
   userQualificationPerRound: Record<number, boolean>; // Track qualification status per round
   winnersAnnounced?: boolean; // NEW: Early completion flag - winners announced before auction ends

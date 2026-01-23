@@ -13,7 +13,7 @@ interface ForgotPasswordProps {
 }
 
 // Reusable Aesthetic OTP Input
-function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value: string; onChange: (v: string) => void; onComplete?: (v: string) => void; disabled?: boolean; length?: number }) {
+function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; onChange: (v: string) => void; disabled?: boolean; length?: number }) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const lastCompletedOtp = useRef<string>('');
 
@@ -46,18 +46,8 @@ function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: { value
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, length).replace(/\D/g, '');
-    if (pastedData) {
-      onChange(pastedData);
-      const nextIndex = Math.min(pastedData.length, length - 1);
-      inputsRef.current[nextIndex]?.focus();
-    }
-  };
-
   return (
-    <div className="flex justify-center gap-1.5 sm:gap-3 py-6 max-w-full overflow-hidden" onPaste={handlePaste}>
+    <div className="flex justify-between gap-2 py-4">
       {Array.from({ length }).map((_, i) => (
         <div
           key={i}
@@ -98,6 +88,7 @@ export function ForgotPasswordPage({
         "enter"
     );
     const [isLoading, setIsLoading] = useState(false);
+    const [hintOtp, setHintOtp] = useState<string | null>(null);
     const [errors, setErrors] = useState<{
         mobile?: string;
         otp?: string;
@@ -150,6 +141,7 @@ export function ForgotPasswordPage({
     const requestOtp = async () => {
         if (!validateMobile()) return;
         setIsLoading(true);
+        setHintOtp(null); // clear previous hint
         try {
             const res = await fetch(
                 API_ENDPOINTS.auth.sendOtp,
@@ -172,6 +164,11 @@ export function ForgotPasswordPage({
             if (res.ok) {
                 setStep("verify");
                 setResendTimer(RESEND_DELAY);
+
+                // show backend-provided otp as hint (for dev/testing)
+                if (data && data.otp) {
+                    setHintOtp(String(data.otp));
+                }
             } else {
                 alert(data.message || "Failed to send OTP");
             }
@@ -241,6 +238,7 @@ export function ForgotPasswordPage({
     const resendOtp = async () => {
         if (resendTimer > 0) return;
         setIsLoading(true);
+        setHintOtp(null);
         try {
             const res = await fetch(API_ENDPOINTS.auth.resendOtp, {
                 method: "POST",
@@ -258,6 +256,9 @@ export function ForgotPasswordPage({
 
             if (res.ok) {
                 setResendTimer(RESEND_DELAY);
+                if (data && data.otp) {
+                    setHintOtp(String(data.otp));
+                }
             } else {
                 alert(data.message || "Failed to resend OTP");
             }
@@ -348,37 +349,42 @@ export function ForgotPasswordPage({
 
                         {step === "verify" && (
                             <div className="space-y-4">
-                                    <div className="space-y-2 text-center">
-                                        <Label className="text-purple-700 font-semibold">
-                                            Verify Mobile Number
-                                        </Label>
-                                        <p className="text-xs text-purple-500 mb-2">
-                                            We've sent a 6-digit code to {mobile}
+                                <div className="space-y-2 text-center">
+                                    <Label className="text-purple-700 font-semibold">
+                                        Verify Mobile Number
+                                    </Label>
+                                    <p className="text-xs text-purple-500 mb-2">
+                                        We've sent a 6-digit code to {mobile}
+                                    </p>
+                                    <OTPInput 
+                                        value={otp} 
+                                        onChange={setOtp} 
+                                        disabled={isLoading}
+                                    />
+                                    {hintOtp && (
+                                        <p className="text-xs text-purple-600 mt-1">
+                                            Hint otp:{" "}
+                                            <span className="font-mono text-sm text-purple-800 bg-purple-50 px-1 rounded">
+                        {hintOtp}
+                      </span>
                                         </p>
-                                        <OTPInput 
-                                            value={otp} 
-                                            onChange={setOtp} 
-                                            onComplete={verifyOtp}
-                                            disabled={isLoading}
-                                        />
-                                        {isLoading && (
-                                            <motion.div 
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                className="flex items-center justify-center gap-2 text-purple-600 text-xs font-medium mt-2"
-                                            >
-                                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                                Verifying...
-                                            </motion.div>
-                                        )}
-                                        {errors.otp && (
-                                            <p className="text-red-500 text-sm">{errors.otp}</p>
-                                        )}
-                                    </div>
+                                    )}
+                                    {errors.otp && (
+                                        <p className="text-red-500 text-sm">{errors.otp}</p>
+                                    )}
+                                </div>
 
-                                    <div className="space-y-3 pt-2">
-                                        <div className="text-center">
+                                <div className="space-y-3">
+                                    <Button
+                                        onClick={verifyOtp}
+                                        className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:from-purple-500 hover:to-purple-600 h-11 rounded-xl shadow-lg shadow-purple-200"
+                                        disabled={isLoading || otp.length !== 6}
+                                    >
+                                        {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                        {isLoading ? "Verifying..." : "Verify OTP"}
+                                    </Button>
 
+                                    <div className="text-center">
                                         <p className="text-xs text-purple-600">
                                             Didn't receive?{" "}
                                             <Button

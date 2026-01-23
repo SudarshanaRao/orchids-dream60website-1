@@ -134,7 +134,7 @@ const fetchServerTime = async () => {
 // Fetch Razorpay payment details for method & metadata
 const fetchRazorpayPaymentDetails = async (paymentId) => {
   try {
-    const payment = await getRazorpayInstance().payments.fetch(paymentId);
+    const payment = await razorpay.payments.fetch(paymentId);
     if (!payment) return null;
 
   const paidAt = payment.captured_at
@@ -367,7 +367,7 @@ exports.createHourlyAuctionOrder = async (req, res) => {
       }
     };
 
-    const order = await getRazorpayInstance().orders.create(options);
+    const order = await razorpay.orders.create(options);
 
     const paymentDoc = await RazorpayPayment.create({
       userId, // UUID string
@@ -842,7 +842,7 @@ exports.createPrizeClaimOrder = async (req, res) => {
       }
     };
 
-    const order = await getRazorpayInstance().orders.create(options);
+    const order = await razorpay.orders.create(options);
 
     const paymentDoc = await RazorpayPayment.create({
       userId,
@@ -1087,21 +1087,20 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
       // ✅ SYNC: Ensure HourlyAuction data is updated with actual claimer info
         await AuctionHistory.syncClaimStatus(payment.auctionId);
 
-        // ✅ Send Prize Claimed confirmation email
-        try {
-          const user = await User.findOne({ user_id: payment.userId });
-          if (user && user.email) {
-            await sendPrizeClaimedEmail(user.email, {
-              username: updatedEntry.username || user.username,
-              auctionName: updatedEntry.auctionName || payment.auctionName,
-              prizeAmount: updatedEntry.prizeAmountWon || 0,
-              claimDate: updatedEntry.claimedAt || new Date(),
-              transactionId: razorpay_payment_id,
-              rewardType: 'Cash Prize',
-              paymentAmount: payment.amount || 0,
-            });
-          }
-        } catch (emailError) {
+      // ✅ Send Prize Claimed confirmation email
+      try {
+        const user = await User.findOne({ user_id: payment.userId });
+        if (user && user.email) {
+          await sendPrizeClaimedEmail(user.email, {
+            username: updatedEntry.username || user.username,
+            auctionName: updatedEntry.auctionName || payment.auctionName,
+            prizeAmount: updatedEntry.prizeAmountWon || 0,
+            claimDate: updatedEntry.claimedAt || new Date(),
+            transactionId: razorpay_payment_id,
+            rewardType: 'Cash Prize',
+          });
+        }
+      } catch (emailError) {
         console.error('⚠️ [EMAIL] Failed to send prize claimed email:', emailError);
       }
 

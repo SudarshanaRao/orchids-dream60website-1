@@ -14,13 +14,6 @@ const emailTemplateSchema = new mongoose.Schema(
       required: [true, 'Template name is required'],
       trim: true,
     },
-    slug: {
-      type: String,
-      unique: true,
-      sparse: true, // Allow nulls while ensuring uniqueness for non-nulls
-      trim: true,
-      lowercase: true
-    },
     subject: {
       type: String,
       required: [true, 'Subject is required'],

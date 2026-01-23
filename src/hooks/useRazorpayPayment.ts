@@ -92,41 +92,16 @@ export const useRazorpayPayment = () => {
           source: orderData.data.userInfo ? 'backend' : 'frontend'
         });
 
-          // 2. Razorpay checkout options
-          const options: RazorpayOrderOptions = {
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-            amount: orderData.data.amount,
-            currency: orderData.data.currency,
-            name: 'DREAM60',
-            description: 'Hourly Auction Entry Fee',
-            order_id: orderData.data.orderId,
-            
-            config: {
-              display: {
-                blocks: {
-                  upi: {
-                    name: 'Pay using UPI',
-                    instruments: [
-                      { method: 'upi', flows: ['qrcode', 'collect', 'intent'] }
-                    ]
-                  },
-                  other: {
-                    name: 'Other Payment Methods',
-                    instruments: [
-                      { method: 'card' },
-                      { method: 'netbanking' },
-                      { method: 'wallet' }
-                    ]
-                  }
-                },
-                sequence: ['block.upi', 'block.other'],
-                preferences: {
-                  show_default_blocks: true
-                }
-              }
-            },
-            
-            handler: async (response: PaymentResponse) => {
+        // 2. Razorpay checkout options
+        const options: RazorpayOrderOptions = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: orderData.data.amount,
+          currency: orderData.data.currency,
+          name: 'DREAM60',
+          description: 'Hourly Auction Entry Fee',
+          order_id: orderData.data.orderId,
+          
+          handler: async (response: PaymentResponse) => {
             try {
               // 3. Verify payment on backend
               const verifyResponse = await fetch(

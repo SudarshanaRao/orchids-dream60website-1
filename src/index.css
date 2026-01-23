@@ -283,12 +283,3 @@ html {
   max-width: 420px !important;
   animation: .3s ease-out toast-slide-in !important;
 }
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
