@@ -21,11 +21,12 @@ interface SignupFormProps {
 interface OTPInputProps {
   value: string;
   onChange: (value: string) => void;
+  onComplete?: (value: string) => void;
   disabled?: boolean;
   length?: number;
 }
 
-function OTPInput({ value, onChange, disabled, length = 6 }: OTPInputProps) {
+function OTPInput({ value, onChange, onComplete, disabled, length = 6 }: OTPInputProps) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const lastCompletedOtp = useRef<string>('');
 
@@ -71,14 +72,15 @@ function OTPInput({ value, onChange, disabled, length = 6 }: OTPInputProps) {
 
   return (
     <div className="flex justify-between gap-2 sm:gap-3 py-4" onPaste={handlePaste}>
-      {Array.from({ length }).map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 20 }}
-          className="relative flex-1"
-        >
+      {Array.from({ length }).map((_, i) => {
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 20 }}
+            className="relative flex-1"
+          >
             <input
               ref={(el) => (inputsRef.current[i] = el)}
               type="text"
@@ -95,8 +97,9 @@ function OTPInput({ value, onChange, disabled, length = 6 }: OTPInputProps) {
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed select-none`}
             />
-        </div>
-      ))}
+          </motion.div>
+        );
+      })}
     </div>
   );
 }
