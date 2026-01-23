@@ -162,24 +162,29 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
           </motion.h1>
 
           <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full mb-4">
-            <Gift className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-semibold text-purple-700">Upcoming Prize</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full mb-4">
+              <Gift className="w-5 h-5 text-purple-600" />
+              <span className="text-sm font-semibold text-purple-700">Upcoming Prize</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600 bg-clip-text text-transparent mb-2">
+              {product.auctionName}
+            </h1>
+            <p className="text-purple-600 flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Click on the card to view details
+            </p>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600 bg-clip-text text-transparent mb-2">
-            {product.auctionName}
-          </h1>
-          <p className="text-purple-600">Tap on the card to see product details</p>
-        </div>
 
-        <div className="mb-8">
-          <ProductFlipCard
-            productImages={productImagesToShow}
-            productName={product.auctionName}
-            prizeValue={product.prizeValue}
-            description={product.description}
-          />
-        </div>
+          <div className="mb-8 h-[320px] sm:h-[400px] flex items-center justify-center">
+            <div className="w-full h-full max-w-md">
+              <ProductFlipCard
+                productImages={productImagesToShow}
+                productName={product.auctionName}
+                prizeValue={product.prizeValue}
+                description={product.description}
+              />
+            </div>
+          </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-purple-100 shadow-sm">
