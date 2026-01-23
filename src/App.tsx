@@ -580,13 +580,10 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       currentPathForTracking
     );
 
-    // Generate random entry fees between ₹1000-₹3500
-  const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
-
   // ✅ Only initialize currentAuction after server time is loaded
   const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
-    const entryFee1 = generateRandomEntryFee();
-    const entryFee2 = generateRandomEntryFee();
+    const entryFee1 = 60;
+    const entryFee2 = 60;
     const auctionHour = serverTime?.hour || 9; // Default to 9 UTC (14:30 IST)
     const today = serverTime ? new Date(serverTime.timestamp) : new Date();
 
@@ -645,8 +642,8 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     
     // Only update if the auction hour is different from current
     if (currentAuction.auctionHour !== currentHour) {
-      const entryFee1 = generateRandomEntryFee();
-      const entryFee2 = generateRandomEntryFee();
+      const entryFee1 = 60;
+      const entryFee2 = 60;
       const today = new Date(serverTime.timestamp);
       
       const startTime = new Date(
@@ -1160,8 +1157,8 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       setCurrentAuction((prev) => {
         // Switch to new auction hour
         if (currentHour && currentHour !== prev.auctionHour) {
-          const entryFee1 = generateRandomEntryFee();
-          const entryFee2 = generateRandomEntryFee();
+          const entryFee1 = 60;
+          const entryFee2 = 60;
           const today = new Date(serverTime.timestamp);
           
           const startTime = new Date(Date.UTC(
@@ -2405,17 +2402,17 @@ if (currentPage === 'prizeshowcase') {
           );
         }
 
-      if (currentPage === 'contact') {
-
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Contact onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-      );
-    }
+        if (currentPage === 'contact') {
+  
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Contact onBack={handleBackToGame} currentUser={currentUser} />
+          </TooltipProvider>
+        </QueryClientProvider>
+        );
+      }
 
     if (currentPage === 'success-preview') {
       return (

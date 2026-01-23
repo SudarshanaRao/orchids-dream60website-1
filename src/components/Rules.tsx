@@ -96,18 +96,18 @@ export function Rules({ onBack }: RulesProps) {
                     <div>• 2 entry boxes + 4 live bidding rounds</div>
                   </div>
                 </div>
-                <div className="bg-white/70 border border-purple-300 rounded-lg p-3">
-                  <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
-                    <IndianRupee className="w-4 h-4 mr-1" />
-                    Participation
+                  <div className="bg-white/70 border border-purple-300 rounded-lg p-3">
+                    <div className="text-purple-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
+                      <IndianRupee className="w-4 h-4 mr-1" />
+                      Participation
+                    </div>
+                    <div className="text-xs sm:text-sm text-purple-600 space-y-1">
+                      <div>• All transactions strictly in INR (₹)</div>
+                      <div>• Fixed entry fees per auction</div>
+                      <div>• Company decided for transparency</div>
+                      <div>• Fast and secure local payments</div>
+                    </div>
                   </div>
-                  <div className="text-xs sm:text-sm text-purple-600 space-y-1">
-                    <div>• All transactions strictly in INR (₹)</div>
-                    <div>• Entry fees based on product value</div>
-                    <div>• Randomly generated for fairness</div>
-                    <div>• Fast and secure local payments</div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -122,15 +122,15 @@ export function Rules({ onBack }: RulesProps) {
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
               <div className="grid sm:grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Badge className="bg-purple-600 text-white">1</Badge>
-                    <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Pay Entry Fee</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Badge className="bg-purple-600 text-white">1</Badge>
+                      <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Pay Entry Fee</h3>
+                    </div>
+                      <p className="text-purple-600 text-xs sm:text-sm">
+                        Entry fees are company decided and fixed for each auction. Pay to unlock all 4 rounds and compete for the prize.
+                      </p>
                   </div>
-                    <p className="text-purple-600 text-xs sm:text-sm">
-                      Entry fees are randomly generated based on the product worth. For a ₹10,000 product, entry might be ₹9-₹99. Pay to unlock all 4 rounds.
-                    </p>
-                </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
@@ -166,16 +166,16 @@ export function Rules({ onBack }: RulesProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
-              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
-                  <h4 className="text-green-800 font-semibold text-sm mb-2">Entry Phase</h4>
-                  <div className="text-green-700 text-xs sm:text-sm space-y-1">
-                    <div>• Random fee (varies by product)</div>
-                    <div>• Mandatory to join rounds</div>
-                    <div>• Unlocks all 4 bidding rounds</div>
-                    <div>• Single payment per box</div>
+                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
+                    <h4 className="text-green-800 font-semibold text-sm mb-2">Entry Phase</h4>
+                    <div className="text-green-700 text-xs sm:text-sm space-y-1">
+                      <div>• Fixed fee per auction</div>
+                      <div>• Mandatory to join rounds</div>
+                      <div>• Unlocks all 4 bidding rounds</div>
+                      <div>• Single payment per box</div>
+                    </div>
                   </div>
-                </div>
 
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
                   <h4 className="text-purple-800 font-semibold text-sm mb-2">Bidding Phase</h4>
@@ -202,18 +202,18 @@ export function Rules({ onBack }: RulesProps) {
                 </div>
               </div>
 
-              <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
-                <div className="text-red-800 font-semibold text-sm mb-2 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  Important Transparency Note
+                <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+                  <div className="text-red-800 font-semibold text-sm mb-2 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    Important Transparency Note
+                  </div>
+                  <div className="text-red-700 text-xs sm:text-sm space-y-1">
+                    <div>• Entry fees are fixed and clearly displayed on each auction box</div>
+                    <div>• Fees are calibrated against the product market value for transparency</div>
+                    <div>• All payments monitored for platform integrity</div>
+                    <div>• Indian residents 18+ only</div>
+                  </div>
                 </div>
-                <div className="text-red-700 text-xs sm:text-sm space-y-1">
-                  <div>• Entry fees cannot be disclosed upfront as they are randomly generated</div>
-                  <div>• Fees are calibrated against the product market value for fairness</div>
-                  <div>• All payments monitored for platform integrity</div>
-                  <div>• Indian residents 18+ only</div>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -229,17 +229,17 @@ export function Rules({ onBack }: RulesProps) {
               {/* Entry Phase */}
               <div>
                 <h3 className="text-purple-800 font-semibold mb-3 text-sm sm:text-base">Entry Phase (Boxes 1 & 2)</h3>
-                <div className="bg-purple-50 border-l-4 border-purple-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
-                  <p className="text-purple-700">
-                    <strong className="text-purple-800">Duration:</strong> Join window opens at the start of each hour.
-                  </p>
-                  <p className="text-purple-700">
-                    <strong className="text-purple-800">Payment:</strong> Fees are product-based and random. Example: A product worth ₹10k might have an entry fee between ₹9-₹99.
-                  </p>
-                  <p className="text-purple-700">
-                    <strong className="text-purple-800">Strategy:</strong> Paying the entry fee unlocks access to bid for higher value prizes in rounds 3-6.
-                  </p>
-                </div>
+                  <div className="bg-purple-50 border-l-4 border-purple-400 p-3 sm:p-4 space-y-2 text-xs sm:text-sm">
+                    <p className="text-purple-700">
+                      <strong className="text-purple-800">Duration:</strong> Join window opens at the start of each hour.
+                    </p>
+                    <p className="text-purple-700">
+                      <strong className="text-purple-800">Payment:</strong> Fees are fixed and company decided for each auction.
+                    </p>
+                    <p className="text-purple-700">
+                      <strong className="text-purple-800">Strategy:</strong> Paying the entry fee unlocks access to bid for higher value prizes in rounds 3-6.
+                    </p>
+                  </div>
               </div>
 
               {/* Bidding Phase */}

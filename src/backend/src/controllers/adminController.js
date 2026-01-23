@@ -16,17 +16,11 @@ const generateOtp = () => {
 };
 
 /**
- * Helper: Generate random BoxA and BoxB fees that add up to a total within min/max range
+ * Helper: Split a manual entry fee into BoxA and BoxB (50/50 split)
  */
-function generateRandomFeeSplits(minEntryFee, maxEntryFee) {
-  // Generate random total fee within range
-  const totalFee = Math.floor(Math.random() * (maxEntryFee - minEntryFee + 1)) + minEntryFee;
-  
-  // Split randomly - BoxA gets 30-70% of total
-  const splitPercentage = Math.random() * 0.4 + 0.3; // 0.3 to 0.7
-  const BoxA = Math.floor(totalFee * splitPercentage);
+function splitManualFee(totalFee) {
+  const BoxA = Math.floor(totalFee / 2);
   const BoxB = totalFee - BoxA;
-  
   return { BoxA, BoxB };
 }
 
@@ -374,9 +368,9 @@ const createMasterAuctionAdmin = async (req, res) => {
     // Process dailyAuctionConfig for entry fees
     if (Array.isArray(payload.dailyAuctionConfig)) {
       payload.dailyAuctionConfig = payload.dailyAuctionConfig.map((auction) => {
-        if (auction.EntryFee === 'RANDOM' && auction.minEntryFee != null && auction.maxEntryFee != null) {
-          // Generate random BoxA and BoxB fees
-          const feeSplits = generateRandomFeeSplits(auction.minEntryFee, auction.maxEntryFee);
+        if (auction.EntryFee === 'FIXED' && auction.fixedEntryFee != null) {
+          // Split fixed fee 50/50
+          const feeSplits = splitManualFee(auction.fixedEntryFee);
           return {
             ...auction,
             FeeSplits: feeSplits,
@@ -523,9 +517,9 @@ const updateMasterAuctionAdmin = async (req, res) => {
     // Process dailyAuctionConfig for entry fees
     if (Array.isArray(updates.dailyAuctionConfig)) {
       updates.dailyAuctionConfig = updates.dailyAuctionConfig.map((auction) => {
-        if (auction.EntryFee === 'RANDOM' && auction.minEntryFee != null && auction.maxEntryFee != null) {
-          // Generate random BoxA and BoxB fees
-          const feeSplits = generateRandomFeeSplits(auction.minEntryFee, auction.maxEntryFee);
+        if (auction.EntryFee === 'FIXED' && auction.fixedEntryFee != null) {
+          // Split fixed fee 50/50
+          const feeSplits = splitManualFee(auction.fixedEntryFee);
           return {
             ...auction,
             FeeSplits: feeSplits,

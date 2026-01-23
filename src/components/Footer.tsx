@@ -8,12 +8,10 @@ interface FooterProps {
 export function Footer({ onNavigate }: FooterProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-  const linkGroups = [
+    const linkGroups = [
     {
       title: 'Platform',
       links: [
-        { label: 'Live Auctions', action: 'game' },
-        { label: 'Winners List', action: 'winners' },
           { label: 'Auction Rules', action: 'rules' },
           { label: 'Play Guide', action: 'participation' }
         ]
