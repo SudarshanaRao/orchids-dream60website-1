@@ -209,9 +209,9 @@ const SMS_TEMPLATES = {
     OTP_VERIFICATION: {
       id: 'otp_verification',
       name: 'OTP Verification',
-      template: 'Dear {username}, use this OTP {otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech',
-      variables: ['username', 'otp'],
-      templateId: '1207176898558880888'
+      template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
+      variables: ['name', 'otp'],
+      templateId: '1207172612396743269'
     },
   };
 

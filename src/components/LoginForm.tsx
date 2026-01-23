@@ -267,16 +267,17 @@ export function LoginForm({
                                     )}
                                 </div>
 
-                                  {/* Forgot Password */}
-                                  <div className="flex justify-end pt-1">
-                                      <button
-                                          type="button"
-                                          onClick={onForgotPassword}
-                                          className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors underline-offset-4 hover:underline"
-                                      >
-                                          Forgot password?
-                                      </button>
-                                  </div>
+                                {/* Forgot Password */}
+                                <div className="text-right">
+                                    <Button
+                                        type="button"
+                                        variant="link"
+                                        onClick={onForgotPassword}
+                                        className="text-sm text-purple-600 hover:text-purple-800 p-0 h-auto"
+                                    >
+                                        Forgot password?
+                                    </Button>
+                                </div>
 
                                 {/* Submit */}
                                 <Button

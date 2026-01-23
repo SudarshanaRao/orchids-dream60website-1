@@ -48,16 +48,16 @@ export function Footer({ onNavigate }: FooterProps) {
               <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl flex items-center justify-center shadow-xl shadow-purple-500/20 group-hover:scale-105 transition-transform">
                 <Clock className="w-7 h-7 text-white" />
               </div>
-                <div className="flex flex-col">
-                  <span className="text-2xl font-black text-purple-900 leading-none tracking-tight">Dream60</span>
-                  <span className="text-[10px] font-bold text-purple-500 tracking-[0.1em] uppercase mt-1">Live Auction Platform</span>
-                </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black text-purple-900 leading-none tracking-tight">Dream60</span>
+                <span className="text-[10px] font-bold text-purple-500 tracking-[0.3em] uppercase mt-1">India Official</span>
               </div>
-              
-              <p className="text-purple-600/70 text-sm leading-relaxed">
-                Experience the adrenaline of Dream60 Live Auction Platform. 
-                Transparent, secure, and rewarding with new winners every 60 minutes.
-              </p>
+            </div>
+            
+            <p className="text-purple-600/70 text-sm leading-relaxed">
+              Experience the adrenaline of India's fastest live auction platform. 
+              Transparent, secure, and rewarding with new winners every 60 minutes.
+            </p>
           </div>
 
           {/* Links Sections */}

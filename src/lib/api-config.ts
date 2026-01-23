@@ -45,7 +45,6 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
     adminLogin: `${API_BASE_URL}/admin/login`,
     checkEmail: `${API_BASE_URL}/auth/check-email`,
     checkMobile: `${API_BASE_URL}/auth/check-mobile`,
-    checkUsername: `${API_BASE_URL}/auth/check-username`,
     me: {
       base: `${API_BASE_URL}/auth/me`,
       profile: `${API_BASE_URL}/auth/me`,

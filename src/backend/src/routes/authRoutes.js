@@ -10,10 +10,9 @@ const {
   resetPassword,
   updatePassword,
   sendVerificationOtp,
-    checkEmail,
-    checkMobile,
-    checkUsername,
-  } = require('../controllers/authController');
+  checkEmail,
+  checkMobile,
+} = require('../controllers/authController');
 
 /**
  * @swagger
@@ -82,27 +81,6 @@ router.post('/check-email', checkEmail);
  *         description: Mobile check result
  */
 router.post('/check-mobile', checkMobile);
-
-/**
- * @swagger
- * /auth/check-username:
- *   post:
- *     summary: Check if username is already taken
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *     responses:
- *       200:
- *         description: Username check result
- */
-router.post('/check-username', checkUsername);
 
 /**
  * @swagger

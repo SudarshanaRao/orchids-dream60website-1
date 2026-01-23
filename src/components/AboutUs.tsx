@@ -71,25 +71,25 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
         </div>
 
         <div className="container mx-auto max-w-6xl text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-purple-100 text-purple-600 text-xs font-bold uppercase tracking-wider mb-8">
-                <Sparkles className="w-4 h-4" />
-                Dream60 Live Auction Platform
-              </div>
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-[1.1]">
-                India's Favorite <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
-                  Live Auction Platform
-                </span>
-              </h1>
-              <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
-                Dream60 Live Auction Platform is India's leading live auction destination designed to make premium products accessible. Experience the thrill of real-time bidding with transparent, fair auctions every hour.
-              </p>
-            </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-purple-100 text-purple-600 text-xs font-bold uppercase tracking-wider mb-8">
+              <Sparkles className="w-4 h-4" />
+              Revolutionizing Indian E-Commerce
+            </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-[1.1]">
+              India's Favorite <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600">
+                Live Auction Hub
+              </span>
+            </h1>
+            <p className="text-slate-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
+              Dream60 is a cutting-edge entertainment and shopping platform designed to make luxury accessible. We blend the excitement of gaming with the rewards of e-commerce.
+            </p>
+          </motion.div>
         </div>
       </div>
 

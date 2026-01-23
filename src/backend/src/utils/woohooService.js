@@ -1,31 +1,7 @@
 // src/backend/src/utils/woohooService.js
 const axios = require('axios');
 const crypto = require('crypto');
-const path = require('path');
-const fs = require('fs');
-
-// Try to load .env from multiple locations
-const envPaths = [
-    path.resolve(process.cwd(), '.env'),
-    path.resolve(process.cwd(), '..', '.env'),
-    path.resolve(process.cwd(), '..', '..', '.env'),
-    path.resolve(__dirname, '../../../.env'),
-    path.resolve(__dirname, '../../../../.env')
-];
-
-let envLoaded = false;
-for (const envPath of envPaths) {
-    if (fs.existsSync(envPath)) {
-        require('dotenv').config({ path: envPath });
-        console.log(`✅ Loaded environment variables from: ${envPath}`);
-        envLoaded = true;
-        break;
-    }
-}
-
-if (!envLoaded) {
-    console.warn('⚠️ WARNING: .env file not found in common locations. Using existing process.env.');
-}
+require('dotenv').config();
 
 class WoohooService {
     constructor() {
@@ -52,90 +28,50 @@ class WoohooService {
         }
 
         try {
-            console.log('=== Woohoo OAuth2.0 Step 1: Get Authorization Code ===');
-            console.log('Verify URL:', this.verifyUrl);
+            console.log('Woohoo Auth Attempt:', {
+                verifyUrl: this.verifyUrl,
+                clientId: this.clientId,
+                username: this.username,
+                password: this.password,
+                passwordLength: this.password?.length
+            });
             
-            // Check if credentials are present
-            if (!this.clientId || !this.username || !this.password) {
-                console.error('❌ CRITICAL: Missing Woohoo credentials in process.env');
-                console.log('Available keys:', Object.keys(process.env).filter(k => k.startsWith('WOOHOO_')));
-                throw new Error('Missing WOOHOO_CLIENT_ID, WOOHOO_USERNAME, or WOOHOO_PASSWORD');
-            }
-
-            console.log('Client ID:', this.clientId.substring(0, 5) + '...');
-            console.log('Username:', this.username);
-            
-            let authResponse;
-            const requestData = {
+            const authPayload = {
                 clientId: this.clientId,
                 username: this.username,
                 password: this.password
             };
-
-            try {
-                authResponse = await axios.post(this.verifyUrl, requestData, {
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            } catch (err) {
-                console.error('Verify Step 1 failed:', err.response?.data || err.message);
-                
-                // If 8308 or 400 with "mandatory" fields error, try fallback variations
-                const errorData = err.response?.data;
-                const messages = errorData?.messages || [];
-                const isMandatoryError = messages.some(m => m.includes('mandatory'));
-
-                if (errorData?.code === 8308 || isMandatoryError) {
-                    console.log('Attempting fallback with different field names...');
-                    try {
-                        // Try snake_case and email field
-                        authResponse = await axios.post(this.verifyUrl, {
-                            client_id: this.clientId,
-                            email: this.username,
-                            password: this.password
-                        }, {
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                    } catch (err2) {
-                        console.error('Verify Step 2 fallback failed:', err2.response?.data || err2.message);
-                        
-                        // Try clientId and email field
-                        console.log('Attempting second fallback...');
-                        authResponse = await axios.post(this.verifyUrl, {
-                            clientId: this.clientId,
-                            email: this.username,
-                            password: this.password
-                        }, {
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                    }
-                } else {
-                    throw err;
+            
+            console.log('Woohoo Auth Payload:', JSON.stringify(authPayload));
+            
+            const authResponse = await axios.post(this.verifyUrl, authPayload, {
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
-            }
-
-            console.log('Auth Response Code:', authResponse.status);
+            });
 
             if (!authResponse.data || !authResponse.data.authorizationCode) {
                 throw new Error('Failed to get authorization code from Woohoo');
             }
 
             const authCode = authResponse.data.authorizationCode;
-            console.log('=== Woohoo OAuth2.0 Step 2: Get Bearer Token ===');
-            
+
+            // Step 2: Get Access Token
             const tokenResponse = await axios.post(this.tokenUrl, {
                 clientId: this.clientId,
                 clientSecret: this.clientSecret,
                 authorizationCode: authCode
             });
 
-            if (!tokenResponse.data || !tokenResponse.data.token) {
-                throw new Error('Failed to get bearer token from Woohoo: ' + JSON.stringify(tokenResponse.data));
+            if (!tokenResponse.data || !tokenResponse.data.accessToken) {
+                throw new Error('Failed to get access token from Woohoo');
             }
 
-            this.accessToken = tokenResponse.data.token;
-            this.tokenExpiry = Date.now() + (6 * 24 * 3600 * 1000);
+            this.accessToken = tokenResponse.data.accessToken;
+            // Token usually valid for 1 hour, setting safety margin
+            this.tokenExpiry = Date.now() + (3600 * 1000) - (5 * 60 * 1000); 
             
-            console.log('=== Woohoo OAuth2.0 Authentication Successful ===');
             return this.accessToken;
         } catch (error) {
             console.error('Woohoo Auth Error:', error.response?.data || error.message);
@@ -170,10 +106,7 @@ class WoohooService {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'dateAtClient': dateAtClient,
-                    'signature': signature
+                    'clientId': this.clientId?.trim() // Also adding to headers just in case
                 }
             });
 
@@ -195,10 +128,9 @@ class WoohooService {
         return this.request('GET', '/v3/categories');
     }
 
-    async getProductsList(params = {}) {
-        return this.request('GET', '/rest/v3/catalog/products', null, params);
-    }
-
+    /**
+     * Get Products by Category
+     */
     async getProducts(categoryId) {
         return this.request('GET', `/v3/categories/${categoryId}/products`);
     }
@@ -261,40 +193,10 @@ class WoohooService {
     }
 
     /**
-     * Get Transaction History for a card
-     * documentation: baseurl/rest/v3/transaction/history
-     * Method: POST
+     * Get Transaction History (Orders)
      */
-    async getTransactionHistory(options = {}) {
-        const {
-            startDate,
-            endDate,
-            limit = 10,
-            offset = 0,
-            cards = []
-        } = options;
-
-        const payload = {
-            limit: parseInt(limit),
-            offset: parseInt(offset),
-            cards: cards
-        };
-
-        if (startDate) payload.startDate = startDate;
-        if (endDate) payload.endDate = endDate;
-
-        // If no cards provided, default to SVC card if available
-        if (payload.cards.length === 0 && this.svc) {
-            payload.cards.push({
-                cardNumber: this.svc
-            });
-        }
-
-        if (payload.cards.length === 0) {
-            throw new Error('At least one card is required for transaction history');
-        }
-
-        return this.request('POST', '/rest/v3/transaction/history', payload);
+    async getTransactionHistory() {
+        return this.request('GET', '/v3/orders');
     }
 
     /**

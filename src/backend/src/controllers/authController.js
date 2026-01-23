@@ -233,7 +233,7 @@ const forgotPassword = async (req, res) => {
         // Continue anyway - OTP still generated
       }
       } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { username: user ? user.username : 'User', otp: otpCode });
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
         const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
@@ -316,7 +316,7 @@ const resendOtp = async (req, res) => {
         // Continue anyway - OTP still generated
       }
       } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { username: user ? user.username : 'User', otp: otpCode });
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: user ? user.username : 'User', otp: otpCode });
         const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
@@ -493,9 +493,9 @@ const checkMobile = async (req, res) => {
       if (!emailResult.success) {
         console.warn('Email send failed:', emailResult.message);
       }
-        } else if (type === 'mobile') {
-          const { message, template } = formatTemplate('OTP_VERIFICATION', { username: username || 'User', otp: otpCode });
-          const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+      } else if (type === 'mobile') {
+        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: username || 'User', otp: otpCode });
+        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
 
       if (!smsResult.success) {
@@ -516,30 +516,6 @@ const checkMobile = async (req, res) => {
   }
 };
 
-// POST /auth/check-username
-// Body: { username }
-const checkUsername = async (req, res) => {
-  try {
-    const { username } = req.body || {};
-    
-    if (!username) {
-      return res.status(400).json({ success: false, message: 'Username is required' });
-    }
-
-    const trimmedUsername = String(username).trim();
-    const existingUser = await User.findOne({ username: trimmedUsername });
-
-    return res.status(200).json({
-      success: true,
-      exists: !!existingUser,
-      message: existingUser ? 'Username is already taken' : 'Username is available'
-    });
-  } catch (err) {
-    console.error('Check Username Error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
-};
-
 module.exports = {
   signup,
   login,
@@ -551,5 +527,4 @@ module.exports = {
   sendVerificationOtp,
   checkEmail,
   checkMobile,
-  checkUsername,
 };

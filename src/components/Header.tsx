@@ -360,10 +360,10 @@ interface HeaderProps {
 
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 relative">
           <div className="flex items-center justify-between">
-              {/* Logo */}
-              <motion.div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => onNavigate?.('game')}
+            {/* Logo */}
+            <motion.div
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={() => onNavigate?.('home')}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.2 }}
@@ -403,7 +403,7 @@ interface HeaderProps {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
                 >
-                  Live Auction Platform
+                  Live Auction Play
                 </motion.p>
 
               </div>
@@ -758,18 +758,18 @@ interface HeaderProps {
                   }}
                 />
 
-                  {/* Header with Logo and Back Button */}
-                  <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 p-4 pb-6">
-                    {/* Back Button */}
-                    <motion.button
-                      onClick={() => { onNavigate?.('game'); setMobileMenuOpen(false); }}
-                      className="flex items-center gap-1.5 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2.5 py-1.5 rounded-xl transition-all mb-3 border border-white/20"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span className="text-sm">Back</span>
-                    </motion.button>
+                {/* Header with Logo and Back Button */}
+                <div className="relative bg-gradient-to-br from-purple-600 via-purple-700 to-purple-800 p-4 pb-6">
+                  {/* Back Button */}
+                  <motion.button
+                    onClick={() => { onNavigate?.('home'); setMobileMenuOpen(false); }}
+                    className="flex items-center gap-1.5 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2.5 py-1.5 rounded-xl transition-all mb-3 border border-white/20"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="text-sm">Back</span>
+                  </motion.button>
 
                   <motion.div
                     className="flex items-center justify-center space-x-3"
@@ -792,7 +792,7 @@ interface HeaderProps {
                     </motion.div>
                     <div>
                       <h2 className="text-2xl font-bold text-white">Dream60</h2>
-                      <p className="text-xs text-purple-200">Live Auction Platform</p>
+                      <p className="text-xs text-purple-200">Live Auction Play</p>
                     </div>
                   </motion.div>
 

@@ -21,8 +21,6 @@ const {
 } = require('../controllers/adminController');
 
 const {
-  refreshWoohooProducts,
-  getDbProducts,
   getEligibleWinners,
   sendVoucher,
   getIssuedVouchers,
@@ -727,8 +725,6 @@ router.post('/vouchers/send', sendVoucher);
 router.get('/vouchers/issued', getIssuedVouchers);
 router.get('/vouchers/woohoo-balance', getWoohooBalance);
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);
-router.get('/vouchers/refresh-products', refreshWoohooProducts);
-router.get('/vouchers/db-products', getDbProducts);
 
 /**
  * @swagger

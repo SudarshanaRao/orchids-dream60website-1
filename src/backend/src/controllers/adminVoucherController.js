@@ -2,135 +2,8 @@
 const AuctionHistory = require('../models/AuctionHistory');
 const User = require('../models/user');
 const Voucher = require('../models/Voucher');
-const WoohooProduct = require('../models/WoohooProduct');
 const woohooService = require('../utils/woohooService');
 const { sendEmail } = require('../utils/emailService');
-
-/**
- * Refresh Woohoo products in local database
- */
-const refreshWoohooProducts = async (req, res) => {
-    try {
-        console.log('Starting Woohoo product refresh...');
-        
-        // 1. Get all products (list of SKUs)
-        const productListResponse = await woohooService.getProductsList();
-        
-        // Product List API might return an array or an object with products array
-        const products = Array.isArray(productListResponse) ? productListResponse : (productListResponse.products || []);
-        
-        if (products.length === 0) {
-            return res.status(200).json({
-                success: true,
-                message: 'No products found in Woohoo catalog'
-            });
-        }
-
-        console.log(`Found ${products.length} products. Fetching details for each...`);
-        
-        const results = {
-            total: products.length,
-            updated: 0,
-            failed: 0,
-            errors: []
-        };
-
-        // 2. Fetch details for each product and upsert
-        // We do this sequentially or in small batches to avoid rate limits
-        for (const p of products) {
-            const sku = p.sku;
-            try {
-                const details = await woohooService.getProductDetails(sku);
-                
-                await WoohooProduct.findOneAndUpdate(
-                    { sku: sku },
-                    {
-                        id: details.id,
-                        name: details.name,
-                        description: details.description,
-                        offerShortDesc: details.offerShortDesc,
-                        purchaserLimit: details.purchaserLimit,
-                        purchaserDescription: details.purchaserDescription,
-                        price: {
-                            price: details.price?.price,
-                            type: details.price?.type,
-                            min: details.price?.min,
-                            max: details.price?.max,
-                            denominations: details.price?.denominations,
-                            currency: details.price?.currency
-                        },
-                        images: details.images,
-                        tnc: details.tnc,
-                        type: details.type,
-                        brandName: details.brandName,
-                        brandCode: details.brandCode,
-                        kycEnabled: details.kycEnabled,
-                        allowed_fulfillments: details.allowed_fulfillments,
-                        rewardsDescription: details.rewardsDescription,
-                        additionalForm: details.additionalForm,
-                        metaInformation: details.metaInformation,
-                        schedulingEnabled: details.schedulingEnabled,
-                        categories: details.categories,
-                        themes: details.themes,
-                        handlingCharges: details.handlingCharges,
-                        reloadCardNumber: details.reloadCardNumber,
-                        expiry: details.expiry,
-                        formatExpiry: details.formatExpiry,
-                        discounts: details.discounts,
-                        corporateDiscounts: details.corporateDiscounts,
-                        relatedProducts: details.relatedProducts,
-                        storeLocatorUrl: details.storeLocatorUrl,
-                        etaMessage: details.etaMessage,
-                        payout: details.payout,
-                        convenience_charges: details.convenience_charges,
-                        cpg: details.cpg,
-                        updatedAt: new Date(),
-                        rawData: details
-                    },
-                    { upsert: true, new: true }
-                );
-                results.updated++;
-            } catch (err) {
-                console.error(`Failed to refresh details for SKU: ${sku}`, err.message);
-                results.failed++;
-                results.errors.push({ sku, error: err.message });
-            }
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: `Product refresh completed. Updated: ${results.updated}, Failed: ${results.failed}`,
-            data: results
-        });
-    } catch (error) {
-        console.error('Error refreshing Woohoo products:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error refreshing products from Woohoo API',
-            error: error.message
-        });
-    }
-};
-
-/**
- * Get products from local database
- */
-const getDbProducts = async (req, res) => {
-    try {
-        const products = await WoohooProduct.find().sort({ name: 1 }).lean();
-        return res.status(200).json({
-            success: true,
-            count: products.length,
-            data: products
-        });
-    } catch (error) {
-        console.error('Error fetching products from DB:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Error fetching products from database'
-        });
-    }
-};
 
 /**
  * Get users eligible for voucher distribution
@@ -357,24 +230,7 @@ const getWoohooBalance = async (req, res) => {
  */
 const getWoohooTransactions = async (req, res) => {
     try {
-        // Support both query params and body for flexibility
-        const options = {
-            startDate: req.query.startDate || req.body.startDate,
-            endDate: req.query.endDate || req.body.endDate,
-            limit: req.query.limit || req.body.limit || 10,
-            offset: req.query.offset || req.body.offset || 0,
-            cards: req.body.cards || []
-        };
-
-        // If cards provided as string in query, try to parse or create single card object
-        if (req.query.cardNumber) {
-            options.cards = [{
-                cardNumber: req.query.cardNumber,
-                pin: req.query.pin
-            }];
-        }
-
-        const transactions = await woohooService.getTransactionHistory(options);
+        const transactions = await woohooService.getTransactionHistory();
         return res.status(200).json({
             success: true,
             data: transactions
@@ -390,8 +246,6 @@ const getWoohooTransactions = async (req, res) => {
 };
 
 module.exports = {
-    refreshWoohooProducts,
-    getDbProducts,
     getEligibleWinners,
     sendVoucher,
     getIssuedVouchers,

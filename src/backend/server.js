@@ -1,36 +1,5 @@
 // server.js 
-const path = require('path');
-const fs = require('fs');
-
-// Try to load .env from multiple locations to be robust across different start methods
-const envPaths = [
-  path.resolve(process.cwd(), '.env'),
-  path.resolve(process.cwd(), '..', '.env'),
-  path.resolve(__dirname, '../.env'),
-  path.resolve(__dirname, '../../.env')
-];
-
-let envLoaded = false;
-for (const envPath of envPaths) {
-  if (fs.existsSync(envPath)) {
-    require('dotenv').config({ path: envPath });
-    console.log(`✅ Loaded environment variables from: ${envPath}`);
-    envLoaded = true;
-    break;
-  }
-}
-
-if (!envLoaded) {
-  require('dotenv').config();
-  console.warn('⚠️ WARNING: .env file not found in common locations. Falling back to default dotenv behavior.');
-}
-
-// Check for required Razorpay environment variables on startup
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  console.warn('⚠️ WARNING: Razorpay credentials (RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET) are missing from environment variables.');
-  console.warn('   Ensure they are set in your .env file or environment.');
-}
-
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
