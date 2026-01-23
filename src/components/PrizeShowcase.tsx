@@ -901,6 +901,48 @@ interface PrizeShowcaseProps {
                   </div>
               </div>
             </div>
+
+            {/* Product Description Table */}
+            {!isLoading && displayDescription && displayDescription.length > 0 && (
+              <div className="mt-4 sm:mt-6 relative z-10">
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-white/40 shadow-xl overflow-hidden">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
+                      Product Specifications
+                    </h3>
+                  </div>
+                  <div className="overflow-hidden rounded-xl border border-purple-100/40">
+                    <table className="w-full text-left border-collapse">
+                      <tbody>
+                        {displayDescription.map((item: any, idx: number) => {
+                          const isString = typeof item === 'string';
+                          const key = isString ? `${idx + 1}` : item.key;
+                          const value = isString ? item : item.value;
+                          
+                          if (!value) return null;
+
+                          return (
+                            <tr key={idx} className="border-b border-purple-50/50 last:border-0 hover:bg-purple-50/30 transition-colors">
+                              <td className="py-3 px-4 w-[40%] bg-purple-50/20">
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-[#8456BC] block">
+                                  {key}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="text-sm text-[#3A2257] font-semibold">
+                                  {value}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
