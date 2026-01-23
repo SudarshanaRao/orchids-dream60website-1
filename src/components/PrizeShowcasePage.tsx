@@ -232,34 +232,38 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
         {/* Product Description Table */}
         {product.description && product.description.length > 0 && (
           <motion.div 
-            className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-purple-100 shadow-sm mb-8"
+            className="bg-white/70 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-purple-200/50 shadow-xl overflow-hidden mb-8 group/specs"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-bold text-purple-900">Product Specifications</h3>
+              <div className="bg-purple-100 p-1.5 rounded-lg">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
+                Product Specifications
+              </h3>
             </div>
-            <div className="overflow-hidden rounded-xl border border-purple-100">
+            <div className="overflow-hidden rounded-xl border border-purple-100/60 bg-white/40">
               <table className="w-full text-left border-collapse">
                 <tbody>
                   {product.description.map((item, idx) => {
                     const isString = typeof item === 'string';
-                    const key = isString ? `${idx + 1}` : item.key;
+                    const key = isString ? `Spec ${idx + 1}` : item.key;
                     const value = isString ? item : item.value;
                     
                     if (!value) return null;
 
                     return (
-                      <tr key={idx} className="border-b border-purple-50 last:border-0 hover:bg-purple-50/50 transition-colors">
-                        <td className="py-3 px-4 w-[40%] bg-purple-50/30">
-                          <span className="text-[10px] uppercase tracking-wider font-bold text-purple-600 block">
+                      <tr key={idx} className="border-b border-purple-100/30 last:border-0 hover:bg-purple-50/50 transition-colors">
+                        <td className="py-3 px-4 w-[40%] bg-purple-50/30 border-r border-purple-100/20">
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-[#8456BC] block leading-tight">
                             {key}
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="text-sm text-purple-900 font-semibold">
+                          <span className="text-sm text-[#3A2257] font-semibold leading-relaxed block">
                             {value}
                           </span>
                         </td>

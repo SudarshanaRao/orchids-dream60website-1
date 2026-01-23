@@ -516,16 +516,17 @@ const createDailyAuction = async () => {
     const dailyAuctionConfigForToday = activeMasterAuction.dailyAuctionConfig.map(config => {
       const configObj = config.toObject ? config.toObject() : { ...config };
       const newHourlyAuctionId = uuidv4(); // Generate hourlyAuctionId upfront
-      return {
-        ...configObj,
-        auctionId: uuidv4(), // Generate NEW UUID for each config entry
-        Status: 'UPCOMING', // Force all to UPCOMING
-        isAuctionCompleted: false,
-        completedAt: null,
-        topWinners: [],
-        hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
-        productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
-      };
+        return {
+          ...configObj,
+          auctionId: uuidv4(), // Generate NEW UUID for each config entry
+          Status: 'UPCOMING', // Force all to UPCOMING
+          isAuctionCompleted: false,
+          completedAt: null,
+          topWinners: [],
+          hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
+          description: config.description || [], // ✅ Explicitly copy description from master
+          productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
+        };
     });
     
     // Create daily auction as complete replica of master auction for TODAY
@@ -657,10 +658,11 @@ const createHourlyAuctions = async (dailyAuction) => {
           maxEntryFee: config.maxEntryFee,
           FeeSplits: config.FeeSplits,
           roundCount: config.roundCount || 4,
-          roundConfig: config.roundConfig || [],
-          imageUrl: config.imageUrl || null,
-          productImages: config.productImages || [],
-          rounds: roundTimes, // ✅ Use pre-calculated round times
+            roundConfig: config.roundConfig || [],
+            imageUrl: config.imageUrl || null,
+            description: config.description || [],
+            productImages: config.productImages || [],
+            rounds: roundTimes, // ✅ Use pre-calculated round times
           participants: [], // ✅ Start with empty participants
           winners: [], // ✅ Start with empty winners
           totalParticipants: 0,
