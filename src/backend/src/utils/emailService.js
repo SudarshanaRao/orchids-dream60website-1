@@ -542,7 +542,7 @@ const sendPrizeClaimedEmail = async (email, details) => {
  */
 const sendPrizeClaimedEmailWithTemplate = async (email, template, details) => {
   const transporter = createTransporter();
-  const { username, auctionName, prizeAmount, claimDate, transactionId, rewardType } = details;
+  const { username, auctionName, prizeAmount, claimDate, transactionId, rewardType, paymentAmount } = details;
   const primaryClientUrl = getPrimaryClientUrl();
   
   const variables = { 
@@ -552,6 +552,7 @@ const sendPrizeClaimedEmailWithTemplate = async (email, template, details) => {
     claimDate: new Date(claimDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
     transactionId: transactionId || 'N/A',
     rewardType: rewardType || 'Cash Prize',
+    paymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '0',
     history_url: `${primaryClientUrl}/history`
   };
   const subject = replaceTemplateVariables(template.subject, variables);

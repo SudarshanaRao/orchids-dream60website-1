@@ -1087,20 +1087,21 @@ exports.verifyPrizeClaimPayment = async (req, res) => {
       // ✅ SYNC: Ensure HourlyAuction data is updated with actual claimer info
         await AuctionHistory.syncClaimStatus(payment.auctionId);
 
-      // ✅ Send Prize Claimed confirmation email
-      try {
-        const user = await User.findOne({ user_id: payment.userId });
-        if (user && user.email) {
-          await sendPrizeClaimedEmail(user.email, {
-            username: updatedEntry.username || user.username,
-            auctionName: updatedEntry.auctionName || payment.auctionName,
-            prizeAmount: updatedEntry.prizeAmountWon || 0,
-            claimDate: updatedEntry.claimedAt || new Date(),
-            transactionId: razorpay_payment_id,
-            rewardType: 'Cash Prize',
-          });
-        }
-      } catch (emailError) {
+        // ✅ Send Prize Claimed confirmation email
+        try {
+          const user = await User.findOne({ user_id: payment.userId });
+          if (user && user.email) {
+            await sendPrizeClaimedEmail(user.email, {
+              username: updatedEntry.username || user.username,
+              auctionName: updatedEntry.auctionName || payment.auctionName,
+              prizeAmount: updatedEntry.prizeAmountWon || 0,
+              claimDate: updatedEntry.claimedAt || new Date(),
+              transactionId: razorpay_payment_id,
+              rewardType: 'Cash Prize',
+              paymentAmount: payment.amount || 0,
+            });
+          }
+        } catch (emailError) {
         console.error('⚠️ [EMAIL] Failed to send prize claimed email:', emailError);
       }
 
