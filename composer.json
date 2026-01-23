@@ -1,0 +1,8 @@
+{
+    "name": "dream60/website",
+    "description": "Dream60 Website (Node.js/Vite)",
+    "type": "project",
+    "require": {
+        "php": ">=7.4"
+    }
+}
