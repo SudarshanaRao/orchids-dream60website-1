@@ -530,6 +530,30 @@ const checkMobile = async (req, res) => {
   }
 };
 
+// POST /auth/check-username
+// Body: { username }
+const checkUsername = async (req, res) => {
+  try {
+    const { username } = req.body || {};
+    
+    if (!username) {
+      return res.status(400).json({ success: false, message: 'Username is required' });
+    }
+
+    const trimmedUsername = String(username).trim();
+    const existingUser = await User.findOne({ username: trimmedUsername });
+
+    return res.status(200).json({
+      success: true,
+      exists: !!existingUser,
+      message: existingUser ? 'Username is already taken' : 'Username is available'
+    });
+  } catch (err) {
+    console.error('Check Username Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   signup,
   login,
@@ -541,4 +565,5 @@ module.exports = {
   sendVerificationOtp,
   checkEmail,
   checkMobile,
+  checkUsername,
 };
