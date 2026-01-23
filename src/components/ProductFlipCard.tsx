@@ -196,39 +196,45 @@ export function ProductFlipCard({ imageUrl, description, productImages = [], pro
                     <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
                   </div>
 
-                     <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-                      {activeDescription && activeDescription.length > 0 ? (
-                        <div className="space-y-3">
-                          <div className="overflow-hidden rounded-xl border border-white/20 bg-white/5 shadow-inner">
-                            <table className="w-full text-left border-collapse">
-                              <tbody>
-                                {activeDescription.map((item, idx) => {
-                                  const isString = typeof item === 'string';
-                                  const key = isString ? `Spec ${idx + 1}` : item.key;
-                                  const value = isString ? item : item.value;
-                                  
-                                  if (!value) return null;
+                       <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+                        {activeDescription && activeDescription.length > 0 ? (
+                          <div className="space-y-3">
+                            <div className="overflow-hidden rounded-xl border border-white/30 bg-black/20 shadow-2xl">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-white/10 border-b border-white/20">
+                                    <th className="py-2 px-3 text-[10px] uppercase tracking-widest font-black text-pink-300 w-[40%]">Specification</th>
+                                    <th className="py-2 px-3 text-[10px] uppercase tracking-widest font-black text-pink-300">Details</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {activeDescription.map((item, idx) => {
+                                    const isString = typeof item === 'string';
+                                    const key = isString ? `Spec ${idx + 1}` : item.key;
+                                    const value = isString ? item : item.value;
+                                    
+                                    if (!value) return null;
 
-                                  return (
-                                    <tr key={idx} className="border-b border-white/10 last:border-0 hover:bg-white/10 transition-colors group/row">
-                                      <td className="py-2.5 px-3 align-top w-[40%] bg-white/5 border-r border-white/5">
-                                        <span className="text-[10px] uppercase tracking-wider font-bold text-purple-100/70 block leading-tight">
-                                          {key}
-                                        </span>
-                                      </td>
-                                      <td className="py-2.5 px-3 align-top">
-                                        <span className="text-[13px] text-white font-semibold leading-relaxed block">
-                                          {value}
-                                        </span>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                                    return (
+                                      <tr key={idx} className="border-b border-white/10 last:border-0 hover:bg-white/10 transition-colors group/row">
+                                        <td className="py-2.5 px-3 align-top w-[40%] bg-white/5 border-r border-white/10">
+                                          <span className="text-[10px] uppercase tracking-wider font-bold text-purple-100 block leading-tight">
+                                            {key}
+                                          </span>
+                                        </td>
+                                        <td className="py-2.5 px-3 align-top">
+                                          <span className="text-[13px] text-white font-medium leading-relaxed block">
+                                            {value}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
+                        ) : (
                       <p className="text-white/70 text-sm italic">
                         No description available for this product.
                       </p>

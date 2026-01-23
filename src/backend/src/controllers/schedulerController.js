@@ -1178,6 +1178,23 @@ const getLiveHourlyAuction = async (req, res) => {
       });
     }
 
+    // ✅ NEW: Ensure description is fetched from DailyAuction if missing in HourlyAuction
+    if (liveAuction && (!liveAuction.description || liveAuction.description.length === 0)) {
+      try {
+        console.log(`🔍 [LIVE-AUCTION] Description missing in HourlyAuction ${liveAuction.hourlyAuctionId}, fetching from DailyAuction...`);
+        const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: liveAuction.dailyAuctionId });
+        if (dailyAuction) {
+          const config = dailyAuction.dailyAuctionConfig.find(c => c.hourlyAuctionId === liveAuction.hourlyAuctionId);
+          if (config && config.description && config.description.length > 0) {
+            liveAuction.description = config.description;
+            console.log(`✅ [LIVE-AUCTION] Description recovered from DailyAuction for ${liveAuction.TimeSlot}`);
+          }
+        }
+      } catch (err) {
+        console.error('⚠️ [LIVE-AUCTION] Error fetching description fallback:', err);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: liveAuction,
@@ -2486,7 +2503,24 @@ const getFirstUpcomingProduct = async (req, res) => {
         data: null,
       });
     }
-    
+
+    // ✅ NEW: Ensure description is fetched from DailyAuction if missing in HourlyAuction
+    if (upcomingAuction && (!upcomingAuction.description || upcomingAuction.description.length === 0)) {
+      try {
+        console.log(`🔍 [UPCOMING-PRODUCT] Description missing in HourlyAuction ${upcomingAuction.hourlyAuctionId}, fetching from DailyAuction...`);
+        const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: upcomingAuction.dailyAuctionId });
+        if (dailyAuction) {
+          const config = dailyAuction.dailyAuctionConfig.find(c => c.hourlyAuctionId === upcomingAuction.hourlyAuctionId);
+          if (config && config.description && config.description.length > 0) {
+            upcomingAuction.description = config.description;
+            console.log(`✅ [UPCOMING-PRODUCT] Description recovered from DailyAuction for ${upcomingAuction.TimeSlot}`);
+          }
+        }
+      } catch (err) {
+        console.error('⚠️ [UPCOMING-PRODUCT] Error fetching description fallback:', err);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: upcomingAuction,

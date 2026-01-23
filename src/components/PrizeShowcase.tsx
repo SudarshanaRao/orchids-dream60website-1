@@ -899,57 +899,11 @@ interface PrizeShowcaseProps {
                       prizeValue={displayPrizeValue}
                     />
                   </div>
-              </div>
-            </div>
-
-            {/* Product Description Table */}
-            {!isLoading && displayDescription && displayDescription.length > 0 && (
-              <div className="mt-4 sm:mt-6 relative z-10" data-whatsnew-target="prize-specifications">
-                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-purple-200/50 shadow-xl overflow-hidden group/specs">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-purple-100 p-1.5 rounded-lg">
-                        <Sparkles className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-[#3A2257] to-[#6B3FA0] bg-clip-text text-transparent">
-                        Product Specifications
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="overflow-hidden rounded-xl border border-purple-100/60 bg-white/40">
-                    <table className="w-full text-left border-collapse">
-                      <tbody>
-                        {displayDescription.map((item: any, idx: number) => {
-                          const isString = typeof item === 'string';
-                          const key = isString ? `Spec ${idx + 1}` : item.key;
-                          const value = isString ? item : item.value;
-                          
-                          if (!value) return null;
-
-                          return (
-                            <tr key={idx} className="border-b border-purple-100/30 last:border-0 hover:bg-purple-50/50 transition-colors">
-                              <td className="py-3 px-4 w-[40%] bg-purple-50/30 border-r border-purple-100/20">
-                                <span className="text-[10px] uppercase tracking-wider font-bold text-[#8456BC] block leading-tight">
-                                  {key}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className="text-sm text-[#3A2257] font-semibold leading-relaxed block">
-                                  {value}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
