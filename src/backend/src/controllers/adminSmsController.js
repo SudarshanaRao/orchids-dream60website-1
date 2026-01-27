@@ -80,10 +80,12 @@ const getSmsReports = async (req, res) => {
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
     const { fromDate, toDate, page, limit } = req.query;
+    const offset = page ? (parseInt(page) - 1) * (parseInt(limit) || 10) + 1 : undefined;
+    
     const result = await smsRestService.getDetailedReports({ 
       FromDate: fromDate, 
       ToDate: toDate, 
-      Page: page, 
+      Offset: offset, 
       Limit: limit 
     });
     return res.status(result.success ? 200 : 400).json(result);

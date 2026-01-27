@@ -135,9 +135,22 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/SMSes/', { params });
+      const rawSms = response.data?.SMSes || (Array.isArray(response.data) ? response.data : []);
+      
+      // Normalize SMS reports
+      const normalizedSms = rawSms.map(sms => ({
+        MessageId: sms.MessageUUID || sms.MessageId,
+        Number: sms.Number,
+        Text: sms.Text,
+        SenderId: sms.SenderId,
+        Status: sms.Status,
+        DeliveryDate: sms.StatusTime || sms.DeliveryDate,
+        SubmittedDate: sms.ProcessTime || sms.SubmittedDate
+      }));
+
       return { 
         success: true, 
-        data: response.data?.SMSes || (Array.isArray(response.data) ? response.data : []) 
+        data: normalizedSms
       };
     } catch (error) {
       console.error('SMS Rest Detailed Report Error:', error.response?.data || error.message);
@@ -153,9 +166,11 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/SenderIDs/');
+      const rawSenderIds = response.data?.SenderIds || response.data?.SenderIDs || (Array.isArray(response.data) ? response.data : []);
+      
       return { 
         success: true, 
-        data: response.data?.SenderIDs || (Array.isArray(response.data) ? response.data : []) 
+        data: rawSenderIds 
       };
     } catch (error) {
       console.error('SMS Rest SenderID Error:', error.response?.data || error.message);
@@ -171,9 +186,19 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/Templates/');
+      const rawTemplates = response.data?.Templates || (Array.isArray(response.data) ? response.data : []);
+      
+      // Normalize templates
+      const normalizedTemplates = rawTemplates.map(tpl => ({
+        TemplateId: tpl.TemplateId,
+        TemplateName: tpl.Name || tpl.TemplateName,
+        Message: tpl.Template || tpl.Message,
+        CreatedDate: tpl.CreatedDate
+      }));
+
       return { 
         success: true, 
-        data: response.data?.Templates || (Array.isArray(response.data) ? response.data : []) 
+        data: normalizedTemplates
       };
     } catch (error) {
       console.error('SMS Rest Get Templates Error:', error.response?.data || error.message);

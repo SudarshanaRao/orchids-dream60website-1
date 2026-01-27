@@ -179,9 +179,18 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     try {
       const response = await fetch(`${API_BASE}/admin/sms/rest/templates?user_id=${adminUserId}`);
       const data = await response.json();
-      if (data.success) {
-        setRestTemplates(data.data || []);
-      }
+    if (data.success) {
+      // Filter out duplicates by TemplateId
+      const uniqueTemplates = (data.data || []).reduce((acc: RestTemplate[], current: RestTemplate) => {
+        const x = acc.find(item => item.TemplateId === current.TemplateId);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+      setRestTemplates(uniqueTemplates);
+    }
     } catch (error) {
       console.error('Error loading REST templates:', error);
     }
@@ -207,7 +216,16 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       );
       const data = await response.json();
       if (data.success) {
-        setReports(data.data || []);
+        // Ensure reports are an array and unique
+        const uniqueReports = (data.data || []).reduce((acc: SmsReport[], current: SmsReport) => {
+          const x = acc.find(item => item.MessageId === current.MessageId);
+          if (!x) {
+            return acc.concat([current]);
+          } else {
+            return acc;
+          }
+        }, []);
+        setReports(uniqueReports);
       }
     } catch (error) {
       console.error('Error loading reports:', error);
@@ -845,11 +863,11 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                           <option key={template.key} value={template.key}>{template.name}</option>
                         ))}
                       </optgroup>
-                      <optgroup label="SMSCountry Templates">
-                        {Array.isArray(restTemplates) && restTemplates.map((template) => (
-                          <option key={template.TemplateId} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
-                        ))}
-                      </optgroup>
+      <optgroup label="SMSCountry Templates">
+        {Array.isArray(restTemplates) && restTemplates.map((template, idx) => (
+          <option key={`${template.TemplateId}_${idx}`} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
+        ))}
+      </optgroup>
                     <option value="CUSTOM">Custom Message</option>
                   </select>
                 </div>
@@ -984,52 +1002,115 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600" />
-                SMSCountry Templates ({restTemplates.length})
-              </h3>
-              <button onClick={loadRestTemplates} className="text-purple-600 hover:text-purple-700">
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
-                  <tr>
-                    <th className="px-6 py-3 text-left">ID</th>
-                    <th className="px-6 py-3 text-left">Name</th>
-                    <th className="px-6 py-3 text-left">Message</th>
-                    <th className="px-6 py-3 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                    {Array.isArray(restTemplates) && restTemplates.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No templates found in SMSCountry account</td>
-                      </tr>
-                    ) : (
-                      Array.isArray(restTemplates) && restTemplates.map((template) => (
-                        <tr key={template.TemplateId} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-mono text-xs">{template.TemplateId}</td>
-                        <td className="px-6 py-4 font-medium text-gray-900">{template.TemplateName}</td>
-                        <td className="px-6 py-4 text-gray-600 max-w-md truncate">{template.Message}</td>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  Local System Templates ({templates.length})
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Name</th>
+                      <th className="px-6 py-3 text-left">Message Content</th>
+                      <th className="px-6 py-3 text-left">Variables</th>
+                      <th className="px-6 py-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {templates.map((template) => (
+                      <tr key={template.key} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 font-medium text-gray-900">{template.name}</td>
+                        <td className="px-6 py-4 text-gray-600 max-w-md whitespace-pre-wrap">{template.template}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {template.variables.map(v => (
+                              <span key={v} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                {`{${v}}`}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
                         <td className="px-6 py-4 text-center">
                           <button
-                            onClick={() => handleDeleteTemplate(template.TemplateId)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText(template.template);
+                              toast.success('Template copied to clipboard');
+                            }}
+                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                            title="Copy Message"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <FileText className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
+                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-purple-600" />
+                  SMSCountry API Templates ({restTemplates.length})
+                </h3>
+                <button onClick={loadRestTemplates} className="text-purple-600 hover:text-purple-700">
+                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-semibold">
+                    <tr>
+                      <th className="px-6 py-3 text-left">ID</th>
+                      <th className="px-6 py-3 text-left">Name</th>
+                      <th className="px-6 py-3 text-left">Message Content</th>
+                      <th className="px-6 py-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                      {Array.isArray(restTemplates) && restTemplates.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No templates found in SMSCountry account</td>
+                        </tr>
+                      ) : (
+                        Array.isArray(restTemplates) && restTemplates.map((template, idx) => (
+                          <tr key={`${template.TemplateId}_${idx}`} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 font-mono text-xs">{template.TemplateId}</td>
+                          <td className="px-6 py-4 font-medium text-gray-900">{template.TemplateName}</td>
+                          <td className="px-6 py-4 text-gray-600 max-w-md whitespace-pre-wrap">{template.Message}</td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(template.Message);
+                                  toast.success('Template copied to clipboard');
+                                }}
+                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                title="Copy Message"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTemplate(template.TemplateId)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete Template"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
         </div>
       )}
 
@@ -1084,11 +1165,11 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                         <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No reports found for the selected period</td>
                       </tr>
                     ) : (
-                      Array.isArray(reports) && reports.map((report) => (
-                        <tr key={report.MessageId} className="hover:bg-gray-50">
+                      Array.isArray(reports) && reports.map((report, idx) => (
+                        <tr key={`${report.MessageId}_${idx}`} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-mono text-xs">{report.MessageId}</td>
                         <td className="px-6 py-4 font-medium">{report.Number}</td>
-                        <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{report.Text}</td>
+                        <td className="px-6 py-4 text-gray-600 max-w-md whitespace-pre-wrap">{report.Text}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                             report.Status === 'Delivered' ? 'bg-green-100 text-green-700' :
@@ -1098,9 +1179,17 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                             {report.Status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-500">
-                          {new Date(report.SubmittedDate).toLocaleString()}
-                        </td>
+                          <td className="px-6 py-4 text-gray-500">
+                            {(() => {
+                              if (!report.SubmittedDate) return 'N/A';
+                              const date = new Date(report.SubmittedDate);
+                              if (isNaN(date.getTime())) {
+                                // Fallback for formats like "Jan 27 2026 10:41AM"
+                                return report.SubmittedDate;
+                              }
+                              return date.toLocaleString();
+                            })()}
+                          </td>
                       </tr>
                     ))
                   )}
