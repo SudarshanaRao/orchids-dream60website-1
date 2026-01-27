@@ -7,7 +7,13 @@
 
 // Get API base URL based on hostname or environment variable
 const getApiBaseUrl = (): string => {
-  // Check if we are in a browser environment
+  // 1. Check for environment variable first (Vite will inject VITE_BACKEND_API_URL from .env.development or .env.production)
+  const envApiUrl = import.meta.env.VITE_BACKEND_API_URL;
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+
+  // 2. Fallback to runtime detection if env var is missing
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
@@ -20,19 +26,8 @@ const getApiBaseUrl = (): string => {
     if (hostname === 'test.dream60.com' || hostname.includes('vercel.app')) {
       return 'https://dev-api.dream60.com';
     }
-
-    // Local development
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return import.meta.env.VITE_BACKEND_API_URL || 'https://dev-api.dream60.com';
-    }
   }
 
-  // Check for environment variable first (fallback for SSR or other environments)
-  const envApiUrl = import.meta.env.VITE_BACKEND_API_URL;
-  if (envApiUrl) {
-    return envApiUrl;
-  }
-  
   // Default fallback
   return 'https://dev-api.dream60.com';
 };
