@@ -176,11 +176,18 @@ exports.handleAirpayResponse = async (req, res) => {
     var ap_SecureHash = data.ap_securehash;
     var CUSTOMVAR = data.custom_var;
 
+    // Additional fields from req.body (Airpay sends these in POST body)
+    var PAYMENT_METHOD = req.body.CHMOD || '';
+    var BANK_NAME = req.body.BANKNAME || '';
+    var CARD_NAME = req.body.CARDNAME || '';
+    var CARD_NUMBER = req.body.CARDNUMBER || '';
+    var UPI_ID = req.body.CUSTOMERVPA || '';
+
     var hashdata = TRANSACTIONID + ':' + APTRANSACTIONID + ':' + AMOUNT + ':' + TRANSACTIONSTATUS + ':' + MESSAGE + ':' + AIRPAY_MID + ':' + AIRPAY_USERNAME;
     
     var txnhash = CRC32.str(hashdata);
-    if (req.body.CHMOD === 'upi') {
-      txnhash = CRC32.str(TRANSACTIONID + ':' + APTRANSACTIONID + ':' + AMOUNT + ':' + TRANSACTIONSTATUS + ':' + MESSAGE + ':' + AIRPAY_MID + ':' + AIRPAY_USERNAME + ':' + req.body.CUSTOMERVPA);
+    if (PAYMENT_METHOD === 'upi') {
+      txnhash = CRC32.str(TRANSACTIONID + ':' + APTRANSACTIONID + ':' + AMOUNT + ':' + TRANSACTIONSTATUS + ':' + MESSAGE + ':' + AIRPAY_MID + ':' + AIRPAY_USERNAME + ':' + UPI_ID);
     }
     txnhash = (txnhash >>> 0);
 
@@ -194,7 +201,12 @@ exports.handleAirpayResponse = async (req, res) => {
         airpayResponse: data,
         paidAt: finalStatus === 'paid' ? new Date() : null,
         message: MESSAGE,
-        customVar: CUSTOMVAR
+        customVar: CUSTOMVAR,
+        paymentMethod: PAYMENT_METHOD,
+        bankName: BANK_NAME,
+        cardName: CARD_NAME,
+        cardNumber: CARD_NUMBER,
+        vpa: UPI_ID
       },
       { new: true }
     );
@@ -206,6 +218,26 @@ exports.handleAirpayResponse = async (req, res) => {
         await handlePrizeClaimSuccess(payment);
       }
     }
+
+    // Set cookie for frontend transaction summary
+    const txnSummary = {
+      orderId: TRANSACTIONID,
+      txnId: APTRANSACTIONID,
+      amount: AMOUNT,
+      status: finalStatus,
+      message: MESSAGE,
+      method: PAYMENT_METHOD,
+      upiId: UPI_ID,
+      bankName: BANK_NAME,
+      cardName: CARD_NAME,
+      cardNumber: CARD_NUMBER,
+      timestamp: new Date().toISOString()
+    };
+
+    res.cookie('airpay_txn_data', JSON.stringify(txnSummary), { 
+      maxAge: 3600000, // 1 hour
+      path: '/'
+    });
 
     const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
     const redirectUrl = finalStatus === 'paid' 

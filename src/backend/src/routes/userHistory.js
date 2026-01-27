@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const AuctionHistory = require('../models/AuctionHistory');
 const RazorpayPayment = require('../models/RazorpayPayment');
+const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const DailyAuction = require('../models/DailyAuction');
 
@@ -631,14 +632,19 @@ const mapPayment = (payment, auctionMeta = {}, dailyMeta = {}) => {
     resolvedProductValue = dailyMeta.prizeValue;
   }
 
+  // Handle both Razorpay and Airpay fields
+  const orderId = payment.razorpayOrderId || payment.orderId;
+  const paymentId = payment.razorpayPaymentId || payment.airpayTransactionId;
+  const paymentMethod = payment.paymentMethod || payment.paymentDetails?.method || null;
+
   return {
     id: payment._id,
     paymentType,
     amount: payment.amount,
     currency: payment.currency || 'INR',
     status: payment.status,
-    orderId: payment.razorpayOrderId,
-    paymentId: payment.razorpayPaymentId,
+    orderId,
+    paymentId,
     auctionId: payment.auctionId,
     auctionName: payment.auctionName || dailyMeta.auctionName || auctionMeta.auctionName || null,
     timeSlot: payment.auctionTimeSlot || payment.productTimeSlot || dailyMeta.timeSlot || auctionMeta.timeSlot || null,
@@ -649,8 +655,14 @@ const mapPayment = (payment, auctionMeta = {}, dailyMeta = {}) => {
     prizeWorth: resolvedProductValue,
     productImage: payment.productImage ?? null,
     paidAt: payment.paidAt,
-    paymentMethod: payment.paymentMethod || payment.paymentDetails?.method || null,
-    paymentDetails: payment.paymentDetails,
+    paymentMethod,
+    paymentDetails: payment.paymentDetails || {
+      bankName: payment.bankName,
+      cardName: payment.cardName,
+      cardNumber: payment.cardNumber,
+      vpa: payment.vpa,
+      message: payment.message
+    },
     createdAt: payment.createdAt,
     updatedAt: payment.updatedAt,
   };
@@ -668,11 +680,18 @@ router.get('/transactions', async (req, res) => {
       });
     }
 
-    const payments = await RazorpayPayment.find({ userId, status })
-      .sort({ createdAt: -1 })
-      .lean();
+    // Fetch both Razorpay and Airpay payments
+    const [razorpayPayments, airpayPayments] = await Promise.all([
+      RazorpayPayment.find({ userId, status }).sort({ createdAt: -1 }).lean(),
+      AirpayPayment.find({ userId, status }).sort({ createdAt: -1 }).lean()
+    ]);
 
-    const auctionIds = [...new Set(payments.map(p => p.auctionId).filter(Boolean))];
+    // Combine and sort by createdAt descending
+    const allPayments = [...razorpayPayments, ...airpayPayments].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    const auctionIds = [...new Set(allPayments.map(p => p.auctionId).filter(Boolean))];
     const auctionMap = {};
 
       if (auctionIds.length > 0) {
@@ -708,21 +727,21 @@ router.get('/transactions', async (req, res) => {
         });
       }
 
-      const mapped = payments.map((p) => {
-        const auctionMeta = auctionMap[p.auctionId] || {};
-        const dailyMeta = dailyMap[p.auctionId] || {};
-        return mapPayment(p, auctionMeta, dailyMeta);
-      });
+    const mapped = allPayments.map((p) => {
+      const auctionMeta = auctionMap[p.auctionId] || {};
+      const dailyMeta = dailyMap[p.auctionId] || {};
+      return mapPayment(p, auctionMeta, dailyMeta);
+    });
 
     const entryFees = mapped.filter((m) => m.paymentType === 'ENTRY_FEE');
     const prizeClaims = mapped.filter((m) => m.paymentType === 'PRIZE_CLAIM');
     const voucherTransactions = mapped.filter((m) => m.paymentType === 'VOUCHER');
 
-    const entryAmount = entryFees.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const prizeAmount = prizeClaims.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const voucherAmount = voucherTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-    const prizeWorth = prizeClaims.reduce((sum, t) => sum + (t.productValue || 0), 0);
-    const voucherWorth = prizeClaims.reduce((sum, t) => sum + (t.productValue || 0), 0) + voucherTransactions.reduce((sum, t) => sum + (t.productValue || 0), 0);
+    const entryAmount = entryFees.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const prizeAmount = prizeClaims.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const voucherAmount = voucherTransactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const prizeWorth = prizeClaims.reduce((sum, t) => sum + (Number(t.productValue) || 0), 0);
+    const voucherWorth = prizeClaims.reduce((sum, t) => sum + (Number(t.productValue) || 0), 0) + voucherTransactions.reduce((sum, t) => sum + (Number(t.productValue) || 0), 0);
 
     const summary = {
       entryAmount,
@@ -730,7 +749,7 @@ router.get('/transactions', async (req, res) => {
       voucherAmount,
       prizeWorth,
       voucherWorth,
-      totalProductWorth: mapped.reduce((sum, t) => sum + (t.productValue || 0), 0),
+      totalProductWorth: mapped.reduce((sum, t) => sum + (Number(t.productValue) || 0), 0),
       totalPaid: entryAmount + prizeAmount + voucherAmount,
       netValue: voucherWorth - (entryAmount + prizeAmount + voucherAmount),
       totalTransactions: mapped.length,

@@ -345,16 +345,58 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/profile') setCurrentPage('profile');
         else if (path === '/success-page' || path === '/payment/success') {
           setCurrentPage('success-preview');
-          // Handle transaction data from URL if available
+          // Handle transaction data from URL and cookies
           const txnId = searchParams.get('txnId');
-          if (txnId) {
+          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
+          
+          if (cookieData) {
+            try {
+              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
+              setShowEntrySuccess({
+                entryFee: Number(airpayData.amount),
+                boxNumber: 0,
+                transactionId: airpayData.txnId || airpayData.orderId,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                cardNumber: airpayData.cardNumber,
+                productName: 'Auction Entry Fee',
+                timeSlot: 'Active'
+              } as any);
+              // Optional: Clear cookie after reading
+              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            } catch (e) {
+              console.error("Error parsing airpay cookie", e);
+            }
+          } else if (txnId) {
             setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
           }
         }
         else if (path === '/failure-page' || path === '/payment/failure') {
           setCurrentPage('failure-preview');
           const txnId = searchParams.get('txnId');
-          if (txnId) {
+          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
+
+          if (cookieData) {
+            try {
+              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
+              setShowEntryFailure({
+                entryFee: Number(airpayData.amount),
+                errorMessage: airpayData.message || 'Payment failed',
+                transactionId: airpayData.txnId || airpayData.orderId,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                cardNumber: airpayData.cardNumber
+              } as any);
+              // Optional: Clear cookie after reading
+              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            } catch (e) {
+              console.error("Error parsing airpay cookie", e);
+            }
+          } else if (txnId) {
             setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
           }
         }

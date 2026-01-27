@@ -15,7 +15,11 @@ interface PaymentFailureProps {
   timeSlot?: string;
   paidBy?: string;
   paymentMethod?: string;
-  transactionId?: string; // ✅ NEW: Added transactionId
+  transactionId?: string;
+  upiId?: string;
+  bankName?: string;
+  cardName?: string;
+  cardNumber?: string;
   onRetry: () => void;
   onBackToHome: () => void;
   onClose?: () => void;
@@ -32,7 +36,11 @@ export function PaymentFailure({
   timeSlot,
   paidBy,
   paymentMethod = 'UPI / Card',
-  transactionId, // ✅ NEW: Destructured transactionId
+  transactionId,
+  upiId,
+  bankName,
+  cardName,
+  cardNumber,
   onRetry,
   onBackToHome,
   onClose
@@ -296,6 +304,32 @@ export function PaymentFailure({
                     <span className="text-gray-400">Time Slot</span>
                     <span className="text-red-500 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
                   </div>
+
+                  <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">
+                    <span className="text-gray-400">Payment Method</span>
+                    <span className="text-red-500 font-medium uppercase">{paymentMethod}</span>
+                  </div>
+
+                  {upiId && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">
+                      <span className="text-gray-400">UPI ID</span>
+                      <span className="text-red-500 font-medium">{upiId}</span>
+                    </div>
+                  )}
+
+                  {bankName && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">
+                      <span className="text-gray-400">Bank</span>
+                      <span className="text-red-500 font-medium">{bankName}</span>
+                    </div>
+                  )}
+
+                  {(cardName || cardNumber) && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">
+                      <span className="text-gray-400">Card</span>
+                      <span className="text-red-500 font-medium">{cardName} {cardNumber}</span>
+                    </div>
+                  )}
 
                   {transactionId && (
                     <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">

@@ -15,7 +15,11 @@ interface PaymentSuccessProps {
   timeSlot?: string;
   paidBy?: string;
   paymentMethod?: string;
-  transactionId?: string; // ✅ NEW: Added transactionId
+  transactionId?: string;
+  upiId?: string;
+  bankName?: string;
+  cardName?: string;
+  cardNumber?: string;
   onBackToHome: () => void;
   onClose?: () => void;
 }
@@ -31,7 +35,11 @@ export function PaymentSuccess({
   timeSlot,
   paidBy,
   paymentMethod = 'UPI / Card',
-  transactionId, // ✅ NEW: Destructured transactionId
+  transactionId,
+  upiId,
+  bankName,
+  cardName,
+  cardNumber,
   onBackToHome,
   onClose
 }: PaymentSuccessProps) {
@@ -346,6 +354,32 @@ export function PaymentSuccess({
                       {type === 'claim' ? `₹${productWorth?.toLocaleString('en-IN')}` : (timeSlot || String(auctionNumber) || 'Active')}
                     </span>
                   </div>
+
+                  <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                    <span className="text-gray-400">Payment Method</span>
+                    <span className="text-gray-600 font-medium uppercase">{paymentMethod}</span>
+                  </div>
+
+                  {upiId && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                      <span className="text-gray-400">UPI ID</span>
+                      <span className="text-gray-600 font-medium">{upiId}</span>
+                    </div>
+                  )}
+
+                  {bankName && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                      <span className="text-gray-400">Bank</span>
+                      <span className="text-gray-600 font-medium">{bankName}</span>
+                    </div>
+                  )}
+
+                  {(cardName || cardNumber) && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                      <span className="text-gray-400">Card</span>
+                      <span className="text-gray-600 font-medium">{cardName} {cardNumber}</span>
+                    </div>
+                  )}
 
                   {transactionId && (
                     <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
