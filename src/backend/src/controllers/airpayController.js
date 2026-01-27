@@ -258,12 +258,18 @@ exports.handleAirpayFailure = exports.handleAirpayResponse;
 exports.createOrder = async (req, res) => {
     // Re-using the core logic from sendToAirpay but returning JSON for mobile app/frontend
     try {
-        const { userId, auctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
+        const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
+        const resolvedAuctionId = auctionId || hourlyAuctionId;
+        
+        if (!resolvedAuctionId) {
+            return res.status(400).json({ success: false, message: "auctionId or hourlyAuctionId is required" });
+        }
+
         const orderId = `D60-${Date.now()}`;
         
         await AirpayPayment.create({
             userId,
-            auctionId,
+            auctionId: resolvedAuctionId,
             amount,
             orderId,
             status: 'created',
