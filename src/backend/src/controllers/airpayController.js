@@ -32,12 +32,10 @@ function encrypt(request, secretKey) {
 }
 
 function decrypt(responsedata, secretKey) {
-  let data = responsedata;
   try {
-    const hash = crypto.createHash('sha256').update(data).digest();
-    const iv = hash.slice(0, 16);
-    const encryptedData = Buffer.from(data.slice(16), 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
+    const iv = responsedata.slice(0, 16);
+    const encryptedData = Buffer.from(responsedata.slice(16), 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(iv, 'utf-8'));
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
     decrypted += decipher.final();
     return decrypted;
@@ -65,6 +63,9 @@ function checksumcal(postData) {
 async function getAccessToken(mid) {
   const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
   
+  const dateStr = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0];
+  const checksum = crypto.createHash('sha256').update(mid + AIRPAY_CLIENT_ID + AIRPAY_CLIENT_SECRET + dateStr).digest('hex');
+
   let request = {
     client_id: AIRPAY_CLIENT_ID,
     client_secret: AIRPAY_CLIENT_SECRET,
@@ -74,9 +75,9 @@ async function getAccessToken(mid) {
 
   const encryptedData = encrypt(JSON.stringify(request), key);
   const reqs = {
-    merchant_id: request.merchant_id,
+    merchant_id: mid,
     encdata: encryptedData,
-    checksum: checksumcal(request)
+    checksum: checksum
   };
 
   try {
