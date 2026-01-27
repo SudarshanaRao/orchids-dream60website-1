@@ -145,12 +145,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'https://prod-api.dream60.com',
-        description: 'Production Server',
-      },
-      {
-        url: 'https://dev-api.dream60.com',
-        description: 'Development Server',
+        url: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`,
+        description: `${process.env.NODE_ENV === 'production' ? 'Production' : 'Development'} Server`,
       },
       {
         url: `http://localhost:${process.env.PORT || 5000}`,

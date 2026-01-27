@@ -18,16 +18,16 @@ const swaggerOptions = {
         url: 'https://opensource.org/licenses/MIT'
       }
     },
-    servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 5000}/api/v1`,
-        description: 'Development Server'
-      },
-    //   {
-    //     url: 'https://api.dream60.com/api/v1', t
-    //     description: 'Production Server'
-    //   }
-    ],
+      servers: [
+        {
+          url: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`,
+          description: `${process.env.NODE_ENV === 'production' ? 'Production' : 'Development'} Server`
+        },
+        {
+          url: `http://localhost:${process.env.PORT || 5000}`,
+          description: 'Local Server'
+        }
+      ],
     tags: [
       { name: 'Dreams', description: 'Operations related to dreams' }
     ]
