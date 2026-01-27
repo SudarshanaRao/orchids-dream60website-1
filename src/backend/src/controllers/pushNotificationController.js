@@ -446,7 +446,7 @@ const sendToSelectedUsers = async (req, res) => {
     // Optional: verify admin
     if (adminId) {
       const adminUser = await User.findOne({ user_id: adminId });
-      if (!adminUser || adminUser.userType !== 'ADMIN') {
+      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
         return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
       }
     }

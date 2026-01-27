@@ -153,23 +153,23 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     setShowConfirmModal({ show: true, winner });
   };
 
-  const confirmSendVoucher = async () => {
-    const winner = showConfirmModal.winner;
-    if (!winner) return;
-
-    setShowConfirmModal({ show: false, winner: null });
-    setIsSending(winner._id);
-    try {
-      const response = await fetch('https://dev-api.dream60.com/admin/vouchers/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: adminUserId,
-          claimId: winner._id,
-          sku: 'AMAZON_GC', // Generic SKU for now, should be configurable
-          amount: winner.prizeAmountWon
-        }),
-      });
+    const confirmSendVoucher = async () => {
+      const winner = showConfirmModal.winner;
+      if (!winner) return;
+  
+      setShowConfirmModal({ show: false, winner: null });
+      setIsSending(winner._id);
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: adminUserId,
+            claimId: winner._id,
+            sku: 'AMAZON_GC', // Generic SKU for now, should be configurable
+            amount: winner.prizeAmountWon
+          }),
+        });
 
       const data = await response.json();
 

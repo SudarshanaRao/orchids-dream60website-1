@@ -5,12 +5,23 @@ const Voucher = require('../models/Voucher');
 const woohooService = require('../utils/woohooService');
 const { sendEmail } = require('../utils/emailService');
 
+const verifyAdmin = async (userId) => {
+    if (!userId) return null;
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) return null;
+    return adminUser;
+};
+
 /**
  * Get users eligible for voucher distribution
  * Winners who claimed prize and paid final bid amount, and no voucher issued yet.
  */
 const getEligibleWinners = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         // Find winners who have claimed and paid
         const winners = await AuctionHistory.find({
             isWinner: true,

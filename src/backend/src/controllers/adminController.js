@@ -105,115 +105,130 @@ const adminLogin = async (req, res) => {
  * Get User Statistics
  * Returns comprehensive user statistics for admin dashboard
  */
-const getUserStatistics = async (req, res) => {
-  try {
-    // Verify admin access
-    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized. Admin user_id required.',
-      });
-    }
-
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Admin privileges required.',
-      });
-    }
-
-    // Calculate statistics
-    const [
-      totalUsers,
-      activeUsers,
-      deletedUsers,
-      totalAuctions,
-      totalWins,
-      totalAmountSpent,
-      totalAmountWon,
-      recentUsers,
-      topSpenders,
-      topWinners,
-    ] = await Promise.all([
-      User.countDocuments({ isDeleted: false }),
-      User.countDocuments({ isDeleted: false, userType: 'USER' }),
-      User.countDocuments({ isDeleted: true }),
-      User.aggregate([
-        { $match: { isDeleted: false } },
-        { $group: { _id: null, total: { $sum: '$totalAuctions' } } },
-      ]),
-      User.aggregate([
-        { $match: { isDeleted: false } },
-        { $group: { _id: null, total: { $sum: '$totalWins' } } },
-      ]),
-      User.aggregate([
-        { $match: { isDeleted: false } },
-        { $group: { _id: null, total: { $sum: '$totalAmountSpent' } } },
-      ]),
-      User.aggregate([
-        { $match: { isDeleted: false } },
-        { $group: { _id: null, total: { $sum: '$totalAmountWon' } } },
-      ]),
-      User.find({ isDeleted: false })
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .select('user_id username email mobile userCode createdAt totalAuctions totalWins')
-        .lean(),
-      User.find({ isDeleted: false })
-        .sort({ totalAmountSpent: -1 })
-        .limit(10)
-        .select('user_id username email userCode totalAmountSpent totalAuctions')
-        .lean(),
-      User.find({ isDeleted: false })
-        .sort({ totalWins: -1 })
-        .limit(10)
-        .select('user_id username email userCode totalWins totalAmountWon')
-        .lean(),
-    ]);
-
-    const statistics = {
-      overview: {
+  const getUserStatistics = async (req, res) => {
+    try {
+      // Verify admin access
+      const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Unauthorized. Admin user_id required.',
+        });
+      }
+  
+      const adminUser = await User.findOne({ user_id: userId });
+      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Admin privileges required.',
+        });
+      }
+  
+      // Calculate statistics with individual try-catch to prevent overall failure
+      const statsPromises = [
+        User.countDocuments({ isDeleted: false }).catch(() => 0),
+        User.countDocuments({ isDeleted: false, userType: 'USER' }).catch(() => 0),
+        User.countDocuments({ isDeleted: true }).catch(() => 0),
+        User.aggregate([
+          { $match: { isDeleted: false } },
+          { $group: { _id: null, total: { $sum: '$totalAuctions' } } },
+        ]).catch(() => []),
+        User.aggregate([
+          { $match: { isDeleted: false } },
+          { $group: { _id: null, total: { $sum: '$totalWins' } } },
+        ]).catch(() => []),
+        User.aggregate([
+          { $match: { isDeleted: false } },
+          { $group: { _id: null, total: { $sum: '$totalAmountSpent' } } },
+        ]).catch(() => []),
+        User.aggregate([
+          { $match: { isDeleted: false } },
+          { $group: { _id: null, total: { $sum: '$totalAmountWon' } } },
+        ]).catch(() => []),
+        User.find({ isDeleted: false })
+          .sort({ createdAt: -1 })
+          .limit(10)
+          .select('user_id username email mobile userCode createdAt totalAuctions totalWins')
+          .lean()
+          .catch(() => []),
+        User.find({ isDeleted: false })
+          .sort({ totalAmountSpent: -1 })
+          .limit(10)
+          .select('user_id username email userCode totalAmountSpent totalAuctions')
+          .lean()
+          .catch(() => []),
+        User.find({ isDeleted: false })
+          .sort({ totalWins: -1 })
+          .limit(10)
+          .select('user_id username email userCode totalWins totalAmountWon')
+          .lean()
+          .catch(() => []),
+      ];
+  
+      const [
         totalUsers,
         activeUsers,
         deletedUsers,
-        adminUsers: await User.countDocuments({ userType: 'ADMIN' }),
-      },
-      activity: {
-        totalAuctions: totalAuctions[0]?.total || 0,
-        totalWins: totalWins[0]?.total || 0,
-        totalAmountSpent: totalAmountSpent[0]?.total || 0,
-        totalAmountWon: totalAmountWon[0]?.total || 0,
-      },
-      recentUsers: recentUsers.map((u) => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        mobile: u.mobile,
-        userCode: u.userCode,
-        joinedAt: u.createdAt,
-        totalAuctions: u.totalAuctions || 0,
-        totalWins: u.totalWins || 0,
-      })),
-      topSpenders: topSpenders.map((u) => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        userCode: u.userCode,
-        totalAmountSpent: u.totalAmountSpent || 0,
-        totalAuctions: u.totalAuctions || 0,
-      })),
-      topWinners: topWinners.map((u) => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        userCode: u.userCode,
-        totalWins: u.totalWins || 0,
-        totalAmountWon: u.totalAmountWon || 0,
-      })),
-    };
+        totalAuctions,
+        totalWins,
+        totalAmountSpent,
+        totalAmountWon,
+        recentUsers,
+        topSpenders,
+        topWinners,
+      ] = await Promise.all(statsPromises);
+  
+      const statistics = {
+        overview: {
+          totalUsers,
+          activeUsers,
+          deletedUsers,
+          adminUsers: await User.countDocuments({ userType: 'ADMIN' }).catch(() => 0),
+        },
+        activity: {
+          totalAuctions: totalAuctions[0]?.total || 0,
+          totalWins: totalWins[0]?.total || 0,
+          totalAmountSpent: totalAmountSpent[0]?.total || 0,
+          totalAmountWon: totalAmountWon[0]?.total || 0,
+        },
+        recentUsers: (recentUsers || []).map((u) => ({
+          user_id: u.user_id,
+          username: u.username,
+          email: u.email,
+          mobile: u.mobile,
+          userCode: u.userCode,
+          joinedAt: u.createdAt,
+          totalAuctions: u.totalAuctions || 0,
+          totalWins: u.totalWins || 0,
+        })),
+        topSpenders: (topSpenders || []).map((u) => ({
+          user_id: u.user_id,
+          username: u.username,
+          email: u.email,
+          userCode: u.userCode,
+          totalAmountSpent: u.totalAmountSpent || 0,
+          totalAuctions: u.totalAuctions || 0,
+        })),
+        topWinners: (topWinners || []).map((u) => ({
+          user_id: u.user_id,
+          username: u.username,
+          email: u.email,
+          userCode: u.userCode,
+          totalWins: u.totalWins || 0,
+          totalAmountWon: u.totalAmountWon || 0,
+        })),
+      };
+  
+      return res.status(200).json({
+        success: true,
+        data: statistics,
+      });
+    } catch (err) {
+      console.error('Get User Statistics Error:', err);
+      return res.status(500).json({ success: false, message: 'Server error fetching statistics', error: err.message });
+    }
+  };
 
     return res.status(200).json({
       success: true,
@@ -229,77 +244,77 @@ const getUserStatistics = async (req, res) => {
  * Get All Users (Admin)
  * Returns detailed list of all users with pagination
  */
-const getAllUsersAdmin = async (req, res) => {
-  try {
-    // Verify admin access
-    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized. Admin user_id required.',
+  const getAllUsersAdmin = async (req, res) => {
+    try {
+      // Verify admin access
+      const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+      
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Unauthorized. Admin user_id required.',
+        });
+      }
+  
+      const adminUser = await User.findOne({ user_id: userId });
+      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Admin privileges required.',
+        });
+      }
+  
+      const { page = 1, limit = 20, search = '', includeDeleted = false, userType } = req.query;
+      
+      const query = {};
+      
+      if (includeDeleted !== 'true') {
+        query.isDeleted = false;
+      }
+      
+      // Filter by userType if provided
+      if (userType) {
+        query.userType = userType;
+      }
+      
+      if (search) {
+        query.$or = [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { mobile: { $regex: search, $options: 'i' } },
+          { userCode: { $regex: search, $options: 'i' } },
+        ];
+      }
+  
+      const l = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+      const p = Math.max(parseInt(page, 10) || 1, 1);
+      const skip = (p - 1) * l;
+  
+      const [users, total] = await Promise.all([
+        User.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(l)
+          .select('-password')
+          .lean(),
+        User.countDocuments(query),
+      ]);
+  
+      return res.status(200).json({
+        success: true,
+        data: users,
+        meta: {
+          total,
+          page: p,
+          limit: l,
+          pages: Math.ceil(total / l),
+        },
       });
+    } catch (err) {
+      console.error('Get All Users Admin Error:', err);
+      return res.status(500).json({ success: false, message: 'Server error fetching users', error: err.message });
     }
-
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Admin privileges required.',
-      });
-    }
-
-    const { page = 1, limit = 20, search = '', includeDeleted = false, userType } = req.query;
-    
-    const query = {};
-    
-    if (includeDeleted !== 'true') {
-      query.isDeleted = false;
-    }
-    
-    // Filter by userType if provided
-    if (userType) {
-      query.userType = userType;
-    }
-    
-    if (search) {
-      query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { mobile: { $regex: search, $options: 'i' } },
-        { userCode: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const l = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-    const p = Math.max(parseInt(page, 10) || 1, 1);
-    const skip = (p - 1) * l;
-
-    const [users, total] = await Promise.all([
-      User.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(l)
-        .select('-password')
-        .lean(),
-      User.countDocuments(query),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      data: users,
-      meta: {
-        total,
-        page: p,
-        limit: l,
-        pages: Math.ceil(total / l),
-      },
-    });
-  } catch (err) {
-    console.error('Get All Users Admin Error:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
-};
+  };
 
 /**
  * Get All Master Auctions With Daily Config (Admin)
@@ -361,7 +376,7 @@ const createMasterAuctionAdmin = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -449,7 +464,7 @@ const getAllMasterAuctionsAdmin = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -509,7 +524,7 @@ const updateMasterAuctionAdmin = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -596,7 +611,7 @@ const deleteMasterAuctionAdmin = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -640,7 +655,7 @@ const deleteDailyAuctionSlot = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -703,7 +718,7 @@ const getPushSubscriptionStats = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -835,7 +850,7 @@ const getAnalyticsData = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',

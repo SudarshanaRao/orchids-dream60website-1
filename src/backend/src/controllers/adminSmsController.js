@@ -7,7 +7,7 @@ const smsRestService = require('../utils/smsRestService');
 const verifyAdmin = async (userId) => {
   if (!userId) return null;
   const adminUser = await User.findOne({ user_id: userId });
-  if (!adminUser || adminUser.userType !== 'ADMIN') return null;
+  if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) return null;
   return adminUser;
 };
 

@@ -19,6 +19,7 @@ import {
   Sparkles,
   Eye,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
 
 interface User {
