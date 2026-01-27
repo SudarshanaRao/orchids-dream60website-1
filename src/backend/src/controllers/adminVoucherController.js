@@ -78,6 +78,10 @@ const getEligibleWinners = async (req, res) => {
  */
 const sendVoucher = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const { claimId, sku, amount } = req.body;
 
         if (!claimId || !sku || !amount) {
@@ -189,6 +193,10 @@ const sendVoucher = async (req, res) => {
  */
 const getIssuedVouchers = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const vouchers = await Voucher.find().sort({ createdAt: -1 }).lean();
         
         // Enrich with user info
@@ -221,6 +229,10 @@ const getIssuedVouchers = async (req, res) => {
  */
 const getWoohooBalance = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const balanceData = await woohooService.getAccountBalance();
         return res.status(200).json({
             success: true,
@@ -241,6 +253,10 @@ const getWoohooBalance = async (req, res) => {
  */
 const getWoohooTransactions = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const transactions = await woohooService.getTransactionHistory();
         return res.status(200).json({
             success: true,
@@ -261,6 +277,10 @@ const getWoohooTransactions = async (req, res) => {
  */
 const getWoohooCategories = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const categories = await woohooService.getCategories();
         return res.status(200).json({
             success: true,
@@ -281,6 +301,10 @@ const getWoohooCategories = async (req, res) => {
  */
 const getWoohooProducts = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const { categoryId } = req.params;
         if (!categoryId) {
             return res.status(400).json({ success: false, message: 'Category ID is required' });
@@ -305,6 +329,10 @@ const getWoohooProducts = async (req, res) => {
  */
 const getWoohooProductDetails = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const { sku } = req.params;
         if (!sku) {
             return res.status(400).json({ success: false, message: 'SKU is required' });
@@ -329,6 +357,10 @@ const getWoohooProductDetails = async (req, res) => {
  */
 const getWoohooOrderStatus = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const { orderId } = req.params;
         if (!orderId) {
             return res.status(400).json({ success: false, message: 'Order ID is required' });
@@ -353,6 +385,10 @@ const getWoohooOrderStatus = async (req, res) => {
  */
 const getWoohooOrderCards = async (req, res) => {
     try {
+        const adminId = req.query.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
         const { orderId } = req.params;
         if (!orderId) {
             return res.status(400).json({ success: false, message: 'Order ID is required' });

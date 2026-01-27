@@ -60,8 +60,18 @@ const getSendOptions = ({ ttl = 86400, urgency = 'high', topic } = {}) => ({
 });
 
 // Generate VAPID keys (run once and save to .env)
-const generateVAPIDKeys = (req, res) => {
+const generateVAPIDKeys = async (req, res) => {
   try {
+    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
     const vapidKeys = webpush.generateVAPIDKeys();
     res.json({
       success: true,
@@ -218,7 +228,17 @@ const unsubscribe = async (req, res) => {
 const sendToUser = async (req, res) => {
   try {
     const { userId, title, body, ttl, urgency, topic, ...rest } = req.body;
-    
+    const adminId = req.query.user_id || req.body.admin_id || req.headers['x-user-id'];
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
     if (!userId || !title || !body) {
       return res.status(400).json({
         success: false,
@@ -307,7 +327,17 @@ const sendToUser = async (req, res) => {
 const sendToAllParticipants = async (req, res) => {
   try {
     const { title, body, ttl, urgency, topic, ...rest } = req.body;
-    
+    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
     if (!title || !body) {
       return res.status(400).json({
         success: false,
@@ -431,25 +461,18 @@ const sendToAllParticipants = async (req, res) => {
 const sendToSelectedUsers = async (req, res) => {
   try {
     const { userIds = [], subscriptionIds = [], title, body, ttl, urgency, topic, ...rest } = req.body;
-    const adminId = req.query.admin_id || req.body.adminId;
+    const adminId = req.query.user_id || req.body.user_id || req.query.admin_id || req.body.adminId || req.headers['x-user-id'];
+
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
 
     const normalizedUserIds = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
-    const normalizedSubscriptionIds = Array.isArray(subscriptionIds) ? subscriptionIds.filter(Boolean) : [];
-
-    if (normalizedUserIds.length === 0 && normalizedSubscriptionIds.length === 0) {
-      return res.status(400).json({ success: false, message: 'userIds or subscriptionIds array is required' });
-    }
-    if (!title || !body) {
-      return res.status(400).json({ success: false, message: 'Title and body are required' });
-    }
-
-    // Optional: verify admin
-    if (adminId) {
-      const adminUser = await User.findOne({ user_id: adminId });
-      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
-        return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
-      }
-    }
 
     const subscriptionQuery = { isActive: true };
 
