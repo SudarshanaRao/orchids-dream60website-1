@@ -15,6 +15,7 @@ interface PaymentFailureProps {
   timeSlot?: string;
   paidBy?: string;
   paymentMethod?: string;
+  transactionId?: string; // ✅ NEW: Added transactionId
   onRetry: () => void;
   onBackToHome: () => void;
   onClose?: () => void;
@@ -31,6 +32,7 @@ export function PaymentFailure({
   timeSlot,
   paidBy,
   paymentMethod = 'UPI / Card',
+  transactionId, // ✅ NEW: Destructured transactionId
   onRetry,
   onBackToHome,
   onClose
@@ -259,6 +261,13 @@ export function PaymentFailure({
                     <span className="text-gray-400">Time Slot</span>
                     <span className="text-red-500 font-medium">{timeSlot || String(auctionNumber) || 'Active'}</span>
                   </div>
+
+                  {transactionId && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-red-100">
+                      <span className="text-gray-400">Transaction ID</span>
+                      <span className="text-red-500 font-mono font-medium">{transactionId}</span>
+                    </div>
+                  )}
 
                   <div className="text-left pt-2 border-t border-red-100">
                     <span className="text-gray-400 text-[9px] font-bold uppercase tracking-widest block mb-1">Error Message</span>

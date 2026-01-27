@@ -15,6 +15,7 @@ interface PaymentSuccessProps {
   timeSlot?: string;
   paidBy?: string;
   paymentMethod?: string;
+  transactionId?: string; // ✅ NEW: Added transactionId
   onBackToHome: () => void;
   onClose?: () => void;
 }
@@ -30,6 +31,7 @@ export function PaymentSuccess({
   timeSlot,
   paidBy,
   paymentMethod = 'UPI / Card',
+  transactionId, // ✅ NEW: Destructured transactionId
   onBackToHome,
   onClose
 }: PaymentSuccessProps) {
@@ -309,14 +311,22 @@ export function PaymentSuccess({
                   <span className="text-gray-900 font-medium">{paidBy || 'Member'}</span>
                 </div>
                 
-                <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100 italic">
-                  <span className="text-gray-400">{type === 'claim' ? 'Prize Worth' : 'Time Slot'}</span>
-                  <span className="text-gray-600 font-medium">
-                    {type === 'claim' ? `₹${productWorth?.toLocaleString('en-IN')}` : (timeSlot || String(auctionNumber) || 'Active')}
-                  </span>
-                </div>
+                  <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100 italic">
+                    <span className="text-gray-400">{type === 'claim' ? 'Prize Worth' : 'Time Slot'}</span>
+                    <span className="text-gray-600 font-medium">
+                      {type === 'claim' ? `₹${productWorth?.toLocaleString('en-IN')}` : (timeSlot || String(auctionNumber) || 'Active')}
+                    </span>
+                  </div>
 
-                <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+                  {transactionId && (
+                    <div className="flex justify-between items-center text-[10px] pt-1 border-t border-gray-100">
+                      <span className="text-gray-400">Transaction ID</span>
+                      <span className="text-gray-600 font-mono font-medium">{transactionId}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
+
                   <span className="text-gray-500 font-medium">Amount Paid</span>
                   <span className={`${getAmountColor()} font-black flex items-center gap-0.5 text-lg`}>
                     <IndianRupee className="w-4 h-4" />

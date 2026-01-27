@@ -318,47 +318,64 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return 'game';
   });
 
-  // ✅ Sync URL with page state and handle browser back/forward
-  useEffect(() => {
-    const handlePopState = () => {
-      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-      
-      if (path === '/d60-ctrl-x9k7') {
-          const adminUserId = localStorage.getItem('admin_user_id');
-          setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
-        } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
-      else if (path === '/login') setCurrentPage('login');
-      else if (path === '/signup') setCurrentPage('signup');
-      else if (path === '/forgot-password') setCurrentPage('forgot');
-      else if (path === '/rules') setCurrentPage('rules');
-      else if (path === '/participation') setCurrentPage('participation');
-      else if (path === '/about') setCurrentPage('about');
-      else if (path === '/careers') setCurrentPage('careers');
-      else if (path === '/terms') setCurrentPage('terms');
-      else if (path === '/privacy') setCurrentPage('privacy');
-      else if (path === '/support') setCurrentPage('support');
-      else if (path === '/contact') setCurrentPage('contact');
-      else if (path === '/profile') setCurrentPage('profile');
-      else if (path === '/success-page') setCurrentPage('success-preview');
-      else if (path === '/failure-page') setCurrentPage('failure-preview');
-      else if (path === '/history' || path.startsWith('/history/')) {
-        setCurrentPage('history');
-        if (path === '/history') {
-          setSelectedAuctionDetails(null);
+    // ✅ Sync URL with page state and handle browser back/forward
+    useEffect(() => {
+      const handlePopState = () => {
+        const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+        const searchParams = new URLSearchParams(window.location.search);
+        
+        if (path === '/d60-ctrl-x9k7') {
+            const adminUserId = localStorage.getItem('admin_user_id');
+            setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
+          } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
+        else if (path === '/login') setCurrentPage('login');
+        else if (path === '/signup') setCurrentPage('signup');
+        else if (path === '/forgot-password') setCurrentPage('forgot');
+        else if (path === '/rules') setCurrentPage('rules');
+        else if (path === '/participation') setCurrentPage('participation');
+        else if (path === '/about') setCurrentPage('about');
+        else if (path === '/careers') setCurrentPage('careers');
+        else if (path === '/terms') setCurrentPage('terms');
+        else if (path === '/privacy') setCurrentPage('privacy');
+        else if (path === '/support') setCurrentPage('support');
+        else if (path === '/contact') setCurrentPage('contact');
+        else if (path === '/profile') setCurrentPage('profile');
+        else if (path === '/success-page' || path === '/payment/success') {
+          setCurrentPage('success-preview');
+          // Handle transaction data from URL if available
+          const txnId = searchParams.get('txnId');
+          if (txnId) {
+            setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
+          }
         }
-      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-      else if (path === '/view-guide') setCurrentPage('view-guide');
-      else if (path === '/winning-tips') setCurrentPage('winning-tips');
-      else if (path === '/support-chat') setCurrentPage('support-chat');
-      else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
-      else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
-      else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
-      else setCurrentPage('game');
-    };
+        else if (path === '/failure-page' || path === '/payment/failure') {
+          setCurrentPage('failure-preview');
+          const txnId = searchParams.get('txnId');
+          if (txnId) {
+            setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
+          }
+        }
+        else if (path === '/history' || path.startsWith('/history/')) {
+          setCurrentPage('history');
+          if (path === '/history') {
+            setSelectedAuctionDetails(null);
+          }
+        } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+        else if (path === '/view-guide') setCurrentPage('view-guide');
+        else if (path === '/winning-tips') setCurrentPage('winning-tips');
+        else if (path === '/support-chat') setCurrentPage('support-chat');
+        else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
+        else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+        else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
+        else setCurrentPage('game');
+      };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+      // Initial check for URL parameters
+      handlePopState();
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
   // ✅ Fetch server time ONCE on mount, then use local offset
   useEffect(() => {

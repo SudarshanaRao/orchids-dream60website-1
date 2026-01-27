@@ -1,7 +1,8 @@
 import { Gift, IndianRupee, Users, CreditCard, Sparkles, TrendingUp, Trophy, Clock, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState, useEffect, useRef } from 'react';
-import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
+import { usePayment } from '../hooks/usePayment';
+import { AirpayForm } from './AirpayForm';
 import { parseAPITimestamp, getCurrentIST } from '../utils/timezone';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { ProductFlipCard } from './ProductFlipCard';
@@ -94,7 +95,7 @@ interface PrizeShowcaseProps {
     const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
     const [boxAFee, setBoxAFee] = useState<number>(0);
     const [boxBFee, setBoxBFee] = useState<number>(0);
-    const { initiatePayment, loading: paymentLoading } = useRazorpayPayment();
+    const { initiatePayment, loading: paymentLoading, airpayData } = usePayment();
     const [participantsCount, setParticipantsCount] = useState(0);
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [isUserParticipating, setIsUserParticipating] = useState(false);
@@ -536,10 +537,14 @@ interface PrizeShowcaseProps {
     );
   }
 
-  return (
-    <div className="relative group/main" data-whatsnew-target="prize-showcase">
-      {/* Outer gradient glow */}
-      <div className="absolute -inset-[2px] bg-gradient-to-br from-[#9F7ACB]/30 via-[#B99FD9]/20 to-[#8456BC]/30 rounded-[26px] blur-xl opacity-60 group-hover/main:opacity-80 transition-opacity duration-700"></div>
+    return (
+      <div className="relative group/main" data-whatsnew-target="prize-showcase">
+        {/* Airpay Redirection Form */}
+        {airpayData && <AirpayForm url={airpayData.url} params={airpayData.params} />}
+        
+        {/* Outer gradient glow */}
+        <div className="absolute -inset-[2px] bg-gradient-to-br from-[#9F7ACB]/30 via-[#B99FD9]/20 to-[#8456BC]/30 rounded-[26px] blur-xl opacity-60 group-hover/main:opacity-80 transition-opacity duration-700"></div>
+
 
       {/* Main glassmorphism container */}
       <div className="relative">

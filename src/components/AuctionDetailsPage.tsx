@@ -7,7 +7,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
-import { usePrizeClaimPayment } from '../hooks/usePrizeClaimPayment';
+import { usePayment } from '../hooks/usePayment';
+import { AirpayForm } from './AirpayForm';
 import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
 import { LoadingProfile } from './LoadingProfile';
 import { PaymentSuccess } from './PaymentSuccess';
@@ -95,13 +96,14 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
   const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
   const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
   
-  const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
-    round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
-  );
-    
-  const { initiatePrizeClaimPayment, loading: globalPaymentLoading } = usePrizeClaimPayment();
-    
-  // Get user info - state for dynamic updates
+    const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
+      round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
+    );
+      
+    const { initiatePayment, loading: globalPaymentLoading, airpayData } = usePayment();
+      
+    // Get user info - state for dynamic updates
+
 
   const [userInfo, setUserInfo] = useState({
     userId: localStorage.getItem('user_id') || '',
@@ -451,121 +453,124 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           return () => clearInterval(interval);
         }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt, serverTime]);
 
-  const handleClaimPrize = async () => {
-    if (timeLeft === 'EXPIRED') {
-      toast.error('Claim window has expired');
-      return;
-    }
+    const handleClaimPrize = async () => {
+      if (timeLeft === 'EXPIRED') {
+        toast.error('Claim window has expired');
+        return;
+      }
 
-    if (!isCurrentlyEligibleToClaim()) {
-      toast.error('It is not your turn to claim yet. Please wait for the previous winner.');
-      return;
-    }
+      if (!isCurrentlyEligibleToClaim()) {
+        toast.error('It is not your turn to claim yet. Please wait for the previous winner.');
+        return;
+      }
 
-    // ✅ CRITICAL: Validate all required data before proceeding
-    if (!auction.hourlyAuctionId) {
-      toast.error('Missing auction information. Please refresh and try again.');
-      return;
-    }
+      // ✅ CRITICAL: Validate all required data before proceeding
+      if (!auction.hourlyAuctionId) {
+        toast.error('Missing auction information. Please refresh and try again.');
+        return;
+      }
 
-    if (!auction.lastRoundBidAmount || auction.lastRoundBidAmount <= 0) {
-      toast.error('Invalid bid amount. Please contact support.');
-      return;
-    }
+      if (!auction.lastRoundBidAmount || auction.lastRoundBidAmount <= 0) {
+        toast.error('Invalid bid amount. Please contact support.');
+        return;
+      }
 
-    // ✅ SIMPLIFIED: Use whatever user data we have from localStorage
-    // The hook will use backend userInfo as fallback for email/contact
-    const currentUserEmail = userInfo.userEmail || '';
-    const currentUserMobile = userInfo.userMobile || '';
-    const currentUserName = userInfo.userName || 'User';
+      // ✅ SIMPLIFIED: Use whatever user data we have from localStorage
+      // The hook will use backend userInfo as fallback for email/contact
+      const currentUserEmail = userInfo.userEmail || '';
+      const currentUserMobile = userInfo.userMobile || '';
+      const currentUserName = userInfo.userName || 'User';
 
-    console.log('📧 [CLAIM] Starting prize claim with user data:', {
-      email: currentUserEmail || '(will use backend)',
-      mobile: currentUserMobile || '(will use backend)',
-      name: currentUserName,
-    });
+      console.log('📧 [CLAIM] Starting prize claim with user data:', {
+        email: currentUserEmail || '(will use backend)',
+        mobile: currentUserMobile || '(will use backend)',
+        name: currentUserName,
+      });
 
-    setIsProcessing(true);
+      setIsProcessing(true);
 
-    try {
-      initiatePrizeClaimPayment(
-        {
-          userId: userInfo.userId,
-          hourlyAuctionId: auction.hourlyAuctionId,
-          amount: auction.lastRoundBidAmount,
-          currency: 'INR',
-          username: currentUserName,
-        },
-        {
-          name: currentUserName,
-          email: currentUserEmail, // ✅ Hook will use backend email if this is empty
-          contact: currentUserMobile, // ✅ Hook will use backend contact if this is empty
-          upiId: currentUserEmail, // ✅ Hook will use backend email if this is empty
-        },
-        async (response) => {
-          console.log('Prize claim payment successful:', response);
-          
-          // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
-          console.log('✅ Prize claim data received from verification:', response.data);
-          
-          // ✅ Show Success Modal
-          setShowSuccessModal({
+      try {
+        initiatePayment(
+          {
+            userId: userInfo.userId,
+            hourlyAuctionId: auction.hourlyAuctionId,
             amount: auction.lastRoundBidAmount,
-            type: 'claim',
-            productName: auction.prize,
-            productWorth: auction.prizeValue,
-            auctionId: auction.hourlyAuctionId,
-            paidBy: currentUserName,
-            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card'
-          });
-
-          // ✅ Update local state immediately - no page reload
-          setAuction(prev => ({
-            ...prev,
-            prizeClaimStatus: 'CLAIMED',
-            claimedAt: Date.now(),
-            claimedBy: currentUserName,
-            claimUpiId: response.data?.upiId || currentUserEmail,
-            claimedByRank: auction.finalRank
-          }));
-          
-            toast.success('🎉 Prize Claimed Successfully!', {
-              description: `Amazon voucher details will be sent to your registered email`,
-              duration: 3000,
+            currency: 'INR',
+            username: currentUserName,
+            paymentType: 'PRIZE_CLAIM'
+          },
+          {
+            name: currentUserName,
+            email: currentUserEmail, // ✅ Hook will use backend email if this is empty
+            contact: currentUserMobile, // ✅ Hook will use backend contact if this is empty
+            upiId: currentUserEmail, // ✅ Hook will use backend email if this is empty
+          },
+          async (response) => {
+            console.log('Prize claim payment successful:', response);
+            
+            // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
+            console.log('✅ Prize claim data received from verification:', response.data);
+            
+            // ✅ Show Success Modal
+            setShowSuccessModal({
+              amount: auction.lastRoundBidAmount,
+              type: 'claim',
+              productName: auction.prize,
+              productWorth: auction.prizeValue,
+              auctionId: auction.hourlyAuctionId,
+              paidBy: currentUserName,
+              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card',
+              transactionId: response.data?.payment?.razorpayPaymentId || response.data?.payment?.airpayTransactionId // ✅ ADDED: Pass transaction ID
             });
-          
-          setShowClaimForm(false);
-          setIsProcessing(false);
-          
-          // ✅ Refresh auction details data in background without reload
-          setTimeout(() => {
-            fetchDetailedData();
-          }, 1000);
-        },
-        (error) => {
-          console.error('Prize claim payment failed:', error);
-          
-          setShowFailureModal({
-            amount: auction.lastRoundBidAmount,
-            type: 'claim',
-            errorMessage: error || 'Failed to process prize claim payment',
-            productName: auction.prize,
-            auctionId: auction.hourlyAuctionId,
-            paidBy: currentUserName
-          });
 
-          toast.error('Payment Failed', {
-            description: error || 'Failed to process prize claim payment',
-          });
-          setIsProcessing(false);
-        }
-      );
-    } catch (error) {
-      console.error('Error initiating prize claim payment:', error);
-      toast.error('Failed to initiate payment. Please try again.');
-      setIsProcessing(false);
-    }
-  };
+            // ✅ Update local state immediately - no page reload
+            setAuction(prev => ({
+              ...prev,
+              prizeClaimStatus: 'CLAIMED',
+              claimedAt: Date.now(),
+              claimedBy: currentUserName,
+              claimUpiId: response.data?.upiId || currentUserEmail,
+              claimedByRank: auction.finalRank
+            }));
+            
+              toast.success('🎉 Prize Claimed Successfully!', {
+                description: `Amazon voucher details will be sent to your registered email`,
+                duration: 3000,
+              });
+            
+            setShowClaimForm(false);
+            setIsProcessing(false);
+            
+            // ✅ Refresh auction details data in background without reload
+            setTimeout(() => {
+              fetchDetailedData();
+            }, 1000);
+          },
+          (error) => {
+            console.error('Prize claim payment failed:', error);
+            
+            setShowFailureModal({
+              amount: auction.lastRoundBidAmount,
+              type: 'claim',
+              errorMessage: error || 'Failed to process prize claim payment',
+              productName: auction.prize,
+              auctionId: auction.hourlyAuctionId,
+              paidBy: currentUserName
+            });
+
+            toast.error('Payment Failed', {
+              description: error || 'Failed to process prize claim payment',
+            });
+            setIsProcessing(false);
+          }
+        );
+      } catch (error) {
+        console.error('Error initiating prize claim payment:', error);
+        toast.error('Failed to initiate payment. Please try again.');
+        setIsProcessing(false);
+      }
+    };
+
 
   // Calculate net profit properly (only final round bid amount matters)
   const calculateNetProfit = () => {
@@ -609,11 +614,13 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
     setShowClaimForm(true);
   }, []);
 
-  return (
-    <div className="min-h-screen bg-white relative overflow-hidden">
-      
-      
-      {/* Premium Header */}
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden">
+        {/* Airpay Redirection Form */}
+        {airpayData && <AirpayForm url={airpayData.url} params={airpayData.params} />}
+        
+        {/* Premium Header */}
+
       <motion.div 
         className="relative z-10 overflow-hidden"
         initial={{ opacity: 0, y: -20 }}
