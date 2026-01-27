@@ -837,7 +837,7 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       if (serverTime) {
         fetchUpcomingAuction();
       }
-    }, [serverTime, liveAuctionData]);
+    }, [serverTime?.hour, serverTime?.minute, liveAuctionData]);
   // ✅ Track if the first load has completed
   const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token

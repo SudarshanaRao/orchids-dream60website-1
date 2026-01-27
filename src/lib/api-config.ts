@@ -5,16 +5,35 @@
  * It automatically detects the environment and uses the correct API base URL.
  */
 
-// Get API base URL from environment variable or use default
+// Get API base URL based on hostname or environment variable
 const getApiBaseUrl = (): string => {
-  // Check for environment variable first
+  // Check if we are in a browser environment
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // Production domains
+    if (hostname === 'dream60.com' || hostname === 'www.dream60.com') {
+      return 'https://prod-api.dream60.com';
+    }
+    
+    // Test/Staging domain
+    if (hostname === 'test.dream60.com' || hostname.includes('vercel.app')) {
+      return 'https://dev-api.dream60.com';
+    }
+
+    // Local development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return import.meta.env.VITE_BACKEND_API_URL || 'https://dev-api.dream60.com';
+    }
+  }
+
+  // Check for environment variable first (fallback for SSR or other environments)
   const envApiUrl = import.meta.env.VITE_BACKEND_API_URL;
-  
   if (envApiUrl) {
     return envApiUrl;
   }
   
-  // Fallback to default production API
+  // Default fallback
   return 'https://dev-api.dream60.com';
 };
 

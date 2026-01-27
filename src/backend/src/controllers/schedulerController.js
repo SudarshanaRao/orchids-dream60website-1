@@ -1048,9 +1048,34 @@ const getLiveHourlyAuction = async (req, res) => {
       .select(commonProjection)
       .lean();
 
-    // 1b. FALLBACK: If no LIVE auction found in HourlyAuction, check DailyAuction config
+    // 1b. PROACTIVE SEARCH: If no LIVE auction found, look for an UPCOMING one that SHOULD be live now
     if (!liveAuction) {
-      console.log('🔍 [LIVE-AUCTION] No LIVE HourlyAuction found, checking DailyAuction fallback...');
+      console.log('🔍 [LIVE-AUCTION] No LIVE HourlyAuction found, checking for UPCOMING ones that should be live...');
+      const todayIST = getISTDateStart();
+      const nowIST = getISTTime();
+      const currentHour = nowIST.getUTCHours();
+      const currentMinute = nowIST.getUTCMinutes();
+      
+      // Look for an auction whose TimeSlot matches the current hour
+      const timeSlotStr = `${String(currentHour).padStart(2, '0')}:00`;
+      
+      liveAuction = await HourlyAuction.findOne({
+        Status: 'UPCOMING',
+        TimeSlot: timeSlotStr,
+        auctionDate: todayIST
+      }).select(commonProjection).lean();
+      
+      if (liveAuction) {
+        console.log(`✅ [LIVE-AUCTION] Found UPCOMING auction ${liveAuction.hourlyAuctionCode} for current hour ${timeSlotStr}. Returning as live.`);
+        // We return it but don't modify DB status here (background scheduler will do that)
+        // However, we set the status to LIVE in the returned object so frontend handles it correctly
+        liveAuction.Status = 'LIVE';
+      }
+    }
+
+    // 1c. FALLBACK: If still no auction, check DailyAuction fallback...
+    if (!liveAuction) {
+      console.log('🔍 [LIVE-AUCTION] No suitable HourlyAuction found, checking DailyAuction fallback...');
       const todayIST = getISTDateStart();
       
       // Look for today's active daily auctions
