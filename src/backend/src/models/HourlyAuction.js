@@ -241,6 +241,7 @@ const hourlyAuctionSchema = new mongoose.Schema(
       type: [ProductImageSchema],
       default: [],
     },
+    productDescription: { type: Map, of: String, default: {} },
     
     // ========== NEW FIELDS FOR PLAYER TRACKING ========== 
     

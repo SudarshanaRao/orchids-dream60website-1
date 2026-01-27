@@ -402,18 +402,43 @@ export function CreateMasterAuctionModal({
                       <label className="block text-sm font-semibold text-purple-900 mb-2">
                         Product Description (Key [Tab] Value)
                       </label>
-                      <textarea
-                        value={getDescriptionString(config.productDescription)}
-                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                        placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
-                        rows={4}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
-                      />
-                      <p className="text-xs text-purple-500 mt-1 italic">
-                        Copy-paste from Excel/Tab-separated data. Each line should be "Key [Tab] Value".
-                      </p>
+                        <textarea
+                          value={getDescriptionString(config.productDescription)}
+                          onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                          placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
+                          rows={4}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
+                        />
+                        <p className="text-xs text-purple-500 mt-1 italic">
+                          Copy-paste from Excel/Tab-separated data. Each line should be "Key [Tab] Value".
+                        </p>
+
+                        {/* Description Preview */}
+                        {config.productDescription && Object.keys(config.productDescription).length > 0 && (
+                          <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                            <h5 className="text-xs font-bold text-purple-900 mb-2 uppercase tracking-wider">Description Preview</h5>
+                            <div className="overflow-hidden rounded-md border border-purple-200 bg-white">
+                              <table className="w-full text-xs">
+                                <thead className="bg-purple-100">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Attribute</th>
+                                    <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Value</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {Object.entries(config.productDescription).map(([key, value], idx) => (
+                                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
+                                      <td className="px-3 py-2 font-semibold text-purple-800 border-b border-purple-100">{key}</td>
+                                      <td className="px-3 py-2 text-purple-700 border-b border-purple-100">{value}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
               </div>
             ))}
           </div>

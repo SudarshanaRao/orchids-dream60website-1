@@ -142,6 +142,7 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
     productImages: { type: [ProductImageSchema], default: [] },
+    productDescription: { type: Map, of: String, default: {} },
 
     // ========== TRACKING FIELDS ==========
     isAuctionCompleted: { type: Boolean, default: false },

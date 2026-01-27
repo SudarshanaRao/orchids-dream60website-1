@@ -6,15 +6,17 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface ProductImage {
   imageUrl: string;
   description: string[];
+  productDescription?: Record<string, string>;
 }
 
 interface ProductFlipCardProps {
   productImages: ProductImage[];
   productName: string;
   prizeValue: number;
+  productDescription?: Record<string, string>;
 }
 
-  export function ProductFlipCard({ productImages, productName, prizeValue }: ProductFlipCardProps) {
+  export function ProductFlipCard({ productImages, productName, prizeValue, productDescription: topLevelDescription }: ProductFlipCardProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -29,8 +31,11 @@ interface ProductFlipCardProps {
       return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Use the first image's description as the single description for the product
-    const productDescription = productImages[0]?.description || [];
+    const currentImage = productImages[currentIndex];
+    
+    // Combine descriptions: check current image description, then top level description
+    const currentProductDescription = currentImage?.productDescription || topLevelDescription;
+    const legacyDescription = currentImage?.description || [];
 
 
   if (!productImages || productImages.length === 0) {
@@ -40,8 +45,6 @@ interface ProductFlipCardProps {
       </div>
     );
   }
-
-  const currentImage = productImages[currentIndex];
 
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -166,34 +169,53 @@ interface ProductFlipCardProps {
                   </div>
                 )}
 
-                <div className="relative h-full flex flex-col p-5">
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
-                      {productName}
-                    </h3>
-                    <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
-                  </div>
+                  <div className="relative h-full flex flex-col p-5">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                        {productName}
+                      </h3>
+                      <div className="w-16 h-1 bg-gradient-to-r from-pink-400 to-purple-300 rounded-full" />
+                    </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {productDescription && productDescription.length > 0 ? (
-                      <ul className="space-y-2.5">
-                        {productDescription.filter(d => d.trim()).map((point, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
-                              <span className="text-xs font-bold text-white">{idx + 1}</span>
-                            </span>
-                            <span className="text-sm text-white/90 leading-relaxed">
-                              {point}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-white/70 text-sm italic">
-                        No description available for this product.
-                      </p>
-                    )}
-                  </div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                      {currentProductDescription && Object.keys(currentProductDescription).length > 0 ? (
+                        <div className="rounded-xl overflow-hidden border border-white/20 bg-white/10 backdrop-blur-md">
+                          <table className="w-full text-xs text-left">
+                            <thead className="bg-white/20">
+                              <tr>
+                                <th className="px-3 py-2 text-white/70 font-bold uppercase tracking-wider">Attribute</th>
+                                <th className="px-3 py-2 text-white/70 font-bold uppercase tracking-wider">Details</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/10">
+                              {Object.entries(currentProductDescription).map(([key, value], idx) => (
+                                <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                  <td className="px-3 py-2 text-pink-200 font-semibold align-top">{key}</td>
+                                  <td className="px-3 py-2 text-white/90">{value}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : legacyDescription && legacyDescription.length > 0 ? (
+                        <ul className="space-y-2.5">
+                          {legacyDescription.filter(d => d.trim()).map((point, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center mt-0.5">
+                                <span className="text-xs font-bold text-white">{idx + 1}</span>
+                              </span>
+                              <span className="text-sm text-white/90 leading-relaxed">
+                                {point}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-white/70 text-sm italic">
+                          No description available for this product.
+                        </p>
+                      )}
+                    </div>
 
                 <div className="mt-4 pt-3 border-t border-white/20 text-center">
                     <p className="text-xs text-white/60 font-medium">

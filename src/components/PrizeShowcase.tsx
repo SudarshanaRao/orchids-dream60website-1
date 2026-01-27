@@ -10,6 +10,7 @@ import { ProductFlipCard } from './ProductFlipCard';
 interface ProductImage {
   imageUrl: string;
   description: string[];
+  productDescription?: Record<string, string>;
 }
 
 interface AuctionConfig {
@@ -19,6 +20,7 @@ interface AuctionConfig {
   auctionName: string;
   imageUrl?: string;
   productImages?: ProductImage[];
+  productDescription?: Record<string, string>;
   prizeValue: number;
   Status: 'LIVE' | 'UPCOMING' | 'COMPLETED' | 'CANCELLED';
   FeeSplits?: {
@@ -321,6 +323,7 @@ interface PrizeShowcaseProps {
       auctionName: a.auctionName,
       imageUrl: a.imageUrl,
       productImages: a.productImages || [],
+      productDescription: a.productDescription,
       prizeValue: a.prizeValue,
       Status: a.Status,
       FeeSplits: a.FeeSplits,
@@ -881,6 +884,7 @@ interface PrizeShowcaseProps {
                       productImages={displayProductImages}
                       productName={displayPrize}
                       prizeValue={displayPrizeValue}
+                      productDescription={liveAuctions[0]?.productDescription}
                     />
                   ) : (
                     <div className="relative w-full h-full flex items-center justify-center">
