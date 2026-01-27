@@ -801,19 +801,29 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           const updateCountdown = () => {
             let totalSecondsRemaining = 0;
 
-            if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
-              // Calculate distance to specific upcoming auction
-              const [targetHours, targetMinutes] = upcomingAuctionData.TimeSlot.split(':').map(Number);
-              const target = new Date(serverTime.timestamp);
-              target.setUTCHours(targetHours, targetMinutes, 0, 0);
+              if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
+                // Calculate distance to specific upcoming auction
+                const [targetHours, targetMinutes] = upcomingAuctionData.TimeSlot.split(':').map(Number);
+                
+                // Use the auctionDate from the object if available, otherwise default to today
+                const auctionDate = upcomingAuctionData.auctionDate ? new Date(upcomingAuctionData.auctionDate) : new Date(serverTime.timestamp);
+                const target = new Date(Date.UTC(
+                  auctionDate.getUTCFullYear(),
+                  auctionDate.getUTCMonth(),
+                  auctionDate.getUTCDate(),
+                  targetHours,
+                  targetMinutes,
+                  0,
+                  0
+                ));
 
-              // If target time has passed today, it must be for tomorrow
-              if (target.getTime() <= serverTime.timestamp) {
-                target.setUTCDate(target.getUTCDate() + 1);
-              }
+                // If target time has passed today and no specific date was provided, it must be for tomorrow
+                if (!upcomingAuctionData.auctionDate && target.getTime() <= serverTime.timestamp) {
+                  target.setUTCDate(target.getUTCDate() + 1);
+                }
 
-              totalSecondsRemaining = Math.floor((target.getTime() - serverTime.timestamp) / 1000);
-            } else {
+                totalSecondsRemaining = Math.floor((target.getTime() - serverTime.timestamp) / 1000);
+              } else {
               // Fallback: Simplified calculation to the next top of the hour
               const currentMinute = serverTime.minute;
               const currentSecond = serverTime.second;

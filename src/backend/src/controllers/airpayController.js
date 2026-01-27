@@ -102,8 +102,8 @@ async function getAirpayRedirectData(reqBody) {
         orderid: reqBody.orderid || reqBody.orderId,
         buyer_phone: reqBody.phone || reqBody.buyerPhone || '9999999999',
         buyer_pincode: reqBody.pincode || reqBody.buyerPinCode || '400001',
-        isocurrency: reqBody.isocurrency || 'INR',
-        currency: reqBody.currency || '356',
+        isocurrency: 'INR',
+        currency: '356',
         merchant_id: AIRPAY_MID
     };
 

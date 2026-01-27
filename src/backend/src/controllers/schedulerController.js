@@ -2604,40 +2604,28 @@ const getFirstUpcomingProduct = async (req, res) => {
     const { hourlyAuctionId } = req.query;
     const todayIST = getISTDateStart();
     
-    if (!hourlyAuctionId) {
-      return res.status(200).json({
-        success: false,
-        message: 'No upcoming auctions currently',
-        data: null,
-      });
+    let upcomingAuction;
+
+    if (hourlyAuctionId) {
+      upcomingAuction = await HourlyAuction.findOne({
+        hourlyAuctionId: hourlyAuctionId,
+        Status: 'UPCOMING',
+        auctionDate: { $gte: todayIST }
+      }).lean();
+    } else {
+      // Find the next upcoming auction for today or future
+      upcomingAuction = await HourlyAuction.findOne({
+        Status: 'UPCOMING',
+        auctionDate: { $gte: todayIST }
+      })
+      .sort({ auctionDate: 1, TimeSlot: 1 })
+      .lean();
     }
-    
-    const upcomingAuction = await HourlyAuction.findOne({
-      hourlyAuctionId: hourlyAuctionId,
-      Status: 'UPCOMING',
-      auctionDate: { $gte: todayIST }
-    })
-    .select({
-      hourlyAuctionId: 1,
-      hourlyAuctionCode: 1,
-      auctionName: 1,
-      prizeValue: 1,
-      imageUrl: 1,
-      productImages: 1,
-      TimeSlot: 1,
-      auctionDate: 1,
-      Status: 1,
-      EntryFee: 1,
-      minEntryFee: 1,
-      maxEntryFee: 1,
-      FeeSplits: 1,
-    })
-    .lean();
     
     if (!upcomingAuction) {
       return res.status(200).json({
         success: false,
-        message: 'No upcoming auction found for the given ID',
+        message: 'No upcoming auctions currently',
         data: null,
       });
     }

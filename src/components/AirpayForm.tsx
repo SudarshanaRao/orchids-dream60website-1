@@ -36,9 +36,10 @@ export function AirpayForm({ url, params }: AirpayFormProps) {
       <input type="hidden" name="checksum" value={params.checksum} />
       <input type="hidden" name="chmod" value={params.chmod || ''} />
       <input type="hidden" name="customvar" value={params.customvar || ''} />
-      {params.token && <input type="hidden" name="token" value={params.token} />}
-      {params.currency && <input type="hidden" name="currency" value={params.currency} />}
-      {params.isocurrency && <input type="hidden" name="isocurrency" value={params.isocurrency} />}
-    </form>
+        <input type="hidden" name="token" value={params.token} />
+        <input type="hidden" name="currency" value="356" />
+        <input type="hidden" name="isocurrency" value="INR" />
+      </form>
+
   );
 }

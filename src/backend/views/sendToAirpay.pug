@@ -23,38 +23,38 @@ html
           div.form-group
             input#privatekey.form-control(type='hidden',  name='privatekey' value=privatekey)
           div.form-group
-            input#buyerPhone.form-control(type='hidden',  name='merchant_id' value=mid)
+            input#merchant_id.form-control(type='hidden',  name='merchant_id' value=mid)
           div.form-group
             input#checksum.form-control(type='hidden',  name='checksum' value=checksum)
           div.form-group
-            input#checksum.form-control(type='hidden',  name='encdata' value=data)
+            input#encdata.form-control(type='hidden',  name='encdata' value=data)
           div.form-group
             input#chmod.form-control(type='hidden',  name='chmod' value='')
-            div.form-group
-              input#currency.form-control(type='hidden',  name='currency' value='356')
-            div.form-group
-              input#isocurrency.form-control(type='hidden',  name='isocurrency' value='INR')
           div.form-group
-            input#buyerEmail.form-control(type='hidden',  name='buyerEmail' value=fdata.buyerEmail)
+            input#currency.form-control(type='hidden',  name='currency' value='356')
           div.form-group
-            input#buyerPhone.form-control(type='hidden',  name='buyerPhone' value=fdata.buyerPhone)
+            input#isocurrency.form-control(type='hidden',  name='isocurrency' value='INR')
           div.form-group
-            input#buyerFirstName.form-control(type='hidden',  name='buyerFirstName' value=fdata.buyerFirstName)
+            input#buyerEmail.form-control(type='hidden',  name='buyerEmail' value=fdata.buyerEmail || fdata.email)
           div.form-group
-            input#buyerLastName.form-control(type='hidden',  name='buyerLastName' value=fdata.buyerLastName)
+            input#buyerPhone.form-control(type='hidden',  name='buyerPhone' value=fdata.buyerPhone || fdata.phone)
           div.form-group
-            input#buyerAddress.form-control(type='hidden',  name='buyerAddress' value=fdata.buyerAddress)
+            input#buyerFirstName.form-control(type='hidden',  name='buyerFirstName' value=fdata.buyerFirstName || fdata.firstname)
           div.form-group
-            input#buyerCity.form-control(type='hidden',  name='buyerCity' value=fdata.buyerCity)
+            input#buyerLastName.form-control(type='hidden',  name='buyerLastName' value=fdata.buyerLastName || fdata.lastname)
           div.form-group
-            input#buyerState.form-control(type='hidden',  name='buyerState' value=fdata.buyerState)
+            input#buyerAddress.form-control(type='hidden',  name='buyerAddress' value=fdata.buyerAddress || fdata.address)
           div.form-group
-            input#buyerCountry.form-control(type='hidden',  name='buyerCountry' value=fdata.buyerCountry)
+            input#buyerCity.form-control(type='hidden',  name='buyerCity' value=fdata.buyerCity || fdata.city)
           div.form-group
-            input#buyerPinCode.form-control(type='hidden',  name='buyerPinCode' value=fdata.buyerPinCode)
+            input#buyerState.form-control(type='hidden',  name='buyerState' value=fdata.buyerState || fdata.state)
           div.form-group
-            input#orderid.form-control(type='hidden',  name='orderid' value=fdata.orderid)
+            input#buyerCountry.form-control(type='hidden',  name='buyerCountry' value=fdata.buyerCountry || fdata.country)
+          div.form-group
+            input#buyerPinCode.form-control(type='hidden',  name='buyerPinCode' value=fdata.buyerPinCode || fdata.pincode)
+          div.form-group
+            input#orderid.form-control(type='hidden',  name='orderid' value=fdata.orderid || fdata.orderId)
           div.form-group
             input#amount.form-control(type='hidden',  name='amount' value=fdata.amount)
           div.form-group
-            input#txnsubtype.form-control(type='hidden',  name='txnsubtype' value=fdata.txnsubtype)
+            input#txnsubtype.form-control(type='hidden',  name='txnsubtype' value=fdata.txnsubtype || '')
