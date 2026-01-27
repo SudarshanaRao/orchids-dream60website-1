@@ -15,6 +15,7 @@ const connectDB = async () => {
     } else {
         console.log('🧪 Development Environment - Using Development Database');
     }
+    console.log(`🗄️ MongoDB URI: ${MONGO_URI}`);
 
     const MAX_RETRIES = 5;
     const RETRY_DELAY = 5000; // 5 seconds

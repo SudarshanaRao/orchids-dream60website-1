@@ -3,6 +3,12 @@ const path = require('path');
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
 require('dotenv').config({ path: path.join(__dirname, envFile) });
 
+console.log('-------------------------------------------');
+console.log(`📂 Environment File: ${envFile}`);
+console.log(`🌐 Base URL: ${process.env.API_BASE_URL || 'Not Set'}`);
+console.log(`🗄️ MongoDB URI: ${process.env.MONGO_URI || 'Not Set'}`);
+console.log('-------------------------------------------');
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
