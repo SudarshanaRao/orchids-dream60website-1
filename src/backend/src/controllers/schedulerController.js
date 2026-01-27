@@ -479,30 +479,70 @@ const createDailyAuction = async () => {
     
     if (existingDailyAuction) {
       console.log(`⚠️ [SCHEDULER] Daily auction for today already exists: ${existingDailyAuction.dailyAuctionId}`);
-      console.log(`⚠️ [SCHEDULER] Skipping creation to prevent duplicate. Use the existing auction.`);
+      console.log(`🔄 [SCHEDULER] Re-syncing with latest master auction configuration...`);
       
-      // Make sure hourly auctions exist
-      const existingHourlyCount = await HourlyAuction.countDocuments({
-        dailyAuctionId: existingDailyAuction.dailyAuctionId
-      });
+      // Update basic fields from master
+      existingDailyAuction.totalAuctionsPerDay = activeMasterAuction.totalAuctionsPerDay;
       
-      if (existingHourlyCount === 0) {
-        console.log(`📌 [SCHEDULER] No hourly auctions found for existing daily auction. Creating them...`);
-        const hourlyResult = await createHourlyAuctions(existingDailyAuction);
-        return {
-          success: true,
-          message: 'Daily auction already exists. Created missing hourly auctions.',
-          dailyAuction: existingDailyAuction,
-          hourlyAuctions: hourlyResult,
-          date: todayIST.toISOString(),
-          wasExisting: true,
-        };
+      // Merge configs: Update existing upcoming ones and add new ones
+      const masterConfigs = activeMasterAuction.dailyAuctionConfig.map(c => c.toObject ? c.toObject() : { ...c });
+      const existingConfigs = existingDailyAuction.dailyAuctionConfig;
+      
+      const updatedConfigs = [...existingConfigs];
+      
+      for (const masterConfig of masterConfigs) {
+        // Find existing config by TimeSlot or auctionNumber
+        const existingIndex = updatedConfigs.findIndex(ec => 
+          ec.auctionNumber === masterConfig.auctionNumber || ec.TimeSlot === masterConfig.TimeSlot
+        );
+        
+        if (existingIndex !== -1) {
+          // If existing is UPCOMING, we can update its details
+          if (updatedConfigs[existingIndex].Status === 'UPCOMING') {
+            const hourlyAuctionId = updatedConfigs[existingIndex].hourlyAuctionId;
+            updatedConfigs[existingIndex] = {
+              ...masterConfig,
+              auctionId: updatedConfigs[existingIndex].auctionId, // Keep original auctionId
+              hourlyAuctionId: hourlyAuctionId, // Keep original hourlyAuctionId
+              Status: 'UPCOMING',
+              isAuctionCompleted: false,
+              completedAt: null,
+              topWinners: [],
+              productImages: masterConfig.productImages || [],
+            };
+            console.log(`  📝 Updated existing UPCOMING slot: ${masterConfig.TimeSlot}`);
+          } else {
+            console.log(`  ⏭️ Skipping update for slot ${masterConfig.TimeSlot} as it is already ${updatedConfigs[existingIndex].Status}`);
+          }
+        } else {
+          // New slot from master that doesn't exist in today's daily auction
+          const newHourlyAuctionId = uuidv4();
+          updatedConfigs.push({
+            ...masterConfig,
+            auctionId: uuidv4(),
+            Status: 'UPCOMING',
+            isAuctionCompleted: false,
+            completedAt: null,
+            topWinners: [],
+            hourlyAuctionId: newHourlyAuctionId,
+            productImages: masterConfig.productImages || [],
+          });
+          console.log(`  ➕ Added new slot from master: ${masterConfig.TimeSlot}`);
+        }
       }
+      
+      existingDailyAuction.dailyAuctionConfig = updatedConfigs;
+      existingDailyAuction.markModified('dailyAuctionConfig');
+      await existingDailyAuction.save();
+      
+      // Now create/update hourly auctions
+      const hourlyResult = await createHourlyAuctions(existingDailyAuction);
       
       return {
         success: true,
-        message: 'Daily auction and hourly auctions already exist for today',
+        message: 'Daily auction re-synced with master configuration',
         dailyAuction: existingDailyAuction,
+        hourlyAuctions: hourlyResult,
         date: todayIST.toISOString(),
         wasExisting: true,
       };
@@ -608,9 +648,38 @@ const createHourlyAuctions = async (dailyAuction) => {
         });
         
         if (existingHourlyAuction) {
-          console.log(`  ⏭️ Hourly auction already exists: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
+          if (existingHourlyAuction.Status === 'UPCOMING') {
+            console.log(`  🔄 Updating existing UPCOMING hourly auction: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
+            
+            // Update fields from config
+            existingHourlyAuction.TimeSlot = config.TimeSlot;
+            existingHourlyAuction.auctionName = config.auctionName;
+            existingHourlyAuction.prizeValue = config.prizeValue;
+            existingHourlyAuction.maxDiscount = config.maxDiscount || 0;
+            existingHourlyAuction.EntryFee = config.EntryFee;
+            existingHourlyAuction.minEntryFee = config.minEntryFee;
+            existingHourlyAuction.maxEntryFee = config.maxEntryFee;
+            existingHourlyAuction.FeeSplits = config.FeeSplits;
+            existingHourlyAuction.roundCount = config.roundCount || 4;
+            existingHourlyAuction.roundConfig = config.roundConfig || [];
+            existingHourlyAuction.imageUrl = config.imageUrl || null;
+            existingHourlyAuction.productImages = config.productImages || [];
+            
+            // Recalculate round times
+            const roundTimes = calculateRoundTimes(
+              dailyAuction.auctionDate,
+              config.TimeSlot,
+              config.roundConfig || []
+            );
+            existingHourlyAuction.rounds = roundTimes;
+            
+            await existingHourlyAuction.save();
+            createdAuctions.push(existingHourlyAuction);
+            continue;
+          }
+          console.log(`  ⏭️ Hourly auction already exists and is ${existingHourlyAuction.Status}: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
           skippedAuctions.push(existingHourlyAuction);
-          continue; // Skip to next config - don't overwrite existing data
+          continue;
         }
         
         // ✅ Also check by dailyAuctionId + TimeSlot to prevent duplicates
@@ -620,7 +689,40 @@ const createHourlyAuctions = async (dailyAuction) => {
         });
         
         if (existingByTimeSlot) {
-          console.log(`  ⏭️ Hourly auction for this time slot already exists: ${existingByTimeSlot.hourlyAuctionCode} (${config.TimeSlot})`);
+          if (existingByTimeSlot.Status === 'UPCOMING') {
+            console.log(`  🔄 Updating existing UPCOMING hourly auction (by TimeSlot): ${existingByTimeSlot.hourlyAuctionCode} (${config.TimeSlot})`);
+            
+            // Sync IDs if they differ
+            if (config.hourlyAuctionId !== existingByTimeSlot.hourlyAuctionId) {
+              dailyAuction.dailyAuctionConfig[i].hourlyAuctionId = existingByTimeSlot.hourlyAuctionId;
+            }
+            
+            // Update fields
+            existingByTimeSlot.auctionName = config.auctionName;
+            existingByTimeSlot.prizeValue = config.prizeValue;
+            existingByTimeSlot.maxDiscount = config.maxDiscount || 0;
+            existingByTimeSlot.EntryFee = config.EntryFee;
+            existingByTimeSlot.minEntryFee = config.minEntryFee;
+            existingByTimeSlot.maxEntryFee = config.maxEntryFee;
+            existingByTimeSlot.FeeSplits = config.FeeSplits;
+            existingByTimeSlot.roundCount = config.roundCount || 4;
+            existingByTimeSlot.roundConfig = config.roundConfig || [];
+            existingByTimeSlot.imageUrl = config.imageUrl || null;
+            existingByTimeSlot.productImages = config.productImages || [];
+            
+            const roundTimes = calculateRoundTimes(
+              dailyAuction.auctionDate,
+              config.TimeSlot,
+              config.roundConfig || []
+            );
+            existingByTimeSlot.rounds = roundTimes;
+            
+            await existingByTimeSlot.save();
+            createdAuctions.push(existingByTimeSlot);
+            continue;
+          }
+          
+          console.log(`  ⏭️ Hourly auction for this time slot already exists and is ${existingByTimeSlot.Status}: ${existingByTimeSlot.hourlyAuctionCode} (${config.TimeSlot})`);
           
           // ✅ Update the dailyAuctionConfig with the existing hourlyAuctionId
           if (config.hourlyAuctionId !== existingByTimeSlot.hourlyAuctionId) {

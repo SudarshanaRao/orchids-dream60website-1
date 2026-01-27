@@ -1,7 +1,32 @@
 import { Clock, Lock, Unlock, Zap, Star, IndianRupee } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState, useEffect } from 'react';
 
 export function AuctionScheduleInfo() {
+  const [currentHour, setCurrentHour] = useState<number>(new Date().getHours());
+
+  useEffect(() => {
+    const fetchServerTime = async () => {
+      try {
+        const response = await fetch('https://prod-api.dream60.com/utility/server-time');
+        const result = await response.json();
+        if (result.success && result.data) {
+          setCurrentHour(result.data.hour);
+        }
+      } catch (error) {
+        console.error('Error fetching server time:', error);
+      }
+    };
+
+    fetchServerTime();
+    // Refresh every minute to stay accurate
+    const interval = setInterval(fetchServerTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatHour = (h: number) => h.toString().padStart(2, '0');
+  const nextHour = (currentHour + 1) % 24;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,14 +56,14 @@ export function AuctionScheduleInfo() {
                 <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4 relative z-10">
                   <p className="text-sm text-purple-700 flex items-start gap-2">
                     <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-                    <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:00</span> when the auction hour begins.</span>
+                    <span><span className="font-bold">One Payment:</span> Pay single entry fee (₹1,000-₹3,500) split across Box 1 & 2. Opens exactly at <span className="font-bold">:{formatHour(currentHour)}:00</span> when the auction hour begins.</span>
                   </p>
                 </div>
                 
                   <div className="grid grid-cols-2 gap-4 relative z-10">
                     {[
-                      { box: 'Box 1', time: ':00-:15', desc: 'Half of entry fee' },
-                      { box: 'Box 2', time: ':00-:15', desc: 'Half of entry fee' }
+                      { box: 'Box 1', time: `${formatHour(currentHour)}:00-${formatHour(currentHour)}:15`, desc: 'Half of entry fee' },
+                      { box: 'Box 2', time: `${formatHour(currentHour)}:00-${formatHour(currentHour)}:15`, desc: 'Half of entry fee' }
                     ].map((round, idx) => (
                       <div
                         key={idx}
@@ -66,10 +91,10 @@ export function AuctionScheduleInfo() {
                 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 relative z-10">
                     {[
-                      { box: 'Box 3', time: ':00-:15', unlock: 'Opens at :00' },
-                      { box: 'Box 4', time: ':15-:30', unlock: 'Opens at :15' },
-                      { box: 'Box 5', time: ':30-:45', unlock: 'Opens at :30' },
-                      { box: 'Box 6', time: ':45-:00', unlock: 'Opens at :45' }
+                      { box: 'Box 3', time: `${formatHour(currentHour)}:00-${formatHour(currentHour)}:15`, unlock: `Opens at ${formatHour(currentHour)}:00` },
+                      { box: 'Box 4', time: `${formatHour(currentHour)}:15-${formatHour(currentHour)}:30`, unlock: `Opens at ${formatHour(currentHour)}:15` },
+                      { box: 'Box 5', time: `${formatHour(currentHour)}:30-${formatHour(currentHour)}:45`, unlock: `Opens at ${formatHour(currentHour)}:30` },
+                      { box: 'Box 6', time: `${formatHour(currentHour)}:45-${formatHour(nextHour)}:00`, unlock: `Opens at ${formatHour(currentHour)}:45` }
                     ].map((round, idx) => (
                       <div
                         key={idx}
@@ -92,13 +117,13 @@ export function AuctionScheduleInfo() {
             <div className="flex items-start gap-3 bg-violet-100/50 backdrop-blur-sm rounded-2xl p-4 border border-violet-200/60">
               <Star className="w-5 h-5 text-violet-600 shrink-0" />
               <p className="text-sm text-violet-800">
-                <span className="font-bold">How it works:</span> Pay ONE entry fee right at :00 when the auction hour begins. This unlocks Box 1 & 2 (your entry is split between them). Then Box 3, 4, 5, 6 open every 15 minutes for bidding.
+                <span className="font-bold">How it works:</span> Pay ONE entry fee right at <span className="font-bold">{formatHour(currentHour)}:00</span> when the auction hour begins. This unlocks Box 1 & 2 (your entry is split between them). Then Box 3, 4, 5, 6 open every 15 minutes for bidding.
               </p>
             </div>
             <div className="flex items-start gap-3 bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-200/60">
               <Clock className="w-5 h-5 text-purple-600 shrink-0" />
               <p className="text-sm text-purple-800 leading-relaxed">
-                <span className="font-bold">Example Timeline:</span> If auction starts at 2:00 PM → Entry opens at 2:00 PM → Box 3 at 2:00 PM → Box 4 at 2:15 PM → Box 5 at 2:30 PM → Box 6 at 2:45 PM → Results at 3:00 PM
+                <span className="font-bold">Example Timeline:</span> If auction starts at {formatHour(currentHour)}:00 → Entry opens at {formatHour(currentHour)}:00 → Box 3 at {formatHour(currentHour)}:00 → Box 4 at {formatHour(currentHour)}:15 → Box 5 at {formatHour(currentHour)}:30 → Box 6 at {formatHour(currentHour)}:45 → Results at {formatHour(nextHour)}:00
               </p>
             </div>
           </div>
