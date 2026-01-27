@@ -33,6 +33,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface UserActivitySummary {
   userId: string;
@@ -187,13 +188,13 @@ export function SuperAdminUserAnalytics({ adminUserId }: SuperAdminUserAnalytics
   const [viewType, setViewType] = useState<ViewType>('today');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [onlineCount, setOnlineCount] = useState(0);
-  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+    const [onlineCount, setOnlineCount] = useState(0);
+    const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'https://dev-api.dream60.com';
+    const backendUrl = API_BASE_URL;
 
-  const fetchUserList = async (showLoading = true) => {
+    const fetchUserList = async (showLoading = true) => {
     try {
       if (showLoading) setIsLoading(true);
       setIsRefreshing(true);

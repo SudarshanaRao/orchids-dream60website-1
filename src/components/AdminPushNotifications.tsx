@@ -78,7 +78,7 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
   const fetchUsersWithBidAlerts = async () => {
     try {
       setIsLoadingUsers(true);
-      const response = await fetch('https://dev-api.dream60.com/auth/users');
+      const response = await fetch(`${API_BASE_URL}/auth/users`);
       const data = await response.json();
 
       if (data.success && data.users) {

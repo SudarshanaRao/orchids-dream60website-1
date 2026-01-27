@@ -32,6 +32,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface AnalyticsData {
   viewType: string;
@@ -159,12 +160,12 @@ export const AdminAnalyticsDashboard = forwardRef<{ refresh: () => Promise<void>
         return;
       }
       
-      try {
-        setIsLoading(true);
-        setError(null);
-        const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'https://dev-api.dream60.com';
-        
-        let url = `${backendUrl}/admin/analytics?user_id=${adminUserId}&viewType=${viewType}`;
+        try {
+          setIsLoading(true);
+          setError(null);
+          const backendUrl = API_BASE_URL;
+          
+          let url = `${backendUrl}/admin/analytics?user_id=${adminUserId}&viewType=${viewType}`;
         
         if (viewType === 'today') {
           url += `&date=${formatDateToDDMMYYYY(dateToFetch)}`;

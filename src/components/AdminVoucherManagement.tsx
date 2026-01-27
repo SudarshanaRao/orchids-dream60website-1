@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface EligibleWinner {
   _id: string;
@@ -76,10 +77,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     winner: null
   });
 
-  const fetchEligibleWinners = async () => {
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/eligible-winners?user_id=${adminUserId}`);
-      const data = await response.json();
+    const fetchEligibleWinners = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/eligible-winners?user_id=${adminUserId}`);
+        const data = await response.json();
       if (data.success) {
         setEligibleWinners(data.data);
       }
@@ -89,10 +90,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const fetchIssuedVouchers = async () => {
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/issued?user_id=${adminUserId}`);
-      const data = await response.json();
+    const fetchIssuedVouchers = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/issued?user_id=${adminUserId}`);
+        const data = await response.json();
       if (data.success) {
         setIssuedVouchers(data.data);
       }
@@ -102,10 +103,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const fetchWoohooBalance = async () => {
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-balance?user_id=${adminUserId}`);
-      const data = await response.json();
+    const fetchWoohooBalance = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/woohoo-balance?user_id=${adminUserId}`);
+        const data = await response.json();
       if (data.success) {
         // Woohoo API v3 balance is usually in data.balance or data[0].balance
         const balance = data.data?.balance || data.data?.[0]?.balance || 0;
@@ -116,10 +117,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const fetchWoohooTransactions = async () => {
-    try {
-      const response = await fetch(`https://dev-api.dream60.com/admin/vouchers/woohoo-transactions?user_id=${adminUserId}`);
-      const data = await response.json();
+    const fetchWoohooTransactions = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/vouchers/woohoo-transactions?user_id=${adminUserId}`);
+        const data = await response.json();
       if (data.success) {
         setWoohooTransactions(data.data?.orders || data.data || []);
       }

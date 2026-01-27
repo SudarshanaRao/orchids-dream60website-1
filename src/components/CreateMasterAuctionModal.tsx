@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Image as ImageIcon, Upload, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface ProductImage {
-  imageUrl: string;
-  description: string[];
-}
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface DailyAuctionConfigItem {
   auctionNumber: number;
@@ -80,40 +76,38 @@ export function CreateMasterAuctionModal({
             { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
             { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
           ],
-          imageUrl: '',
-          productImages: [],
-        };
-      setAuctionConfigs([defaultConfig]);
-    }
-  }, [editingAuction]);
+            imageUrl: '',
+          };
+        setAuctionConfigs([defaultConfig]);
+      }
+    }, [editingAuction]);
 
-  const handleAddAuction = () => {
-    const newNumber = auctionConfigs.length + 1;
-    setAuctionConfigs([
-      ...auctionConfigs,
-      {
-        auctionNumber: newNumber,
-        TimeSlot: '14:00',
-        auctionName: `Auction ${newNumber}`,
-        prizeValue: 1000,
-        Status: 'UPCOMING',
-        maxDiscount: 0,
-        EntryFee: 'RANDOM',
-        minEntryFee: null,
-        maxEntryFee: null,
-        FeeSplits: { BoxA: 50, BoxB: 50 },
-        roundCount: 4,
-        roundConfig: [
-          { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-        ],
-        imageUrl: '',
-        productImages: [],
-      },
-    ]);
-  };
+    const handleAddAuction = () => {
+      const newNumber = auctionConfigs.length + 1;
+      setAuctionConfigs([
+        ...auctionConfigs,
+        {
+          auctionNumber: newNumber,
+          TimeSlot: '14:00',
+          auctionName: `Auction ${newNumber}`,
+          prizeValue: 1000,
+          Status: 'UPCOMING',
+          maxDiscount: 0,
+          EntryFee: 'RANDOM',
+          minEntryFee: null,
+          maxEntryFee: null,
+          FeeSplits: { BoxA: 50, BoxB: 50 },
+          roundCount: 4,
+          roundConfig: [
+            { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+            { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          ],
+          imageUrl: '',
+        },
+      ]);
+    };
 
   const handleRemoveAuction = (index: number) => {
     const updated = auctionConfigs.filter((_, i) => i !== index);
@@ -158,8 +152,8 @@ export function CreateMasterAuctionModal({
 
     try {
       const url = editingAuction
-        ? `https://dev-api.dream60.com/admin/master-auctions/${editingAuction.master_id}?user_id=${adminUserId}`
-        : `https://dev-api.dream60.com/admin/master-auctions?user_id=${adminUserId}`;
+        ? `${API_BASE_URL}/admin/master-auctions/${editingAuction.master_id}?user_id=${adminUserId}`
+        : `${API_BASE_URL}/admin/master-auctions?user_id=${adminUserId}`;
 
       const response = await fetch(url, {
         method: editingAuction ? 'PUT' : 'POST',

@@ -19,7 +19,7 @@ import {
   Sparkles,
   Eye,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface User {
   user_id: string;
@@ -65,7 +65,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const fetchUsers = async () => {
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/users?user_id=${adminUserId}&limit=100`
+        `${API_BASE_URL}/admin/users?user_id=${adminUserId}&limit=100`
       );
       const data = await response.json();
 
@@ -84,7 +84,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const fetchTemplates = async () => {
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/emails/templates?user_id=${adminUserId}&limit=100`
+        `${API_BASE_URL}/admin/emails/templates?user_id=${adminUserId}&limit=100`
       );
       const data = await response.json();
 
@@ -162,7 +162,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     setIsSending(true);
 
     try {
-      const response = await fetch('https://dev-api.dream60.com/admin/emails/send', {
+      const response = await fetch(`${API_BASE_URL}/admin/emails/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,8 +220,8 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
 
     try {
       const url = editingTemplate
-        ? `https://dev-api.dream60.com/admin/emails/templates/${editingTemplate.template_id}?user_id=${adminUserId}`
-        : 'https://dev-api.dream60.com/admin/emails/templates';
+        ? `${API_BASE_URL}/admin/emails/templates/${editingTemplate.template_id}?user_id=${adminUserId}`
+        : `${API_BASE_URL}/admin/emails/templates`;
 
       const method = editingTemplate ? 'PUT' : 'POST';
 
@@ -271,7 +271,7 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
 
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/emails/templates/${templateId}?user_id=${adminUserId}`,
+        `${API_BASE_URL}/admin/emails/templates/${templateId}?user_id=${adminUserId}`,
         {
           method: 'DELETE',
         }

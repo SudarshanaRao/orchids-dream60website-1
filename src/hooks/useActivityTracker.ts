@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface DeviceInfo {
   userAgent: string;
@@ -27,7 +28,7 @@ interface Interaction {
   metadata?: Record<string, unknown>;
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_API_URL || 'https://dev-api.dream60.com';
+const BACKEND_URL = API_BASE_URL;
 const HEARTBEAT_INTERVAL = 10000;
 const BATCH_INTERVAL = 15000;
 
