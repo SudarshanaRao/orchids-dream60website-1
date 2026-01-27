@@ -244,6 +244,10 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
       newErrors.username = 'Username must be at least 3 characters';
     } else if (formData.username.length > 20) {
       newErrors.username = 'Username cannot exceed 20 characters';
+    } else if (usernameAvailable === false) {
+      newErrors.username = 'Username is already taken';
+    } else if (usernameAvailable === null && !isCheckingUsername) {
+      newErrors.username = 'Please choose a valid username';
     }
 
     if (!formData.mobile) {
@@ -589,14 +593,14 @@ body: JSON.stringify({ [type]: identifier, otp }),
                             type="button"
                             onClick={() => {
                               if (!usernameAvailable) {
-                                toast.error('Please provide a valid and available username first');
+                                toast.error('Please provide a unique username first');
                                 return;
                               }
                               handleSendOtp('mobile');
                             }}
-                            disabled={isSendingMobileOtp}
+                            disabled={isSendingMobileOtp || !usernameAvailable}
                             variant="outline"
-                            className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap"
+                            className={`rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap transition-all duration-200 ${!usernameAvailable ? 'opacity-50 grayscale cursor-not-allowed' : 'opacity-100'}`}
                           >
                             {isSendingMobileOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
                           </Button>
@@ -678,14 +682,14 @@ body: JSON.stringify({ [type]: identifier, otp }),
                             type="button"
                             onClick={() => {
                               if (!usernameAvailable) {
-                                toast.error('Please provide a valid and available username first');
+                                toast.error('Please provide a unique username first');
                                 return;
                               }
                               handleSendOtp('email');
                             }}
-                            disabled={isSendingEmailOtp}
+                            disabled={isSendingEmailOtp || !usernameAvailable}
                             variant="outline"
-                            className="rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap"
+                            className={`rounded-xl border-purple-400 text-purple-700 hover:bg-purple-50 hover:border-purple-600 px-6 font-medium whitespace-nowrap transition-all duration-200 ${!usernameAvailable ? 'opacity-50 grayscale cursor-not-allowed' : 'opacity-100'}`}
                           >
                             {isSendingEmailOtp ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Verify'}
                           </Button>

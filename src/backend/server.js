@@ -34,7 +34,7 @@ const app = express();
 app.use(express.json());
 
 // Dynamic CORS setup (supports comma-separated env, and common local-network IPs in dev)
-const raw = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:3000';
+const raw = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:3000,http://localhost:5173';
 let allowedOrigins = Array.isArray(raw) ? raw : String(raw).split(',').map(s => s.trim()).filter(Boolean);
 
 // Normalize entries (remove trailing slash)
@@ -49,7 +49,10 @@ const productionDomains = [
   'https://test.dream60.com',
   'http://test.dream60.com',
   'https://form.dream60.com',
-  'http://form.dream60.com'
+  'http://form.dream60.com',
+  'https://dream60website-1.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
 ];
 
 // Merge production domains with allowed origins (avoid duplicates)
@@ -82,36 +85,41 @@ app.use(
 
         // 1) Exact match with configured allowedOrigins
         if (allowedOrigins.includes(incomingOrigin)) {
-          console.log(`✅ Allowing configured origin: ${incomingOrigin}`);
           return callback(null, true);
         }
 
         // 2) Allow all *.orchids.page domains (dynamic Orchids URLs)
         if (isOrchidsPage(hostname)) {
-          console.log(`✅ Allowing Orchids domain: ${incomingOrigin}`);
           return callback(null, true);
         }
 
         // 3) In non-production, allow typical local-network IPs and localhost
         if (process.env.NODE_ENV !== 'production' && isLocalNetwork(hostname)) {
-          console.log(`✅ Allowing local network: ${incomingOrigin}`);
+          return callback(null, true);
+        }
+
+        // 4) Always allow localhost in dev
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
           return callback(null, true);
         }
 
         // Reject if not allowed
         console.error(`❌ Not allowed by CORS: ${incomingOrigin}`);
-        const err = new Error(`❌ Not allowed by CORS: ${incomingOrigin}`);
-        err.status = 403;
-        return callback(err);
+        return callback(null, false);
       } catch (e) {
-        // If origin is malformed, reject
-        console.error(`❌ Not allowed by CORS (malformed origin):`, e.message);
-        return callback(new Error('❌ Not allowed by CORS (malformed origin)'));
+        return callback(null, false);
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
+
+// Explicit OPTIONS handler for all routes
+app.options('*', cors());
 console.log(`🌍 Allowed frontend origins: ${allowedOrigins.join(', ')}`);
 console.log(`🌍 Allowing all *.orchids.page domains`);
 console.log(`🌍 NODE_ENV=${process.env.NODE_ENV || 'undefined'}`);

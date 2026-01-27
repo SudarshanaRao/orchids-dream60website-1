@@ -549,6 +549,7 @@ module.exports = {
   resetPassword,
   updatePassword,
   sendVerificationOtp,
+  checkUsername,
   checkEmail,
   checkMobile,
 };
