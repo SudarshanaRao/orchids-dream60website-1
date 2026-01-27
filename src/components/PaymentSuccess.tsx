@@ -256,18 +256,47 @@ export function PaymentSuccess({
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12" />
         
-        <motion.div 
-          className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg relative z-10"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", delay: 0.2 }}
-        >
-          {type === 'claim' ? (
-            <Trophy className={`w-10 h-10 ${getIconColor()}`} strokeWidth={3} />
-          ) : (
-            <Check className={`w-10 h-10 ${getIconColor()}`} strokeWidth={4} />
-          )}
-        </motion.div>
+          <motion.div 
+            className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg relative z-10"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.2, bounce: 0.6 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4, type: "spring" }}
+            >
+              {type === 'claim' ? (
+                <Trophy className={`w-10 h-10 ${getIconColor()}`} strokeWidth={3} />
+              ) : (
+                <Check className={`w-10 h-10 ${getIconColor()}`} strokeWidth={4} />
+              )}
+            </motion.div>
+          </motion.div>
+          
+          {/* Success Sparkles/Particles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-white/40"
+              initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+              animate={{ 
+                opacity: [0, 1, 0], 
+                scale: [0, 1, 0],
+                x: (Math.random() - 0.5) * 200,
+                y: (Math.random() - 0.5) * 200
+              }}
+              transition={{ 
+                duration: 2, 
+                repeat: Infinity, 
+                delay: i * 0.3,
+                ease: "easeOut"
+              }}
+            >
+              <Sparkles className="w-4 h-4" />
+            </motion.div>
+          ))}
         
         <motion.div
           initial={{ opacity: 0, y: 10 }}

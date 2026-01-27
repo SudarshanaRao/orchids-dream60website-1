@@ -211,10 +211,45 @@ export function PaymentFailure({
             className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg relative z-10"
             initial={{ scale: 0, rotate: -45 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", delay: 0.2 }}
+            transition={{ type: "spring", delay: 0.2, bounce: 0.5 }}
           >
-            <X className="w-10 h-10 text-red-500" strokeWidth={4} />
+            <motion.div
+              animate={{ 
+                x: [0, -5, 5, -5, 5, 0],
+              }}
+              transition={{ 
+                delay: 1,
+                duration: 0.5,
+                repeat: Infinity,
+                repeatDelay: 2
+              }}
+            >
+              <X className="w-10 h-10 text-red-500" strokeWidth={4} />
+            </motion.div>
           </motion.div>
+          
+          {/* Failure Warning Particles */}
+          {[...Array(4)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-white/30"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ 
+                opacity: [0, 1, 0], 
+                scale: [0.5, 1.2, 0.5],
+                y: [0, -100],
+                x: (i % 2 === 0 ? 1 : -1) * (40 + i * 20)
+              }}
+              transition={{ 
+                duration: 1.5, 
+                repeat: Infinity, 
+                delay: i * 0.4,
+                ease: "linear"
+              }}
+            >
+              <AlertTriangle className="w-5 h-5" />
+            </motion.div>
+          ))}
           
           <motion.div
             initial={{ opacity: 0, y: 10 }}
