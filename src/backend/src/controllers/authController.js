@@ -102,7 +102,14 @@ const signup = async (req, res) => {
     if (email) {
       sendWelcomeEmail(email, username).catch(err => {
         console.error('Failed to send welcome email:', err);
-        // Don't fail signup if email fails
+      });
+    }
+
+    // ✅ Send welcome SMS
+    if (normalizedMobile) {
+      const { message, template } = formatTemplate('WELCOME_SMS', { name: username });
+      sendSms(normalizedMobile, message, { templateId: template.templateId }).catch(err => {
+        console.error('Failed to send welcome SMS:', err);
       });
     }
 

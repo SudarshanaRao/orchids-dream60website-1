@@ -228,11 +228,18 @@ const SMS_TEMPLATES = {
     OTP_VERIFICATION: {
       id: 'otp_verification',
       name: 'OTP Verification',
-      template: 'Dear {name}, Your password reset verification code for Dream60 account is {otp}. This code will expire in 10 minutes. - Finpages Tech',
+      template: 'Dear {name}, use this OTP {otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech',
       variables: ['name', 'otp'],
-      templateId: '1207176908078229051'
+      templateId: '1207176898558880888'
     },
-};
+    WELCOME_SMS: {
+      id: 'welcome_sms',
+      name: 'Welcome SMS',
+      template: 'Dear {name}, Welcome to Dream60! Your registration is successful. You can now join auctions and win exciting gadgets. - Finpages Tech',
+      variables: ['name'],
+      templateId: '1207176923373608591'
+    },
+  };
 
 const formatTemplate = (templateId, variables = {}) => {
   const template = SMS_TEMPLATES[templateId];
