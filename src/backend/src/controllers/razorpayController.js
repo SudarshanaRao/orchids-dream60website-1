@@ -234,6 +234,9 @@ exports.createHourlyAuctionOrder = async (req, res) => {
   try {
     const { userId, hourlyAuctionId, amount, currency = 'INR', username } = req.body;
 
+    // Initialize Razorpay instance
+    const razorpay = getRazorpayInstance();
+
     // Validate required fields
     if (!userId || !hourlyAuctionId || !amount) {
       return res.status(400).json({
@@ -731,6 +734,9 @@ exports.verifyHourlyAuctionPayment = async (req, res) => {
 exports.createPrizeClaimOrder = async (req, res) => {
   try {
     const { userId, hourlyAuctionId, amount, currency = 'INR', username } = req.body;
+
+    // Initialize Razorpay instance
+    const razorpay = getRazorpayInstance();
 
     // Validate required fields
     if (!userId || !hourlyAuctionId || !amount) {
