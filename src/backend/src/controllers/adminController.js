@@ -368,6 +368,7 @@ const createMasterAuctionAdmin = async (req, res) => {
       totalAuctionsPerDay: totalAuctionsPerDay || processedConfig.length,
       dailyAuctionConfig: processedConfig,
       isActive: isActive !== false,
+      createdBy: userId,
     });
 
     return res.status(201).json({ success: true, message: 'Master auction created successfully', data: newMasterAuction });
@@ -439,6 +440,7 @@ const updateMasterAuctionAdmin = async (req, res) => {
 
     if (totalAuctionsPerDay) masterAuction.totalAuctionsPerDay = totalAuctionsPerDay;
     if (typeof isActive !== 'undefined') masterAuction.isActive = isActive;
+    masterAuction.modifiedBy = userId;
     if (dailyAuctionConfig && Array.isArray(dailyAuctionConfig)) {
       masterAuction.dailyAuctionConfig = dailyAuctionConfig.map(config => {
         if (config.EntryFee === 'RANDOM' && (!config.BoxA || !config.BoxB)) {
