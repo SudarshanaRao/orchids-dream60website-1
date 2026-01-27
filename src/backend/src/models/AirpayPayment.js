@@ -38,6 +38,13 @@ const AirpayPaymentSchema = new mongoose.Schema(
     // Response details from Airpay
     airpayResponse: Object,
     
+    // Captured Payment Details
+    paymentMethod: String, // chmod
+    bankName: String,
+    cardName: String,
+    cardNumber: String,
+    vpa: String, // UPI ID
+    
     // Metadata
     auctionName: String,
     auctionTimeSlot: String,
