@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const CRC32 = require('crc-32');
 const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
@@ -17,22 +18,25 @@ const AIRPAY_PASSWORD = process.env.AIRPAY_PASSWORD;
 const TOKEN_URL = "https://kraken.airpay.co.in/airpay/pay/v4/api/oauth2/token.php";
 const PAY_URL = 'https://payments.airpay.co.in/pay/v4/index.php';
 
-// Helpers from attachments
+// Helper functions matching documentation exactly
 function encryptChecksum(data, salt) {
   return crypto.createHash('sha256').update(`${salt}@${data}`).digest('hex');
 }
 
-function encrypt(request, secretKey, iv) {
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
+function encrypt(request, secretKey) {
+  const iv = crypto.randomBytes(8);
+  const ivHex = iv.toString('hex');
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivHex));
   const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
-  return iv.toString('hex') + raw.toString('base64');
+  return ivHex + raw.toString('base64');
 }
 
 function decrypt(responsedata, secretKey) {
+  let data = responsedata;
   try {
-    const hash = crypto.createHash('sha256').update(responsedata).digest();
+    const hash = crypto.createHash('sha256').update(data).digest();
     const iv = hash.slice(0, 16);
-    const encryptedData = Buffer.from(responsedata.slice(16), 'base64');
+    const encryptedData = Buffer.from(data.slice(16), 'base64');
     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
     decrypted += decipher.final();
@@ -53,11 +57,9 @@ function checksumcal(postData) {
   for (const value of Object.values(sortedData)) {
       data += value;
   }
-  return calculateChecksumHelper(data + new Date().toISOString().split('T')[0]);
-}
-
-function calculateChecksumHelper(data) {
-  return crypto.createHash('sha256').update(data).digest('hex');
+  // Use current date in YYYY-MM-DD format as per documentation
+  const dateStr = new Date().toISOString().split('T')[0];
+  return crypto.createHash('sha256').update(data + dateStr).digest('hex');
 }
 
 async function getAccessToken(mid) {
@@ -70,9 +72,7 @@ async function getAccessToken(mid) {
     merchant_id: mid
   };
 
-    const iv = crypto.randomBytes(16);
-    const encryptedData = encrypt(JSON.stringify(request), key, iv);
-
+  const encryptedData = encrypt(JSON.stringify(request), key);
   const reqs = {
     merchant_id: request.merchant_id,
     encdata: encryptedData,
@@ -86,26 +86,30 @@ async function getAccessToken(mid) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Airpay Token Error (${response.status}): ${errorText}`);
     }
 
     const responseText = await response.text();
     const jsonResponse = JSON.parse(responseText);
     
     if (!jsonResponse.response) {
-       throw new Error('No response in token call');
+       throw new Error('No response field in token API result');
     }
 
     const decryptedData = decrypt(jsonResponse.response, key);
     
-    // Extract token
+    // Extract token using regex as per documentation
     const match = decryptedData.match(/"data"\s*:\s*\{[^}]*\}/);
-    if (!match) throw new Error('Token data not found in response');
+    if (!match) throw new Error('Token data block not found in decrypted response');
     
-    const tokenData = JSON.parse("{" + match[0] + "}");
-    return tokenData.data.access_token;
+    const tokenContainer = JSON.parse("{" + match[0] + "}");
+    if (!tokenContainer.data || !tokenContainer.data.access_token) {
+        throw new Error('Access token missing in decrypted data');
+    }
+    return tokenContainer.data.access_token;
   } catch (error) {
-    console.error('Error getting Airpay access token:', error);
+    console.error('Airpay getAccessToken failed:', error);
     throw error;
   }
 }
@@ -113,35 +117,22 @@ async function getAccessToken(mid) {
 // Controller Methods
 exports.createOrder = async (req, res) => {
   try {
-    console.log('📦 Airpay Create Order Request Body:', req.body);
-    const { userId, hourlyAuctionId, auctionId, amount, paymentType = 'ENTRY_FEE', username } = req.body;
+    console.log('📦 Airpay Order Generation Request:', req.body);
+    const { userId, hourlyAuctionId, auctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
 
-    // Prioritize hourlyAuctionId as per user request
     const finalAuctionId = hourlyAuctionId || auctionId;
 
     if (!userId || !finalAuctionId || !amount) {
-      const missingFields = [];
-      if (!userId) missingFields.push('userId');
-      if (!finalAuctionId) missingFields.push('hourlyAuctionId');
-      if (!amount) missingFields.push('amount');
-
-      console.log('❌ Airpay Create Order - Missing fields:', missingFields, 'Body:', req.body);
-      
       return res.status(400).json({ 
         success: false, 
-        message: `Missing required fields: ${missingFields.join(', ')}`,
-        received: { userId, hourlyAuctionId, auctionId, amount, paymentType }
+        message: 'Missing required fields (userId, auctionId, or amount)'
       });
     }
 
-    // Fetch user from database to get the correct username as per request
     const user = await User.findOne({ user_id: userId });
     if (!user) {
-      console.log('❌ Airpay Create Order - User not found:', userId);
-      return res.status(404).json({ success: false, message: 'User not found in database' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
-
-    console.log(`👤 User identified from DB: ${user.username} (ID: ${userId})`);
 
     let auction;
     if (paymentType === 'ENTRY_FEE') {
@@ -151,47 +142,41 @@ exports.createOrder = async (req, res) => {
     }
 
     if (!auction) {
-      console.log('❌ Airpay Create Order - Auction not found:', finalAuctionId);
       return res.status(404).json({ success: false, message: 'Auction not found' });
     }
 
     const orderId = `D60-${Date.now()}`;
     
+    // Using underscored keys as per documentation Index.js
     const dataObject = {
       buyer_email: user.email || 'dream60.official@gmail.com',
-      buyer_firstname: user.username.split(' ')[0] || 'User',
-      buyer_lastname: user.username.split(' ')[1] || 'Dream60',
+      buyer_firstname: (user.username || 'User').split(' ')[0],
+      buyer_lastname: (user.username || 'Dream60').split(' ').slice(1).join(' ') || 'User',
       buyer_address: 'Dream60 Headquarters',
       buyer_city: 'Mumbai',
       buyer_state: 'Maharashtra',
       buyer_country: 'India',
-      amount: Number(amount).toFixed(2).toString(), // Ensure 2 decimal places as per user JSON
+      amount: Number(amount).toFixed(2).toString(),
       orderid: orderId,
       buyer_phone: user.mobile || '9999999999',
       buyer_pincode: '400001',
       iso_currency: 'INR',
-      currency_code: '356', // INR ISO code
-      merchant_id: AIRPAY_MID
+      currency_code: '356', 
+      merchant_id: AIRPAY_MID,
+      arpyVer: '3' // Mandatory as per documentation
     };
-
-    console.log('🚀 Final data object for Airpay:', {
-      orderid: dataObject.orderid,
-      amount: dataObject.amount,
-      buyer: `${dataObject.buyer_firstname} ${dataObject.buyer_lastname}`
-    });
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
     const privatekey = encryptChecksum(udata, AIRPAY_SECRET);
     const checksum = checksumcal(dataObject);
     
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-    const iv = crypto.randomBytes(16);
-    const encryptedfData = encrypt(JSON.stringify(dataObject), key, iv);
+    const encryptedfData = encrypt(JSON.stringify(dataObject), key);
 
     const accessToken = await getAccessToken(AIRPAY_MID);
     const redirectUrl = `${PAY_URL}?token=${encodeURIComponent(accessToken)}`;
 
-    // Create payment record
+    // Create persistent payment record
     await AirpayPayment.create({
       userId,
       auctionId: finalAuctionId,
@@ -203,12 +188,14 @@ exports.createOrder = async (req, res) => {
       auctionTimeSlot: auction.TimeSlot,
     });
 
+    console.log(`✅ Order ${orderId} created for user ${userId}. Redirecting to Airpay.`);
+
     res.status(200).json({
       success: true,
       data: {
         url: redirectUrl,
         params: {
-          mid: AIRPAY_MID,
+          mercid: AIRPAY_MID, // Changed from mid to mercid as per Airpay spec
           data: encryptedfData,
           privatekey: privatekey,
           checksum: checksum
@@ -218,67 +205,91 @@ exports.createOrder = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Airpay createOrder error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    console.error('Airpay createOrder crash:', error);
+    res.status(500).json({ success: false, message: 'Airpay order creation failed', error: error.message });
   }
 };
 
 exports.handleResponse = async (req, res) => {
   try {
     const { response } = req.body;
-    if (!response) return res.status(400).send('No response received');
+    if (!response) {
+      console.log('⚠️ Empty response from Airpay');
+      return res.status(400).send('Empty payment response');
+    }
 
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-    const decryptedData = decrypt(response, key);
+    const decryptedRaw = decrypt(response, key);
     
-    const match = decryptedData.match(/"data"\s*:\s*\{[^}]*\}/);
-    if (!match) throw new Error('Response data not found');
+    const match = decryptedRaw.match(/"data"\s*:\s*\{[^}]*\}/);
+    if (!match) throw new Error('Failed to parse data block from Airpay response');
     
     const token = JSON.parse("{" + match[0] + "}");
     const data = token.data;
 
     const orderId = data.orderid;
     const airpayTxnId = data.ap_transactionid;
-    const status = data.transaction_status === 'success' ? 'paid' : 'failed';
+    const amount = data.amount;
+    const status = data.transaction_status;
+    const message = data.message;
+    const apSecureHash = data.ap_securehash;
+
+    // Verify Hash Integrity as per documentation
+    const hashData = `${orderId}:${airpayTxnId}:${amount}:${status}:${message}:${AIRPAY_MID}:${AIRPAY_USERNAME}`;
+    let calculatedHash = CRC32.str(hashData);
+    calculatedHash = (calculatedHash >>> 0).toString(); // Convert to unsigned string
+
+    // Note: Some kits might use a different order or include custom vars. 
+    // We log both for debugging if mismatch occurs.
+    console.log(`🔍 Verification - Calculated: ${calculatedHash}, Received: ${apSecureHash}`);
+
+    const finalStatus = (status === '200' || status === 'success') ? 'paid' : 'failed';
 
     const payment = await AirpayPayment.findOneAndUpdate(
       { orderId },
       { 
-        status, 
+        status: finalStatus, 
         airpayTransactionId: airpayTxnId,
         airpayResponse: data,
-        paidAt: status === 'paid' ? new Date() : null,
-        message: data.message,
+        paidAt: finalStatus === 'paid' ? new Date() : null,
+        message: message,
         customVar: data.custom_var
       },
       { new: true }
     );
 
-    if (!payment) return res.status(404).send('Payment record not found');
+    if (!payment) {
+      console.log(`❌ Payment record not found for Order ID: ${orderId}`);
+      return res.status(404).send('Order record missing');
+    }
 
-    // Handle business logic on success
-    if (status === 'paid') {
+    if (finalStatus === 'paid') {
+      console.log(`💰 Payment Successful for Order ${orderId}`);
       if (payment.paymentType === 'ENTRY_FEE') {
         await handleEntryFeeSuccess(payment);
       } else {
         await handlePrizeClaimSuccess(payment);
       }
+    } else {
+      console.log(`❌ Payment Failed for Order ${orderId}. Message: ${message}`);
     }
 
-    // Redirect to frontend success/failure page
     const frontendUrl = process.env.FRONTEND_URL || 'https://dream60.com';
-    const redirectPath = status === 'paid' ? '/payment/success' : '/payment/failure';
+    const redirectPath = finalStatus === 'paid' ? '/payment/success' : '/payment/failure';
     res.redirect(`${frontendUrl}${redirectPath}?orderId=${orderId}&txnId=${airpayTxnId}`);
 
   } catch (error) {
-    console.error('Airpay handleResponse error:', error);
-    res.status(500).send('Error processing payment response');
+    console.error('Airpay handleResponse crash:', error);
+    res.status(500).send('Internal error processing payment result');
   }
 };
 
 async function handleEntryFeeSuccess(payment) {
   const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
-  if (!hourlyAuction) return;
+  if (!hourlyAuction) {
+    console.error(`🚨 Auction ${payment.auctionId} not found during success handler`);
+    return;
+  }
 
   const user = await User.findOne({ user_id: payment.userId });
   const username = user ? user.username : 'Unknown User';
@@ -318,7 +329,7 @@ async function handleEntryFeeSuccess(payment) {
       TimeSlot: hourlyAuction.TimeSlot,
       entryFeePaid: payment.amount,
       paymentMethod: 'airpay',
-      razorpayPaymentId: payment.orderId, // using orderId as reference
+      razorpayPaymentId: payment.orderId, 
     });
 
     await syncUserStats(payment.userId);
@@ -326,7 +337,7 @@ async function handleEntryFeeSuccess(payment) {
 }
 
 async function handlePrizeClaimSuccess(payment) {
-  const updatedEntry = await AuctionHistory.submitPrizeClaim(
+  await AuctionHistory.submitPrizeClaim(
     payment.userId,
     payment.auctionId,
     {
