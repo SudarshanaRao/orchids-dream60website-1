@@ -160,8 +160,8 @@ exports.createOrder = async (req, res) => {
       orderid: orderId,
       buyer_phone: user.mobile || '9999999999',
       buyer_pincode: '400001',
-      iso_currency: 'INR',
-      currency_code: '356', 
+      isocurrency: 'INR',
+      currency: '356', 
       merchant_id: AIRPAY_MID,
       arpyVer: '3' // Mandatory as per documentation
     };
@@ -195,10 +195,12 @@ exports.createOrder = async (req, res) => {
       data: {
         url: redirectUrl,
         params: {
-          mercid: AIRPAY_MID, // Changed from mid to mercid as per Airpay spec
+          mercid: AIRPAY_MID,
           data: encryptedfData,
           privatekey: privatekey,
-          checksum: checksum
+          checksum: checksum,
+          chmod: '', // Default to all payment modes
+          customvar: paymentType // Pass payment type as custom var
         },
         orderId
       }
