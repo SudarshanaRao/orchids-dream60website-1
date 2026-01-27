@@ -88,24 +88,23 @@ exports.renderTxn = (req, res) => {
   res.render('txn', { title: 'Airpay Transaction' });
 };
 
-exports.sendToAirpay = async (req, res) => {
-  try {
-    const reqBody = req.body;
+// Helper to get Airpay redirect data
+async function getAirpayRedirectData(reqBody) {
     const dataObject = {
-      buyer_email: reqBody.buyerEmail,
-      buyer_firstname: reqBody.buyerFirstName,
-      buyer_lastname: reqBody.buyerLastName,
-      buyer_address: reqBody.buyerAddress || 'NA',
-      buyer_city: reqBody.buyerCity || 'NA',
-      buyer_state: reqBody.buyerState || 'NA',
-      buyer_country: reqBody.buyerCountry || 'India',
-      amount: reqBody.amount,
-      orderid: reqBody.orderid,
-      buyer_phone: reqBody.buyerPhone,
-      buyer_pincode: reqBody.buyerPinCode || '400001',
-      iso_currency: reqBody.isocurrency || 'INR',
-      currency_code: reqBody.currency || '356',
-      merchant_id: AIRPAY_MID
+        buyer_email: reqBody.email || reqBody.buyerEmail || 'user@dream60.com',
+        buyer_firstname: reqBody.firstname || reqBody.buyerFirstName || 'User',
+        buyer_lastname: reqBody.lastname || reqBody.buyerLastName || 'D60',
+        buyer_address: reqBody.address || reqBody.buyerAddress || 'NA',
+        buyer_city: reqBody.city || reqBody.buyerCity || 'NA',
+        buyer_state: reqBody.state || reqBody.buyerState || 'NA',
+        buyer_country: reqBody.country || reqBody.buyerCountry || 'India',
+        amount: Number(reqBody.amount).toFixed(2).toString(),
+        orderid: reqBody.orderid || reqBody.orderId,
+        buyer_phone: reqBody.phone || reqBody.buyerPhone || '9999999999',
+        buyer_pincode: reqBody.pincode || reqBody.buyerPinCode || '400001',
+        iso_currency: reqBody.isocurrency || 'INR',
+        currency_code: reqBody.currency || '356',
+        merchant_id: AIRPAY_MID
     };
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
@@ -142,13 +141,30 @@ exports.sendToAirpay = async (req, res) => {
     
     let finalUrl = `${PAY_URL}?token=${encodeURIComponent(accesstoken)}`;
 
+    return {
+        url: finalUrl,
+        params: {
+            mercid: AIRPAY_MID,
+            data: encryptedfData,
+            privatekey: privatekey,
+            checksum: checksum,
+            customvar: reqBody.userId || reqBody.customvar || ''
+        },
+        dataObject
+    };
+}
+
+exports.sendToAirpay = async (req, res) => {
+  try {
+    const redirectData = await getAirpayRedirectData(req.body);
+
     res.render('sendToAirpay', { 
       mid: AIRPAY_MID, 
-      data: encryptedfData, 
-      privatekey: privatekey, 
-      checksum: checksum, 
-      URL: finalUrl,
-      fdata: reqBody
+      data: redirectData.params.data, 
+      privatekey: redirectData.params.privatekey, 
+      checksum: redirectData.params.checksum, 
+      URL: redirectData.url,
+      fdata: req.body
     });
   } catch (error) {
     console.error('sendToAirpay error:', error);
@@ -270,7 +286,6 @@ exports.handleAirpayFailure = exports.handleAirpayResponse;
 
 // Original API Methods (Maintained for backward compatibility and internal app use)
 exports.createOrder = async (req, res) => {
-    // Re-using the core logic from sendToAirpay but returning JSON for mobile app/frontend
     try {
         const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
         const resolvedAuctionId = auctionId || hourlyAuctionId;
@@ -290,39 +305,29 @@ exports.createOrder = async (req, res) => {
             paymentType
         });
 
-        // For the JSON API, we mimic the logic but return the parameters
-        const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
-        const privatekey = encryptChecksum(udata, AIRPAY_SECRET);
-        
-        const dataObject = {
-            buyer_email: req.body.email || 'user@dream60.com',
-            buyer_firstname: req.body.firstname || 'User',
-            buyer_lastname: req.body.lastname || 'D60',
-            amount: Number(amount).toFixed(2).toString(),
-            orderid: orderId,
-            buyer_phone: req.body.phone || '9999999999',
-            iso_currency: 'INR',
-            currency_code: '356',
-            mercid: AIRPAY_MID
-        };
-
-        const checksum = checksumcal(dataObject);
-        const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-        const encryptedfData = encrypt(JSON.stringify(dataObject), key);
+        // Get the full redirect data including tokenized URL
+        const redirectData = await getAirpayRedirectData({
+            ...req.body,
+            orderId: orderId,
+            amount: amount
+        });
 
         res.status(200).json({
             success: true,
             data: {
                 orderId,
+                url: redirectData.url,
                 params: {
-                    mercid: AIRPAY_MID,
-                    encdata: encryptedfData,
-                    privatekey: privatekey,
-                    checksum: checksum
+                    mercid: redirectData.params.mercid,
+                    data: redirectData.params.data,
+                    privatekey: redirectData.params.privatekey,
+                    checksum: redirectData.params.checksum,
+                    customvar: userId
                 }
             }
         });
     } catch (error) {
+        console.error('Airpay createOrder error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 };

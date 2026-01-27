@@ -1,7 +1,12 @@
 // server.js 
 const path = require('path');
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+const envFile = (process.env.NODE_ENV === 'production' || process.env.VITE_ENVIRONMENT === 'production') ? '.env.production' : '.env.development';
 require('dotenv').config({ path: path.join(__dirname, envFile) });
+
+// Ensure NODE_ENV is set correctly if VITE_ENVIRONMENT is production
+if (process.env.VITE_ENVIRONMENT === 'production' && !process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'production';
+}
 
 console.log('-------------------------------------------');
 console.log(`📂 Environment File: ${envFile}`);
