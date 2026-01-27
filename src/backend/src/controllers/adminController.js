@@ -579,19 +579,183 @@ const getAnalyticsData = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
-    const { date } = req.query;
-    const targetDate = date ? new Date(date) : new Date();
-    targetDate.setHours(0, 0, 0, 0);
-    const nextDate = new Date(targetDate);
-    nextDate.setDate(nextDate.getDate() + 1);
+    const { date, viewType, startDate: startStr, endDate: endStr } = req.query;
+    
+    // Determine date range
+    let start, end;
+    const now = new Date();
+    
+    const parseDDMMYYYY = (str) => {
+      if (!str) return null;
+      const [d, m, y] = str.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
 
+    if (viewType === 'today') {
+      start = date ? parseDDMMYYYY(date) : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setDate(end.getDate() + 1);
+    } else if (viewType === 'yesterday') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      end.setHours(0, 0, 0, 0);
+    } else if (viewType === 'week') {
+      start = new Date(now);
+      start.setDate(start.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    } else if (viewType === 'month') {
+      start = new Date(now);
+      start.setDate(start.getDate() - 30);
+      start.setHours(0, 0, 0, 0);
+      end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+    } else if (viewType === 'custom') {
+      start = parseDDMMYYYY(startStr) || new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      start.setHours(0, 0, 0, 0);
+      end = parseDDMMYYYY(endStr) || new Date(start);
+      end.setHours(23, 59, 59, 999);
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      start.setHours(0, 0, 0, 0);
+      end = new Date(start);
+      end.setDate(end.getDate() + 1);
+    }
+
+    // Fetch all hourly auctions in range
+    const hourlyAuctions = await HourlyAuction.find({
+      auctionDate: { $gte: start, $lt: end }
+    }).sort({ auctionDate: 1, TimeSlot: 1 }).lean();
+
+    // Fetch auction history in range
     const history = await AuctionHistory.find({
-      startTime: { $gte: targetDate, $lt: nextDate }
+      auctionDate: { $gte: start, $lt: end }
     }).lean();
 
-    return res.status(200).json({ success: true, data: history });
+    // Aggregate Summary
+    const summary = {
+      totalAuctions: hourlyAuctions.length,
+      liveAuctions: hourlyAuctions.filter(a => a.Status === 'LIVE').length,
+      completedAuctions: hourlyAuctions.filter(a => a.Status === 'COMPLETED').length,
+      upcomingAuctions: hourlyAuctions.filter(a => a.Status === 'UPCOMING').length,
+      uniqueParticipants: new Set(history.map(h => h.userId)).size,
+      totalParticipations: history.length,
+      totalClaimed: history.filter(h => h.prizeClaimStatus === 'CLAIMED').length,
+      totalPending: history.filter(h => h.prizeClaimStatus === 'PENDING').length,
+      totalExpired: history.filter(h => h.prizeClaimStatus === 'EXPIRED').length,
+      totalEntryFees: history.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
+      totalPrizeValue: hourlyAuctions.reduce((sum, a) => sum + (a.prizeValue || 0), 0),
+      totalClaimedValue: history.filter(h => h.prizeClaimStatus === 'CLAIMED').reduce((sum, h) => sum + (h.prizeAmountWon || 0), 0),
+    };
+
+    // Status Distribution
+    const statusDistribution = {
+      live: summary.liveAuctions,
+      completed: summary.completedAuctions,
+      upcoming: summary.upcomingAuctions,
+      cancelled: hourlyAuctions.filter(a => a.Status === 'CANCELLED').length,
+    };
+
+    // Claim Status Distribution
+    const claimStatusDistribution = {
+      claimed: summary.totalClaimed,
+      pending: summary.totalPending,
+      expired: summary.totalExpired,
+      notApplicable: history.filter(h => h.prizeClaimStatus === 'NOT_APPLICABLE').length,
+    };
+
+    // Auction Details
+    const auctionDetails = hourlyAuctions.map(a => {
+      const auctionHistory = history.filter(h => h.hourlyAuctionId === a.hourlyAuctionId);
+      const winners = (a.winners || []).map(w => ({
+        rank: w.rank,
+        username: w.playerUsername,
+        prizeAmount: w.prizeAmount,
+        claimStatus: w.prizeClaimStatus || 'NOT_APPLICABLE',
+        claimedAt: w.prizeClaimedAt,
+      }));
+
+      return {
+        auctionId: a.hourlyAuctionId,
+        auctionCode: a.hourlyAuctionCode,
+        auctionName: a.auctionName,
+        timeSlot: a.TimeSlot,
+        date: a.auctionDate ? new Date(a.auctionDate).toLocaleDateString('en-IN') : 'N/A',
+        status: a.Status,
+        prizeValue: a.prizeValue || 0,
+        participantCount: a.totalParticipants || 0,
+        currentRound: a.currentRound || 0,
+        totalRounds: a.totalRounds || 0,
+        winnersCount: winners.length,
+        claimedCount: winners.filter(w => w.claimStatus === 'CLAIMED').length,
+        totalEntryFees: auctionHistory.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
+        winners,
+      };
+    });
+
+    // Trend Data (Last 7 days by default for trend charts)
+    const trendRangeStart = new Date(start);
+    trendRangeStart.setDate(trendRangeStart.getDate() - 6); // Look back 7 days total
+    
+    const trendHistory = await AuctionHistory.find({
+      auctionDate: { $gte: trendRangeStart, $lt: end }
+    }).lean();
+
+    const lastTrendData = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - (i + 1));
+      d.setHours(0,0,0,0);
+      const nextD = new Date(d);
+      nextD.setDate(nextD.getDate() + 1);
+
+      const dayHistory = trendHistory.filter(h => h.auctionDate >= d && h.auctionDate < nextD);
+      lastTrendData.unshift({
+        date: d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit' }),
+        dateISO: d.toISOString(),
+        dayName: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+        participants: new Set(dayHistory.map(h => h.userId)).size,
+        claimed: dayHistory.filter(h => h.prizeClaimStatus === 'CLAIMED').length,
+        revenue: dayHistory.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
+      });
+    }
+
+    // Current Live Auction
+    const currentLiveAuctionDoc = hourlyAuctions.find(a => a.Status === 'LIVE');
+    const currentLiveAuction = currentLiveAuctionDoc ? {
+      auctionId: currentLiveAuctionDoc.hourlyAuctionId,
+      auctionName: currentLiveAuctionDoc.auctionName,
+      timeSlot: currentLiveAuctionDoc.TimeSlot,
+      prizeValue: currentLiveAuctionDoc.prizeValue,
+      currentRound: currentLiveAuctionDoc.currentRound,
+      totalRounds: currentLiveAuctionDoc.totalRounds,
+      participantCount: currentLiveAuctionDoc.totalParticipants || 0,
+    } : null;
+
+    const result = {
+      viewType: viewType || 'today',
+      startDate: start.toLocaleDateString('en-IN'),
+      endDate: end.toLocaleDateString('en-IN'),
+      currentTime: now.toLocaleTimeString('en-IN'),
+      currentTimeISO: now.toISOString(),
+      currentTimeSlot: `${now.getHours().toString().padStart(2, '0')}:00`,
+      fetchedAt: now.toISOString(),
+      isToday: start.toDateString() === now.toDateString(),
+      summary,
+      statusDistribution,
+      claimStatusDistribution,
+      auctionDetails,
+      lastTrendData,
+      currentLiveAuction,
+    };
+
+    return res.status(200).json({ success: true, data: result });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Get Analytics Data Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
   }
 };
 

@@ -17,17 +17,15 @@ export function ChangePhoneModal({ currentPhone, onClose, onOldPhoneVerified, on
   const [step, setStep] = useState<'verify-old' | 'otp'>('verify-old');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [otpHint, setOtpHint] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
 
-  const currentDigits = currentPhone.replace(/\D/g, '');
+    const currentDigits = currentPhone.replace(/\D/g, '');
 
-  const sendOtpToCurrentPhone = async () => {
-    setLoading(true);
-    setError(null);
-    setOtpHint(null);
-    try {
+    const sendOtpToCurrentPhone = async () => {
+      setLoading(true);
+      setError(null);
+      try {
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,17 +36,13 @@ export function ChangePhoneModal({ currentPhone, onClose, onOldPhoneVerified, on
         }),
       });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to send OTP');
-      }
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to send OTP');
+        }
 
-      if (data.otp) {
-        setOtpHint(data.otp);
-      }
-
-      setStep('otp');
+        setStep('otp');
       setTimeLeft(60);
       
       const timer = setInterval(() => {
@@ -221,17 +215,10 @@ export function ChangePhoneModal({ currentPhone, onClose, onOldPhoneVerified, on
                 <p className="text-purple-700">
                   We've sent a 6-digit verification code to
                 </p>
-                <p className="font-semibold text-purple-900">{currentPhone}</p>
-              </div>
-
-              {otpHint && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-                  <p className="text-xs text-green-600 font-medium">Testing Mode - OTP Hint</p>
-                  <p className="text-lg font-bold text-green-700 tracking-widest">{otpHint}</p>
+                  <p className="font-semibold text-purple-900">{currentPhone}</p>
                 </div>
-              )}
 
-              <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
                   <Input
                     key={index}

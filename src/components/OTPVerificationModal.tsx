@@ -56,11 +56,6 @@ export function OTPVerificationModal({
 
         const data = await response.json();
         
-        // Hint for mobile OTP (requested by user)
-        if (data.otp && type === 'phone') {
-          console.log(`[OTP Hint] Your verification code is: ${data.otp}`);
-        }
-
         if (!response.ok) {
           throw new Error(data.message || 'Failed to send OTP');
         }

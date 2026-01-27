@@ -17,11 +17,10 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
   const [newPhone, setNewPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [otpHint, setOtpHint] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [timeLeft, setTimeLeft] = useState(0);
 
-  const formatIndianMobile = (input: string) => {
+    const formatIndianMobile = (input: string) => {
     const digits = input.replace(/\D/g, "").slice(0, 10);
     if (!digits) return "";
     let first = digits.slice(0, 5);
@@ -46,7 +45,6 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
 
     setLoading(true);
     setError(null);
-    setOtpHint(null);
 
     try {
       const checkRes = await fetch(API_ENDPOINTS.auth.checkMobile, {
@@ -77,10 +75,6 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send OTP');
-      }
-
-      if (data.otp) {
-        setOtpHint(data.otp);
       }
 
       setStep('otp');
@@ -336,17 +330,10 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
                 <p className="text-purple-700">
                   We've sent a 6-digit verification code to your new phone
                 </p>
-                <p className="font-semibold text-purple-900">+91 {formatIndianMobile(newDigits)}</p>
-              </div>
-
-              {otpHint && (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-                  <p className="text-xs text-green-600 font-medium">Testing Mode - OTP Hint</p>
-                  <p className="text-lg font-bold text-green-700 tracking-widest">{otpHint}</p>
+                  <p className="font-semibold text-purple-900">+91 {formatIndianMobile(newDigits)}</p>
                 </div>
-              )}
 
-              <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
                 {otp.map((digit, index) => (
                   <Input
                     key={index}
