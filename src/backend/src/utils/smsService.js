@@ -225,13 +225,13 @@ const SMS_TEMPLATES = {
     template: '{message}',
     variables: ['message'],
   },
-  OTP_VERIFICATION: {
-    id: 'otp_verification',
-    name: 'OTP Verification',
-    template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Dream60 account. Its only valid for 10 minutes - Dream60',
-    variables: ['name', 'otp'],
-    templateId: '1207172612396743269'
-  },
+    OTP_VERIFICATION: {
+      id: 'otp_verification',
+      name: 'OTP Verification',
+      template: 'Dear {name}, Your password reset verification code for Dream60 account is {otp}. This code will expire in 10 minutes. - Finpages Tech',
+      variables: ['name', 'otp'],
+      templateId: '1207176908078229051'
+    },
 };
 
 const formatTemplate = (templateId, variables = {}) => {

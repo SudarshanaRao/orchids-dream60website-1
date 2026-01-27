@@ -153,13 +153,30 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [showFilters, setShowFilters] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
 
+  const [reportsPage, setReportsPage] = useState(1);
+  const [reportsLimit] = useState(20);
+  const [totalReports, setTotalReports] = useState(0);
+  
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersLimit] = useState(50);
+  const [totalUsers, setTotalUsers] = useState(0);
+
+  const [templatesPage, setTemplatesPage] = useState(1);
+  const [templatesLimit] = useState(10);
+
   useEffect(() => {
     loadInitialData();
   }, []);
 
   useEffect(() => {
     loadUsers();
-  }, [selectedFilter, selectedAuction, selectedRound, searchTerm]);
+  }, [selectedFilter, selectedAuction, selectedRound, searchTerm, usersPage]);
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      loadReports();
+    }
+  }, [reportsPage]);
 
     const loadInitialData = async () => {
       setIsLoading(true);
@@ -212,7 +229,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE}/admin/sms/rest/reports?user_id=${adminUserId}&fromDate=${reportDateRange.from}&toDate=${reportDateRange.to}`
+        `${API_BASE}/admin/sms/rest/reports?user_id=${adminUserId}&fromDate=${reportDateRange.from}&toDate=${reportDateRange.to}&page=${reportsPage}&limit=${reportsLimit}`
       );
       const data = await response.json();
       if (data.success) {
@@ -226,6 +243,10 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
           }
         }, []);
         setReports(uniqueReports);
+        // If API doesn't return total count, we'll handle it via the presence of data
+        if (data.data?.length === reportsLimit) {
+          // Potentially more pages
+        }
       }
     } catch (error) {
       console.error('Error loading reports:', error);
@@ -341,7 +362,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
   const loadUsers = async () => {
     try {
-      let url = `${API_BASE}/admin/sms/users?user_id=${adminUserId}&filter=${selectedFilter}&limit=100`;
+      let url = `${API_BASE}/admin/sms/users?user_id=${adminUserId}&filter=${selectedFilter}&page=${usersPage}&limit=${usersLimit}`;
       
       if (searchTerm) {
         url += `&search=${encodeURIComponent(searchTerm)}`;
@@ -350,6 +371,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       if (['auction_participants', 'round1_players', 'advanced_round2', 'eliminated_current', 'specific_round'].includes(selectedFilter)) {
         if (!selectedAuction) {
           setUsers([]);
+          setTotalUsers(0);
           return;
         }
         url += `&auctionId=${selectedAuction}`;
@@ -363,6 +385,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       const data = await response.json();
       if (data.success) {
         setUsers(data.data);
+        setTotalUsers(data.meta?.total || data.data.length);
         setSelectedUsers(new Set());
         setSelectAll(false);
       }
@@ -393,6 +416,12 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
   const getPreviewMessage = () => {
     if (selectedTemplate && selectedTemplate !== 'CUSTOM') {
+      if (selectedTemplate.startsWith('rest_')) {
+        const templateId = selectedTemplate.replace('rest_', '');
+        const template = restTemplates.find(t => t.TemplateId === templateId);
+        return template?.Message || '';
+      }
+      
       const template = templates.find(t => t.key === selectedTemplate);
       if (template) {
         let message = template.template;
@@ -496,6 +525,102 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   };
 
   const requiresAuction = ['auction_participants', 'round1_players', 'advanced_round2', 'eliminated_current', 'specific_round'].includes(selectedFilter);
+
+  const Pagination = ({ 
+    currentPage, 
+    totalItems, 
+    pageSize, 
+    onPageChange,
+    loading = false
+  }: { 
+    currentPage: number, 
+    totalItems: number, 
+    pageSize: number, 
+    onPageChange: (page: number) => void,
+    loading?: boolean
+  }) => {
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalPages <= 1 && totalItems > 0) return null;
+    if (totalItems === 0) return null;
+
+    return (
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div className="flex justify-between flex-1 sm:hidden">
+          <button
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1 || loading}
+            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages || loading}
+            className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium">{Math.min(currentPage * pageSize, totalItems)}</span> of{' '}
+              <span className="font-medium">{totalItems}</span> results
+            </p>
+          </div>
+          <div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1 || loading}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronDown className="w-5 h-5 rotate-90" />
+              </button>
+              
+              {/* Show pages around current page */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => onPageChange(pageNum)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      currentPage === pageNum
+                        ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages || loading}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <span className="sr-only">Next</span>
+                <ChevronUp className="w-5 h-5 rotate-90" />
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderTabs = () => (
     <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl mb-6">
@@ -760,70 +885,77 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stats</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {users.map((user) => (
-                        <tr 
-                          key={user.user_id}
-                          onClick={() => handleSelectUser(user.user_id)}
-                          className={`cursor-pointer transition-colors ${
-                            selectedUsers.has(user.user_id) ? 'bg-purple-50' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <td className="px-4 py-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedUsers.has(user.user_id)}
-                              onChange={() => handleSelectUser(user.user_id)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                            />
-                          </td>
-                          <td className="px-4 py-3">
-                            <div>
-                              <p className="font-medium text-gray-800">{user.username}</p>
-                              <p className="text-xs text-gray-500">{user.userCode || user.email}</p>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-1 text-gray-600">
-                              <Phone className="w-3 h-3" />
-                              <span className="text-sm">{user.mobile}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2 text-xs">
-                              {user.totalAuctions !== undefined && (
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                  {user.totalAuctions} played
-                                </span>
-                              )}
-                              {user.totalWins !== undefined && user.totalWins > 0 && (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded">
-                                  {user.totalWins} wins
-                                </span>
-                              )}
-                              {user.finalRound !== undefined && (
-                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-                                  Round {user.finalRound}
-                                </span>
-                              )}
-                              {user.isWinner && (
-                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
-                                  Winner
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      <tbody className="divide-y divide-gray-100">
+                        {users.map((user) => (
+                          <tr 
+                            key={user.user_id}
+                            onClick={() => handleSelectUser(user.user_id)}
+                            className={`cursor-pointer transition-colors ${
+                              selectedUsers.has(user.user_id) ? 'bg-purple-50' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <td className="px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedUsers.has(user.user_id)}
+                                onChange={() => handleSelectUser(user.user_id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <div>
+                                <p className="font-medium text-gray-800">{user.username}</p>
+                                <p className="text-xs text-gray-500">{user.userCode || user.email}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1 text-gray-600">
+                                <Phone className="w-3 h-3" />
+                                <span className="text-sm">{user.mobile}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2 text-xs">
+                                {user.totalAuctions !== undefined && (
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                    {user.totalAuctions} played
+                                  </span>
+                                )}
+                                {user.totalWins !== undefined && user.totalWins > 0 && (
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                                    {user.totalWins} wins
+                                  </span>
+                                )}
+                                {user.finalRound !== undefined && (
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                    Round {user.finalRound}
+                                  </span>
+                                )}
+                                {user.isWinner && (
+                                  <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
+                                    Winner
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                <Pagination 
+                  currentPage={usersPage}
+                  totalItems={totalUsers}
+                  pageSize={usersLimit}
+                  onPageChange={setUsersPage}
+                  loading={isLoading}
+                />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4">
+            <div className="space-y-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-4 bg-gray-50 border-b">
                 <div className="flex items-center gap-2">
@@ -1019,38 +1151,45 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                       <th className="px-6 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {templates.map((template) => (
-                      <tr key={template.key} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-medium text-gray-900">{template.name}</td>
-                        <td className="px-6 py-4 text-gray-600 max-w-md whitespace-pre-wrap">{template.template}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1">
-                            {template.variables.map(v => (
-                              <span key={v} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
-                                {`{${v}}`}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(template.template);
-                              toast.success('Template copied to clipboard');
-                            }}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                            title="Copy Message"
-                          >
-                            <FileText className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    <tbody className="divide-y divide-gray-100">
+                      {templates.slice((templatesPage - 1) * templatesLimit, templatesPage * templatesLimit).map((template) => (
+                        <tr key={template.key} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 font-medium text-gray-900">{template.name}</td>
+                          <td className="px-6 py-4 text-gray-600 max-w-md whitespace-pre-wrap">{template.template}</td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1">
+                              {template.variables.map(v => (
+                                <span key={v} className="px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                                  {`{${v}}`}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(template.template);
+                                toast.success('Template copied to clipboard');
+                              }}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                              title="Copy Message"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination 
+                  currentPage={templatesPage}
+                  totalItems={templates.length}
+                  pageSize={templatesLimit}
+                  onPageChange={setTemplatesPage}
+                />
               </div>
-            </div>
+
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
@@ -1196,6 +1335,13 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                 </tbody>
               </table>
             </div>
+            <Pagination 
+              currentPage={reportsPage}
+              totalItems={reports.length >= reportsLimit ? reportsPage * reportsLimit + 1 : reports.length + (reportsPage - 1) * reportsLimit}
+              pageSize={reportsLimit}
+              onPageChange={setReportsPage}
+              loading={isLoading}
+            />
           </div>
         </div>
       )}

@@ -173,9 +173,136 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     const [editingAuction, setEditingAuction] = useState<MasterAuction | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+    
+    const [usersPage, setUsersPage] = useState(1);
+    const [usersLimit] = useState(20);
+    const [paginatedUsers, setUsers] = useState<CombinedUser[]>([]);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [isUsersLoading, setIsUsersLoading] = useState(false);
+
     const analyticsRef = useRef<{ refresh: () => Promise<void> }>(null);
     
     const isSuperAdmin = adminUser.isSuperAdmin === true;
+
+  const fetchUsers = async () => {
+    setIsUsersLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/admin/users?user_id=${adminUser.user_id}&page=${usersPage}&limit=${usersLimit}&search=${searchTerm}`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.data);
+        setTotalUsers(data.meta.total);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users');
+    } finally {
+      setIsUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab, usersPage, searchTerm]);
+
+  const Pagination = ({ 
+    currentPage, 
+    totalItems, 
+    pageSize, 
+    onPageChange,
+    loading = false
+  }: { 
+    currentPage: number, 
+    totalItems: number, 
+    pageSize: number, 
+    onPageChange: (page: number) => void,
+    loading?: boolean
+  }) => {
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalPages <= 1 && totalItems > 0) return null;
+    if (totalItems === 0) return null;
+
+    return (
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 mt-4 rounded-xl shadow-sm border-2 border-purple-100">
+        <div className="flex justify-between flex-1 sm:hidden">
+          <button
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1 || loading}
+            className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages || loading}
+            className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to <span className="font-medium">{Math.min(currentPage * pageSize, totalItems)}</span> of{' '}
+              <span className="font-medium">{totalItems}</span> results
+            </p>
+          </div>
+          <div>
+            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <button
+                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1 || loading}
+                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <span className="sr-only">Previous</span>
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => onPageChange(pageNum)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      currentPage === pageNum
+                        ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages || loading}
+                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <span className="sr-only">Next</span>
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const fetchStatistics = async () => {
     try {
@@ -657,93 +784,82 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
           </div>
         )}
 
-{activeTab === 'users' && statistics && (
-            <div className="space-y-6">
-              {/* Search Bar and Filters */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search users by username, email, mobile, or user code..."
-                      className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-purple-600" />
-                    <select
-                      value={dateFilter}
-                      onChange={(e) => setDateFilter(e.target.value as 'all' | 'today' | 'week' | 'month')}
-                      className="px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 bg-white text-purple-900 font-medium"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="today">Last 24 Hours</option>
-                      <option value="week">Last 7 Days</option>
-                      <option value="month">Last 30 Days</option>
-                    </select>
+          {activeTab === 'users' && (
+              <div className="space-y-6">
+                {/* Search Bar and Filters */}
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setUsersPage(1); // Reset to page 1 on search
+                        }}
+                        placeholder="Search users by username, email, mobile, or user code..."
+                        className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-
-            {/* All Users Table */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-              <h2 className="text-xl font-bold text-purple-900 mb-4">All Users</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-purple-200">
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Wins</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Spent</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Won</th>
-                    </tr>
-                  </thead>
-<tbody>
-                      {[...statistics.recentUsers, ...statistics.topSpenders, ...statistics.topWinners]
-                        .filter((user, index, self) => 
-                          self.findIndex(u => u.user_id === user.user_id) === index
-                        )
-                        .filter(user => 
-                          !searchTerm || 
-                          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          user.userCode.toLowerCase().includes(searchTerm.toLowerCase())
-                        )
-                        .filter((user: CombinedUser) => {
-                          if (dateFilter === 'all') return true;
-                          if (!user.joinedAt) return false;
-                          const joinedDate = new Date(user.joinedAt);
-                          const now = new Date();
-                          const diffTime = now.getTime() - joinedDate.getTime();
-                          const diffDays = diffTime / (1000 * 60 * 60 * 24);
-                          if (dateFilter === 'today') return diffDays <= 1;
-                          if (dateFilter === 'week') return diffDays <= 7;
-                          if (dateFilter === 'month') return diffDays <= 30;
-                          return true;
-                        })
-                        .map((user: CombinedUser) => (
-                        <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
-                          <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
-                          <td className="py-3 px-4">{user.username}</td>
-                          <td className="py-3 px-4 text-sm">{user.email}</td>
-                          <td className="py-3 px-4">{user.totalAuctions || 0}</td>
-                          <td className="py-3 px-4">{user.totalWins || 0}</td>
-                          <td className="py-3 px-4">₹{(user.totalAmountSpent || 0).toLocaleString()}</td>
-                          <td className="py-3 px-4">₹{(user.totalAmountWon || 0).toLocaleString()}</td>
+  
+              {/* All Users Table */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200 overflow-hidden relative">
+                {isUsersLoading && (
+                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center">
+                    <RefreshCw className="w-8 h-8 text-purple-600 animate-spin" />
+                  </div>
+                )}
+                <h2 className="text-xl font-bold text-purple-900 mb-4">All Users ({totalUsers})</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-purple-200">
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Mobile</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Wins</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Spent</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Won</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-8 text-center text-gray-500">No users found matching your search</td>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
+                      ) : (
+                        paginatedUsers.map((user: CombinedUser) => (
+                          <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
+                            <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
+                            <td className="py-3 px-4 font-medium text-purple-900">{user.username}</td>
+                            <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
+                            <td className="py-3 px-4 text-sm text-gray-600">{user.mobile || 'N/A'}</td>
+                            <td className="py-3 px-4">{user.totalAuctions || 0}</td>
+                            <td className="py-3 px-4 font-semibold text-green-600">{user.totalWins || 0}</td>
+                            <td className="py-3 px-4">₹{(user.totalAmountSpent || 0).toLocaleString()}</td>
+                            <td className="py-3 px-4">₹{(user.totalAmountWon || 0).toLocaleString()}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <Pagination 
+                  currentPage={usersPage}
+                  totalItems={totalUsers}
+                  pageSize={usersLimit}
+                  onPageChange={setUsersPage}
+                  loading={isUsersLoading}
+                />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
         {activeTab === 'auctions' && (
           <div className="space-y-6">
