@@ -22,10 +22,10 @@ function encryptChecksum(data, salt) {
   return crypto.createHash('sha256').update(`${salt}@${data}`).digest('hex');
 }
 
-function encrypt(request, secretKey, ivHex) {
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivHex, 'hex'));
+function encrypt(request, secretKey, iv) {
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
   const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
-  return ivHex + raw.toString('base64');
+  return iv.toString('hex') + raw.toString('base64');
 }
 
 function decrypt(responsedata, secretKey) {
@@ -71,8 +71,7 @@ async function getAccessToken(mid) {
   };
 
     const iv = crypto.randomBytes(16);
-    const ivHex = iv.toString('hex');
-    const encryptedData = encrypt(JSON.stringify(request), key, ivHex);
+    const encryptedData = encrypt(JSON.stringify(request), key, iv);
 
   const reqs = {
     merchant_id: request.merchant_id,
@@ -187,8 +186,7 @@ exports.createOrder = async (req, res) => {
     
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
     const iv = crypto.randomBytes(16);
-    const ivHex = iv.toString('hex');
-    const encryptedfData = encrypt(JSON.stringify(dataObject), key, ivHex);
+    const encryptedfData = encrypt(JSON.stringify(dataObject), key, iv);
 
     const accessToken = await getAccessToken(AIRPAY_MID);
     const redirectUrl = `${PAY_URL}?token=${encodeURIComponent(accessToken)}`;

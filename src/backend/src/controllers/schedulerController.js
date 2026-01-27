@@ -818,8 +818,7 @@ const manualTriggerDailyAuction = async (req, res) => {
  */
 const manualTriggerHourlyAuctions = async (req, res) => {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getISTDateStart();
     
     const dailyAuctions = await DailyAuction.findByDate(today);
     
@@ -1227,8 +1226,7 @@ const manualTriggerAutoActivate = async (req, res) => {
 const getSchedulerStatus = async (req, res) => {
   try {
     const now = new Date();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getISTDateStart();
     
     // Get today's auctions
     const todaysAuctions = await HourlyAuction.findByDate(today);

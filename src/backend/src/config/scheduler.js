@@ -716,7 +716,7 @@ const autoActivateAuctions = async () => {
         // This prevents resetting yesterday's auctions to UPCOMING/LIVE
         const todayIST = getISTDateStart();
         const auctionDate = new Date(local.auctionDate);
-        auctionDate.setHours(0, 0, 0, 0);
+        auctionDate.setUTCHours(0, 0, 0, 0);
         
         if (auctionDate.getTime() < todayIST.getTime()) {
           // Auction is from a previous day - mark as COMPLETED if not already
