@@ -254,13 +254,16 @@ export function SignupForm({ onSignup, onSwitchToLogin, onBack, onNavigate, isLo
       newErrors.mobile = 'Mobile number is required';
     } else if (!/^[0-9]{10}$/.test(formData.mobile)) {
       newErrors.mobile = 'Mobile number must be a valid 10-digit number';
+    } else if (!isMobileVerified) {
+      newErrors.mobile = 'Please verify your mobile number';
     }
-
 
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
+    } else if (!isEmailVerified) {
+      newErrors.email = 'Please verify your email address';
     }
 
     if (!formData.password) {

@@ -119,7 +119,7 @@ app.use(
 );
 
 // Explicit OPTIONS handler for all routes
-app.options('*', cors());
+app.options(/(.*)/, cors());
 console.log(`🌍 Allowed frontend origins: ${allowedOrigins.join(', ')}`);
 console.log(`🌍 Allowing all *.orchids.page domains`);
 console.log(`🌍 NODE_ENV=${process.env.NODE_ENV || 'undefined'}`);

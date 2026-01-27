@@ -9,11 +9,11 @@ const {
   resendOtp,
   resetPassword,
   updatePassword,
-    sendVerificationOtp,
-    checkUsername,
-    checkEmail,
-    checkMobile,
-  } = require('../controllers/authController');
+  sendVerificationOtp,
+  checkUsername,
+  checkEmail,
+  checkMobile,
+} = require('../controllers/authController');
   
   /**
    * @swagger
