@@ -22,7 +22,7 @@ const getRestTemplates = async (req, res) => {
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
     const result = await smsRestService.getTemplates();
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Get REST Templates Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -37,7 +37,7 @@ const createRestTemplate = async (req, res) => {
 
     const { templateName, message } = req.body;
     const result = await smsRestService.createTemplate(templateName, message);
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Create REST Template Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -52,7 +52,7 @@ const deleteRestTemplate = async (req, res) => {
 
     const { templateId } = req.params;
     const result = await smsRestService.deleteTemplate(templateId);
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Delete REST Template Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -66,7 +66,7 @@ const getSenderIds = async (req, res) => {
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
     const result = await smsRestService.getSenderIds();
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Get Sender IDs Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -86,7 +86,7 @@ const getSmsReports = async (req, res) => {
       Page: page, 
       Limit: limit 
     });
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Get SMS Reports Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -101,7 +101,7 @@ const getSmsStatus = async (req, res) => {
 
     const { messageId } = req.params;
     const result = await smsRestService.getSmsReport(messageId);
-    return res.status(200).json(result);
+    return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Get SMS Status Error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });

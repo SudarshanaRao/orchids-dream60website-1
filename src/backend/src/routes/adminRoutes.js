@@ -1019,22 +1019,343 @@ router.post('/vouchers/:voucherId/resend-email', resendVoucherEmail);
  *       500:
  *         description: Sync error
  */
+/**
+ * @swagger
+ * /admin/vouchers/{voucherId}/sync:
+ *   post:
+ *     summary: SYNC VOUCHER STATUS WITH WOOHOO
+ *     description: Sync the local voucher status with Woohoo API and update card details if order is complete
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: voucherId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Voucher ID from database
+ *     responses:
+ *       200:
+ *         description: Voucher status synced successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Voucher status synced successfully"
+ *                 data:
+ *                   type: object
+ *                   description: Updated voucher data
+ *       400:
+ *         description: Voucher ID is required
+ *       404:
+ *         description: Voucher not found
+ *       500:
+ *         description: Sync error
+ */
 router.post('/vouchers/:voucherId/sync', syncVoucherStatus);
 
+/**
+ * @swagger
+ * tags:
+ *   - name: SMS Management
+ *     description: APIs for managing SMS templates, sending SMS, and reports
+ */
+
+/**
+ * @swagger
+ * /admin/sms/templates:
+ *   get:
+ *     summary: GET LOCAL SMS TEMPLATES
+ *     description: Get all local SMS templates defined in the system
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Templates retrieved successfully
+ *       403:
+ *         description: Admin access required
+ */
 router.get('/sms/templates', getSmsTemplates);
+
+/**
+ * @swagger
+ * /admin/sms/balance:
+ *   get:
+ *     summary: GET SMS BALANCE
+ *     description: Get current SMS balance from the provider
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Balance retrieved successfully
+ */
 router.get('/sms/balance', getSmsBalance);
+
+/**
+ * @swagger
+ * /admin/sms/users:
+ *   get:
+ *     summary: GET USERS FOR SMS
+ *     description: Get users based on various filters for sending SMS
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: filter
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [all, active_players, top_players, winners, never_played, auction_participants, round1_players, advanced_round2, eliminated_current, specific_round, claim_pending]
+ *       - name: auctionId
+ *         in: query
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ */
 router.get('/sms/users', getUsersForSms);
+
+/**
+ * @swagger
+ * /admin/sms/auctions:
+ *   get:
+ *     summary: GET RECENT AUCTIONS
+ *     description: Get recent auctions for filtering SMS recipients
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Auctions retrieved successfully
+ */
 router.get('/sms/auctions', getRecentAuctions);
+
+/**
+ * @swagger
+ * /admin/sms/filter-stats:
+ *   get:
+ *     summary: GET FILTER STATISTICS
+ *     description: Get user counts for different SMS filters
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ */
 router.get('/sms/filter-stats', getFilterStats);
+
+/**
+ * @swagger
+ * /admin/sms/send:
+ *   post:
+ *     summary: SEND SMS TO USERS
+ *     description: Send SMS to specific users or mobile numbers
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userIds:
+ *                 type: array
+ *                 items: { type: string }
+ *               mobileNumbers:
+ *                 type: array
+ *                 items: { type: string }
+ *               message:
+ *                 type: string
+ *               templateKey:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: SMS sent successfully
+ */
 router.post('/sms/send', sendSmsToUsers);
+
+/**
+ * @swagger
+ * /admin/sms/send-bulk:
+ *   post:
+ *     summary: SEND BULK SMS TO FILTER
+ *     description: Send SMS to all users matching a specific filter
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               filter:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *               templateKey:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Bulk SMS sent successfully
+ */
 router.post('/sms/send-bulk', sendBulkSmsToFilter);
 
-// REST API SMS Management
+/**
+ * @swagger
+ * /admin/sms/rest/templates:
+ *   get:
+ *     summary: GET SMSCOUNTRY REST TEMPLATES
+ *     description: Get SMS templates directly from SMSCountry REST API
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: REST templates retrieved successfully
+ *   post:
+ *     summary: CREATE SMSCOUNTRY REST TEMPLATE
+ *     description: Create a new SMS template on SMSCountry
+ *     tags: [SMS Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               templateName:
+ *                 type: string
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: REST template created successfully
+ */
 router.get('/sms/rest/templates', getRestTemplates);
 router.post('/sms/rest/templates', createRestTemplate);
+
+/**
+ * @swagger
+ * /admin/sms/rest/templates/{templateId}:
+ *   delete:
+ *     summary: DELETE SMSCOUNTRY REST TEMPLATE
+ *     description: Delete an SMS template from SMSCountry
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: templateId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: REST template deleted successfully
+ */
 router.delete('/sms/rest/templates/:templateId', deleteRestTemplate);
+
+/**
+ * @swagger
+ * /admin/sms/rest/sender-ids:
+ *   get:
+ *     summary: GET SMSCOUNTRY SENDER IDS
+ *     description: Get approved sender IDs from SMSCountry REST API
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sender IDs retrieved successfully
+ */
 router.get('/sms/rest/sender-ids', getSenderIds);
+
+/**
+ * @swagger
+ * /admin/sms/rest/reports:
+ *   get:
+ *     summary: GET SMSCOUNTRY REST REPORTS
+ *     description: Get detailed SMS delivery reports from SMSCountry REST API
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: fromDate
+ *         in: query
+ *         schema: { type: string }
+ *       - name: toDate
+ *         in: query
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Reports retrieved successfully
+ */
 router.get('/sms/rest/reports', getSmsReports);
+
+/**
+ * @swagger
+ * /admin/sms/rest/status/{messageId}:
+ *   get:
+ *     summary: GET SMS DELIVERY STATUS
+ *     description: Get delivery status for a specific message from SMSCountry REST API
+ *     tags: [SMS Management]
+ *     parameters:
+ *       - name: messageId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Status retrieved successfully
+ */
 router.get('/sms/rest/status/:messageId', getSmsStatus);
 
 module.exports = router;

@@ -28,26 +28,48 @@ class SmsRestService {
   }
 
   /**
+   * Get account balance
+   */
+  async getBalance() {
+    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+
+    try {
+      const response = await this.client.get('/');
+      // The API returns account details including balance
+      const balance = response.data?.CreditBalance || 0;
+      return { success: true, balance };
+    } catch (error) {
+      console.error('SMS Rest Balance Error:', error.response?.data || error.message);
+      return { success: false, error: error.response?.data?.Message || error.message };
+    }
+  }
+
+  /**
    * Send a single SMS
    */
-    async sendSms(mobileNumber, message, senderId, options = {}) {
-      if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
-  
-      try {
-        const payload = {
-          Text: message,
-          Number: this.formatNumber(mobileNumber),
-          SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
-          DRNotifyUrl: '',
-          DRNotifyHttpMethod: 'POST',
-          Tool: 'API'
-        };
-  
-        if (options.templateId) {
-          payload.TemplateId = options.templateId;
-        }
-  
-        const response = await this.client.post('/SMSes/', payload);
+  async sendSms(mobileNumber, message, senderId, options = {}) {
+    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+
+    try {
+      const payload = {
+        Text: message,
+        Number: this.formatNumber(mobileNumber),
+        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+        DRNotifyUrl: '',
+        DRNotifyHttpMethod: 'POST',
+        Tool: 'API'
+      };
+
+      if (options.templateId) {
+        payload.TemplateId = options.templateId;
+      }
+      
+      // Support for DLT Principal Entity ID
+      if (process.env.DLT_ENTITY_ID) {
+        payload.PrincipalEntityId = process.env.DLT_ENTITY_ID;
+      }
+
+      const response = await this.client.post('/SMSes/', payload);
 
       return { success: true, data: response.data };
     } catch (error) {
@@ -59,24 +81,29 @@ class SmsRestService {
   /**
    * Send bulk SMS
    */
-    async sendBulkSms(numbers, message, senderId, options = {}) {
-      if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
-  
-      try {
-        const payload = {
-          Text: message,
-          Numbers: numbers.map(n => this.formatNumber(n)),
-          SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
-          DRNotifyUrl: '',
-          DRNotifyHttpMethod: 'POST',
-          Tool: 'API'
-        };
-  
-        if (options.templateId) {
-          payload.TemplateId = options.templateId;
-        }
-  
-        const response = await this.client.post('/BulkSMSes/', payload);
+  async sendBulkSms(numbers, message, senderId, options = {}) {
+    if (!this.isConfigured()) return { success: false, error: 'SMS service not configured' };
+
+    try {
+      const payload = {
+        Text: message,
+        Numbers: numbers.map(n => this.formatNumber(n)),
+        SenderId: senderId || process.env.SMSCOUNTRY_SENDER_ID || 'FINPGS',
+        DRNotifyUrl: '',
+        DRNotifyHttpMethod: 'POST',
+        Tool: 'API'
+      };
+
+      if (options.templateId) {
+        payload.TemplateId = options.templateId;
+      }
+
+      // Support for DLT Principal Entity ID
+      if (process.env.DLT_ENTITY_ID) {
+        payload.PrincipalEntityId = process.env.DLT_ENTITY_ID;
+      }
+
+      const response = await this.client.post('/BulkSMSes/', payload);
 
       return { success: true, data: response.data };
     } catch (error) {

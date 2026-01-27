@@ -118,6 +118,12 @@ const sendBulkSms = async (recipients, message, options = {}) => {
 
 const getBalance = async () => {
   try {
+    // Try REST API first if configured
+    if (smsRestService.isConfigured()) {
+      const result = await smsRestService.getBalance();
+      if (result.success) return result;
+    }
+
     const config = getSmsConfig();
     
     if (!config.user || !config.passwd) {
@@ -131,7 +137,12 @@ const getBalance = async () => {
       }
     });
     
-    const balance = parseFloat(response.data?.trim()) || 0;
+    const balanceText = response.data?.toString().trim() || '0';
+    if (balanceText.includes('ERROR')) {
+      return { success: false, error: balanceText };
+    }
+    
+    const balance = parseFloat(balanceText) || 0;
     return { success: true, balance };
   } catch (error) {
     console.error('Get SMS Balance Error:', error.message);
@@ -141,6 +152,14 @@ const getBalance = async () => {
 
 const getDeliveryReports = async (fromDate, toDate) => {
   try {
+    // Try REST API first if configured
+    if (smsRestService.isConfigured()) {
+      return await smsRestService.getDetailedReports({ 
+        FromDate: fromDate, 
+        ToDate: toDate 
+      });
+    }
+
     const config = getSmsConfig();
     
     if (!config.user || !config.passwd) {
@@ -200,20 +219,20 @@ const SMS_TEMPLATES = {
     template: '{message}',
     variables: ['message'],
   },
-    CUSTOM: {
-      id: 'custom',
-      name: 'Custom Message',
-      template: '{message}',
-      variables: ['message'],
-    },
-    OTP_VERIFICATION: {
-      id: 'otp_verification',
-      name: 'OTP Verification',
-      template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
-      variables: ['name', 'otp'],
-      templateId: '1207172612396743269'
-    },
-  };
+  CUSTOM: {
+    id: 'custom',
+    name: 'Custom Message',
+    template: '{message}',
+    variables: ['message'],
+  },
+  OTP_VERIFICATION: {
+    id: 'otp_verification',
+    name: 'OTP Verification',
+    template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Dream60 account. Its only valid for 10 minutes - Dream60',
+    variables: ['name', 'otp'],
+    templateId: '1207172612396743269'
+  },
+};
 
 const formatTemplate = (templateId, variables = {}) => {
   const template = SMS_TEMPLATES[templateId];

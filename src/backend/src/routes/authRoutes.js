@@ -9,16 +9,38 @@ const {
   resendOtp,
   resetPassword,
   updatePassword,
-  sendVerificationOtp,
-  checkEmail,
-  checkMobile,
-} = require('../controllers/authController');
-
-/**
- * @swagger
- * /auth/send-verification-otp:
- *   post:
- *     summary: SEND VERIFICATION OTP (e.g. for profile changes)
+    sendVerificationOtp,
+    checkUsername,
+    checkEmail,
+    checkMobile,
+  } = require('../controllers/authController');
+  
+  /**
+   * @swagger
+   * /auth/check-username:
+   *   post:
+   *     summary: Check if username is already taken
+   *     tags: [Authentication]
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               username:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Username check result
+   */
+  router.post('/check-username', checkUsername);
+  
+  /**
+   * @swagger
+   * /auth/send-verification-otp:
+   *   post:
+   *     summary: SEND VERIFICATION OTP (e.g. for profile changes)
  *     tags: [Authentication, Email Integration]
  *     requestBody:
  *       required: true
