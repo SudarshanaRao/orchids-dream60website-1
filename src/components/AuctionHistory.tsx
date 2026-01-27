@@ -524,109 +524,132 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
     }
   };
 
-  return (
-    <motion.div
-      key={`${tabPrefix}-${localAuction.id}`}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="cursor-pointer"
-    >
-        <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
-                
-        {/* Subtle Background Gradient */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-          <div
-            className="absolute w-32 h-32 rounded-full blur-3xl"
-            style={{
-              background: localAuction.status === 'won' 
-                ? 'radial-gradient(circle, #A78BFA, #7C3AED)' 
-                : 'radial-gradient(circle, #DDD6FE, #C4B5FD)',
-              top: '-20%',
-              right: '-10%',
-            }}
-          />
-        </div>
+    const getStatusBadge = (status: string, claimStatus?: string) => {
+      if (claimStatus === 'CANCELLED') {
+        return (
+          <Badge className="shrink-0 border backdrop-blur-sm font-semibold text-[9px] sm:text-xs px-1 sm:px-2 py-0.5 bg-red-50 text-red-700 border-red-200">
+            <div className="flex items-center gap-0.5">
+              <AlertCircle className="w-2 h-2 sm:w-3 sm:h-3" />
+              <span>Cancelled</span>
+            </div>
+          </Badge>
+        );
+      }
+      return (
+        <Badge className={`
+          shrink-0 border backdrop-blur-sm font-semibold text-[9px] sm:text-xs px-1 sm:px-2 py-0.5
+          ${status === 'won' 
+            ? 'bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 text-violet-900 border-violet-300/60' 
+            : 'bg-purple-50/80 text-purple-700 border-purple-200/50'
+          }
+        `}>
+          <div className="flex items-center gap-0.5">
+            {status === 'won' ? (
+              <>
+                <Trophy className="w-2 h-2 sm:w-3 sm:h-3" />
+                <span>Won</span>
+              </>
+            ) : (
+              <>
+                <TrendingDown className="w-2 h-2 sm:w-3 sm:h-3" />
+                <span>Lost</span>
+              </>
+            )}
+          </div>
+        </Badge>
+      );
+    };
 
-        <CardContent className="p-2.5 sm:p-6 relative z-10">
-          <div className="flex flex-col gap-2 sm:gap-4">
-            {/* Header Section */}
-            <div className="flex items-start justify-between gap-2" onClick={() => onViewDetails(localAuction)}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
-                  <div
-                    className={`w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-xl flex items-center justify-center shadow-md sm:shadow-lg border border-white/60 sm:border-2 ${
-                      localAuction.status === 'won'
-                        ? 'bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-700'
-                        : 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'
-                    }`}
-                  >
-                    {localAuction.status === 'won' ? (
-                      <Crown className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
-                    ) : (
-                      <Target className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
-                    )}
-                  </div>
+    return (
+      <motion.div
+        key={`${tabPrefix}-${localAuction.id}`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+        className="cursor-pointer"
+      >
+          <Card className="relative overflow-hidden border-2 border-purple-200/60 backdrop-blur-xl bg-white/70 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.01] hover:border-purple-300/80">
                   
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-purple-900 text-xs sm:text-base md:text-lg truncate">{localAuction.prize}</h3>
-                    <div className="flex items-center gap-1 text-[9px] sm:text-xs text-purple-600 sm:hidden">
-                      <Calendar className="w-2.5 h-2.5 shrink-0" />
-                      <span>{localAuction.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+          {/* Subtle Background Gradient */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+            <div
+              className="absolute w-32 h-32 rounded-full blur-3xl"
+              style={{
+                background: localAuction.prizeClaimStatus === 'CANCELLED'
+                  ? 'radial-gradient(circle, #FCA5A5, #EF4444)'
+                  : localAuction.status === 'won' 
+                  ? 'radial-gradient(circle, #A78BFA, #7C3AED)' 
+                  : 'radial-gradient(circle, #DDD6FE, #C4B5FD)',
+                top: '-20%',
+                right: '-10%',
+              }}
+            />
+          </div>
+
+          <CardContent className="p-2.5 sm:p-6 relative z-10">
+            <div className="flex flex-col gap-2 sm:gap-4">
+              {/* Header Section */}
+              <div className="flex items-start justify-between gap-2" onClick={() => onViewDetails(localAuction)}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+                    <div
+                      className={`w-7 h-7 sm:w-10 sm:h-10 rounded-xl sm:rounded-xl flex items-center justify-center shadow-md sm:shadow-lg border border-white/60 sm:border-2 ${
+                        localAuction.prizeClaimStatus === 'CANCELLED'
+                          ? 'bg-gradient-to-br from-red-400 to-red-600'
+                          : localAuction.status === 'won'
+                          ? 'bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-700'
+                          : 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'
+                      }`}
+                    >
+                      {localAuction.prizeClaimStatus === 'CANCELLED' ? (
+                        <AlertCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
+                      ) : localAuction.status === 'won' ? (
+                        <Crown className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
+                      ) : (
+                        <Target className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-white" />
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-purple-900 text-xs sm:text-base md:text-lg truncate">{localAuction.prize}</h3>
+                      <div className="flex items-center gap-1 text-[9px] sm:text-xs text-purple-600 sm:hidden">
+                        <Calendar className="w-2.5 h-2.5 shrink-0" />
+                        <span>{localAuction.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</span>
+                      </div>
                     </div>
                   </div>
+                  
+                  <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm text-purple-600">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                      <span className="whitespace-nowrap">
+                        {localAuction.date.toLocaleDateString('en-IN', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                    <span className="text-purple-400">•</span>
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                      <span className="whitespace-nowrap">
+                        {localAuction.auctionStartTime}
+                      </span>
+                    </div>
+                    {localAuction.auctionEndTime && (
+                      <>
+                        <span className="text-purple-400">→</span>
+                        <span className="whitespace-nowrap">{localAuction.auctionEndTime}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs md:text-sm text-purple-600">
-                  <div className="flex items-center gap-0.5 sm:gap-1">
-                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span className="whitespace-nowrap">
-                      {localAuction.date.toLocaleDateString('en-IN', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}
-                    </span>
-                  </div>
-                  <span className="text-purple-400">•</span>
-                  <div className="flex items-center gap-0.5 sm:gap-1">
-                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                    <span className="whitespace-nowrap">
-                      {localAuction.auctionStartTime}
-                    </span>
-                  </div>
-                  {localAuction.auctionEndTime && (
-                    <>
-                      <span className="text-purple-400">→</span>
-                      <span className="whitespace-nowrap">{localAuction.auctionEndTime}</span>
-                    </>
-                  )}
-                </div>
+                {getStatusBadge(localAuction.status, localAuction.prizeClaimStatus)}
               </div>
-              
-              <Badge className={`
-                shrink-0 border backdrop-blur-sm font-semibold text-[9px] sm:text-xs px-1 sm:px-2 py-0.5
-                ${localAuction.status === 'won' 
-                  ? 'bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 text-violet-900 border-violet-300/60' 
-                  : 'bg-purple-50/80 text-purple-700 border-purple-200/50'
-                }
-              `}>
-                <div className="flex items-center gap-0.5">
-                  {localAuction.status === 'won' ? (
-                    <>
-                      <Trophy className="w-2 h-2 sm:w-3 sm:h-3" />
-                      <span>Won</span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="w-2 h-2 sm:w-3 sm:h-3" />
-                      <span>Lost</span>
-                    </>
-                  )}
-                </div>
-              </Badge>
-            </div>
+
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2 md:gap-3" onClick={() => onViewDetails(localAuction)}>

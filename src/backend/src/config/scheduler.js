@@ -638,10 +638,10 @@ const autoActivateAuctions = async () => {
     const currentMinute = Number(serverTime.minute);
     console.log(`⏰ [AUTO-ACTIVATE] Server Time: ${serverTime.time} (${serverTime.date}) - Hour: ${currentHour}, Minute: ${currentMinute}`);
 
-    // Only operate between 9..23 (inclusive). 
+    // Only operate between 3..23 (inclusive). 
     // 22 (10 PM slot) ends at 23:00. We allow 23:00 to run to mark the last auction as COMPLETED.
-    if (currentHour < 9 || currentHour > 23) {
-      console.log(`⏸️ [AUTO-ACTIVATE] Outside operating hours (9 AM - 11 PM). Current hour: ${currentHour}`);
+    if (currentHour < 3 || currentHour > 23) {
+      console.log(`⏸️ [AUTO-ACTIVATE] Outside operating hours (3 AM - 11 PM). Current hour: ${currentHour}`);
       return;
     }
 
@@ -900,16 +900,52 @@ const autoActivateAuctions = async () => {
             console.log(`  🎯 [AUTO-ACTIVATE] ${local.hourlyAuctionCode || local.hourlyAuctionId} -> LIVE (server ${currentHour} == slot ${slotHour})`);
           }
 
-          // Determine which round should be active by minute
-          let targetRound = 1;
-          if (currentMinute >= 0 && currentMinute < 15) targetRound = 1;
-          else if (currentMinute >= 15 && currentMinute < 30) targetRound = 2;
-          else if (currentMinute >= 30 && currentMinute < 45) targetRound = 3;
-          else if (currentMinute >= 45 && currentMinute < 60) targetRound = 4;
-          else {
-            // minute >= 60 (shouldn't happen) -> complete
-            targetRound = local.roundCount || 4;
-          }
+            //Determine which round should be active by minute
+            let targetRound = 1;
+            if (currentMinute >= 0 && currentMinute < 15) targetRound = 1;
+            else if (currentMinute >= 15 && currentMinute < 30) targetRound = 2;
+            else if (currentMinute >= 30 && currentMinute < 45) targetRound = 3;
+            else if (currentMinute >= 45 && currentMinute < 60) targetRound = 4;
+            else {
+              // minute >= 60 (shouldn't happen) -> complete
+              targetRound = local.roundCount || 4;
+            }
+
+            // ✅ NEW: 14th minute check for minimum slots criteria
+            if (currentMinute === 14 && local.Status === 'LIVE' && local.currentRound === 1) {
+              const minSlots = local.minSlotsValue || 0;
+              const participantsCount = local.participants?.length || 0;
+              
+              if (participantsCount < minSlots) {
+                console.log(`🚫 [AUTO-CANCEL] Auction ${local.hourlyAuctionCode || local.hourlyAuctionId} cancelled due to insufficient participants: ${participantsCount}/${minSlots}`);
+                
+                local.Status = 'CANCELLED';
+                local.completedAt = now;
+                local.claimNotes = `Auction cancelled: Minimum slots criteria not met (${participantsCount}/${minSlots}). Refund initiated.`;
+                
+                // Update all participants' history entries
+                if (local.participants && local.participants.length > 0) {
+                  for (const participant of local.participants) {
+                    await AuctionHistory.findOneAndUpdate(
+                      { userId: participant.playerId, hourlyAuctionId: local.hourlyAuctionId },
+                      {
+                        $set: {
+                          auctionStatus: 'COMPLETED',
+                          prizeClaimStatus: 'CANCELLED',
+                          claimNotes: 'Auction cancelled due to insufficient participants. Refund of entry fee (₹' + participant.entryFee + ') initiated. Expected in 2-3 working days.',
+                          completedAt: now
+                        }
+                      }
+                    );
+                  }
+                }
+                
+                await local.save();
+                await syncHourlyStatusToDailyConfig(local.hourlyAuctionId, 'CANCELLED');
+                continue; // Skip further processing for this auction
+              }
+            }
+
 
           // Update rounds statuses
           const rc = local.roundCount || 4;

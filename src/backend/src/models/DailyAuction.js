@@ -143,6 +143,8 @@ const DailyAuctionConfigSchema = new mongoose.Schema(
     imageUrl: { type: String, default: null },
     productImages: { type: [ProductImageSchema], default: [] },
     productDescription: { type: Map, of: String, default: {} },
+    minSlotsCriteria: { type: String, enum: ['MANUAL', 'AUTO'], default: 'AUTO' },
+    minSlotsValue: { type: Number, default: 0 },
 
     // ========== TRACKING FIELDS ==========
     isAuctionCompleted: { type: Boolean, default: false },

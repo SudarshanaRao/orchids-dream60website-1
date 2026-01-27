@@ -26,6 +26,8 @@ interface DailyAuctionConfigItem {
   }>;
   imageUrl?: string;
   productDescription?: Record<string, string>;
+  minSlotsCriteria: 'AUTO' | 'MANUAL';
+  minSlotsValue: number;
 }
 
 interface MasterAuction {
@@ -58,56 +60,60 @@ export function CreateMasterAuctionModal({
 
   useEffect(() => {
     if (!editingAuction && auctionConfigs.length === 0) {
-        const defaultConfig: DailyAuctionConfigItem = {
-          auctionNumber: 1,
-          TimeSlot: '14:00',
-          auctionName: 'Auction 1',
-          prizeValue: 1000,
-          Status: 'UPCOMING',
-          maxDiscount: 0,
-          EntryFee: 'RANDOM',
-          minEntryFee: null,
-          maxEntryFee: null,
-          FeeSplits: { BoxA: 50, BoxB: 50 },
-          roundCount: 4,
-          roundConfig: [
-            { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          ],
-            imageUrl: '',
-          };
-        setAuctionConfigs([defaultConfig]);
-      }
-    }, [editingAuction]);
+      const defaultConfig: DailyAuctionConfigItem = {
+        auctionNumber: 1,
+        TimeSlot: '14:00',
+        auctionName: 'Auction 1',
+        prizeValue: 1000,
+        Status: 'UPCOMING',
+        maxDiscount: 0,
+        EntryFee: 'RANDOM',
+        minEntryFee: null,
+        maxEntryFee: null,
+        FeeSplits: { BoxA: 50, BoxB: 50 },
+        roundCount: 4,
+        roundConfig: [
+          { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+        ],
+        imageUrl: '',
+        minSlotsCriteria: 'AUTO',
+        minSlotsValue: 0,
+      };
+      setAuctionConfigs([defaultConfig]);
+    }
+  }, [editingAuction]);
 
-    const handleAddAuction = () => {
-      const newNumber = auctionConfigs.length + 1;
-      setAuctionConfigs([
-        ...auctionConfigs,
-        {
-          auctionNumber: newNumber,
-          TimeSlot: '14:00',
-          auctionName: `Auction ${newNumber}`,
-          prizeValue: 1000,
-          Status: 'UPCOMING',
-          maxDiscount: 0,
-          EntryFee: 'RANDOM',
-          minEntryFee: null,
-          maxEntryFee: null,
-          FeeSplits: { BoxA: 50, BoxB: 50 },
-          roundCount: 4,
-          roundConfig: [
-            { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-            { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
-          ],
-          imageUrl: '',
-        },
-      ]);
-    };
+  const handleAddAuction = () => {
+    const newNumber = auctionConfigs.length + 1;
+    setAuctionConfigs([
+      ...auctionConfigs,
+      {
+        auctionNumber: newNumber,
+        TimeSlot: '14:00',
+        auctionName: `Auction ${newNumber}`,
+        prizeValue: 1000,
+        Status: 'UPCOMING',
+        maxDiscount: 0,
+        EntryFee: 'RANDOM',
+        minEntryFee: null,
+        maxEntryFee: null,
+        FeeSplits: { BoxA: 50, BoxB: 50 },
+        roundCount: 4,
+        roundConfig: [
+          { round: 1, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 2, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 3, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+          { round: 4, minPlayers: null, duration: 15, maxBid: null, roundCutoffPercentage: null, topBidAmountsPerRound: 3 },
+        ],
+        imageUrl: '',
+        minSlotsCriteria: 'AUTO',
+        minSlotsValue: 0,
+      },
+    ]);
+  };
 
   const handleRemoveAuction = (index: number) => {
     const updated = auctionConfigs.filter((_, i) => i !== index);
@@ -253,192 +259,230 @@ export function CreateMasterAuctionModal({
                   )}
                 </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Auction Name
-                      </label>
-                      <input
-                        type="text"
-                        value={config.auctionName}
-                        onChange={(e) => handleConfigChange(index, 'auctionName', e.target.value)}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                        required
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Min Slots Criteria
+                    </label>
+                    <select
+                      value={config.minSlotsCriteria}
+                      onChange={(e) => handleConfigChange(index, 'minSlotsCriteria', e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="AUTO">AUTO (Formula)</option>
+                      <option value="MANUAL">MANUAL</option>
+                    </select>
+                  </div>
 
+                  {config.minSlotsCriteria === 'MANUAL' ? (
                     <div>
                       <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Time Slot (HH:MM)
-                      </label>
-                      <input
-                        type="text"
-                        pattern="^([01]\d|2[0-3]):([0-5]\d)$"
-                        value={config.TimeSlot}
-                        onChange={(e) => handleConfigChange(index, 'TimeSlot', e.target.value)}
-                        placeholder="14:00"
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Prize Value (₹)
+                        Min Slots Value
                       </label>
                       <input
                         type="number"
                         min="0"
-                        value={config.prizeValue}
-                        onChange={(e) => handleConfigChange(index, 'prizeValue', parseInt(e.target.value))}
+                        value={config.minSlotsValue}
+                        onChange={(e) => handleConfigChange(index, 'minSlotsValue', parseInt(e.target.value))}
                         className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
                         required
                       />
                     </div>
-
+                  ) : (
                     <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Round Count
+                      <label className="block text-sm font-semibold text-purple-900 mb-2 opacity-50">
+                        Min Slots Value (Auto)
                       </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={config.roundCount}
-                        onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Entry Fee Type
-                      </label>
-                      <select
-                        value={config.EntryFee}
-                        onChange={(e) => handleConfigChange(index, 'EntryFee', e.target.value)}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      >
-                        <option value="RANDOM">RANDOM</option>
-                        <option value="MANUAL">MANUAL</option>
-                      </select>
-                    </div>
-
-                    {config.EntryFee === 'RANDOM' ? (
-                      <>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Min Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={config.minEntryFee || ''}
-                            onChange={(e) => handleConfigChange(index, 'minEntryFee', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Max Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={config.maxEntryFee || ''}
-                            onChange={(e) => handleConfigChange(index, 'maxEntryFee', parseInt(e.target.value))}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Box 1 Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={config.FeeSplits?.BoxA || ''}
-                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxA: parseInt(e.target.value) })}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-purple-900 mb-2">
-                            Box 2 Entry Fee (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={config.FeeSplits?.BoxB || ''}
-                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxB: parseInt(e.target.value) })}
-                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                            required
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        <ImageIcon className="w-4 h-4 inline-block mr-1" />
-                        Prize Image URL
-                      </label>
-                      <input
-                        type="url"
-                        value={config.imageUrl || ''}
-                        onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Product Description (Key [Tab] Value)
-                      </label>
-                        <textarea
-                          value={getDescriptionString(config.productDescription)}
-                          onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                          placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
-                          rows={4}
-                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
-                        />
-                        <p className="text-xs text-purple-500 mt-1 italic">
-                          Copy-paste from Excel/Tab-separated data. Each line should be "Key [Tab] Value".
-                        </p>
-
-                        {/* Description Preview */}
-                        {config.productDescription && Object.keys(config.productDescription).length > 0 && (
-                          <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                            <h5 className="text-xs font-bold text-purple-900 mb-2 uppercase tracking-wider">Description Preview</h5>
-                            <div className="overflow-hidden rounded-md border border-purple-200 bg-white">
-                              <table className="w-full text-xs">
-                                <thead className="bg-purple-100">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Attribute</th>
-                                    <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Value</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {Object.entries(config.productDescription).map(([key, value], idx) => (
-                                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
-                                      <td className="px-3 py-2 font-semibold text-purple-800 border-b border-purple-100">{key}</td>
-                                      <td className="px-3 py-2 text-purple-700 border-b border-purple-100">{value}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
+                      <div className="px-4 py-2 bg-purple-50 border-2 border-purple-100 rounded-lg text-purple-400 italic">
+                        Calculated automatically
                       </div>
                     </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Auction Name
+                    </label>
+                    <input
+                      type="text"
+                      value={config.auctionName}
+                      onChange={(e) => handleConfigChange(index, 'auctionName', e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Time Slot (HH:MM)
+                    </label>
+                    <input
+                      type="text"
+                      pattern="^([01]\d|2[0-3]):([0-5]\d)$"
+                      value={config.TimeSlot}
+                      onChange={(e) => handleConfigChange(index, 'TimeSlot', e.target.value)}
+                      placeholder="14:00"
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Prize Value (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={config.prizeValue}
+                      onChange={(e) => handleConfigChange(index, 'prizeValue', parseInt(e.target.value))}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Round Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={config.roundCount}
+                      onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Entry Fee Type
+                    </label>
+                    <select
+                      value={config.EntryFee}
+                      onChange={(e) => handleConfigChange(index, 'EntryFee', e.target.value)}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="RANDOM">RANDOM</option>
+                      <option value="MANUAL">MANUAL</option>
+                    </select>
+                  </div>
+
+                  {config.EntryFee === 'RANDOM' ? (
+                    <>
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-900 mb-2">
+                          Min Entry Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={config.minEntryFee || ''}
+                          onChange={(e) => handleConfigChange(index, 'minEntryFee', parseInt(e.target.value))}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-900 mb-2">
+                          Max Entry Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={config.maxEntryFee || ''}
+                          onChange={(e) => handleConfigChange(index, 'maxEntryFee', parseInt(e.target.value))}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                          required
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-900 mb-2">
+                          Box 1 Entry Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={config.FeeSplits?.BoxA || ''}
+                          onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxA: parseInt(e.target.value) })}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-purple-900 mb-2">
+                          Box 2 Entry Fee (₹)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={config.FeeSplits?.BoxB || ''}
+                          onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxB: parseInt(e.target.value) })}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                          required
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      <ImageIcon className="w-4 h-4 inline-block mr-1" />
+                      Prize Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={config.imageUrl || ''}
+                      onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-semibold text-purple-900 mb-2">
+                      Product Description (Key [Tab] Value)
+                    </label>
+                    <textarea
+                      value={getDescriptionString(config.productDescription)}
+                      onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                      placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
+                      rows={4}
+                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
+                    />
+                    <p className="text-xs text-purple-500 mt-1 italic">
+                      Each line should be "Key [Tab] Value".
+                    </p>
+
+                    {config.productDescription && Object.keys(config.productDescription).length > 0 && (
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                        <h5 className="text-xs font-bold text-purple-900 mb-2 uppercase tracking-wider">Description Preview</h5>
+                        <div className="overflow-hidden rounded-md border border-purple-200 bg-white">
+                          <table className="w-full text-xs">
+                            <thead className="bg-purple-100">
+                              <tr>
+                                <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Attribute</th>
+                                <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(config.productDescription).map(([key, value], idx) => (
+                                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
+                                  <td className="px-3 py-2 font-semibold text-purple-800 border-b border-purple-100">{key}</td>
+                                  <td className="px-3 py-2 text-purple-700 border-b border-purple-100">{value}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>

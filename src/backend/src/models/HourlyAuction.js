@@ -242,6 +242,8 @@ const hourlyAuctionSchema = new mongoose.Schema(
       default: [],
     },
     productDescription: { type: Map, of: String, default: {} },
+    minSlotsCriteria: { type: String, enum: ['MANUAL', 'AUTO'], default: 'AUTO' },
+    minSlotsValue: { type: Number, default: 0 },
     
     // ========== NEW FIELDS FOR PLAYER TRACKING ========== 
     

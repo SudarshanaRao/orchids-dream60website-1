@@ -354,6 +354,23 @@ const createMasterAuctionAdmin = async (req, res) => {
 
     // Process and validate config
     const processedConfig = dailyAuctionConfig.map(config => {
+      // Calculate minSlotsValue if AUTO
+      if (config.minSlotsCriteria === 'AUTO') {
+        const prizeValue = config.prizeValue || 0;
+        let entryFee = 0;
+        if (config.EntryFee === 'MANUAL' && config.FeeSplits) {
+          entryFee = (config.FeeSplits.BoxA || 0) + (config.FeeSplits.BoxB || 0);
+        } else if (config.EntryFee === 'RANDOM' && config.minEntryFee && config.maxEntryFee) {
+          entryFee = (config.minEntryFee + config.maxEntryFee) / 2;
+        }
+
+        if (entryFee > 0) {
+          config.minSlotsValue = Math.floor((prizeValue / entryFee) / 2);
+        } else {
+          config.minSlotsValue = 0;
+        }
+      }
+
       if (config.EntryFee === 'RANDOM' && (!config.minEntryFee || !config.maxEntryFee)) {
         throw new Error(`minEntryFee and maxEntryFee required for RANDOM entry fee in auction ${config.auctionNumber}`);
       }
