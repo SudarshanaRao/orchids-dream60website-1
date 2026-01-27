@@ -5,6 +5,7 @@ interface AirpayFormProps {
   params: {
     mercid: string;
     data: string;
+    encdata?: string;
     privatekey: string;
     checksum: string;
     chmod?: string;
@@ -25,6 +26,7 @@ export function AirpayForm({ url, params }: AirpayFormProps) {
     <form ref={formRef} action={url} method="post" style={{ display: 'none' }}>
       <input type="hidden" name="mercid" value={params.mercid} />
       <input type="hidden" name="data" value={params.data} />
+      {params.encdata && <input type="hidden" name="encdata" value={params.encdata} />}
       <input type="hidden" name="privatekey" value={params.privatekey} />
       <input type="hidden" name="checksum" value={params.checksum} />
       <input type="hidden" name="chmod" value={params.chmod || ''} />

@@ -57,8 +57,8 @@ function checksumcal(postData) {
   for (const value of Object.values(sortedData)) {
       data += value;
   }
-  // Use current date in YYYY-MM-DD format as per documentation
-  const dateStr = new Date().toISOString().split('T')[0];
+  // Use current IST date in YYYY-MM-DD format for India-based Airpay PG
+  const dateStr = new Date(new Date().getTime() + (5.5 * 60 * 60 * 1000)).toISOString().split('T')[0];
   return crypto.createHash('sha256').update(data + dateStr).digest('hex');
 }
 
@@ -147,7 +147,7 @@ exports.createOrder = async (req, res) => {
 
     const orderId = `D60-${Date.now()}`;
     
-    // Using underscored keys as per documentation Index.js
+    // Updated field names to match Airpay v4 requirements
     const dataObject = {
       buyer_email: user.email || 'dream60.official@gmail.com',
       buyer_firstname: (user.username || 'User').split(' ')[0],
@@ -160,10 +160,9 @@ exports.createOrder = async (req, res) => {
       orderid: orderId,
       buyer_phone: user.mobile || '9999999999',
       buyer_pincode: '400001',
-      isocurrency: 'INR',
-      currency: '356', 
-      merchant_id: AIRPAY_MID,
-      arpyVer: '3' // Mandatory as per documentation
+      iso_currency: 'INR',
+      currency_code: '356', 
+      mercid: AIRPAY_MID
     };
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
@@ -197,6 +196,7 @@ exports.createOrder = async (req, res) => {
         params: {
           mercid: AIRPAY_MID,
           data: encryptedfData,
+          encdata: encryptedfData, // Some kits use data, some use encdata. Providing both.
           privatekey: privatekey,
           checksum: checksum,
           chmod: '', // Default to all payment modes
