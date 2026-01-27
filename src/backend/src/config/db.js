@@ -6,18 +6,14 @@ require('dotenv').config(); // Load environment variables
  * ✅ Enhanced MongoDB connection with retry logic and better error handling
  */
 const connectDB = async () => {
-    // Logic to switch between Test and Production MongoDB based on domain/environment
-    const isProd = (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('dream60.com') && !process.env.CLIENT_URL.includes('test.dream60.com')) || 
-                   (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes('dream60.com') && !process.env.FRONTEND_URL.includes('test.dream60.com')) ||
-                   (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('localhost:3000')) ||
-                   (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes('localhost:3000'));
-    
-    const MONGO_URI = (isProd && process.env.MONGO_URI_PROD) ? process.env.MONGO_URI_PROD : (process.env.MONGO_URI || 'mongodb://localhost:27017/dream60');
+    // MONGO_URI is now directly loaded from .env.development or .env.production
+    const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dream60';
+    const isProd = process.env.NODE_ENV === 'production';
 
     if (isProd) {
-        console.log('🚀 Production Environment Detected - Using Production MongoDB');
+        console.log('🚀 Production Environment - Using Production Database');
     } else {
-        console.log('🧪 Test Environment Detected - Using Test MongoDB');
+        console.log('🧪 Development Environment - Using Development Database');
     }
 
     const MAX_RETRIES = 5;

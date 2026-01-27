@@ -37,30 +37,22 @@ const app = express();
 // --------------------
 app.use(express.json());
 
-// Dynamic CORS setup (supports comma-separated env, and common local-network IPs in dev)
-const raw = process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:3000,http://localhost:5173';
+// Dynamic CORS setup (supports comma-separated env)
+const raw = process.env.CLIENT_URL || 'http://localhost:3000,http://localhost:5173';
 let allowedOrigins = Array.isArray(raw) ? raw : String(raw).split(',').map(s => s.trim()).filter(Boolean);
 
 // Normalize entries (remove trailing slash)
 allowedOrigins = allowedOrigins.map(u => u.replace(/\/$/, ''));
 
-// ✅ ADD: Support for production domains
-const productionDomains = [
+// Merge with additional hardcoded production domains if necessary
+const defaultDomains = [
   'https://www.dream60.com',
   'https://dream60.com',
-  'http://www.dream60.com',
-  'http://dream60.com',
   'https://test.dream60.com',
-  'http://test.dream60.com',
-  'https://form.dream60.com',
-  'http://form.dream60.com',
-  'https://dream60website-1.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5173'
+  'https://dream60website-1.vercel.app'
 ];
 
-// Merge production domains with allowed origins (avoid duplicates)
-allowedOrigins = [...new Set([...allowedOrigins, ...productionDomains])];
+allowedOrigins = [...new Set([...allowedOrigins, ...defaultDomains])];
 
 const isLocalNetwork = (hostname) => {
   return hostname === 'localhost' ||
