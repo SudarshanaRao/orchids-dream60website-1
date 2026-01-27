@@ -114,10 +114,25 @@ async function getAccessToken(mid) {
 // Controller Methods
 exports.createOrder = async (req, res) => {
   try {
-    const { userId, auctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
+    console.log('📦 Airpay Create Order Request Body:', req.body);
+    const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
 
-    if (!userId || !auctionId || !amount) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    // Support both auctionId and hourlyAuctionId from frontend
+    const finalAuctionId = auctionId || hourlyAuctionId;
+
+    if (!userId || !finalAuctionId || !amount) {
+      const missingFields = [];
+      if (!userId) missingFields.push('userId');
+      if (!finalAuctionId) missingFields.push('auctionId/hourlyAuctionId');
+      if (!amount) missingFields.push('amount');
+
+      console.log('❌ Airpay Create Order - Missing fields:', missingFields, 'Body:', req.body);
+      
+      return res.status(400).json({ 
+        success: false, 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        received: { userId, auctionId, hourlyAuctionId, amount, paymentType }
+      });
     }
 
     const user = await User.findOne({ user_id: userId });
@@ -125,9 +140,9 @@ exports.createOrder = async (req, res) => {
 
     let auction;
     if (paymentType === 'ENTRY_FEE') {
-        auction = await HourlyAuction.findOne({ hourlyAuctionId: auctionId });
+        auction = await HourlyAuction.findOne({ hourlyAuctionId: finalAuctionId });
     } else {
-        auction = await AuctionHistory.findOne({ userId, hourlyAuctionId: auctionId, isWinner: true });
+        auction = await AuctionHistory.findOne({ userId, hourlyAuctionId: finalAuctionId, isWinner: true });
     }
 
     if (!auction) return res.status(404).json({ success: false, message: 'Auction not found' });
@@ -166,7 +181,7 @@ exports.createOrder = async (req, res) => {
     // Create payment record
     await AirpayPayment.create({
       userId,
-      auctionId,
+      auctionId: finalAuctionId,
       amount,
       orderId,
       status: 'created',

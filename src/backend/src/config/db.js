@@ -6,7 +6,20 @@ require('dotenv').config(); // Load environment variables
  * ✅ Enhanced MongoDB connection with retry logic and better error handling
  */
 const connectDB = async () => {
-    const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dream60';
+    // Logic to switch between Test and Production MongoDB based on domain/environment
+    const isProd = (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('dream60.com') && !process.env.CLIENT_URL.includes('test.dream60.com')) || 
+                   (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes('dream60.com') && !process.env.FRONTEND_URL.includes('test.dream60.com')) ||
+                   (process.env.CLIENT_URL && process.env.CLIENT_URL.includes('localhost:3000')) ||
+                   (process.env.FRONTEND_URL && process.env.FRONTEND_URL.includes('localhost:3000'));
+    
+    const MONGO_URI = (isProd && process.env.MONGO_URI_PROD) ? process.env.MONGO_URI_PROD : (process.env.MONGO_URI || 'mongodb://localhost:27017/dream60');
+
+    if (isProd) {
+        console.log('🚀 Production Environment Detected - Using Production MongoDB');
+    } else {
+        console.log('🧪 Test Environment Detected - Using Test MongoDB');
+    }
+
     const MAX_RETRIES = 5;
     const RETRY_DELAY = 5000; // 5 seconds
     
