@@ -29,7 +29,7 @@ interface DailyAuctionConfigItem {
     topBidAmountsPerRound: number;
   }>;
   imageUrl?: string;
-  productImages?: ProductImage[];
+  productDescription?: Record<string, string>;
 }
 
 interface MasterAuction {
@@ -129,54 +129,27 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
-  const handleAddProductImage = (configIndex: number) => {
+  const handleDescriptionChange = (configIndex: number, text: string) => {
     const updated = [...auctionConfigs];
-    if (!updated[configIndex].productImages) {
-      updated[configIndex].productImages = [];
-    }
-    updated[configIndex].productImages!.push({
-      imageUrl: '',
-      description: [''],
+    const lines = text.split('\n');
+    const description: Record<string, string> = {};
+    
+    lines.forEach(line => {
+      const [key, ...valueParts] = line.split('\t');
+      if (key && valueParts.length > 0) {
+        description[key.trim()] = valueParts.join('\t').trim();
+      }
     });
+    
+    updated[configIndex].productDescription = description;
     setAuctionConfigs(updated);
   };
 
-  const handleRemoveProductImage = (configIndex: number, imageIndex: number) => {
-    const updated = [...auctionConfigs];
-    updated[configIndex].productImages = updated[configIndex].productImages?.filter((_, i) => i !== imageIndex);
-    setAuctionConfigs(updated);
-  };
-
-  const handleProductImageChange = (configIndex: number, imageIndex: number, field: 'imageUrl' | 'description', value: string | string[]) => {
-    const updated = [...auctionConfigs];
-    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      (updated[configIndex].productImages![imageIndex] as any)[field] = value;
-    }
-    setAuctionConfigs(updated);
-  };
-
-  const handleAddDescriptionPoint = (configIndex: number, imageIndex: number) => {
-    const updated = [...auctionConfigs];
-    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      updated[configIndex].productImages![imageIndex].description.push('');
-    }
-    setAuctionConfigs(updated);
-  };
-
-  const handleRemoveDescriptionPoint = (configIndex: number, imageIndex: number, descIndex: number) => {
-    const updated = [...auctionConfigs];
-    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      updated[configIndex].productImages![imageIndex].description = updated[configIndex].productImages![imageIndex].description.filter((_, i) => i !== descIndex);
-    }
-    setAuctionConfigs(updated);
-  };
-
-  const handleDescriptionPointChange = (configIndex: number, imageIndex: number, descIndex: number, value: string) => {
-    const updated = [...auctionConfigs];
-    if (updated[configIndex].productImages && updated[configIndex].productImages![imageIndex]) {
-      updated[configIndex].productImages![imageIndex].description[descIndex] = value;
-    }
-    setAuctionConfigs(updated);
+  const getDescriptionString = (description?: Record<string, string>) => {
+    if (!description) return '';
+    return Object.entries(description)
+      .map(([key, value]) => `${key}\t${value}`)
+      .join('\n');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -286,197 +259,167 @@ export function CreateMasterAuctionModal({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Auction Name
-                    </label>
-                    <input
-                      type="text"
-                      value={config.auctionName}
-                      onChange={(e) => handleConfigChange(index, 'auctionName', e.target.value)}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Time Slot (HH:MM)
-                    </label>
-                    <input
-                      type="text"
-                      pattern="^([01]\d|2[0-3]):([0-5]\d)$"
-                      value={config.TimeSlot}
-                      onChange={(e) => handleConfigChange(index, 'TimeSlot', e.target.value)}
-                      placeholder="14:00"
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Prize Value (₹)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={config.prizeValue}
-                      onChange={(e) => handleConfigChange(index, 'prizeValue', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Round Count
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={config.roundCount}
-                      onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      <ImageIcon className="w-4 h-4 inline-block mr-1" />
-                      Prize Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={config.imageUrl || ''}
-                      onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
-                    
-                    {config.imageUrl && (
-                      <div className="mt-3 border-2 border-purple-200 rounded-lg p-3 bg-purple-50">
-                        <p className="text-sm font-semibold text-purple-900 mb-2">Image Preview:</p>
-                        <div className="relative w-full h-48 bg-white rounded-lg overflow-hidden">
-                          <img
-                            src={config.imageUrl}
-                            alt="Prize preview"
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="16" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage not found%3C/text%3E%3C/svg%3E';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="col-span-2 mt-4 border-t-2 border-purple-100 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-bold text-purple-900">
-                        <ImageIcon className="w-4 h-4 inline-block mr-1" />
-                        Product Gallery (Multiple Images with Descriptions)
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Auction Name
                       </label>
-                      <button
-                        type="button"
-                        onClick={() => handleAddProductImage(index)}
-                        className="flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-semibold"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Image
-                      </button>
+                      <input
+                        type="text"
+                        value={config.auctionName}
+                        onChange={(e) => handleConfigChange(index, 'auctionName', e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
                     </div>
 
-                    {config.productImages && config.productImages.length > 0 ? (
-                      <div className="space-y-4">
-                        {config.productImages.map((productImage, imgIndex) => (
-                          <div key={imgIndex} className="border-2 border-purple-200 rounded-lg p-3 bg-purple-50/50">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-semibold text-purple-800">Image #{imgIndex + 1}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveProductImage(index, imgIndex)}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Time Slot (HH:MM)
+                      </label>
+                      <input
+                        type="text"
+                        pattern="^([01]\d|2[0-3]):([0-5]\d)$"
+                        value={config.TimeSlot}
+                        onChange={(e) => handleConfigChange(index, 'TimeSlot', e.target.value)}
+                        placeholder="14:00"
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
 
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-xs font-semibold text-purple-700 mb-1">
-                                  Image URL
-                                </label>
-                                <input
-                                  type="url"
-                                  value={productImage.imageUrl}
-                                  onChange={(e) => handleProductImageChange(index, imgIndex, 'imageUrl', e.target.value)}
-                                  placeholder="https://example.com/image.jpg"
-                                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                                />
-                              </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Prize Value (₹)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={config.prizeValue}
+                        onChange={(e) => handleConfigChange(index, 'prizeValue', parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
 
-                              {productImage.imageUrl && (
-                                <div className="w-24 h-24 bg-white rounded-lg overflow-hidden border border-purple-200">
-                                  <img
-                                    src={productImage.imageUrl}
-                                    alt={`Product ${imgIndex + 1}`}
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" font-size="10" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo img%3C/text%3E%3C/svg%3E';
-                                    }}
-                                  />
-                                </div>
-                              )}
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Round Count
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={config.roundCount}
+                        onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
 
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <label className="block text-xs font-semibold text-purple-700">
-                                    Description Points (shown on card back)
-                                  </label>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAddDescriptionPoint(index, imgIndex)}
-                                    className="text-xs text-purple-600 hover:text-purple-800 font-semibold"
-                                  >
-                                    + Add Point
-                                  </button>
-                                </div>
-                                <div className="space-y-2">
-                                  {productImage.description.map((desc, descIndex) => (
-                                    <div key={descIndex} className="flex items-center gap-2">
-                                      <span className="text-xs text-purple-500 w-4">{descIndex + 1}.</span>
-                                      <input
-                                        type="text"
-                                        value={desc}
-                                        onChange={(e) => handleDescriptionPointChange(index, imgIndex, descIndex, e.target.value)}
-                                        placeholder="Enter description point..."
-                                        className="flex-1 px-2 py-1 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                                      />
-                                      {productImage.description.length > 1 && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleRemoveDescriptionPoint(index, imgIndex, descIndex)}
-                                          className="text-red-400 hover:text-red-600"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Entry Fee Type
+                      </label>
+                      <select
+                        value={config.EntryFee}
+                        onChange={(e) => handleConfigChange(index, 'EntryFee', e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="RANDOM">RANDOM</option>
+                        <option value="MANUAL">MANUAL</option>
+                      </select>
+                    </div>
+
+                    {config.EntryFee === 'RANDOM' ? (
+                      <>
+                        <div>
+                          <label className="block text-sm font-semibold text-purple-900 mb-2">
+                            Min Entry Fee (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={config.minEntryFee || ''}
+                            onChange={(e) => handleConfigChange(index, 'minEntryFee', parseInt(e.target.value))}
+                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-purple-900 mb-2">
+                            Max Entry Fee (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={config.maxEntryFee || ''}
+                            onChange={(e) => handleConfigChange(index, 'maxEntryFee', parseInt(e.target.value))}
+                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                            required
+                          />
+                        </div>
+                      </>
                     ) : (
-                      <p className="text-sm text-purple-500 italic">No product images added. Click "Add Image" to create flip-card gallery.</p>
+                      <>
+                        <div>
+                          <label className="block text-sm font-semibold text-purple-900 mb-2">
+                            Box 1 Entry Fee (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={config.FeeSplits?.BoxA || ''}
+                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxA: parseInt(e.target.value) })}
+                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-purple-900 mb-2">
+                            Box 2 Entry Fee (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={config.FeeSplits?.BoxB || ''}
+                            onChange={(e) => handleConfigChange(index, 'FeeSplits', { ...config.FeeSplits, BoxB: parseInt(e.target.value) })}
+                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                            required
+                          />
+                        </div>
+                      </>
                     )}
+
+                    <div className="col-span-2">
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        <ImageIcon className="w-4 h-4 inline-block mr-1" />
+                        Prize Image URL
+                      </label>
+                      <input
+                        type="url"
+                        value={config.imageUrl || ''}
+                        onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Product Description (Key [Tab] Value)
+                      </label>
+                      <textarea
+                        value={getDescriptionString(config.productDescription)}
+                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                        placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
+                        rows={4}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
+                      />
+                      <p className="text-xs text-purple-500 mt-1 italic">
+                        Copy-paste from Excel/Tab-separated data. Each line should be "Key [Tab] Value".
+                      </p>
+                    </div>
                   </div>
-                </div>
               </div>
             ))}
           </div>

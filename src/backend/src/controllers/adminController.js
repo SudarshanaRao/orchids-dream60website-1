@@ -382,11 +382,12 @@ const createMasterAuctionAdmin = async (req, res) => {
             FeeSplits: feeSplits,
           };
         } else if (auction.EntryFee === 'MANUAL') {
-          // For MANUAL, set min and max to 0
+          // For MANUAL, set min and max to the sum of splits for consistency
+          const totalFee = (auction.FeeSplits?.BoxA || 0) + (auction.FeeSplits?.BoxB || 0);
           return {
             ...auction,
-            minEntryFee: 0,
-            maxEntryFee: 0,
+            minEntryFee: totalFee,
+            maxEntryFee: totalFee,
           };
         }
         return auction;
@@ -531,11 +532,12 @@ const updateMasterAuctionAdmin = async (req, res) => {
             FeeSplits: feeSplits,
           };
         } else if (auction.EntryFee === 'MANUAL') {
-          // For MANUAL, set min and max to 0
+          // For MANUAL, set min and max to the sum of splits for consistency
+          const totalFee = (auction.FeeSplits?.BoxA || 0) + (auction.FeeSplits?.BoxB || 0);
           return {
             ...auction,
-            minEntryFee: 0,
-            maxEntryFee: 0,
+            minEntryFee: totalFee,
+            maxEntryFee: totalFee,
           };
         }
         return auction;

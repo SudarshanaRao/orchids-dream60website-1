@@ -8,7 +8,7 @@ const { syncUserStats } = require('./userController');
 const { sendPrizeClaimedEmail } = require('../utils/emailService');
 
 const AIRPAY_SECRET = process.env.AIRPAY_SECRET;
-const AIRPAY_MID = process.env.AIRPAY_MID;
+const AIRPAY_MID = process.env.AIRPAY_MERCHANT_ID;
 const AIRPAY_CLIENT_ID = process.env.AIRPAY_CLIENT_ID;
 const AIRPAY_CLIENT_SECRET = process.env.AIRPAY_CLIENT_SECRET;
 const AIRPAY_USERNAME = process.env.AIRPAY_USERNAME;
