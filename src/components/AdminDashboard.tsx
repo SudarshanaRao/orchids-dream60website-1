@@ -171,6 +171,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateAuction, setShowCreateAuction] = useState(false);
     const [editingAuction, setEditingAuction] = useState<MasterAuction | null>(null);
+    const [expandedAuctions, setExpandedAuctions] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
     
@@ -340,7 +341,53 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
     }
   };
 
-  const handleEditAuction = (auction: MasterAuction) => {
+    const toggleAuctionExpand = (masterId: string) => {
+      setExpandedAuctions(prev => {
+        const next = new Set(prev);
+        if (next.has(masterId)) {
+          next.delete(masterId);
+        } else {
+          next.add(masterId);
+        }
+        return next;
+      });
+    };
+
+    const handleToggleAuctionStatus = async (auction: MasterAuction) => {
+      const newStatus = !auction.isActive;
+      const statusText = newStatus ? 'active' : 'inactive';
+      
+      if (!confirm(`Are you sure you want to change the status of this master auction to ${statusText}?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/admin/master-auctions/${auction.master_id}?user_id=${adminUser.user_id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              ...auction,
+              isActive: newStatus 
+            }),
+          }
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          toast.success(`Master auction is now ${statusText}`);
+          fetchMasterAuctions();
+        } else {
+          toast.error(data.message || 'Failed to update status');
+        }
+      } catch (error) {
+        console.error('Error updating status:', error);
+        toast.error('Failed to update status');
+      }
+    };
+
+    const handleEditAuction = (auction: MasterAuction) => {
     setEditingAuction(auction);
     setShowCreateAuction(true);
   };
@@ -899,30 +946,48 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-4 py-2 rounded-full font-bold text-sm shadow-md ${ // Modified classes for active/inactive indicator
-                          auction.isActive
-                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
-                            : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
-                        }`}>
-                        {auction.isActive ? '● Active' : '○ Inactive'}
-                      </span>
-                      <button
-                        onClick={() => handleEditAuction(auction)}
-                        className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
-                        title="Edit auction"
-                      >
-                        <Edit className="w-5 h-5 text-purple-600" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAuction(auction.master_id)}
-                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                        title="Delete auction"
-                      >
-                        <Trash2 className="w-5 h-5 text-red-600" />
-                      </button>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleAuctionStatus(auction)}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm transition-all ${
+                            auction.isActive
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          }`}
+                          title={`Click to make ${auction.isActive ? 'Inactive' : 'Active'}`}
+                        >
+                          {auction.isActive ? (
+                            <><Power className="w-4 h-4" /> Active</>
+                          ) : (
+                            <><Power className="w-4 h-4" /> Inactive</>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => toggleAuctionExpand(auction.master_id)}
+                          className="p-2 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-1 text-purple-700 font-semibold text-sm"
+                          title={expandedAuctions.has(auction.master_id) ? "Collapse" : "Expand to see products"}
+                        >
+                          {expandedAuctions.has(auction.master_id) ? (
+                            <><ChevronUp className="w-5 h-5" /> Hide Products</>
+                          ) : (
+                            <><ChevronDown className="w-5 h-5" /> View Products ({auction.dailyAuctionConfig?.length || 0})</>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleEditAuction(auction)}
+                          className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+                          title="Edit auction"
+                        >
+                          <Edit className="w-5 h-5 text-purple-600" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAuction(auction.master_id)}
+                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Delete auction"
+                        >
+                          <Trash2 className="w-5 h-5 text-red-600" />
+                        </button>
+                      </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
@@ -940,77 +1005,77 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                     </div>
                   </div>
 
-                  {auction.dailyAuctionConfig && auction.dailyAuctionConfig.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="font-bold text-base text-purple-900 mb-3 flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Auction Slots
-                      </h4>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {auction.dailyAuctionConfig.map((config) => (
-                          <div
-                            key={config.auctionNumber}
-                            className="group bg-white rounded-lg overflow-hidden border border-purple-200 shadow-sm hover:shadow-md hover:border-purple-400 transition-all duration-300"
-                          >
-                            {/* Content Section */}
-                            <div className="flex-1 p-3">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                                {/* Left: Name & Time */}
-                                <div className="flex-1">
-                                  <h5 className="font-bold text-base text-purple-900 mb-1">
-                                    {config.auctionName}
-                                  </h5>
-                                  <div className="flex items-center gap-2 text-purple-600 mb-2">
-                                    <Clock className="w-3 h-3" />
-                                    <span className="font-semibold text-sm">{config.TimeSlot}</span>
-                                  </div>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                        config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
-                                        config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
-                                        config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
-                                        'bg-red-100 text-red-700'
-                                      }`}>
-                                        {config.Status}
-                                      </span>
+                    {expandedAuctions.has(auction.master_id) && auction.dailyAuctionConfig && auction.dailyAuctionConfig.length > 0 && (
+                      <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <h4 className="font-bold text-base text-purple-900 mb-3 flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          Auction Slots
+                        </h4>
+                        <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                          {auction.dailyAuctionConfig.map((config) => (
+                            <div
+                              key={config.auctionNumber}
+                              className="group bg-white rounded-lg overflow-hidden border border-purple-200 shadow-sm hover:shadow-md hover:border-purple-400 transition-all duration-300"
+                            >
+                              {/* Content Section */}
+                              <div className="flex-1 p-3">
+                                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                  {/* Left: Name & Time */}
+                                  <div className="flex-1">
+                                    <h5 className="font-bold text-base text-purple-900 mb-1">
+                                      {config.auctionName}
+                                    </h5>
+                                    <div className="flex items-center gap-2 text-purple-600 mb-2">
+                                      <Clock className="w-3 h-3" />
+                                      <span className="font-semibold text-sm">{config.TimeSlot}</span>
                                     </div>
-                                  </div>
-
-                                  {/* Right: Image Preview, Prize Value & Delete Button */}
-                                  <div className="flex items-center gap-3">
-                                    {config.imageUrl && (
-                                      <div className="w-16 h-16 bg-gray-100 rounded-md border border-purple-200 overflow-hidden flex-shrink-0">
-                                        <img
-                                          src={config.imageUrl}
-                                          alt={config.auctionName}
-                                          className="w-full h-full object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
-                                          }}
-                                        />
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                          config.Status === 'LIVE' ? 'bg-green-100 text-green-700' :
+                                          config.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                                          config.Status === 'COMPLETED' ? 'bg-gray-100 text-gray-700' :
+                                          'bg-red-100 text-red-700'
+                                        }`}>
+                                          {config.Status}
+                                        </span>
                                       </div>
-                                    )}
-                                    <div className="text-left">
-                                      <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
-                                      <p className="text-lg font-bold text-purple-900">
-                                        ₹{config.prizeValue.toLocaleString()}
-                                      </p>
                                     </div>
-                                    <button
-                                      onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
-                                      className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                      title="Delete auction slot"
-                                    >
-                                      <Trash2 className="w-4 h-4 text-red-600" />
-                                    </button>
-                                  </div>
+  
+                                    {/* Right: Image Preview, Prize Value & Delete Button */}
+                                    <div className="flex items-center gap-3">
+                                      {config.imageUrl && (
+                                        <div className="w-16 h-16 bg-gray-100 rounded-md border border-purple-200 overflow-hidden flex-shrink-0">
+                                          <img
+                                            src={config.imageUrl}
+                                            alt={config.auctionName}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                      <div className="text-left">
+                                        <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
+                                        <p className="text-lg font-bold text-purple-900">
+                                          ₹{config.prizeValue.toLocaleString()}
+                                        </p>
+                                      </div>
+                                      <button
+                                        onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
+                                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                        title="Delete auction slot"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-red-600" />
+                                      </button>
+                                    </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               ))}
               {masterAuctions.length === 0 && (
