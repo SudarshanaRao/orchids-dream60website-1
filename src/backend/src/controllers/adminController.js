@@ -406,26 +406,30 @@ const createMasterAuctionAdmin = async (req, res) => {
       message: 'Master auction created successfully',
       data: masterAuction,
     });
-  } catch (err) {
-    console.error('Create Master Auction Admin Error:', err);
+    } catch (err) {
+      console.error('Create Master Auction Admin Error:', err);
 
-    if (err.name === 'ValidationError') {
-      const messages = Object.values(err.errors || {}).map((v) => v.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: messages,
-      });
+      if (err.name === 'ValidationError' || err.name === 'Error') {
+        const messages = err.errors 
+          ? Object.values(err.errors).map((v) => v.message)
+          : [err.message];
+          
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          errors: messages,
+        });
+      }
+
+      if (err.code === 11000) {
+        return res.status(409).json({
+          success: false,
+          message: 'Duplicate master auction',
+        });
+      }
+
+      return res.status(500).json({ success: false, message: 'Server error', error: err.message });
     }
-
-    if (err.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'Duplicate master auction',
-      });
-    }
-
-    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

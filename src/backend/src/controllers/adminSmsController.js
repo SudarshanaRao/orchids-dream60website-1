@@ -88,10 +88,20 @@ const getSmsReports = async (req, res) => {
       Offset: offset, 
       Limit: limit 
     });
-    return res.status(result.success ? 200 : 400).json(result);
+    
+    if (!result.success) {
+      console.error('SMS Reports API Failure:', result.error);
+      return res.status(400).json(result);
+    }
+    
+    return res.status(200).json(result);
   } catch (error) {
-    console.error('Get SMS Reports Error:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Get SMS Reports Controller Error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch SMS reports', 
+      error: error.message 
+    });
   }
 };
 

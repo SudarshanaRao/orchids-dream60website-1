@@ -19,7 +19,7 @@ const sendEmailToUsers = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -107,7 +107,7 @@ const createEmailTemplate = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -169,7 +169,7 @@ const getAllEmailTemplates = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -233,7 +233,7 @@ const getEmailTemplateById = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -277,7 +277,7 @@ const updateEmailTemplate = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -332,7 +332,7 @@ const deleteEmailTemplate = async (req, res) => {
     }
 
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || adminUser.userType !== 'ADMIN') {
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
