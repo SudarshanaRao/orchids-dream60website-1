@@ -716,9 +716,18 @@ const autoActivateAuctions = async () => {
         // This prevents resetting yesterday's auctions to UPCOMING/LIVE
         const todayIST = getISTDateStart();
         const auctionDate = new Date(local.auctionDate);
-        auctionDate.setUTCHours(0, 0, 0, 0);
         
-        if (auctionDate.getTime() < todayIST.getTime()) {
+        // Use a more robust date comparison that handles IST offset
+        const getISTDateVal = (date) => {
+          const istOffset = 5.5 * 60 * 60 * 1000;
+          const istDate = new Date(date.getTime() + istOffset);
+          return new Date(Date.UTC(istDate.getUTCFullYear(), istDate.getUTCMonth(), istDate.getUTCDate())).getTime();
+        };
+
+        const todayVal = getISTDateVal(new Date());
+        const auctionVal = getISTDateVal(auctionDate);
+        
+        if (auctionVal < todayVal) {
           // Auction is from a previous day - mark as COMPLETED if not already
           if (local.Status !== 'COMPLETED') {
             local.Status = 'COMPLETED';

@@ -1005,46 +1005,77 @@ const getLiveHourlyAuction = async (req, res) => {
 
     // 1. Find the currently LIVE auction with projection for speed
     // Use lean() for faster read-only access
+    const commonProjection = {
+      hourlyAuctionId: 1,
+      hourlyAuctionCode: 1,
+      auctionName: 1,
+      prizeValue: 1,
+      Status: 1,
+      currentRound: 1,
+      totalParticipants: 1,
+      totalBids: 1,
+      rounds: 1,
+      participants: 1,
+      winnersAnnounced: 1,
+      roundConfig: 1,
+      completedAt: 1,
+      TimeSlot: 1,
+      imageUrl: 1,
+      productImages: 1,
+      EntryFee: 1,
+      minEntryFee: 1,
+      maxEntryFee: 1,
+      auctionDate: 1,
+      roundCount: 1,
+      maxDiscount: 1,
+      FeeSplits: 1,
+      winners: 1,
+      totalPrizePool: 1,
+      winnerId: 1,
+      winnerUsername: 1,
+      winningBid: 1,
+      startedAt: 1,
+      dailyAuctionId: 1,
+      masterId: 1,
+      auctionNumber: 1,
+      auctionId: 1,
+      currentEligibleRank: 1,
+      claimWindowStartedAt: 1
+    };
+
     let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
       .sort({ startedAt: -1 })
-        .select({
-          hourlyAuctionId: 1,
-          hourlyAuctionCode: 1,
-          auctionName: 1,
-          prizeValue: 1,
-          Status: 1,
-          currentRound: 1,
-          totalParticipants: 1,
-          totalBids: 1,
-          rounds: 1,
-          participants: 1,
-          winnersAnnounced: 1,
-          roundConfig: 1,
-          completedAt: 1,
-        TimeSlot: 1,
-        imageUrl: 1,
-        productImages: 1,
-        EntryFee: 1,
-          minEntryFee: 1,
-          maxEntryFee: 1,
-          auctionDate: 1,
-          roundCount: 1,
-          maxDiscount: 1,
-          FeeSplits: 1,
-          winners: 1,
-          totalPrizePool: 1,
-          winnerId: 1,
-          winnerUsername: 1,
-          winningBid: 1,
-          startedAt: 1,
-          dailyAuctionId: 1,
-          masterId: 1,
-          auctionNumber: 1,
-          auctionId: 1,
-          currentEligibleRank: 1,
-          claimWindowStartedAt: 1
-        })
+      .select(commonProjection)
       .lean();
+
+    // 1b. FALLBACK: If no LIVE auction found in HourlyAuction, check DailyAuction config
+    if (!liveAuction) {
+      console.log('🔍 [LIVE-AUCTION] No LIVE HourlyAuction found, checking DailyAuction fallback...');
+      const todayIST = getISTDateStart();
+      
+      // Look for today's active daily auctions
+      const activeDailies = await DailyAuction.find({ 
+        isActive: true,
+        auctionDate: todayIST
+      }).sort({ createdAt: -1 }).lean();
+      
+      for (const daily of activeDailies) {
+        if (daily.dailyAuctionConfig) {
+          const liveInConfig = daily.dailyAuctionConfig.find(c => c.Status === 'LIVE');
+          if (liveInConfig && liveInConfig.hourlyAuctionId) {
+            console.log(`🔍 [LIVE-AUCTION] Found LIVE status in DailyAuction ${daily.dailyAuctionId} config for slot ${liveInConfig.TimeSlot}. Fetching HourlyAuction ${liveInConfig.hourlyAuctionId}...`);
+            liveAuction = await HourlyAuction.findOne({ hourlyAuctionId: liveInConfig.hourlyAuctionId })
+              .select(commonProjection)
+              .lean();
+            
+            if (liveAuction) {
+              console.log(`✅ [LIVE-AUCTION] Fallback successful: Found ${liveAuction.hourlyAuctionCode}`);
+              break; // Found it, stop searching other dailies
+            }
+          }
+        }
+      }
+    }
 
     let bannerData = null;
 
