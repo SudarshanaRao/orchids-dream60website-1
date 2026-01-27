@@ -135,7 +135,10 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/SMSes/', { params });
-      return { success: true, data: response.data };
+      return { 
+        success: true, 
+        data: response.data?.SMSes || (Array.isArray(response.data) ? response.data : []) 
+      };
     } catch (error) {
       console.error('SMS Rest Detailed Report Error:', error.response?.data || error.message);
       return { success: false, error: error.response?.data?.Message || error.message };
@@ -150,7 +153,10 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/SenderIDs/');
-      return { success: true, data: response.data };
+      return { 
+        success: true, 
+        data: response.data?.SenderIDs || (Array.isArray(response.data) ? response.data : []) 
+      };
     } catch (error) {
       console.error('SMS Rest SenderID Error:', error.response?.data || error.message);
       return { success: false, error: error.response?.data?.Message || error.message };
@@ -165,7 +171,10 @@ class SmsRestService {
 
     try {
       const response = await this.client.get('/Templates/');
-      return { success: true, data: response.data };
+      return { 
+        success: true, 
+        data: response.data?.Templates || (Array.isArray(response.data) ? response.data : []) 
+      };
     } catch (error) {
       console.error('SMS Rest Get Templates Error:', error.response?.data || error.message);
       return { success: false, error: error.response?.data?.Message || error.message };

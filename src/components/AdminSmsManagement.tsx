@@ -153,8 +153,6 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [showFilters, setShowFilters] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
 
-  const API_BASE = 'https://dev-api.dream60.com';
-
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -354,14 +352,6 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
       console.error('Error loading users:', error);
     }
   };
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    loadUsers();
-  }, [selectedFilter, selectedAuction, selectedRound, searchTerm]);
 
   const handleSelectAll = () => {
     if (selectAll) {
@@ -833,9 +823,9 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="">Default (FINPGS)</option>
-                    {senderIds.map((sid) => (
-                      <option key={sid.SenderId} value={sid.SenderId}>{sid.SenderId}</option>
-                    ))}
+                      {Array.isArray(senderIds) && senderIds.map((sid) => (
+                        <option key={sid.SenderId} value={sid.SenderId}>{sid.SenderId}</option>
+                      ))}
                   </select>
                 </div>
 
@@ -850,16 +840,16 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="">-- Select Template --</option>
-                    <optgroup label="Local Templates">
-                      {templates.map((template) => (
-                        <option key={template.key} value={template.key}>{template.name}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="SMSCountry Templates">
-                      {restTemplates.map((template) => (
-                        <option key={template.TemplateId} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
-                      ))}
-                    </optgroup>
+                      <optgroup label="Local Templates">
+                        {Array.isArray(templates) && templates.map((template) => (
+                          <option key={template.key} value={template.key}>{template.name}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="SMSCountry Templates">
+                        {Array.isArray(restTemplates) && restTemplates.map((template) => (
+                          <option key={template.TemplateId} value={`rest_${template.TemplateId}`}>{template.TemplateName}</option>
+                        ))}
+                      </optgroup>
                     <option value="CUSTOM">Custom Message</option>
                   </select>
                 </div>
@@ -1015,13 +1005,13 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {restTemplates.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No templates found in SMSCountry account</td>
-                    </tr>
-                  ) : (
-                    restTemplates.map((template) => (
-                      <tr key={template.TemplateId} className="hover:bg-gray-50">
+                    {Array.isArray(restTemplates) && restTemplates.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">No templates found in SMSCountry account</td>
+                      </tr>
+                    ) : (
+                      Array.isArray(restTemplates) && restTemplates.map((template) => (
+                        <tr key={template.TemplateId} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-mono text-xs">{template.TemplateId}</td>
                         <td className="px-6 py-4 font-medium text-gray-900">{template.TemplateName}</td>
                         <td className="px-6 py-4 text-gray-600 max-w-md truncate">{template.Message}</td>
@@ -1088,14 +1078,14 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
                     <th className="px-6 py-3 text-left">Submitted</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {reports.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No reports found for the selected period</td>
-                    </tr>
-                  ) : (
-                    reports.map((report) => (
-                      <tr key={report.MessageId} className="hover:bg-gray-50">
+                  <tbody className="divide-y divide-gray-100">
+                    {Array.isArray(reports) && reports.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No reports found for the selected period</td>
+                      </tr>
+                    ) : (
+                      Array.isArray(reports) && reports.map((report) => (
+                        <tr key={report.MessageId} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-mono text-xs">{report.MessageId}</td>
                         <td className="px-6 py-4 font-medium">{report.Number}</td>
                         <td className="px-6 py-4 text-gray-600 max-w-xs truncate">{report.Text}</td>

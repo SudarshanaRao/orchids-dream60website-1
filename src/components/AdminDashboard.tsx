@@ -34,8 +34,9 @@ import {
       MessageSquare,
     } from 'lucide-react';
 
-  import { toast } from 'sonner';
-  import { AdminEmailManagement } from './AdminEmailManagement';
+import { toast } from 'sonner';
+import { API_BASE_URL as API_BASE } from '@/lib/api-config';
+import { AdminEmailManagement } from './AdminEmailManagement';
   import { AdminPushNotifications } from './AdminPushNotifications';
   import { CreateMasterAuctionModal } from './CreateMasterAuctionModal';
   import { AdminAnalyticsDashboard } from './AdminAnalyticsDashboard';
@@ -179,7 +180,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
   const fetchStatistics = async () => {
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/statistics?user_id=${adminUser.user_id}`
+        `${API_BASE}/admin/statistics?user_id=${adminUser.user_id}`
       );
       const data = await response.json();
 
@@ -197,7 +198,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
   const fetchMasterAuctions = async () => {
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/master-auctions/?user_id=${adminUser.user_id}`
+        `${API_BASE}/admin/master-auctions/?user_id=${adminUser.user_id}`
       );
       const data = await response.json();
 
@@ -224,7 +225,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
 
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/master-auctions/${masterId}?user_id=${adminUser.user_id}`,
+        `${API_BASE}/admin/master-auctions/${masterId}?user_id=${adminUser.user_id}`,
         {
           method: 'DELETE',
         }
@@ -250,7 +251,7 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
 
     try {
       const response = await fetch(
-        `https://dev-api.dream60.com/admin/master-auctions/${masterId}/slots/${auctionNumber}?user_id=${adminUser.user_id}`,
+        `${API_BASE}/admin/master-auctions/${masterId}/slots/${auctionNumber}?user_id=${adminUser.user_id}`,
         {
           method: 'DELETE',
         }
