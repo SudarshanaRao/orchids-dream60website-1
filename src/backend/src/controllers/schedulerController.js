@@ -564,12 +564,12 @@ const createDailyAuction = async () => {
         Status: 'UPCOMING', // Force all to UPCOMING
         isAuctionCompleted: false,
         completedAt: null,
-        topWinners: [],
-          hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
-          productImages: config.productImages || [], // ✅ Explicitly copy productImages from master
-          productDescription: config.productDescription || {}, // ✅ Explicitly copy productDescription from master
-        };
-    });
+            topWinners: [],
+            hourlyAuctionId: newHourlyAuctionId, // ✅ Store hourlyAuctionId upfront in dailyAuctionConfig
+            productImages: configObj.productImages || [], // ✅ Explicitly copy productImages from master
+            productDescription: configObj.productDescription || {}, // ✅ Explicitly copy productDescription from master
+          };
+      });
     
     // Create daily auction as complete replica of master auction for TODAY
     const dailyAuctionData = {
@@ -626,7 +626,7 @@ const createHourlyAuctions = async (dailyAuction) => {
   try {
     console.log(`🕐 [SCHEDULER] Creating hourly auctions for daily auction: ${dailyAuction.dailyAuctionId}`);
     
-    const configs = dailyAuction.dailyAuctionConfig || [];
+    const configs = (dailyAuction.dailyAuctionConfig || []).map(c => c.toObject ? c.toObject() : { ...c });
     
     if (configs.length === 0) {
       console.log('⚠️ [SCHEDULER] No auction configs found in daily auction.');
@@ -2515,31 +2515,33 @@ const syncMasterToAuctions = async (req, res) => {
         dc => dc.auctionNumber === masterConfig.auctionNumber
       );
       
-      if (dailyConfigIndex !== -1) {
-        const dailyConfig = dailyAuction.dailyAuctionConfig[dailyConfigIndex];
-        
-        dailyAuction.dailyAuctionConfig[dailyConfigIndex].productImages = masterConfig.productImages || [];
-        dailyAuction.dailyAuctionConfig[dailyConfigIndex].imageUrl = masterConfig.imageUrl || dailyConfig.imageUrl;
-        dailyAuction.dailyAuctionConfig[dailyConfigIndex].auctionName = masterConfig.auctionName || dailyConfig.auctionName;
-        dailyAuction.dailyAuctionConfig[dailyConfigIndex].prizeValue = masterConfig.prizeValue ?? dailyConfig.prizeValue;
-        dailyAuction.dailyAuctionConfig[dailyConfigIndex].maxDiscount = masterConfig.maxDiscount ?? dailyConfig.maxDiscount;
-        
-        const hourlyAuctionId = dailyConfig.hourlyAuctionId;
-        
-        if (hourlyAuctionId) {
-          const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
+        if (dailyConfigIndex !== -1) {
+          const dailyConfig = dailyAuction.dailyAuctionConfig[dailyConfigIndex];
           
-          if (hourlyAuction) {
-            hourlyAuction.productImages = masterConfig.productImages || [];
-            hourlyAuction.imageUrl = masterConfig.imageUrl || hourlyAuction.imageUrl;
-            hourlyAuction.auctionName = masterConfig.auctionName || hourlyAuction.auctionName;
-            hourlyAuction.prizeValue = masterConfig.prizeValue ?? hourlyAuction.prizeValue;
-            hourlyAuction.maxDiscount = masterConfig.maxDiscount ?? hourlyAuction.maxDiscount;
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].productImages = masterConfig.productImages || [];
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].productDescription = masterConfig.productDescription || {};
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].imageUrl = masterConfig.imageUrl || dailyConfig.imageUrl;
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].auctionName = masterConfig.auctionName || dailyConfig.auctionName;
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].prizeValue = masterConfig.prizeValue ?? dailyConfig.prizeValue;
+          dailyAuction.dailyAuctionConfig[dailyConfigIndex].maxDiscount = masterConfig.maxDiscount ?? dailyConfig.maxDiscount;
+          
+          const hourlyAuctionId = dailyConfig.hourlyAuctionId;
+          
+          if (hourlyAuctionId) {
+            const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
             
-            await hourlyAuction.save();
-            syncResults.hourlyAuctionsUpdated++;
+            if (hourlyAuction) {
+              hourlyAuction.productImages = masterConfig.productImages || [];
+              hourlyAuction.productDescription = masterConfig.productDescription || {};
+              hourlyAuction.imageUrl = masterConfig.imageUrl || hourlyAuction.imageUrl;
+              hourlyAuction.auctionName = masterConfig.auctionName || hourlyAuction.auctionName;
+              hourlyAuction.prizeValue = masterConfig.prizeValue ?? hourlyAuction.prizeValue;
+              hourlyAuction.maxDiscount = masterConfig.maxDiscount ?? hourlyAuction.maxDiscount;
+              
+              await hourlyAuction.save();
+              syncResults.hourlyAuctionsUpdated++;
+            }
           }
-        }
         
         syncResults.configsUpdated.push({
           auctionNumber: masterConfig.auctionNumber,

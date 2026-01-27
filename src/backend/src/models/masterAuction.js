@@ -69,6 +69,7 @@ const DailyAuctionSchema = new mongoose.Schema(
     roundCount: { type: Number, min: 1, default: 4 },
     roundConfig: { type: [RoundConfigSchema], default: [] },
     imageUrl: { type: String, default: null },
+    productImages: { type: [ProductImageSchema], default: [] },
     productDescription: { type: Map, of: String, default: {} },
   },
   { _id: false }
