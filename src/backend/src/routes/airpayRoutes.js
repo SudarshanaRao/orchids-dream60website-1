@@ -9,8 +9,8 @@ router.post('/sendtoairpay', runValidation, airpayController.sendToAirpay);
 router.post('/responsefromairpay', airpayController.handleAirpayResponse);
 
 // Success/Failure Whitelist URLs for Airpay
-router.post('/success', airpayController.handleAirpaySuccess);
-router.post('/failure', airpayController.handleAirpayFailure);
+router.all('/success', airpayController.handleAirpaySuccess);
+router.all('/failure', airpayController.handleAirpayFailure);
 
 // Application API Routes (JSON)
 router.post('/create-order', airpayController.createOrder);

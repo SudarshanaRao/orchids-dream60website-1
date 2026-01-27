@@ -158,8 +158,22 @@ exports.sendToAirpay = async (req, res) => {
 
 exports.handleAirpayResponse = async (req, res) => {
   try {
+    console.log('--- Airpay Response Received ---');
+    console.log('Method:', req.method);
+    console.log('Body Keys:', Object.keys(req.body));
+    console.log('Query Keys:', Object.keys(req.query));
+
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-    const responseData = req.body.response;
+    
+    // Check both body and query for 'response'
+    const responseData = req.body.response || req.query.response;
+    
+    if (!responseData) {
+      console.error('Airpay Error: Missing response data in both body and query');
+      const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/payment/failure?message=${encodeURIComponent('Payment response data missing from Airpay')}`);
+    }
+
     const decrypteddata = decrypt(responseData, key);
     
     const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
@@ -176,12 +190,12 @@ exports.handleAirpayResponse = async (req, res) => {
     var ap_SecureHash = data.ap_securehash;
     var CUSTOMVAR = data.custom_var;
 
-    // Additional fields from req.body (Airpay sends these in POST body)
-    var PAYMENT_METHOD = req.body.CHMOD || '';
-    var BANK_NAME = req.body.BANKNAME || '';
-    var CARD_NAME = req.body.CARDNAME || '';
-    var CARD_NUMBER = req.body.CARDNUMBER || '';
-    var UPI_ID = req.body.CUSTOMERVPA || '';
+    // Additional fields from req.body or req.query (Airpay sends these in POST body or GET query)
+    var PAYMENT_METHOD = req.body.CHMOD || req.query.CHMOD || '';
+    var BANK_NAME = req.body.BANKNAME || req.query.BANKNAME || '';
+    var CARD_NAME = req.body.CARDNAME || req.query.CARDNAME || '';
+    var CARD_NUMBER = req.body.CARDNUMBER || req.query.CARDNUMBER || '';
+    var UPI_ID = req.body.CUSTOMERVPA || req.query.CUSTOMERVPA || '';
 
     var hashdata = TRANSACTIONID + ':' + APTRANSACTIONID + ':' + AMOUNT + ':' + TRANSACTIONSTATUS + ':' + MESSAGE + ':' + AIRPAY_MID + ':' + AIRPAY_USERNAME;
     
