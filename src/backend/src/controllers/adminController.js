@@ -904,7 +904,10 @@ const getAnalyticsData = async (req, res) => {
     if (includesToday) {
       try {
         const fetch = require('node-fetch');
-        const schedulerResponse = await fetch('https://dev-api.dream60.com/scheduler/hourly-auctions');
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+        const schedulerResponse = await fetch(`${baseUrl}/scheduler/hourly-auctions`);
         if (schedulerResponse.ok) {
           const schedulerData = await schedulerResponse.json();
           if (schedulerData.success && Array.isArray(schedulerData.data)) {

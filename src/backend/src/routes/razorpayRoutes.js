@@ -246,14 +246,14 @@ router.post('/prize-claim/verify-payment', razorpayController.verifyPrizeClaimPa
 
 /**
  * @swagger
- * /api/razorpay/webhook:
- *   post:
- *     summary: Razorpay Webhook Handler
- *     description: >
- *       Handles payment events from Razorpay dashboard (payment.captured, payment.failed, refund.processed, etc.)
- *       Webhook URL: https://dev-api.dream60.com/api/razorpay/webhook
- *       Secret: Dream60
- *     tags: [Razorpay]
+   * /api/razorpay/webhook:
+   *   post:
+   *     summary: Razorpay Webhook Handler
+   *     description: >
+   *       Handles payment events from Razorpay dashboard (payment.captured, payment.failed, refund.processed, etc.)
+   *       Webhook URL: [YOUR_API_DOMAIN]/api/razorpay/webhook
+   *       Secret: Dream60
+   *     tags: [Razorpay]
  *     requestBody:
  *       required: true
  *       content:

@@ -56,79 +56,30 @@ const deriveUpiApp = (vpa = '', wallet, bank) => {
   return suffix || wallet || bank || undefined;
 };
 
-// Fetch server time from API using native https module
+// Fetch server time (Internal helper)
 const fetchServerTime = async () => {
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'dev-api.dream60.com',
-      path: '/utility/server-time',
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          if (parsed.success && parsed.data) {
-            console.log('Server time fetched successfully:', {
-              hour: parsed.data.hour,
-              minute: parsed.data.minute,
-              second: parsed.data.second,
-              iso: parsed.data.iso,
-            });
-            resolve(parsed.data);
-          } else {
-            throw new Error('Invalid server time response');
-          }
-        } catch (error) {
-          console.error('Error parsing server time:', error);
-          // Fallback to system time
-          const now = new Date();
-          resolve({
-            hour: now.getHours(),
-            minute: now.getMinutes(),
-            second: now.getSeconds(),
-            timestamp: now.getTime(),
-          });
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      console.error('Error fetching server time:', error);
-      // Fallback to system time
-      const now = new Date();
-      resolve({
-        hour: now.getHours(),
-        minute: now.getMinutes(),
-        second: now.getSeconds(),
-        timestamp: now.getTime(),
-      });
-    });
-
-    req.setTimeout(5000, () => {
-      req.destroy();
-      // Fallback to system time on timeout
-      const now = new Date();
-      resolve({
-        hour: now.getHours(),
-        minute: now.getMinutes(),
-        second: now.getSeconds(),
-        timestamp: now.getTime(),
-      });
-    });
-
-    req.end();
-  });
+  // Get current UTC time
+  const now = new Date();
+  
+  // Convert to IST (UTC + 5:30)
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+  const istTime = new Date(now.getTime() + istOffset);
+  
+  // Extract IST time components
+  const hours = istTime.getUTCHours(); // Use UTC methods since we already added offset
+  const minutes = istTime.getUTCMinutes();
+  const seconds = istTime.getUTCSeconds();
+  const timestamp = istTime.getTime();
+  
+  console.log('Server time (Internal):', { hour: hours, minute: minutes, second: seconds });
+  
+  return {
+    hour: hours,
+    minute: minutes,
+    second: seconds,
+    timestamp: timestamp,
+    iso: istTime.toISOString()
+  };
 };
 
 // Fetch Razorpay payment details for method & metadata
