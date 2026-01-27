@@ -857,15 +857,16 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
             const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
             const dailyData = await dailyResponse.json();
             
-            if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
-              const auctions = dailyData.data.dailyAuctionConfig;
-              // Find the first auction that is marked as 'UPCOMING'
-              const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
-              
-              if (nextAuction) {
-                console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
-                setUpcomingAuctionData(nextAuction);
-              } else {
+              if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
+                const auctions = dailyData.data.dailyAuctionConfig;
+                // Find the first auction that is marked as 'UPCOMING'
+                const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
+                
+                if (nextAuction) {
+                  console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
+                  // Include the auctionDate from the parent daily auction for accurate countdown
+                  setUpcomingAuctionData({ ...nextAuction, auctionDate: dailyData.data.auctionDate });
+                } else {
                 console.log('⚠️ No upcoming auctions found in daily schedule');
                 setUpcomingAuctionData(null);
               }

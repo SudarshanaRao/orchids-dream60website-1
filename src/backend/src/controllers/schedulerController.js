@@ -978,14 +978,31 @@ const manualTriggerMidnightReset = async (req, res) => {
  */
 const getDailyAuction = async (req, res) => {
   try {
+    const todayIST = getISTDateStart();
+    
+    // 1) Try to find an active auction for today first
+    const todayAuction = await DailyAuction
+      .findOne({ 
+        isActive: true,
+        auctionDate: { $gte: todayIST } 
+      })
+      .sort({ auctionDate: 1, createdAt: -1 });
+
+    if (todayAuction) {
+      return res.status(200).json({
+        success: true,
+        data: todayAuction,
+      });
+    }
+
+    // 2) Fallback to the absolute latest active auction if no today/future auction found
     const latestAuction = await DailyAuction
-      .find({ isActive: true })
-      .sort({ createdAt: -1 })   
-      .limit(1);                 
+      .findOne({ isActive: true })
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
-      data: latestAuction.length > 0 ? latestAuction[0] : null,
+      data: latestAuction || null,
     });
 
   } catch (error) {

@@ -143,12 +143,15 @@ async function getAirpayRedirectData(reqBody) {
 
     return {
         url: finalUrl,
+        token: accesstoken,
         params: {
             mercid: AIRPAY_MID,
             data: encryptedfData,
             privatekey: privatekey,
             checksum: checksum,
-            customvar: reqBody.userId || reqBody.customvar || ''
+            customvar: reqBody.userId || reqBody.customvar || '',
+            token: accesstoken,
+            merchant_id: AIRPAY_MID
         },
         dataObject
     };
@@ -317,14 +320,17 @@ exports.createOrder = async (req, res) => {
             data: {
                 orderId,
                 url: redirectData.url,
+                token: redirectData.token,
                 params: {
                     mid: AIRPAY_MID,
                     mercid: AIRPAY_MID,
+                    merchant_id: AIRPAY_MID,
                     data: redirectData.params.data,
                     encdata: redirectData.params.data,
                     privatekey: redirectData.params.privatekey,
                     checksum: redirectData.params.checksum,
-                    customvar: userId
+                    customvar: userId,
+                    token: redirectData.token
                 }
             }
         });
