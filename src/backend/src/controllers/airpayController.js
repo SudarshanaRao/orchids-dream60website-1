@@ -318,8 +318,10 @@ exports.createOrder = async (req, res) => {
                 orderId,
                 url: redirectData.url,
                 params: {
-                    mercid: redirectData.params.mercid,
+                    mid: AIRPAY_MID,
+                    mercid: AIRPAY_MID,
                     data: redirectData.params.data,
+                    encdata: redirectData.params.data,
                     privatekey: redirectData.params.privatekey,
                     checksum: redirectData.params.checksum,
                     customvar: userId

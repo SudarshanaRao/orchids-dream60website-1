@@ -100,25 +100,31 @@ app.use(
           return callback(null, true);
         }
 
-        // 2) Allow all *.orchids.page domains (dynamic Orchids URLs)
+        // 2) Subdomain matching for dream60.com in production
+        if (process.env.NODE_ENV === 'production' && (hostname === 'dream60.com' || hostname.endsWith('.dream60.com'))) {
+          return callback(null, true);
+        }
+
+        // 3) Allow all *.orchids.page domains (dynamic Orchids URLs)
         if (isOrchidsPage(hostname)) {
           return callback(null, true);
         }
 
-        // 3) In non-production, allow typical local-network IPs and localhost
+        // 4) In non-production, allow typical local-network IPs and localhost
         if (process.env.NODE_ENV !== 'production' && isLocalNetwork(hostname)) {
           return callback(null, true);
         }
 
-        // 4) Always allow localhost in dev
+        // 5) Always allow localhost
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
           return callback(null, true);
         }
 
         // Reject if not allowed
-        console.error(`❌ Not allowed by CORS: ${incomingOrigin}`);
+        console.error(`❌ CORS blocked origin: ${origin} (Normalized: ${incomingOrigin})`);
         return callback(null, false);
       } catch (e) {
+        console.error(`❌ CORS error parsing origin: ${origin}`, e);
         return callback(null, false);
       }
     },
