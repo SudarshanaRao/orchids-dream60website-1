@@ -10,6 +10,7 @@ import { PrizeShowcase } from './components/PrizeShowcase';
 import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { RefundPolicy } from './components/RefundPolicy';
 import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
@@ -301,6 +302,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
+    if (path === '/refund') return 'refund';
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
@@ -337,6 +339,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/careers') setCurrentPage('careers');
         else if (path === '/terms') setCurrentPage('terms');
         else if (path === '/privacy') setCurrentPage('privacy');
+        else if (path === '/refund') setCurrentPage('refund');
         else if (path === '/support') setCurrentPage('support');
         else if (path === '/contact') setCurrentPage('contact');
         else if (path === '/profile') setCurrentPage('profile');
@@ -1598,6 +1601,7 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         'about': '/about',
         'terms': '/terms',
         'privacy': '/privacy',
+        'refund': '/refund',
         'support': '/support',
         'contact': '/contact',
         'profile': '/profile',
@@ -2292,15 +2296,26 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     }
 
     if (currentPage === 'terms') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <TermsAndConditions onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <TermsAndConditions onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'refund') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <RefundPolicy onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
   if (currentPage === 'privacy') {
     return (

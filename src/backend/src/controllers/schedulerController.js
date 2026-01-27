@@ -1198,14 +1198,15 @@ const manualTriggerAutoActivate = async (req, res) => {
   try {
     console.log('🔧 [MANUAL] Triggering auto-activation logic...');
     
-    // ✅ FIX: Remove circular dependency - call autoActivateAuctions dynamically
-    // Instead of importing from scheduler.js, we'll execute the logic inline or use a shared module
+    // Dynamically require to avoid circular dependency
+    const { autoActivateAuctions } = require('../config/scheduler');
     
-    // ✅ OPTION 1: Return success and let the cron job handle it
+    // Execute the auto-activation logic
+    await autoActivateAuctions();
+    
     return res.status(200).json({
       success: true,
-      message: 'Auto-activation is handled by the scheduled cron job that runs every minute. Please wait for the next scheduled run.',
-      note: 'Manual trigger removed to prevent circular dependency issues',
+      message: 'Auto-activation logic executed successfully',
       timestamp: new Date().toISOString(),
     });
     

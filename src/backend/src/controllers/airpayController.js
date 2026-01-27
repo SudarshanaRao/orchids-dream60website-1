@@ -70,9 +70,9 @@ async function getAccessToken(mid) {
     merchant_id: mid
   };
 
-  const iv = crypto.randomBytes(8);
-  const ivHex = iv.toString('hex');
-  const encryptedData = encrypt(JSON.stringify(request), key, ivHex);
+    const iv = crypto.randomBytes(16);
+    const ivHex = iv.toString('hex');
+    const encryptedData = encrypt(JSON.stringify(request), key, ivHex);
 
   const reqs = {
     merchant_id: request.merchant_id,
@@ -115,15 +115,15 @@ async function getAccessToken(mid) {
 exports.createOrder = async (req, res) => {
   try {
     console.log('📦 Airpay Create Order Request Body:', req.body);
-    const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
+    const { userId, hourlyAuctionId, auctionId, amount, paymentType = 'ENTRY_FEE', username } = req.body;
 
-    // Support both auctionId and hourlyAuctionId from frontend
-    const finalAuctionId = auctionId || hourlyAuctionId;
+    // Prioritize hourlyAuctionId as per user request
+    const finalAuctionId = hourlyAuctionId || auctionId;
 
     if (!userId || !finalAuctionId || !amount) {
       const missingFields = [];
       if (!userId) missingFields.push('userId');
-      if (!finalAuctionId) missingFields.push('auctionId/hourlyAuctionId');
+      if (!finalAuctionId) missingFields.push('hourlyAuctionId');
       if (!amount) missingFields.push('amount');
 
       console.log('❌ Airpay Create Order - Missing fields:', missingFields, 'Body:', req.body);
@@ -131,12 +131,18 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: `Missing required fields: ${missingFields.join(', ')}`,
-        received: { userId, auctionId, hourlyAuctionId, amount, paymentType }
+        received: { userId, hourlyAuctionId, auctionId, amount, paymentType }
       });
     }
 
+    // Fetch user from database to get the correct username as per request
     const user = await User.findOne({ user_id: userId });
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user) {
+      console.log('❌ Airpay Create Order - User not found:', userId);
+      return res.status(404).json({ success: false, message: 'User not found in database' });
+    }
+
+    console.log(`👤 User identified from DB: ${user.username} (ID: ${userId})`);
 
     let auction;
     if (paymentType === 'ENTRY_FEE') {
@@ -145,7 +151,10 @@ exports.createOrder = async (req, res) => {
         auction = await AuctionHistory.findOne({ userId, hourlyAuctionId: finalAuctionId, isWinner: true });
     }
 
-    if (!auction) return res.status(404).json({ success: false, message: 'Auction not found' });
+    if (!auction) {
+      console.log('❌ Airpay Create Order - Auction not found:', finalAuctionId);
+      return res.status(404).json({ success: false, message: 'Auction not found' });
+    }
 
     const orderId = `D60-${Date.now()}`;
     
@@ -157,7 +166,7 @@ exports.createOrder = async (req, res) => {
       buyer_city: 'Mumbai',
       buyer_state: 'Maharashtra',
       buyer_country: 'India',
-      amount: amount.toString(),
+      amount: Number(amount).toFixed(2).toString(), // Ensure 2 decimal places as per user JSON
       orderid: orderId,
       buyer_phone: user.mobile || '9999999999',
       buyer_pincode: '400001',
@@ -166,12 +175,18 @@ exports.createOrder = async (req, res) => {
       merchant_id: AIRPAY_MID
     };
 
+    console.log('🚀 Final data object for Airpay:', {
+      orderid: dataObject.orderid,
+      amount: dataObject.amount,
+      buyer: `${dataObject.buyer_firstname} ${dataObject.buyer_lastname}`
+    });
+
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
     const privatekey = encryptChecksum(udata, AIRPAY_SECRET);
     const checksum = checksumcal(dataObject);
     
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-    const iv = crypto.randomBytes(8);
+    const iv = crypto.randomBytes(16);
     const ivHex = iv.toString('hex');
     const encryptedfData = encrypt(JSON.stringify(dataObject), key, ivHex);
 

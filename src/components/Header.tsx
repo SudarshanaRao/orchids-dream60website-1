@@ -403,7 +403,7 @@ interface HeaderProps {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
                 >
-                  Live Auction Play
+                  Live Auction Platform
                 </motion.p>
 
               </div>
@@ -792,7 +792,7 @@ interface HeaderProps {
                     </motion.div>
                     <div>
                       <h2 className="text-2xl font-bold text-white">Dream60</h2>
-                      <p className="text-xs text-purple-200">Live Auction Play</p>
+                      <p className="text-xs text-purple-200">Live Auction Platform</p>
                     </div>
                   </motion.div>
 

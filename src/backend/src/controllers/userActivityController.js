@@ -202,7 +202,7 @@ const heartbeat = async (req, res) => {
 
 const trackPageView = async (req, res) => {
   try {
-    const { userId, sessionId, page, path, enterTime, exitTime, duration, scrollDepth } = req.body;
+    const { userId, sessionId, page, path, enterTime, duration, scrollDepth } = req.body;
     
     if (!userId || !sessionId || !page || !path) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
@@ -210,56 +210,46 @@ const trackPageView = async (req, res) => {
 
     const now = new Date();
     const todayStr = getDateStrIST(enterTime || now);
+    const safePath = path.replace(/\./g, '_');
 
-    const userActivity = await UserActivity.findOne({ userId });
-    if (!userActivity) {
-      return res.status(404).json({ success: false, message: 'User activity not found' });
-    }
-
-    const todayIdx = userActivity.dailyActivities.findIndex(d => d.dateStr === todayStr);
-    if (todayIdx < 0) {
-      return res.status(404).json({ success: false, message: 'Daily activity not found' });
-    }
-
-    const sessionIdx = userActivity.dailyActivities[todayIdx].sessions.findIndex(
-      s => s.sessionId === sessionId
-    );
-    if (sessionIdx < 0) {
-      return res.status(404).json({ success: false, message: 'Session not found' });
-    }
-
-    const pageView = {
-      page,
-      path,
-      enterTime: enterTime || now,
-      exitTime: exitTime || null,
-      duration: duration || 0,
-      scrollDepth: scrollDepth || 0,
+    const updateOps = {
+      $push: {
+        'dailyActivities.$[day].sessions.$[sess].pageViews': {
+          page,
+          path,
+          enterTime: enterTime || now,
+          exitTime: null,
+          duration: duration || 0,
+          scrollDepth: scrollDepth || 0,
+        }
+      },
+      $inc: {
+        'dailyActivities.$[day].sessions.$[sess].totalPageViews': 1,
+        'dailyActivities.$[day].totalPageViews': 1,
+        [`dailyActivities.$[day].pageStats.${safePath}.views`]: 1,
+        [`dailyActivities.$[day].pageStats.${safePath}.totalTime`]: duration || 0,
+        'lifetimeStats.totalPageViews': 1,
+        [`lifetimeStats.favoritePages.${safePath}.views`]: 1,
+        [`lifetimeStats.favoritePages.${safePath}.totalTime`]: duration || 0,
+      },
+      $set: {
+        'dailyActivities.$[day].lastActivity': now,
+        'lifetimeStats.lastSeen': now,
+        'currentSession.currentPage': path,
+        'currentSession.lastHeartbeat': now,
+      }
     };
 
-    userActivity.dailyActivities[todayIdx].sessions[sessionIdx].pageViews.push(pageView);
-    userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalPageViews += 1;
-    userActivity.dailyActivities[todayIdx].totalPageViews += 1;
-    userActivity.dailyActivities[todayIdx].lastActivity = now;
+    const arrayFilters = [
+      { 'day.dateStr': todayStr },
+      { 'sess.sessionId': sessionId }
+    ];
 
-    if (!userActivity.dailyActivities[todayIdx].pageStats[path]) {
-      userActivity.dailyActivities[todayIdx].pageStats[path] = { views: 0, totalTime: 0 };
-    }
-    userActivity.dailyActivities[todayIdx].pageStats[path].views += 1;
-    userActivity.dailyActivities[todayIdx].pageStats[path].totalTime += duration || 0;
-
-    userActivity.lifetimeStats.totalPageViews += 1;
-    if (!userActivity.lifetimeStats.favoritePages[path]) {
-      userActivity.lifetimeStats.favoritePages[path] = { views: 0, totalTime: 0 };
-    }
-    userActivity.lifetimeStats.favoritePages[path].views += 1;
-    userActivity.lifetimeStats.favoritePages[path].totalTime += duration || 0;
-    userActivity.lifetimeStats.lastSeen = now;
-
-    userActivity.currentSession.currentPage = path;
-    userActivity.currentSession.lastHeartbeat = now;
-
-    await userActivity.save();
+    await UserActivity.updateOne(
+      { userId, 'dailyActivities.dateStr': todayStr, 'dailyActivities.sessions.sessionId': sessionId },
+      updateOps,
+      { arrayFilters }
+    );
 
     return res.status(200).json({ success: true, message: 'Page view tracked' });
   } catch (err) {
@@ -279,41 +269,38 @@ const trackInteraction = async (req, res) => {
     const now = new Date();
     const todayStr = getDateStrIST(now);
 
-    const userActivity = await UserActivity.findOne({ userId });
-    if (!userActivity) {
-      return res.status(404).json({ success: false, message: 'User activity not found' });
-    }
-
-    const todayIdx = userActivity.dailyActivities.findIndex(d => d.dateStr === todayStr);
-    if (todayIdx < 0) {
-      return res.status(404).json({ success: false, message: 'Daily activity not found' });
-    }
-
-    const sessionIdx = userActivity.dailyActivities[todayIdx].sessions.findIndex(
-      s => s.sessionId === sessionId
-    );
-    if (sessionIdx < 0) {
-      return res.status(404).json({ success: false, message: 'Session not found' });
-    }
-
-    const interaction = {
-      type,
-      element: element || '',
-      page: page || '',
-      path: path || '',
-      timestamp: now,
-      metadata: metadata || {},
+    const updateOps = {
+      $push: {
+        'dailyActivities.$[day].sessions.$[sess].interactions': {
+          type,
+          element: element || '',
+          page: page || '',
+          path: path || '',
+          timestamp: now,
+          metadata: metadata || {},
+        }
+      },
+      $inc: {
+        'dailyActivities.$[day].sessions.$[sess].totalInteractions': 1,
+        'dailyActivities.$[day].totalInteractions': 1,
+        'lifetimeStats.totalInteractions': 1,
+      },
+      $set: {
+        'dailyActivities.$[day].lastActivity': now,
+        'lifetimeStats.lastSeen': now,
+      }
     };
 
-    userActivity.dailyActivities[todayIdx].sessions[sessionIdx].interactions.push(interaction);
-    userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalInteractions += 1;
-    userActivity.dailyActivities[todayIdx].totalInteractions += 1;
-    userActivity.dailyActivities[todayIdx].lastActivity = now;
+    const arrayFilters = [
+      { 'day.dateStr': todayStr },
+      { 'sess.sessionId': sessionId }
+    ];
 
-    userActivity.lifetimeStats.totalInteractions += 1;
-    userActivity.lifetimeStats.lastSeen = now;
-
-    await userActivity.save();
+    await UserActivity.updateOne(
+      { userId, 'dailyActivities.dateStr': todayStr, 'dailyActivities.sessions.sessionId': sessionId },
+      updateOps,
+      { arrayFilters }
+    );
 
     return res.status(200).json({ success: true, message: 'Interaction tracked' });
   } catch (err) {
@@ -333,75 +320,76 @@ const trackBatch = async (req, res) => {
     const now = new Date();
     const todayStr = getDateStrIST(now);
 
-    const userActivity = await UserActivity.findOne({ userId });
-    if (!userActivity) {
-      return res.status(404).json({ success: false, message: 'User activity not found' });
-    }
+    const updateOps = {
+      $inc: {
+        'lifetimeStats.totalPageViews': (pageViews && Array.isArray(pageViews)) ? pageViews.length : 0,
+        'lifetimeStats.totalInteractions': (interactions && Array.isArray(interactions)) ? interactions.length : 0,
+      },
+      $set: {
+        'lifetimeStats.lastSeen': now,
+        'currentSession.lastHeartbeat': now,
+      }
+    };
 
-    const todayIdx = userActivity.dailyActivities.findIndex(d => d.dateStr === todayStr);
-    if (todayIdx < 0) {
-      return res.status(200).json({ success: true, message: 'No daily activity, skipping' });
-    }
+    const arrayFilters = [
+      { 'day.dateStr': todayStr },
+      { 'sess.sessionId': sessionId }
+    ];
 
-    const sessionIdx = userActivity.dailyActivities[todayIdx].sessions.findIndex(
-      s => s.sessionId === sessionId
-    );
-    if (sessionIdx < 0) {
-      return res.status(200).json({ success: true, message: 'Session not found, skipping' });
-    }
+    const pushOps = {};
+    if (pageViews && Array.isArray(pageViews) && pageViews.length > 0) {
+      pushOps['dailyActivities.$[day].sessions.$[sess].pageViews'] = { $each: pageViews.map(pv => ({
+        page: pv.page || '',
+        path: pv.path || '',
+        enterTime: pv.enterTime || now,
+        exitTime: pv.exitTime || null,
+        duration: pv.duration || 0,
+        scrollDepth: pv.scrollDepth || 0,
+      })) };
+      
+      updateOps.$inc['dailyActivities.$[day].sessions.$[sess].totalPageViews'] = pageViews.length;
+      updateOps.$inc['dailyActivities.$[day].totalPageViews'] = pageViews.length;
+      updateOps.$set['dailyActivities.$[day].lastActivity'] = now;
 
-    if (pageViews && Array.isArray(pageViews)) {
+      // Update page stats and favorite pages
       for (const pv of pageViews) {
-        const pageView = {
-          page: pv.page || '',
-          path: pv.path || '',
-          enterTime: pv.enterTime || now,
-          exitTime: pv.exitTime || null,
-          duration: pv.duration || 0,
-          scrollDepth: pv.scrollDepth || 0,
-        };
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].pageViews.push(pageView);
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalPageViews += 1;
-        userActivity.dailyActivities[todayIdx].totalPageViews += 1;
-
         const path = pv.path || '/';
-        if (!userActivity.dailyActivities[todayIdx].pageStats[path]) {
-          userActivity.dailyActivities[todayIdx].pageStats[path] = { views: 0, totalTime: 0 };
-        }
-        userActivity.dailyActivities[todayIdx].pageStats[path].views += 1;
-        userActivity.dailyActivities[todayIdx].pageStats[path].totalTime += pv.duration || 0;
-
-        userActivity.lifetimeStats.totalPageViews += 1;
-        if (!userActivity.lifetimeStats.favoritePages[path]) {
-          userActivity.lifetimeStats.favoritePages[path] = { views: 0, totalTime: 0 };
-        }
-        userActivity.lifetimeStats.favoritePages[path].views += 1;
-        userActivity.lifetimeStats.favoritePages[path].totalTime += pv.duration || 0;
+        const safePath = path.replace(/\./g, '_'); // Replace dots in path for mongo keys
+        updateOps.$inc[`dailyActivities.$[day].pageStats.${safePath}.views`] = 1;
+        updateOps.$inc[`dailyActivities.$[day].pageStats.${safePath}.totalTime`] = pv.duration || 0;
+        updateOps.$inc[`lifetimeStats.favoritePages.${safePath}.views`] = 1;
+        updateOps.$inc[`lifetimeStats.favoritePages.${safePath}.totalTime`] = pv.duration || 0;
       }
     }
 
-    if (interactions && Array.isArray(interactions)) {
-      for (const inter of interactions) {
-        const interaction = {
-          type: inter.type || 'other',
-          element: inter.element || '',
-          page: inter.page || '',
-          path: inter.path || '',
-          timestamp: inter.timestamp || now,
-          metadata: inter.metadata || {},
-        };
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].interactions.push(interaction);
-        userActivity.dailyActivities[todayIdx].sessions[sessionIdx].totalInteractions += 1;
-        userActivity.dailyActivities[todayIdx].totalInteractions += 1;
-        userActivity.lifetimeStats.totalInteractions += 1;
-      }
+    if (interactions && Array.isArray(interactions) && interactions.length > 0) {
+      pushOps['dailyActivities.$[day].sessions.$[sess].interactions'] = { $each: interactions.map(inter => ({
+        type: inter.type || 'other',
+        element: inter.element || '',
+        page: inter.page || '',
+        path: inter.path || '',
+        timestamp: inter.timestamp || now,
+        metadata: inter.metadata || {},
+      })) };
+
+      updateOps.$inc['dailyActivities.$[day].sessions.$[sess].totalInteractions'] = interactions.length;
+      updateOps.$inc['dailyActivities.$[day].totalInteractions'] = interactions.length;
+      updateOps.$set['dailyActivities.$[day].lastActivity'] = now;
     }
 
-    userActivity.dailyActivities[todayIdx].lastActivity = now;
-    userActivity.lifetimeStats.lastSeen = now;
-    userActivity.currentSession.lastHeartbeat = now;
+    if (Object.keys(pushOps).length > 0) {
+      updateOps.$push = pushOps;
+    }
 
-    await userActivity.save();
+    const result = await UserActivity.updateOne(
+      { userId, 'dailyActivities.dateStr': todayStr, 'dailyActivities.sessions.sessionId': sessionId },
+      updateOps,
+      { arrayFilters }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(200).json({ success: true, message: 'Session or daily activity not found, skipping' });
+    }
 
     return res.status(200).json({ success: true, message: 'Batch tracked' });
   } catch (err) {

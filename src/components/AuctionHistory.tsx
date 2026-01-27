@@ -1131,6 +1131,7 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
 
 export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
   const [activeTab, setActiveTab] = useState('all');
+  const [isSwitching, setIsSwitching] = useState(false);
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1419,7 +1420,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                 </div>
                 <div className="hidden sm:block">
                   <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
-                  <p className="text-[10px] text-purple-600">Live Auction Play</p>
+                  <p className="text-[10px] text-purple-600">Live Auction Platform</p>
                 </div>
               </div>
             </div>
@@ -1492,7 +1493,7 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               </div>
               <div className="hidden sm:block">
                 <h2 className="text-lg font-bold bg-gradient-to-r from-[#53317B] via-[#6B3FA0] to-[#8456BC] bg-clip-text text-transparent">Dream60</h2>
-                <p className="text-[10px] text-purple-600">Live Auction Play</p>
+                <p className="text-[10px] text-purple-600">Live Auction Platform</p>
               </div>
             </div>
           </div>
@@ -1968,9 +1969,17 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
               </div>
             </CardHeader>
             
-            <CardContent className="p-2 sm:p-4 md:p-6 relative z-10">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+              <CardContent className="p-2 sm:p-4 md:p-6 relative z-10">
+                <Tabs 
+                  value={activeTab} 
+                  onValueChange={(value) => {
+                    setIsSwitching(true);
+                    setActiveTab(value);
+                    setTimeout(() => setIsSwitching(false), 500); // Smooth transition duration
+                  }} 
+                  className="w-full"
+                >
+                  <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
                   <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-6 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
                     <TabsTrigger 
                       value="all" 
@@ -1996,115 +2005,152 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                   </TabsList>
                 </div>
 
-                <TabsContent value="all" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
-                  {history.length > 0 ? (
-                  history.map((auction, index) => <AuctionCard 
-                        key={`${activeTab}-${auction.id}`}
-                        auction={auction}
-                        index={index}
-                        tabPrefix={activeTab}
-                        user={user}
-                        onViewDetails={onViewDetails}
-                        onClaimSuccess={() => fetchAuctionHistory()}
-                        userProfile={userProfile}
-                        serverTime={serverTime}
-                      />)
-                  ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-center py-6 sm:py-12"
-                    >
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ 
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 15
-                        }}
-                        className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl"
-                      >
-                        <Trophy className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
-                      </motion.div>
-                      <p className="text-sm sm:text-base font-semibold text-purple-800">No auction history yet</p>
-                      <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">Start bidding to see your history here!</p>
-                    </motion.div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="all" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0 min-h-[300px] relative">
+                    <AnimatePresence mode="wait">
+                      {isSwitching ? (
+                        <motion.div
+                          key="loader-all"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-[2px] rounded-xl"
+                        >
+                          <LoadingProfile message="Loading History" subMessage="Updating your activities" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="content-all"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-2 sm:space-y-3 md:space-y-4"
+                        >
+                          {history.length > 0 ? (
+                            history.map((auction, index) => (
+                              <AuctionCard 
+                                key={`all-${auction.id}`}
+                                auction={auction}
+                                index={index}
+                                tabPrefix="all"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory()}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-6 sm:py-12">
+                              <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
+                                <Trophy className="w-5 h-5 sm:w-8 sm:h-8" />
+                              </div>
+                              <p className="text-sm sm:text-base font-semibold text-purple-800">No auction history yet</p>
+                              <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">Start bidding to see your history here!</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </TabsContent>
 
-                <TabsContent value="won" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
-                  {wonAuctions.length > 0 ? (
-                  wonAuctions.map((auction, index) => <AuctionCard 
-                        key={`${activeTab}-${auction.id}`}
-                        auction={auction}
-                        index={index}
-                        tabPrefix={activeTab}
-                        user={user}
-                        onViewDetails={onViewDetails}
-                        onClaimSuccess={() => fetchAuctionHistory()}
-                        userProfile={userProfile}
-                        serverTime={serverTime}
-                      />)
-                  ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-center py-6 sm:py-12"
-                    >
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ 
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 15
-                        }}
-                        className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl"
-                      >
-                        <Crown className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
-                      </motion.div>
-                      <p className="text-sm sm:text-base font-semibold text-purple-800">No wins yet</p>
-                      <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">Keep bidding to win amazing prizes!</p>
-                    </motion.div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="won" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0 min-h-[300px] relative">
+                    <AnimatePresence mode="wait">
+                      {isSwitching ? (
+                        <motion.div
+                          key="loader-won"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-[2px] rounded-xl"
+                        >
+                          <LoadingProfile message="Loading Wins" subMessage="Fetching your trophies" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="content-won"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-2 sm:space-y-3 md:space-y-4"
+                        >
+                          {wonAuctions.length > 0 ? (
+                            wonAuctions.map((auction, index) => (
+                              <AuctionCard 
+                                key={`won-${auction.id}`}
+                                auction={auction}
+                                index={index}
+                                tabPrefix="won"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory()}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-6 sm:py-12">
+                              <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
+                                <Crown className="w-5 h-5 sm:w-8 sm:h-8" />
+                              </div>
+                              <p className="text-sm sm:text-base font-semibold text-purple-800">No wins yet</p>
+                              <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">Keep bidding to win amazing prizes!</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </TabsContent>
 
-                <TabsContent value="lost" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0">
-                  {lostAuctions.length > 0 ? (
-                    lostAuctions.map((auction, index) => <AuctionCard 
-                      key={`${activeTab}-${auction.id}`}
-                      auction={auction}
-                      index={index}
-                      tabPrefix={activeTab}
-                      user={user}
-                      onViewDetails={onViewDetails}
-                      onClaimSuccess={() => fetchAuctionHistory()}
-                      userProfile={userProfile}
-                    />)
-                  ) : (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-center py-6 sm:py-12"
-                    >
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ 
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 15
-                        }}
-                        className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl"
-                      >
-                        <Sparkles className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
-                      </motion.div>
-                      <p className="text-sm sm:text-base font-semibold text-purple-800">Perfect record!</p>
-                      <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">You haven't lost any auctions yet!</p>
-                    </motion.div>
-                  )}
-                </TabsContent>
+                  <TabsContent value="lost" className="space-y-2 sm:space-y-3 md:space-y-4 mt-0 min-h-[300px] relative">
+                    <AnimatePresence mode="wait">
+                      {isSwitching ? (
+                        <motion.div
+                          key="loader-lost"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 flex items-center justify-center z-50 bg-white/50 backdrop-blur-[2px] rounded-xl"
+                        >
+                          <LoadingProfile message="Loading History" subMessage="Updating your record" />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="content-lost"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-2 sm:space-y-3 md:space-y-4"
+                        >
+                          {lostAuctions.length > 0 ? (
+                            lostAuctions.map((auction, index) => (
+                              <AuctionCard 
+                                key={`lost-${auction.id}`}
+                                auction={auction}
+                                index={index}
+                                tabPrefix="lost"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory()}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            ))
+                          ) : (
+                            <div className="text-center py-6 sm:py-12">
+                              <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
+                                <Sparkles className="w-5 h-5 sm:w-8 sm:h-8" />
+                              </div>
+                              <p className="text-sm sm:text-base font-semibold text-purple-800">Perfect record!</p>
+                              <p className="text-[10px] sm:text-xs mt-1 sm:mt-2 text-purple-600">You haven't lost any auctions yet!</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </TabsContent>
               </Tabs>
             </CardContent>
           </Card>

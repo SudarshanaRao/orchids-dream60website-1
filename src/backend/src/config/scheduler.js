@@ -10,9 +10,10 @@ const mongoose = require('mongoose');
 
 // ... existing code ...
 
-// External API endpoints
-const SERVER_TIME_API = 'https://dev-api.dream60.com/utility/server-time';
-const HOURLY_AUCTIONS_API = 'https://dev-api.dream60.com/scheduler/hourly-auctions';
+// External API endpoints - Use environment variable or local fallback
+const BACKEND_URL = process.env.VITE_BACKEND_API_URL || 'http://localhost:5000';
+const SERVER_TIME_API = `${BACKEND_URL}/utility/server-time`;
+const HOURLY_AUCTIONS_API = `${BACKEND_URL}/scheduler/hourly-auctions`;
 
 /**
  * ✅ Helper function to get current IST time

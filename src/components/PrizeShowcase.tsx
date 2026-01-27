@@ -447,6 +447,7 @@ interface PrizeShowcaseProps {
         amount: totalEntryFee,
         currency: 'INR',
         username: userName,
+        paymentType: 'ENTRY_FEE',
       },
       {
         name: userName,
