@@ -319,7 +319,16 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return 'game';
   });
 
-  // ✅ Sync URL with page state and handle browser back/forward
+    // ✅ Handle post-payment state for Airpay redirects
+    useEffect(() => {
+      if (currentPage === 'success-preview') {
+        setRecentPaymentSuccess(true);
+        recentPaymentTimestamp.current = Date.now();
+        console.log('✅ Airpay success detected - setting optimistic payment state');
+      }
+    }, [currentPage]);
+
+    // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
@@ -1619,12 +1628,18 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     window.history.pushState({}, '', url);
   };
 
-  const handleBackToGame = () => {
-    setCurrentPage('game');
-    window.history.pushState({}, '', '/');
-    setSelectedLeaderboard(null);
-    setSelectedAuctionDetails(null);
-  };
+    const handleBackToGame = (shouldScroll = false) => {
+      setCurrentPage('game');
+      window.history.pushState({}, '', '/');
+      setSelectedLeaderboard(null);
+      setSelectedAuctionDetails(null);
+      
+      if (shouldScroll) {
+        setTimeout(() => {
+          handleBidNowScroll();
+        }, 500);
+      }
+    };
 
   const handleShowLeaderboard = (
     roundNumber: number,
@@ -2442,8 +2457,8 @@ if (currentPage === 'prizeshowcase') {
               amount={Number(searchParams.get('amount')) || 60}
               type="entry"
               transactionId={searchParams.get('txnId') || ''}
-              onBackToHome={handleBackToGame}
-              onClose={handleBackToGame}
+              onBackToHome={() => handleBackToGame(true)}
+              onClose={() => handleBackToGame(true)}
             />
           </TooltipProvider>
         </QueryClientProvider>

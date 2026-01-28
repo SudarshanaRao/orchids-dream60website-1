@@ -43,7 +43,7 @@ interface PaymentSuccessProps {
     onBackToHome,
     onClose
   }: PaymentSuccessProps) {
-    const [countdown, setCountdown] = useState(2);
+    const [countdown, setCountdown] = useState(3);
     const [txnData, setTxnSummary] = useState<any>(null);
 
     useEffect(() => {
