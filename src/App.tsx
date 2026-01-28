@@ -852,31 +852,33 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           return () => clearInterval(timer);
         }, [serverTime, upcomingAuctionData]);
 
-      // Fetch upcoming auction data
-    useEffect(() => {
-      const fetchUpcomingAuction = async () => {
+      // ✅ NEW: Fetch upcoming auction data with polling
+      const fetchUpcomingAuction = useCallback(async () => {
         try {
+          console.log('🔄 Fetching upcoming auction data...');
           // First try to fetch the single first upcoming product
           const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
           const data = await response.json();
           
           if (data.success && data.data) {
+            console.log('✅ Found upcoming auction from dedicated endpoint:', data.data.auctionName);
             setUpcomingAuctionData(data.data);
           } else {
             // Fallback: Fetch daily auction schedule and find the next one
+            console.log('🔄 Fallback: Searching for next upcoming auction in daily schedule...');
             const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
             const dailyData = await dailyResponse.json();
             
-              if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
-                const auctions = dailyData.data.dailyAuctionConfig;
-                // Find the first auction that is marked as 'UPCOMING'
-                const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
-                
-                if (nextAuction) {
-                  console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
-                  // Include the auctionDate from the parent daily auction for accurate countdown
-                  setUpcomingAuctionData({ ...nextAuction, auctionDate: dailyData.data.auctionDate });
-                } else {
+            if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
+              const auctions = dailyData.data.dailyAuctionConfig;
+              // Find the first auction that is marked as 'UPCOMING'
+              const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
+              
+              if (nextAuction) {
+                console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
+                // Include the auctionDate from the parent daily auction for accurate countdown
+                setUpcomingAuctionData({ ...nextAuction, auctionDate: dailyData.data.auctionDate });
+              } else {
                 console.log('⚠️ No upcoming auctions found in daily schedule');
                 setUpcomingAuctionData(null);
               }
@@ -885,12 +887,20 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         } catch (error) {
           console.error('Error fetching upcoming auction:', error);
         }
-      };
+      }, []);
 
-      if (serverTime) {
+      // Initial fetch and polling for upcoming auction
+      useEffect(() => {
+        if (!serverTime) return;
+        
         fetchUpcomingAuction();
-      }
-    }, [serverTime?.hour, serverTime?.minute, liveAuctionData]);
+        
+        // Poll every 5 minutes (300,000 ms) as requested "every few minutes"
+        const pollInterval = setInterval(fetchUpcomingAuction, 300000);
+        
+        return () => clearInterval(pollInterval);
+      }, [fetchUpcomingAuction, serverTime?.hour, serverTime?.minute, liveAuctionData]);
+
   // ✅ Track if the first load has completed
   const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token

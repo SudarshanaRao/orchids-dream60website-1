@@ -271,9 +271,10 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
     return true;
   });
 
-  const sortedAuctions = activeFilter === 'completed'
-    ? [...filteredAuctions].sort((a, b) => (b.hour * 60 + b.minute) - (a.hour * 60 + a.minute))
-    : filteredAuctions;
+    const sortedAuctions = activeFilter === 'completed'
+      ? [...filteredAuctions].sort((a, b) => (b.hour * 60 + b.minute) - (a.hour * 60 + a.minute))
+      : [...filteredAuctions].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+
 
   const getStatusColor = (status: string) => {
     switch (status) {

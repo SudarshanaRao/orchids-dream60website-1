@@ -2629,6 +2629,41 @@ const getFirstUpcomingProduct = async (req, res) => {
         data: null,
       });
     }
+
+    // ✅ FETCH FRESH DATA FROM DAILY AUCTION SOURCE OF TRUTH
+    // This ensures updates to Master/Daily auctions are reflected immediately
+    try {
+      const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: upcomingAuction.dailyAuctionId }).lean();
+      if (dailyAuction && dailyAuction.dailyAuctionConfig) {
+        const freshConfig = dailyAuction.dailyAuctionConfig.find(
+          c => c.auctionNumber === upcomingAuction.auctionNumber || c.hourlyAuctionId === upcomingAuction.hourlyAuctionId
+        );
+        
+        if (freshConfig) {
+          // Merge fresh config over the hourly auction data
+          // Prioritize fields from dailyAuctionConfig which is the source of truth for product info
+          upcomingAuction = {
+            ...upcomingAuction,
+            auctionName: freshConfig.auctionName || upcomingAuction.auctionName,
+            prizeValue: freshConfig.prizeValue || upcomingAuction.prizeValue,
+            imageUrl: freshConfig.imageUrl || upcomingAuction.imageUrl,
+            productImages: freshConfig.productImages || upcomingAuction.productImages,
+            productDescription: freshConfig.productDescription || upcomingAuction.productDescription,
+            minSlotsCriteria: freshConfig.minSlotsCriteria || upcomingAuction.minSlotsCriteria,
+            minSlotsValue: freshConfig.minSlotsValue || upcomingAuction.minSlotsValue,
+            EntryFee: freshConfig.EntryFee || upcomingAuction.EntryFee,
+            minEntryFee: freshConfig.minEntryFee || upcomingAuction.minEntryFee,
+            maxEntryFee: freshConfig.maxEntryFee || upcomingAuction.maxEntryFee,
+            FeeSplits: freshConfig.FeeSplits || upcomingAuction.FeeSplits,
+            roundConfig: freshConfig.roundConfig || upcomingAuction.roundConfig,
+            roundCount: freshConfig.roundCount || upcomingAuction.roundCount,
+          };
+        }
+      }
+    } catch (mergeError) {
+      console.error('Error merging fresh daily auction data:', mergeError);
+      // Continue with whatever we have in upcomingAuction if merge fails
+    }
     
     return res.status(200).json({
       success: true,
