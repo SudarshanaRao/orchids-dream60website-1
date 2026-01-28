@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 interface ProductImage {
   imageUrl: string;
   description: string[];
+  productDescription?: Record<string, string>;
 }
 
 interface UpcomingProduct {
@@ -19,6 +20,7 @@ interface UpcomingProduct {
   prizeValue: number;
   imageUrl: string | null;
   productImages: ProductImage[];
+  productDescription?: Record<string, string>;
   TimeSlot: string;
   auctionDate: string;
   Status: string;
@@ -171,13 +173,14 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
           <p className="text-purple-600">Tap on the card to see product details</p>
         </div>
 
-        <div className="mb-8">
-          <ProductFlipCard
-            productImages={productImagesToShow}
-            productName={product.auctionName}
-            prizeValue={product.prizeValue}
-          />
-        </div>
+          <div className="mb-8">
+            <ProductFlipCard
+              productImages={productImagesToShow}
+              productName={product.auctionName}
+              prizeValue={product.prizeValue}
+              productDescription={product.productDescription}
+            />
+          </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-purple-100 shadow-sm">
