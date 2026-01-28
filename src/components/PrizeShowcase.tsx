@@ -104,7 +104,6 @@ interface PrizeShowcaseProps {
     const [isUserParticipating, setIsUserParticipating] = useState(false);
     const [isJoinWindowOpen, setIsJoinWindowOpen] = useState(false);
     const [timeLeft, setTimeLeft] = useState<string>('00:00:00');
-    const [upcomingTimeLeft, setUpcomingTimeLeft] = useState<string>('00:00:00');
     const [auctionEndTime, setAuctionEndTime] = useState<Date | null>(null);
     const [noLiveAuction, setNoLiveAuction] = useState(false);
     // ✅ NEW: Store initial fallback time to prevent recalculation
@@ -415,38 +414,38 @@ interface PrizeShowcaseProps {
     return () => clearInterval(timer);
   }, [auctionEndTime, serverTime, liveAuctionData?.winnersAnnounced]);
 
-  // ✅ Update countdown timer for upcoming auction every second using server time
-  useEffect(() => {
-    if (!isUpcoming || !serverTime) return;
+    // ✅ Update countdown timer for upcoming auction every second using server time
+    useEffect(() => {
+      if (!isUpcoming || !serverTime || upcomingCountdown) return;
 
-    const updateUpcomingTimer = () => {
-      // Simplified calculation to the next top of the hour (MM:SS)
-      // As per user request: hour will be zero always, so only minutes and seconds
-      const currentMinute = serverTime.minute;
-      const currentSecond = serverTime.second;
+      const updateUpcomingTimer = () => {
+        // Simplified calculation to the next top of the hour (MM:SS)
+        // As per user request: hour will be zero always, so only minutes and seconds
+        const currentMinute = serverTime.minute;
+        const currentSecond = serverTime.second;
+        
+        const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+        
+        // If we are at the exact top of the hour, it means an auction just started
+        if (totalSecondsRemaining >= 3600) {
+          setTimeLeft('00:00');
+          return;
+        }
+
+        const minutes = Math.floor(totalSecondsRemaining / 60);
+        const seconds = totalSecondsRemaining % 60;
+        
+        setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      };
+
+      // Initial call
+      updateUpcomingTimer();
       
-      const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-      
-      // If we are at the exact top of the hour, it means an auction just started
-      if (totalSecondsRemaining >= 3600) {
-        setUpcomingTimeLeft('00:00');
-        return;
-      }
+      // We update every second
+      const timer = setInterval(updateUpcomingTimer, 1000);
 
-      const minutes = Math.floor(totalSecondsRemaining / 60);
-      const seconds = totalSecondsRemaining % 60;
-      
-      setUpcomingTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    };
-
-    // Initial call
-    updateUpcomingTimer();
-    
-    // We update every second
-    const timer = setInterval(updateUpcomingTimer, 1000);
-
-    return () => clearInterval(timer);
-  }, [isUpcoming, serverTime]);
+      return () => clearInterval(timer);
+    }, [isUpcoming, serverTime, upcomingCountdown]);
 
   const handlePayEntry = () => {
     if (!isLoggedIn || liveAuctions.length === 0) return;
@@ -618,9 +617,9 @@ interface PrizeShowcaseProps {
                     <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-xl blur group-hover/stat:blur-md transition-all"></div>
                     <div className="relative backdrop-blur-xl bg-white/70 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 border border-red-200/40 shadow-sm inline-flex items-center space-x-1.5 sm:space-x-2">
                       <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
-                      <span className="text-sm sm:text-base md:text-lg font-bold font-mono bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent tracking-tight">
-                        {timeLeft}
-                      </span>
+                        <span className="text-sm sm:text-base md:text-lg font-bold font-mono bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent tracking-tight">
+                          {isUpcoming ? (upcomingCountdown || timeLeft) : timeLeft}
+                        </span>
                     </div>
                   </div>
                 )}
@@ -739,12 +738,12 @@ interface PrizeShowcaseProps {
                             <p className="text-[10px] sm:text-xs text-blue-600 mt-1 ml-6 sm:ml-8 font-medium">
                               This auction is scheduled to start soon. Check back then!
                             </p>
-                                <Button
-                                  disabled={true}
-                                  className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
-                                >
-                                  {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingCountdown || upcomingTimeLeft})
-                                </Button>
+                                  <Button
+                                    disabled={true}
+                                    className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
+                                  >
+                                    {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingCountdown})
+                                  </Button>
 
                           </div>
                         </div>
