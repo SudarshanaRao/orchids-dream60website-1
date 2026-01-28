@@ -110,7 +110,7 @@ export const usePrizeClaimPayment = () => {
 
         // 2. Razorpay checkout options
         const options: RazorpayOrderOptions = {
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          key: orderData.data.razorpayKeyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: orderData.data.amount,
           currency: orderData.data.currency,
           name: 'DREAM60',

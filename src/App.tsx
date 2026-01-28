@@ -794,63 +794,72 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
     const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
 
-        // ✅ Update countdown timer for upcoming auction every second using server time
-        useEffect(() => {
-          if (!serverTime) return;
-  
-          const updateCountdown = () => {
-            let totalSecondsRemaining = 0;
+    // ✅ NEW: Centralized countdown calculation for consistency across all components
+    const calculateCountdown = useCallback((targetTimeStr: string, auctionDateStr?: string, currentTime?: number) => {
+      if (!targetTimeStr || !currentTime) return '00:00:00';
 
-              if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
-                // Calculate distance to specific upcoming auction
-                const [targetHours, targetMinutes] = upcomingAuctionData.TimeSlot.split(':').map(Number);
-                
-                // Use the auctionDate from the object if available, otherwise default to today
-                const auctionDate = upcomingAuctionData.auctionDate ? new Date(upcomingAuctionData.auctionDate) : new Date(serverTime.timestamp);
-                const target = new Date(Date.UTC(
-                  auctionDate.getUTCFullYear(),
-                  auctionDate.getUTCMonth(),
-                  auctionDate.getUTCDate(),
-                  targetHours,
-                  targetMinutes,
-                  0,
-                  0
-                ));
+      const [targetHours, targetMinutes] = targetTimeStr.split(':').map(Number);
+      const serverNow = new Date(currentTime);
+      
+      // Use the auctionDate from the object if available, otherwise default to today
+      const auctionDate = auctionDateStr ? new Date(auctionDateStr) : new Date(currentTime);
+      const target = new Date(Date.UTC(
+        auctionDate.getUTCFullYear(),
+        auctionDate.getUTCMonth(),
+        auctionDate.getUTCDate(),
+        targetHours,
+        targetMinutes,
+        0,
+        0
+      ));
 
-                // If target time has passed today and no specific date was provided, it must be for tomorrow
-                if (!upcomingAuctionData.auctionDate && target.getTime() <= serverTime.timestamp) {
-                  target.setUTCDate(target.getUTCDate() + 1);
-                }
+      // If target time has passed today and no specific date was provided, it must be for tomorrow
+      if (!auctionDateStr && target.getTime() <= currentTime) {
+        target.setUTCDate(target.getUTCDate() + 1);
+      }
 
-                totalSecondsRemaining = Math.floor((target.getTime() - serverTime.timestamp) / 1000);
-              } else {
-              // Fallback: Simplified calculation to the next top of the hour
-              const currentMinute = serverTime.minute;
-              const currentSecond = serverTime.second;
-              totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-              if (totalSecondsRemaining >= 3600) totalSecondsRemaining = 0;
-            }
-            
-            if (totalSecondsRemaining <= 0) {
-              setUpcomingCountdown('00:00');
-              return;
-            }
-  
-            const hours = Math.floor(totalSecondsRemaining / 3600);
-            const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
-            const seconds = totalSecondsRemaining % 60;
-            
-            if (hours > 0) {
-              setUpcomingCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-            } else {
-              setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-            }
-          };
-  
-          updateCountdown();
-          const timer = setInterval(updateCountdown, 1000);
-          return () => clearInterval(timer);
-        }, [serverTime, upcomingAuctionData]);
+      const totalSecondsRemaining = Math.floor((target.getTime() - currentTime) / 1000);
+      
+      if (totalSecondsRemaining <= 0) return '00:00:00';
+
+      const hours = Math.floor(totalSecondsRemaining / 3600);
+      const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+      const seconds = totalSecondsRemaining % 60;
+      
+      if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }, []);
+
+    // ✅ Update countdown timer for upcoming auction every second using server time
+    useEffect(() => {
+      if (!serverTime) return;
+
+      const updateCountdown = () => {
+        if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
+          const countdown = calculateCountdown(
+            upcomingAuctionData.TimeSlot, 
+            upcomingAuctionData.auctionDate, 
+            serverTime.timestamp
+          );
+          setUpcomingCountdown(countdown);
+        } else {
+          // Fallback: Simplified calculation to the next top of the hour
+          const currentMinute = serverTime.minute;
+          const currentSecond = serverTime.second;
+          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+          const minutes = Math.floor(totalSecondsRemaining / 60);
+          const seconds = totalSecondsRemaining % 60;
+          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        }
+      };
+
+      updateCountdown();
+      const timer = setInterval(updateCountdown, 1000);
+      return () => clearInterval(timer);
+    }, [serverTime, upcomingAuctionData, calculateCountdown]);
 
       // ✅ NEW: Fetch upcoming auction data with polling
       const fetchUpcomingAuction = useCallback(async () => {
@@ -2817,6 +2826,7 @@ if (currentPage === 'prizeshowcase') {
                                               liveAuctionData={upcomingAuctionData}
                                               isLoadingLiveAuction={false}
                                               isUpcoming={true}
+                                              upcomingCountdown={upcomingCountdown}
                                               onPayEntry={() => {
                                                 // Scroll to current auction to join
                                                 const element = document.getElementById('six-box-system-container');

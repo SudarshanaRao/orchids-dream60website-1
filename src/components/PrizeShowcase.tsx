@@ -85,11 +85,12 @@ interface PrizeShowcaseProps {
   onLogin?: () => void;
   serverTime?: ServerTime | null; // ✅ Server time from parent
   liveAuctionData?: any; // ✅ NEW: Live auction data from parent
-  isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
-  isUpcoming?: boolean; // ✅ NEW: Whether this is an upcoming auction
-}
-
-    export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true, isUpcoming = false }: PrizeShowcaseProps) {
+    isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
+    isUpcoming?: boolean; // ✅ NEW: Whether this is an upcoming auction
+    upcomingCountdown?: string; // ✅ NEW: Standardized countdown from parent
+  }
+  
+      export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true, isUpcoming = false, upcomingCountdown }: PrizeShowcaseProps) {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
       const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -738,12 +739,12 @@ interface PrizeShowcaseProps {
                             <p className="text-[10px] sm:text-xs text-blue-600 mt-1 ml-6 sm:ml-8 font-medium">
                               This auction is scheduled to start soon. Check back then!
                             </p>
-                              <Button
-                                disabled={true}
-                                className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
-                              >
-                                {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingTimeLeft})
-                              </Button>
+                                <Button
+                                  disabled={true}
+                                  className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
+                                >
+                                  {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingCountdown || upcomingTimeLeft})
+                                </Button>
 
                           </div>
                         </div>
