@@ -326,13 +326,60 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           recentPaymentTimestamp.current = Date.now();
           console.log('✅ Airpay success detected - setting optimistic payment state');
           
+          // ✅ Get details from cookies to show in the success modal
+          const getCookie = (name: string) => {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop()?.split(';').shift();
+            return null;
+          };
+
+          const airpayData = getCookie('airpay_txn_data');
+          const pendingData = getCookie('pending_payment_details');
+          
+          let successDetails: any = null;
+
+          if (pendingData) {
+            try {
+              const pending = JSON.parse(decodeURIComponent(pendingData));
+              successDetails = {
+                entryFee: pending.amount,
+                boxNumber: 1, // Default or find from logic
+                auctionId: pending.auctionId,
+                productName: pending.productName,
+                productWorth: pending.productWorth,
+                timeSlot: pending.timeSlot,
+                paidBy: currentUser?.username || 'Member'
+              };
+            } catch (e) {
+              console.error('Error parsing pending payment details:', e);
+            }
+          }
+
+          if (airpayData) {
+            try {
+              const airpay = JSON.parse(decodeURIComponent(airpayData));
+              if (successDetails) {
+                successDetails.transactionId = airpay.txnId || airpay.orderId;
+                successDetails.paymentMethod = airpay.method;
+              }
+            } catch (e) {
+              console.error('Error parsing airpay transaction data:', e);
+            }
+          }
+
+          if (successDetails) {
+            setShowEntrySuccess(successDetails);
+            console.log('✅ Setting success modal details from cookies:', successDetails);
+          }
+          
           // ✅ Immediately update currentAuction state to reflect "Joined" status
           setCurrentAuction(prev => ({
             ...prev,
             userHasPaidEntry: true
           }));
         }
-      }, [currentPage]);
+      }, [currentPage, currentUser]);
 
     // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {

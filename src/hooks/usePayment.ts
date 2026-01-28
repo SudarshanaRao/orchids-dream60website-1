@@ -11,6 +11,9 @@ interface CreateOrderPayload {
   currency?: string;
   username?: string;
   paymentType?: 'ENTRY_FEE' | 'PRIZE_CLAIM';
+  productName?: string;
+  productWorth?: number;
+  timeSlot?: string;
 }
 
 interface OrderResponse {
@@ -137,6 +140,19 @@ export const usePayment = () => {
             throw new Error('Airpay redirect data missing');
           }
           
+            // ✅ Store pending payment details in cookies for recovery after redirect
+            const pendingDetails = {
+              auctionId: payload.hourlyAuctionId,
+              amount: payload.amount,
+              paymentType: payload.paymentType || 'ENTRY_FEE',
+              productName: payload.productName,
+              productWorth: payload.productWorth,
+              timeSlot: payload.timeSlot,
+              timestamp: Date.now()
+            };
+            document.cookie = `pending_payment_details=${encodeURIComponent(JSON.stringify(pendingDetails))}; path=/; max-age=3600`;
+
+
           // Set airpay data to trigger the AirpayForm component in the UI
           setAirpayData({
             url: orderData.data.url,
