@@ -8,7 +8,8 @@
         "@headlessui/react": "^2.2.8",
         "@heroicons/react": "^2.2.0",
         "@hookform/resolvers": "^3.9.0",
-        "@lottiefiles/dotlottie-react": "^0.17.10",
+        "@lottiefiles/dotlottie-react": "^0.17.13",
+        "@lottiefiles/dotlottie-web": "^0.61.0",
         "@number-flow/react": "^0.5.10",
         "@radix-ui/react-accordion": "^1.2.0",
         "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -56,6 +57,7 @@
         "input-otp": "^1.2.4",
         "jspdf": "^3.0.4",
         "lottie-react": "^2.4.1",
+        "lottie-web": "^5.13.0",
         "lucide-react": "^0.462.0",
         "motion": "^12.23.15",
         "motion-dom": "^12.23.12",
@@ -63,6 +65,7 @@
         "react": "^18.3.1",
         "react-day-picker": "^8.10.1",
         "react-dom": "^18.3.1",
+        "react-fast-compare": "^3.2.2",
         "react-fast-marquee": "^1.6.5",
         "react-hook-form": "^7.53.0",
         "react-icons": "^5.5.0",
@@ -265,9 +268,9 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lottiefiles/dotlottie-react": ["@lottiefiles/dotlottie-react@0.17.10", "", { "dependencies": { "@lottiefiles/dotlottie-web": "0.58.1" }, "peerDependencies": { "react": "^17 || ^18 || ^19" } }, "sha512-ikrN05/q0/KjqIU+n48uNwmE7DeZIC9y3Nd19httcKqe273zoOeNYycEaQzLSdcpEGnWLmHaZpgtoo07aQZAXg=="],
+    "@lottiefiles/dotlottie-react": ["@lottiefiles/dotlottie-react@0.17.13", "", { "dependencies": { "@lottiefiles/dotlottie-web": "0.61.0" }, "peerDependencies": { "react": "^17 || ^18 || ^19" } }, "sha512-Ui8bqFlxqxLqB3G4bE9nsSw05lUn7eiZ24dSi/NVHFjTMAlb/JxdS8xWt1cdF2W1yJPNCeQuze6kkqNC5OMbJg=="],
 
-    "@lottiefiles/dotlottie-web": ["@lottiefiles/dotlottie-web@0.58.1", "", {}, "sha512-YC4pmScrV0R3rd11gU5xHrjeNczlCic69zlnMH/buDIzYxIbpR88oPUhGtKgu5ln7EJchoLpeRJbA3uLCzSeTA=="],
+    "@lottiefiles/dotlottie-web": ["@lottiefiles/dotlottie-web@0.61.0", "", {}, "sha512-1QwcDchh/TXTvP9zXUHA5oJOdhEdUrn6U7gAiQ1AXEUrcK6PTU6v5D3byP76BK56fQjoY2WQ2A4pYDCCvoVRqw=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 

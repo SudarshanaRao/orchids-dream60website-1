@@ -10,7 +10,7 @@ import { PrizeShowcase } from './components/PrizeShowcase';
 import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { RefundPolicy } from './components/RefundPolicy';
+import { RefundCancellation } from './components/RefundCancellation';
 import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
@@ -21,7 +21,6 @@ import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
-import { PaymentAnimation } from './components/PaymentAnimation';
 import { Leaderboard } from './components/Leaderboard';
 import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
@@ -46,9 +45,9 @@ import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Sonner } from '@/components/ui/sonner';
-import { Button } from '@/components/ui/button';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
@@ -303,125 +302,64 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
-    if (path === '/refund') return 'refund';
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
-    if (path === '/success-page') return 'success-preview';
-    if (path === '/failure-page') return 'failure-preview';
-      if (path === '/history' || path.startsWith('/history/')) return 'history';
-      if (path === '/leaderboard') return 'leaderboard';
-      if (path === '/view-guide') return 'view-guide';
-      if (path === '/winning-tips') return 'winning-tips';
-      if (path === '/support-chat') return 'support-chat';
-      if (path === '/tester-feedback') return 'tester-feedback';
-      if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
-      if (path === '/prizeshowcase') return 'prizeshowcase';
-      if (path === '/payment/success') return 'payment-success-animation';
-      if (path === '/payment/failure') return 'payment-failure-animation';
+    if (path === '/success-page' || path === '/payment/success') return 'success-preview';
+    if (path === '/failure-page' || path === '/payment/failure') return 'failure-preview';
+    if (path === '/history' || path.startsWith('/history/')) return 'history';
+    if (path === '/leaderboard') return 'leaderboard';
+    if (path === '/view-guide') return 'view-guide';
+    if (path === '/winning-tips') return 'winning-tips';
+    if (path === '/support-chat') return 'support-chat';
+    if (path === '/tester-feedback') return 'tester-feedback';
+    if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+    if (path === '/prizeshowcase') return 'prizeshowcase';
 
-      return 'game';
-
+    return 'game';
   });
 
-    // ✅ Sync URL with page state and handle browser back/forward
-    useEffect(() => {
-      const handlePopState = () => {
-        const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-        const searchParams = new URLSearchParams(window.location.search);
-        
-        if (path === '/d60-ctrl-x9k7') {
-            const adminUserId = localStorage.getItem('admin_user_id');
-            setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
-          } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
-        else if (path === '/login') setCurrentPage('login');
-        else if (path === '/signup') setCurrentPage('signup');
-        else if (path === '/forgot-password') setCurrentPage('forgot');
-        else if (path === '/rules') setCurrentPage('rules');
-        else if (path === '/participation') setCurrentPage('participation');
-        else if (path === '/about') setCurrentPage('about');
-        else if (path === '/careers') setCurrentPage('careers');
-        else if (path === '/terms') setCurrentPage('terms');
-        else if (path === '/privacy') setCurrentPage('privacy');
-        else if (path === '/refund') setCurrentPage('refund');
-        else if (path === '/support') setCurrentPage('support');
-        else if (path === '/contact') setCurrentPage('contact');
-        else if (path === '/profile') setCurrentPage('profile');
-        else if (path === '/payment/success') {
-          setCurrentPage('payment-success-animation');
-          const txnId = searchParams.get('txnId');
-          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
-          if (cookieData) {
-            try {
-              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
-              setShowEntrySuccess({
-                entryFee: Number(airpayData.amount),
-                boxNumber: 0,
-                transactionId: airpayData.txnId || airpayData.orderId,
-                paymentMethod: airpayData.method,
-                upiId: airpayData.upiId,
-                bankName: airpayData.bankName,
-                cardName: airpayData.cardName,
-                cardNumber: airpayData.cardNumber,
-                productName: 'Auction Entry Fee',
-                timeSlot: 'Active'
-              } as any);
-              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            } catch (e) { console.error("Error parsing airpay cookie", e); }
-          } else if (txnId) {
-            setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
-          }
+  // ✅ Sync URL with page state and handle browser back/forward
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+      
+      if (path === '/d60-ctrl-x9k7') {
+          const adminUserId = localStorage.getItem('admin_user_id');
+          setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
+        } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
+      else if (path === '/login') setCurrentPage('login');
+      else if (path === '/signup') setCurrentPage('signup');
+      else if (path === '/forgot-password') setCurrentPage('forgot');
+      else if (path === '/rules') setCurrentPage('rules');
+      else if (path === '/participation') setCurrentPage('participation');
+      else if (path === '/about') setCurrentPage('about');
+      else if (path === '/careers') setCurrentPage('careers');
+      else if (path === '/terms') setCurrentPage('terms');
+      else if (path === '/privacy') setCurrentPage('privacy');
+      else if (path === '/support') setCurrentPage('support');
+      else if (path === '/contact') setCurrentPage('contact');
+      else if (path === '/profile') setCurrentPage('profile');
+      else if (path === '/success-page' || path === '/payment/success') setCurrentPage('success-preview');
+      else if (path === '/failure-page' || path === '/payment/failure') setCurrentPage('failure-preview');
+      else if (path === '/history' || path.startsWith('/history/')) {
+        setCurrentPage('history');
+        if (path === '/history') {
+          setSelectedAuctionDetails(null);
         }
-        else if (path === '/payment/failure') {
-          setCurrentPage('payment-failure-animation');
-          const txnId = searchParams.get('txnId');
-          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
-          if (cookieData) {
-            try {
-              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
-              setShowEntryFailure({
-                entryFee: Number(airpayData.amount),
-                errorMessage: airpayData.message || 'Payment failed',
-                transactionId: airpayData.txnId || airpayData.orderId,
-                paymentMethod: airpayData.method,
-                upiId: airpayData.upiId,
-                bankName: airpayData.bankName,
-                cardName: airpayData.cardName,
-                cardNumber: airpayData.cardNumber
-              } as any);
-              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            } catch (e) { console.error("Error parsing airpay cookie", e); }
-          } else if (txnId) {
-            setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
-          }
-        }
-        else if (path === '/success-page') {
-          setCurrentPage('success-preview');
-        }
-        else if (path === '/failure-page') {
-          setCurrentPage('failure-preview');
-        }
-        else if (path === '/history' || path.startsWith('/history/')) {
-          setCurrentPage('history');
-          if (path === '/history') {
-            setSelectedAuctionDetails(null);
-          }
-        } else if (path === '/leaderboard') setCurrentPage('leaderboard');
-        else if (path === '/view-guide') setCurrentPage('view-guide');
-        else if (path === '/winning-tips') setCurrentPage('winning-tips');
-        else if (path === '/support-chat') setCurrentPage('support-chat');
-        else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
-        else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
-        else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
-        else setCurrentPage('game');
-      };
+      } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+      else if (path === '/view-guide') setCurrentPage('view-guide');
+      else if (path === '/winning-tips') setCurrentPage('winning-tips');
+      else if (path === '/support-chat') setCurrentPage('support-chat');
+      else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
+      else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+      else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
+      else setCurrentPage('game');
+    };
 
-      // Initial check for URL parameters
-      handlePopState();
-
-      window.addEventListener('popstate', handlePopState);
-      return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // ✅ Fetch server time ONCE on mount, then use local offset
   useEffect(() => {
@@ -640,13 +578,10 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       currentPathForTracking
     );
 
-    // Generate random entry fees between ₹1000-₹3500
-  const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
-
   // ✅ Only initialize currentAuction after server time is loaded
   const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
-    const entryFee1 = generateRandomEntryFee();
-    const entryFee2 = generateRandomEntryFee();
+    const entryFee1 = 60;
+    const entryFee2 = 60;
     const auctionHour = serverTime?.hour || 9; // Default to 9 UTC (14:30 IST)
     const today = serverTime ? new Date(serverTime.timestamp) : new Date();
 
@@ -705,8 +640,8 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     
     // Only update if the auction hour is different from current
     if (currentAuction.auctionHour !== currentHour) {
-      const entryFee1 = generateRandomEntryFee();
-      const entryFee2 = generateRandomEntryFee();
+      const entryFee1 = 60;
+      const entryFee2 = 60;
       const today = new Date(serverTime.timestamp);
       
       const startTime = new Date(
@@ -795,105 +730,107 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
     const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
 
-    // ✅ NEW: Centralized countdown calculation for consistency across all components
-    const calculateCountdown = useCallback((targetTimeStr: string, auctionDateStr?: string, currentTime?: number) => {
-      if (!targetTimeStr || !currentTime) return '00:00:00';
+      // ✅ Update countdown timer for upcoming auction every second using server time
+        useEffect(() => {
+          if (!serverTime) return;
+  
+          const updateCountdown = () => {
+            // If we have upcoming auction data with a specific time slot, use that
+            if (upcomingAuctionData?.TimeSlot) {
+              try {
+                const [targetHour, targetMinute] = upcomingAuctionData.TimeSlot.split(':').map(Number);
+                
+                // Create target date based on server time's date but target hour/minute
+                const targetDate = new Date(serverTime.timestamp);
+                targetDate.setHours(targetHour, targetMinute, 0, 0);
+                
+                // If target time is in the past for today, it might be for tomorrow
+                if (targetDate.getTime() < serverTime.timestamp) {
+                  targetDate.setDate(targetDate.getDate() + 1);
+                }
+                
+                const totalSecondsRemaining = Math.max(0, Math.floor((targetDate.getTime() - serverTime.timestamp) / 1000));
+                
+                if (totalSecondsRemaining === 0) {
+                  setUpcomingCountdown('00:00:00');
+                  return;
+                }
+  
+                const hours = Math.floor(totalSecondsRemaining / 3600);
+                const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+                const seconds = totalSecondsRemaining % 60;
+                
+                if (hours > 0) {
+                  setUpcomingCountdown(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                } else {
+                  setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                }
+                return;
+              } catch (e) {
+                console.error("Error calculating custom countdown:", e);
+              }
+            }
 
-      const [targetHours, targetMinutes] = targetTimeStr.split(':').map(Number);
-      const serverNow = new Date(currentTime);
-      
-      // Use the auctionDate from the object if available, otherwise default to today
-      const auctionDate = auctionDateStr ? new Date(auctionDateStr) : new Date(currentTime);
-      const target = new Date(Date.UTC(
-        auctionDate.getUTCFullYear(),
-        auctionDate.getUTCMonth(),
-        auctionDate.getUTCDate(),
-        targetHours,
-        targetMinutes,
-        0,
-        0
-      ));
+            // Simplified fallback calculation to the next top of the hour (MM:SS)
+            const currentMinute = serverTime.minute;
+            const currentSecond = serverTime.second;
+            
+            const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+            
+            if (totalSecondsRemaining >= 3600) {
+              setUpcomingCountdown('00:00');
+              return;
+            }
 
-      // If target time has passed today and no specific date was provided, it must be for tomorrow
-      if (!auctionDateStr && target.getTime() <= currentTime) {
-        target.setUTCDate(target.getUTCDate() + 1);
-      }
+            const minutes = Math.floor(totalSecondsRemaining / 60);
+            const seconds = totalSecondsRemaining % 60;
+            
+            setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+          };
 
-      const totalSecondsRemaining = Math.floor((target.getTime() - currentTime) / 1000);
-      
-      if (totalSecondsRemaining <= 0) return '00:00:00';
+          updateCountdown();
+          const timer = setInterval(updateCountdown, 1000);
+          return () => clearInterval(timer);
+        }, [serverTime, upcomingAuctionData]);
 
-      const hours = Math.floor(totalSecondsRemaining / 3600);
-      const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
-      const seconds = totalSecondsRemaining % 60;
-      
-      if (hours > 0) {
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      } else {
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }
-    }, []);
-
-    // ✅ Update countdown timer for upcoming auction every second using server time
+      // Fetch upcoming auction data
     useEffect(() => {
-      if (!serverTime) return;
-
-      const updateCountdown = () => {
-        if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
-          const countdown = calculateCountdown(
-            upcomingAuctionData.TimeSlot, 
-            upcomingAuctionData.auctionDate, 
-            serverTime.timestamp
-          );
-          setUpcomingCountdown(countdown);
-        } else {
-          // Fallback: Simplified calculation to the next top of the hour
-          const currentMinute = serverTime.minute;
-          const currentSecond = serverTime.second;
-          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
-          const minutes = Math.floor(totalSecondsRemaining / 60);
-          const seconds = totalSecondsRemaining % 60;
-          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-        }
-      };
-
-      updateCountdown();
-      const timer = setInterval(updateCountdown, 1000);
-      return () => clearInterval(timer);
-    }, [serverTime, upcomingAuctionData, calculateCountdown]);
-
-      // ✅ NEW: Fetch upcoming auction data with polling
-      const fetchUpcomingAuction = useCallback(async () => {
+      const fetchUpcomingAuction = async () => {
         try {
-          console.log('🔄 Fetching first upcoming product from API...');
+          // First try to fetch the single first upcoming product
           const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
           const data = await response.json();
           
           if (data.success && data.data) {
-            const nextAuction = data.data;
-            console.log('✅ Found first upcoming auction:', nextAuction.auctionName);
-            setUpcomingAuctionData(nextAuction);
+            setUpcomingAuctionData(data.data);
           } else {
-            console.log('⚠️ No upcoming auctions found');
-            setUpcomingAuctionData(null);
+            // Fallback: Fetch daily auction schedule and find the next one
+            const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
+            const dailyData = await dailyResponse.json();
+            
+            if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
+              const auctions = dailyData.data.dailyAuctionConfig;
+              // Find the first auction that is marked as 'UPCOMING'
+              const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
+              
+              if (nextAuction) {
+                console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
+                setUpcomingAuctionData(nextAuction);
+              } else {
+                console.log('⚠️ No upcoming auctions found in daily schedule');
+                setUpcomingAuctionData(null);
+              }
+            }
           }
         } catch (error) {
           console.error('Error fetching upcoming auction:', error);
         }
-      }, []);
+      };
 
-      // Initial fetch and polling for upcoming auction
-      useEffect(() => {
-        if (!serverTime) return;
-        
+      if (serverTime) {
         fetchUpcomingAuction();
-        
-        // Poll every 5 minutes (300,000 ms) as requested "every few minutes"
-        const pollInterval = setInterval(fetchUpcomingAuction, 300000);
-        
-        return () => clearInterval(pollInterval);
-      }, [fetchUpcomingAuction, serverTime?.hour, serverTime?.minute, liveAuctionData]);
-
+      }
+    }, [serverTime, liveAuctionData]);
   // ✅ Track if the first load has completed
   const hasInitiallyLoaded = useRef(false);
   // ✅ NEW: Track tutorial/whatsnew token
@@ -1057,26 +994,22 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         
         const result = await response.json();
         
-          if (result.success && result.data) {
-            const auctions = result.data.auctions || [];
-            
-            // Filter for active (not cancelled) auctions
-            const activeAuctions = auctions.filter((auction: any) => auction.status !== 'CANCELLED');
-            const totalAuctions = activeAuctions.length || 6;
-            
-            // Calculate total prize value by summing prizeValue of active auctions
-            const totalPrizeValue = activeAuctions.reduce((sum: number, auction: any) => {
-              return sum + (auction.prizeValue || 0);
-            }, 0);
-            
-            setDailyStats({
-              totalAuctions,
-              totalPrizeValue: totalPrizeValue > 0 ? totalPrizeValue : 350000
-            });
-            
-            console.log('📈 Daily Stats Updated (Active):', { totalAuctions, totalPrizeValue });
-          }
-
+        if (result.success && result.data) {
+          const auctions = result.data.auctions || [];
+          const totalAuctions = result.data.totalAuctionsPerDay || auctions.length || 6;
+          
+          // Calculate total prize value by summing prizeValue of all auctions
+          const totalPrizeValue = auctions.reduce((sum: number, auction: any) => {
+            return sum + (auction.prizeValue || 0);
+          }, 0);
+          
+          setDailyStats({
+            totalAuctions,
+            totalPrizeValue: totalPrizeValue > 0 ? totalPrizeValue : 350000
+          });
+          
+          console.log('📈 Daily Stats Updated:', { totalAuctions, totalPrizeValue });
+        }
       } catch (error) {
         console.error('Error fetching daily stats:', error);
       }
@@ -1237,8 +1170,8 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       setCurrentAuction((prev) => {
         // Switch to new auction hour
         if (currentHour && currentHour !== prev.auctionHour) {
-          const entryFee1 = generateRandomEntryFee();
-          const entryFee2 = generateRandomEntryFee();
+          const entryFee1 = 60;
+          const entryFee2 = 60;
           const today = new Date(serverTime.timestamp);
           
           const startTime = new Date(Date.UTC(
@@ -1661,7 +1594,6 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         'about': '/about',
         'terms': '/terms',
         'privacy': '/privacy',
-        'refund': '/refund',
         'support': '/support',
         'contact': '/contact',
         'profile': '/profile',
@@ -1675,11 +1607,8 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           'tester-feedback': '/tester-feedback',
           'transactions': '/transactions',
           'prizeshowcase': '/prizeshowcase',
-          'success-page': '/success-page',
-          'failure-page': '/failure-page',
-          'careers': '/careers'
-        };
-
+        'careers': '/careers'
+      };
     
     const url = urlMap[page] || '/';
     window.history.pushState({}, '', url);
@@ -2299,18 +2228,16 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     );
   }
 
-    if (currentPage === 'rules') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <Rules onBack={handleBackToGame} />
-            <Footer onNavigate={handleNavigate} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
+  if (currentPage === 'rules') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Rules onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
     if (currentPage === 'forgot') {
       return (
@@ -2361,26 +2288,15 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     }
 
     if (currentPage === 'terms') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <TermsAndConditions onBack={handleBackToGame} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'refund') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <RefundPolicy onBack={handleBackToGame} />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <TermsAndConditions onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   if (currentPage === 'privacy') {
     return (
@@ -2388,6 +2304,17 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         <TooltipProvider>
           <Sonner />
           <PrivacyPolicy onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (currentPage === 'refund-cancellation') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <RefundCancellation onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -2488,80 +2415,30 @@ if (currentPage === 'prizeshowcase') {
           );
         }
 
-      if (currentPage === 'contact') {
-
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Contact onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'payment-success-animation') {
+        if (currentPage === 'contact') {
+  
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <PaymentAnimation 
-              status="success" 
-              onComplete={() => {
-                handleNavigate('game');
-                // Small delay to ensure we are on the game page before scrolling
-                setTimeout(() => {
-                  const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }, 100);
-              }} 
-            />
+            <Sonner />
+            <Contact onBack={handleBackToGame} currentUser={currentUser} />
           </TooltipProvider>
         </QueryClientProvider>
-      );
-    }
-
-    if (currentPage === 'payment-failure-animation') {
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <PaymentAnimation 
-              status="failure" 
-              onComplete={() => {
-                handleNavigate('game');
-                // Small delay to ensure we are on the game page before scrolling
-                setTimeout(() => {
-                  const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }, 100);
-              }} 
-            />
-          </TooltipProvider>
-        </QueryClientProvider>
-      );
-    }
+        );
+      }
 
     if (currentPage === 'success-preview') {
+      const searchParams = new URLSearchParams(window.location.search);
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
             <PaymentSuccess
-              amount={showEntrySuccess?.entryFee || 0}
+              amount={Number(searchParams.get('amount')) || 60}
               type="entry"
-              boxNumber={showEntrySuccess?.boxNumber || 0}
-              auctionId={showEntrySuccess?.auctionId}
-              auctionNumber={showEntrySuccess?.auctionNumber}
-              productName={showEntrySuccess?.productName}
-              productWorth={showEntrySuccess?.productWorth}
-              timeSlot={showEntrySuccess?.timeSlot}
-              paidBy={showEntrySuccess?.paidBy}
-              paymentMethod={showEntrySuccess?.paymentMethod}
-              onBackToHome={handleEntrySuccess}
-              onClose={handleCloseEntrySuccess}
+              transactionId={searchParams.get('txnId') || ''}
+              onBackToHome={handleBackToGame}
+              onClose={handleBackToGame}
             />
           </TooltipProvider>
         </QueryClientProvider>
@@ -2569,23 +2446,18 @@ if (currentPage === 'prizeshowcase') {
     }
 
     if (currentPage === 'failure-preview') {
+      const searchParams = new URLSearchParams(window.location.search);
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
             <PaymentFailure
-              amount={showEntryFailure?.entryFee || 0}
-              errorMessage={showEntryFailure?.errorMessage}
-              auctionId={showEntryFailure?.auctionId}
-              auctionNumber={showEntryFailure?.auctionNumber}
-              productName={showEntryFailure?.productName}
-              productWorth={showEntryFailure?.productWorth}
-              timeSlot={showEntryFailure?.timeSlot}
-              paidBy={showEntryFailure?.paidBy}
-              paymentMethod={showEntryFailure?.paymentMethod}
-              onRetry={handleRetryPayment}
-              onBackToHome={handleCloseEntryFailure}
-              onClose={handleCloseEntryFailure}
+              amount={Number(searchParams.get('amount')) || 60}
+              errorMessage={searchParams.get('message') || "Payment processing failed"}
+              transactionId={searchParams.get('txnId') || ''}
+              onRetry={handleBackToGame}
+              onBackToHome={handleBackToGame}
+              onClose={handleBackToGame}
             />
           </TooltipProvider>
         </QueryClientProvider>
@@ -2894,7 +2766,6 @@ if (currentPage === 'prizeshowcase') {
                                               liveAuctionData={upcomingAuctionData}
                                               isLoadingLiveAuction={false}
                                               isUpcoming={true}
-                                              upcomingCountdown={upcomingCountdown}
                                               onPayEntry={() => {
                                                 // Scroll to current auction to join
                                                 const element = document.getElementById('six-box-system-container');

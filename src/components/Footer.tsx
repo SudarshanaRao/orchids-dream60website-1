@@ -31,7 +31,8 @@ export function Footer({ onNavigate }: FooterProps) {
         links: [
           { label: 'About Us', action: 'about' },
           { label: 'Terms of Use', action: 'terms' },
-          { label: 'Privacy Policy', action: 'privacy' }
+          { label: 'Privacy Policy', action: 'privacy' },
+          { label: 'Refund & Cancellation', action: 'refund-cancellation' }
         ]
       }
     ];

@@ -465,21 +465,17 @@ const createDailyAuction = async () => {
     
     console.log(`✅ [SCHEDULER] Found active master auction: ${activeMasterAuction.master_id}`);
     
-    // ✅ CRITICAL FIX: Get TODAY's date in IST (start of day)
-    const todayIST = getISTDateStart();
-    
-    console.log(`📅 [SCHEDULER] Creating daily auction for TODAY (IST): ${todayIST.toISOString()}`);
-    
-    // ✅ CRITICAL FIX: Check if daily auction for today ALREADY exists
-    const existingDailyAuction = await DailyAuction.findOne({
-      masterId: activeMasterAuction.master_id,
-      auctionDate: todayIST,
+    // ✅ CRITICAL FIX: Update ALL active daily auctions (not just today's)
+    const activeDailyAuctions = await DailyAuction.find({
       isActive: true
     });
     
-    if (existingDailyAuction) {
-      console.log(`⚠️ [SCHEDULER] Daily auction for today already exists: ${existingDailyAuction.dailyAuctionId}`);
-      console.log(`🔄 [SCHEDULER] Re-syncing with latest master auction configuration...`);
+    const results = [];
+    
+    // If no active daily auction exists for today, we'll create it later
+    // But first, update any existing active ones
+    for (const existingDailyAuction of activeDailyAuctions) {
+      console.log(`🔄 [SCHEDULER] Syncing daily auction: ${existingDailyAuction.dailyAuctionId} (${existingDailyAuction.auctionDate.toISOString()})`);
       
       // Update basic fields from master
       existingDailyAuction.totalAuctionsPerDay = activeMasterAuction.totalAuctionsPerDay;
@@ -507,28 +503,28 @@ const createDailyAuction = async () => {
               Status: 'UPCOMING',
               isAuctionCompleted: false,
               completedAt: null,
-                topWinners: [],
-                productImages: masterConfig.productImages || [],
-                productDescription: masterConfig.productDescription || {},
-              };
+              topWinners: [],
+              productImages: masterConfig.productImages || [],
+              productDescription: masterConfig.productDescription || {},
+            };
             console.log(`  📝 Updated existing UPCOMING slot: ${masterConfig.TimeSlot}`);
           } else {
             console.log(`  ⏭️ Skipping update for slot ${masterConfig.TimeSlot} as it is already ${updatedConfigs[existingIndex].Status}`);
           }
         } else {
-          // New slot from master that doesn't exist in today's daily auction
+          // New slot from master that doesn't exist in this daily auction
           const newHourlyAuctionId = uuidv4();
-            updatedConfigs.push({
-              ...masterConfig,
-              auctionId: uuidv4(),
-              Status: 'UPCOMING',
-              isAuctionCompleted: false,
-              completedAt: null,
-              topWinners: [],
-              hourlyAuctionId: newHourlyAuctionId,
-              productImages: masterConfig.productImages || [],
-              productDescription: masterConfig.productDescription || {},
-            });
+          updatedConfigs.push({
+            ...masterConfig,
+            auctionId: uuidv4(),
+            Status: 'UPCOMING',
+            isAuctionCompleted: false,
+            completedAt: null,
+            topWinners: [],
+            hourlyAuctionId: newHourlyAuctionId,
+            productImages: masterConfig.productImages || [],
+            productDescription: masterConfig.productDescription || {},
+          });
           console.log(`  ➕ Added new slot from master: ${masterConfig.TimeSlot}`);
         }
       }
@@ -537,18 +533,31 @@ const createDailyAuction = async () => {
       existingDailyAuction.markModified('dailyAuctionConfig');
       await existingDailyAuction.save();
       
-      // Now create/update hourly auctions
+      // Now create/update hourly auctions for this daily auction
       const hourlyResult = await createHourlyAuctions(existingDailyAuction);
-      
+      results.push({
+        dailyAuctionId: existingDailyAuction.dailyAuctionId,
+        date: existingDailyAuction.auctionDate,
+        hourlyResult
+      });
+    }
+
+    // ✅ CRITICAL FIX: Check if daily auction for today was among those updated
+    const todayIST = getISTDateStart();
+    const hasToday = activeDailyAuctions.some(da => da.auctionDate.getTime() === todayIST.getTime());
+
+    if (hasToday) {
       return {
         success: true,
-        message: 'Daily auction re-synced with master configuration',
-        dailyAuction: existingDailyAuction,
-        hourlyAuctions: hourlyResult,
-        date: todayIST.toISOString(),
+        message: 'All active daily auctions re-synced with master configuration',
+        results,
         wasExisting: true,
       };
     }
+
+    // If today's auction wasn't found, create it
+    console.log(`📅 [SCHEDULER] Today's daily auction not found. Creating for TODAY (IST): ${todayIST.toISOString()}`);
+
     
     // ✅ Generate NEW unique dailyAuctionId
     const newDailyAuctionId = uuidv4();
