@@ -100,8 +100,7 @@ export function AmazonVoucherModal({ onClose, isVisible }: AmazonVoucherModalPro
                   <p className="text-gray-800 text-center text-lg leading-relaxed">
                     Get a chance to win{' '}
                     <span className="font-bold text-amber-600">Amazon Gift Vouchers</span>{' '}
-                    worth up to{' '}
-                    <span className="font-bold text-orange-600 text-xl">₹1000</span>!
+                    worth up to worth the total prize value!
                   </p>
                   <p className="text-gray-600 text-center mt-3 text-sm">
                     Participate in our auctions and stand a chance to win exciting prizes!
