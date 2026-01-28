@@ -256,7 +256,29 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-    const App = () => {
+  // ✅ Tutorial steps for "What's New" overlay
+  const whatsNewSteps: TutorialStep[] = [
+    {
+      target: '[data-whatsnew-target="prize-showcase"]',
+      title: "Win Big for Less!",
+      content: "Bid on high-value prizes like iPhones, Watches, and Gadgets at a fraction of their cost.",
+      placement: "bottom"
+    },
+    {
+      target: '[data-whatsnew-target="prize-showcase-section"]',
+      title: "Pay & Participate",
+      content: "Pay the small entry fee to unlock all bidding rounds for the current auction.",
+      placement: "top"
+    },
+    {
+      target: '[data-whatsnew-target="auction-grid"]',
+      title: "The 4-Round Strategy",
+      content: "Progress through 4 rounds. Top bidders move forward, and the Round 4 winner takes home the prize!",
+      placement: "top"
+    }
+  ];
+
+  const App = () => {
       const [isMobile, setIsMobile] = useState(false);
   
       useEffect(() => {
