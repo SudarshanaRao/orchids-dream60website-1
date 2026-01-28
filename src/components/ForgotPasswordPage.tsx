@@ -9,11 +9,11 @@ import { API_ENDPOINTS } from '../lib/api-config';
 
 interface ForgotPasswordProps {
     onBack: () => void;
-    onNavigate?: (page: "login") => void;
+    onNavigate?: (page: string) => void;
 }
 
 // Reusable Aesthetic OTP Input
-function OTPInput({ value, onChange, disabled, length = 6 }: { value: string; onChange: (v: string) => void; disabled?: boolean; length?: number }) {
+function OTPInput({ value, onChange, disabled, length = 6, onComplete }: { value: string; onChange: (v: string) => void; disabled?: boolean; length?: number; onComplete?: (v: string) => void }) {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const lastCompletedOtp = useRef<string>('');
 

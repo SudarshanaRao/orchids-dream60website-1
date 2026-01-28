@@ -24,28 +24,65 @@ interface PaymentSuccessProps {
   onClose?: () => void;
 }
 
-export function PaymentSuccess({ 
-  amount, 
-  type, 
-  boxNumber, 
-  auctionId,
-  auctionNumber,
-  productName = 'Auction Participation',
-  productWorth,
-  timeSlot,
-  paidBy,
-  paymentMethod = 'UPI / Card',
-  transactionId,
-  upiId,
-  bankName,
-  cardName,
-  cardNumber,
-  onBackToHome,
-  onClose
-}: PaymentSuccessProps) {
+  export function PaymentSuccess({ 
+    amount: initialAmount, 
+    type: initialType, 
+    boxNumber, 
+    auctionId: initialAuctionId,
+    auctionNumber: initialAuctionNumber,
+    productName: initialProductName = 'Auction Participation',
+    productWorth: initialProductWorth,
+    timeSlot: initialTimeSlot,
+    paidBy: initialPaidBy,
+    paymentMethod: initialPaymentMethod = 'UPI / Card',
+    transactionId: initialTransactionId,
+    upiId: initialUpiId,
+    bankName: initialBankName,
+    cardName: initialCardName,
+    cardNumber: initialCardNumber,
+    onBackToHome,
+    onClose
+  }: PaymentSuccessProps) {
     const [countdown, setCountdown] = useState(2);
+    const [txnData, setTxnSummary] = useState<any>(null);
 
-  const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+      // Try to read transaction data from cookie (set by backend airpayController)
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return null;
+      };
+
+      const cookieData = getCookie('airpay_txn_data');
+      if (cookieData) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(cookieData));
+          setTxnSummary(parsed);
+          console.log('✅ Found Airpay transaction data in cookie:', parsed);
+        } catch (e) {
+          console.error('Error parsing transaction cookie:', e);
+        }
+      }
+    }, []);
+
+    // Use cookie data if available, otherwise fallback to props
+    const amount = txnData?.amount || initialAmount;
+    const type = initialType;
+    const transactionId = txnData?.txnId || initialTransactionId || txnData?.orderId;
+    const paymentMethod = txnData?.method || initialPaymentMethod;
+    const upiId = txnData?.upiId || initialUpiId;
+    const bankName = txnData?.bankName || initialBankName;
+    const cardName = txnData?.cardName || initialCardName;
+    const cardNumber = txnData?.cardNumber || initialCardNumber;
+    const timestamp = txnData?.timestamp ? new Date(txnData.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN');
+    const productName = initialProductName;
+    const productWorth = initialProductWorth;
+    const timeSlot = initialTimeSlot;
+    const paidBy = initialPaidBy;
+
+    const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);

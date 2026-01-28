@@ -492,26 +492,29 @@ const createDailyAuction = async () => {
           ec.auctionNumber === masterConfig.auctionNumber || ec.TimeSlot === masterConfig.TimeSlot
         );
         
-        if (existingIndex !== -1) {
-          // If existing is UPCOMING, we can update its details
-          if (updatedConfigs[existingIndex].Status === 'UPCOMING') {
+          if (existingIndex !== -1) {
+            // Always update product details from master, even if LIVE (requested: "update all")
             const hourlyAuctionId = updatedConfigs[existingIndex].hourlyAuctionId;
-            updatedConfigs[existingIndex] = {
-              ...masterConfig,
-              auctionId: updatedConfigs[existingIndex].auctionId, // Keep original auctionId
-              hourlyAuctionId: hourlyAuctionId, // Keep original hourlyAuctionId
-              Status: 'UPCOMING',
-              isAuctionCompleted: false,
-              completedAt: null,
-              topWinners: [],
-              productImages: masterConfig.productImages || [],
-              productDescription: masterConfig.productDescription || {},
-            };
-            console.log(`  📝 Updated existing UPCOMING slot: ${masterConfig.TimeSlot}`);
+            const currentStatus = updatedConfigs[existingIndex].Status;
+            
+            // Only update fields if it's UPCOMING or LIVE. COMPLETED auctions should remain as is for history.
+            if (currentStatus === 'UPCOMING' || currentStatus === 'LIVE') {
+              updatedConfigs[existingIndex] = {
+                ...masterConfig,
+                auctionId: updatedConfigs[existingIndex].auctionId, // Keep original auctionId
+                hourlyAuctionId: hourlyAuctionId, // Keep original hourlyAuctionId
+                Status: currentStatus, // Keep current status
+                isAuctionCompleted: updatedConfigs[existingIndex].isAuctionCompleted,
+                completedAt: updatedConfigs[existingIndex].completedAt,
+                topWinners: updatedConfigs[existingIndex].topWinners || [],
+                productImages: masterConfig.productImages || [],
+                productDescription: masterConfig.productDescription || {},
+              };
+              console.log(`  📝 Updated existing ${currentStatus} slot: ${masterConfig.TimeSlot}`);
+            } else {
+              console.log(`  ⏭️ Skipping core update for slot ${masterConfig.TimeSlot} as it is already ${currentStatus}`);
+            }
           } else {
-            console.log(`  ⏭️ Skipping update for slot ${masterConfig.TimeSlot} as it is already ${updatedConfigs[existingIndex].Status}`);
-          }
-        } else {
           // New slot from master that doesn't exist in this daily auction
           const newHourlyAuctionId = uuidv4();
           updatedConfigs.push({
@@ -659,41 +662,46 @@ const createHourlyAuctions = async (dailyAuction) => {
           hourlyAuctionId: config.hourlyAuctionId
         });
         
-        if (existingHourlyAuction) {
-          if (existingHourlyAuction.Status === 'UPCOMING') {
-            console.log(`  🔄 Updating existing UPCOMING hourly auction: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
-            
-            // Update fields from config
-            existingHourlyAuction.TimeSlot = config.TimeSlot;
-            existingHourlyAuction.auctionName = config.auctionName;
-            existingHourlyAuction.prizeValue = config.prizeValue;
-            existingHourlyAuction.maxDiscount = config.maxDiscount || 0;
-            existingHourlyAuction.EntryFee = config.EntryFee;
-            existingHourlyAuction.minEntryFee = config.minEntryFee;
-            existingHourlyAuction.maxEntryFee = config.maxEntryFee;
-            existingHourlyAuction.FeeSplits = config.FeeSplits;
-            existingHourlyAuction.roundCount = config.roundCount || 4;
-            existingHourlyAuction.roundConfig = config.roundConfig || [];
-            existingHourlyAuction.imageUrl = config.imageUrl || null;
-            existingHourlyAuction.productImages = config.productImages || [];
-            existingHourlyAuction.productDescription = config.productDescription || {};
-            
-            // Recalculate round times
-            const roundTimes = calculateRoundTimes(
-              dailyAuction.auctionDate,
-              config.TimeSlot,
-              config.roundConfig || []
-            );
-            existingHourlyAuction.rounds = roundTimes;
-            
-            await existingHourlyAuction.save();
-            createdAuctions.push(existingHourlyAuction);
+          if (existingHourlyAuction) {
+            const currentStatus = existingHourlyAuction.Status;
+            if (currentStatus === 'UPCOMING' || currentStatus === 'LIVE') {
+              console.log(`  🔄 Updating existing ${currentStatus} hourly auction: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
+              
+              // Update product fields from config
+              existingHourlyAuction.auctionName = config.auctionName;
+              existingHourlyAuction.prizeValue = config.prizeValue;
+              existingHourlyAuction.maxDiscount = config.maxDiscount || 0;
+              existingHourlyAuction.imageUrl = config.imageUrl || null;
+              existingHourlyAuction.productImages = config.productImages || [];
+              existingHourlyAuction.productDescription = config.productDescription || {};
+              
+              // Only update core config fields if it's UPCOMING
+              if (currentStatus === 'UPCOMING') {
+                existingHourlyAuction.TimeSlot = config.TimeSlot;
+                existingHourlyAuction.EntryFee = config.EntryFee;
+                existingHourlyAuction.minEntryFee = config.minEntryFee;
+                existingHourlyAuction.maxEntryFee = config.maxEntryFee;
+                existingHourlyAuction.FeeSplits = config.FeeSplits;
+                existingHourlyAuction.roundCount = config.roundCount || 4;
+                existingHourlyAuction.roundConfig = config.roundConfig || [];
+                
+                // Recalculate round times
+                const roundTimes = calculateRoundTimes(
+                  dailyAuction.auctionDate,
+                  config.TimeSlot,
+                  config.roundConfig || []
+                );
+                existingHourlyAuction.rounds = roundTimes;
+              }
+              
+              await existingHourlyAuction.save();
+              createdAuctions.push(existingHourlyAuction);
+              continue;
+            }
+            console.log(`  ⏭️ Hourly auction already exists and is ${existingHourlyAuction.Status}: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
+            skippedAuctions.push(existingHourlyAuction);
             continue;
           }
-          console.log(`  ⏭️ Hourly auction already exists and is ${existingHourlyAuction.Status}: ${existingHourlyAuction.hourlyAuctionCode} (${config.TimeSlot})`);
-          skippedAuctions.push(existingHourlyAuction);
-          continue;
-        }
         
         // ✅ Also check by dailyAuctionId + TimeSlot to prevent duplicates
         const existingByTimeSlot = await HourlyAuction.findOne({
