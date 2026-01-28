@@ -6,11 +6,13 @@ import { Button } from './ui/button';
 interface EntrySuccessModalProps {
   entryFee: number;
   boxNumber: number;
+  auctionId?: string;
+  transactionId?: string;
   onContinue: () => void;
   onClose: () => void;
 }
 
-export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: EntrySuccessModalProps) {
+export function EntrySuccessModal({ entryFee, boxNumber, auctionId, transactionId, onContinue, onClose }: EntrySuccessModalProps) {
   const [countdown, setCountdown] = useState(3);
   const [showContinue, setShowContinue] = useState(false);
 

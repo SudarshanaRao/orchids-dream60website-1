@@ -612,6 +612,8 @@ const [adminUser, setAdminUser] = useState<{
     const [showEntrySuccessDetail, setShowEntrySuccessDetail] = useState<{
       entryFee: number;
       boxNumber: number;
+      auctionId?: string;
+      transactionId?: string;
     } | null>(null);
 
     const [showEntryFailure, setShowEntryFailure] = useState<{
@@ -1916,10 +1918,12 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         // ✅ Prepare detail modal data
         const entryFee = showEntrySuccess.entryFee;
         const boxNumber = showEntrySuccess.boxNumber || 1;
+        const successAuctionId = showEntrySuccess.auctionId;
+        const transactionId = showEntrySuccess.transactionId;
 
         // ✅ Close primary modal and show detail modal on game page
         setShowEntrySuccess(null);
-        setShowEntrySuccessDetail({ entryFee, boxNumber });
+        setShowEntrySuccessDetail({ entryFee, boxNumber, auctionId: successAuctionId, transactionId });
         setCurrentPage('game');
         window.history.pushState({}, '', '/');
         
