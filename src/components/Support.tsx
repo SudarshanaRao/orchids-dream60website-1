@@ -90,10 +90,10 @@ export function Support({ user, onBack, onNavigate }: SupportProps) {
             question: 'How does Dream60 work?',
             answer: 'Dream60 runs premium hourly Auctions daily. To participate, you must pay an entry fee during the join window. There are 4 bidding rounds every 15 minutes. The highest bidder in the final round wins the prize!'
           },
-          {
-            question: 'How much is the entry fee?',
-            answer: 'Entry fees are randomly generated based on the product market value. For example, a product worth ₹10,000 might have an entry fee between ₹9 and ₹99. You only know the exact fee when the auction opens.'
-        },
+              {
+                question: 'How much is the entry fee?',
+                answer: 'Entry fee will company decided based on product worth. You only know the exact fee when the auction opens.'
+            },
         {
           question: 'Are there subscriptions?',
           answer: 'No, Dream60 is entirely pay-as-you-go. You only pay for the auctions you choose to join.'

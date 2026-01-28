@@ -398,7 +398,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     doc.rect(0, 275, 210, 22, 'F');
     doc.setTextColor(gray[0], gray[1], gray[2]);
     doc.setFontSize(8);
-    doc.text('DREAM60 INDIA OFFICIAL | support@dream60.com | www.dream60.com', 105, 285, { align: 'center' });
+    doc.text('DREAM60 | Live Auction Platform | support@dream60.com | www.dream60.com', 105, 285, { align: 'center' });
     doc.text('This is a computer-generated document and does not require a physical signature.', 105, 290, { align: 'center' });
     
     doc.save(`Dream60_${tx.paymentType}_Receipt_${Date.now()}.pdf`);

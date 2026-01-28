@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee, Gift } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -102,10 +102,10 @@ export function Rules({ onBack }: RulesProps) {
                     Participation
                   </div>
                   <div className="text-xs sm:text-sm text-purple-600 space-y-1">
-                    <div>• All transactions strictly in INR (₹)</div>
-                    <div>• Entry fees based on product value</div>
-                    <div>• Randomly generated for fairness</div>
-                    <div>• Fast and secure local payments</div>
+                      <div>• All transactions strictly in INR (₹)</div>
+                      <div>• Entry fees based on product value</div>
+                      <div>• Entry fee will company decided</div>
+                      <div>• Fast and secure local payments</div>
                   </div>
                 </div>
               </div>
@@ -127,9 +127,9 @@ export function Rules({ onBack }: RulesProps) {
                     <Badge className="bg-purple-600 text-white">1</Badge>
                     <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Pay Entry Fee</h3>
                   </div>
-                    <p className="text-purple-600 text-xs sm:text-sm">
-                      Entry fees are randomly generated based on the product worth. For a ₹10,000 product, entry might be ₹9-₹99. Pay to unlock all 4 rounds.
-                    </p>
+                        <p className="text-purple-600 text-xs sm:text-sm">
+                          Entry fee will company decided based on product worth. Pay to unlock all 4 rounds.
+                        </p>
                 </div>
 
                 <div className="space-y-3">
@@ -169,12 +169,12 @@ export function Rules({ onBack }: RulesProps) {
               <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-green-50 border-l-4 border-green-400 p-3 rounded">
                   <h4 className="text-green-800 font-semibold text-sm mb-2">Entry Phase</h4>
-                  <div className="text-green-700 text-xs sm:text-sm space-y-1">
-                    <div>• Random fee (varies by product)</div>
-                    <div>• Mandatory to join rounds</div>
-                    <div>• Unlocks all 4 bidding rounds</div>
-                    <div>• Single payment per box</div>
-                  </div>
+                    <div className="text-green-700 text-xs sm:text-sm space-y-1">
+                      <div>• Entry fee will company decided</div>
+                      <div>• Mandatory to join rounds</div>
+                      <div>• Unlocks all 4 bidding rounds</div>
+                      <div>• Single payment per box</div>
+                    </div>
                 </div>
 
                 <div className="bg-purple-50 border-l-4 border-purple-400 p-3 rounded">
@@ -207,12 +207,12 @@ export function Rules({ onBack }: RulesProps) {
                   <AlertCircle className="w-4 h-4 mr-1" />
                   Important Transparency Note
                 </div>
-                <div className="text-red-700 text-xs sm:text-sm space-y-1">
-                  <div>• Entry fees cannot be disclosed upfront as they are randomly generated</div>
-                  <div>• Fees are calibrated against the product market value for fairness</div>
-                  <div>• All payments monitored for platform integrity</div>
-                  <div>• Indian residents 18+ only</div>
-                </div>
+                  <div className="text-red-700 text-xs sm:text-sm space-y-1">
+                    <div>• Entry fees are decided by the company based on product worth</div>
+                    <div>• Fees are calibrated against the product market value for fairness</div>
+                    <div>• All payments monitored for platform integrity</div>
+                    <div>• Indian residents 18+ only</div>
+                  </div>
               </div>
             </CardContent>
           </Card>
@@ -234,7 +234,7 @@ export function Rules({ onBack }: RulesProps) {
                     <strong className="text-purple-800">Duration:</strong> Join window opens at the start of each hour.
                   </p>
                   <p className="text-purple-700">
-                    <strong className="text-purple-800">Payment:</strong> Fees are product-based and random. Example: A product worth ₹10k might have an entry fee between ₹9-₹99.
+                    <strong className="text-purple-800">Payment:</strong> Entry fee will company decided based on product worth.
                   </p>
                   <p className="text-purple-700">
                     <strong className="text-purple-800">Strategy:</strong> Paying the entry fee unlocks access to bid for higher value prizes in rounds 3-6.

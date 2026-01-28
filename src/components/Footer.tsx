@@ -48,7 +48,7 @@ export function Footer({ onNavigate }: FooterProps) {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black text-purple-900 leading-none tracking-tight">Dream60</span>
-                  <span className="text-[10px] font-bold text-purple-500 tracking-[0.3em] uppercase mt-1">India Official</span>
+                  <span className="text-[10px] font-bold text-purple-500 tracking-[0.3em] uppercase mt-1">Live Auction Platform</span>
                 </div>
               </div>
               

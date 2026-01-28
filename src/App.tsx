@@ -1056,22 +1056,26 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         
         const result = await response.json();
         
-        if (result.success && result.data) {
-          const auctions = result.data.auctions || [];
-          const totalAuctions = result.data.totalAuctionsPerDay || auctions.length || 6;
-          
-          // Calculate total prize value by summing prizeValue of all auctions
-          const totalPrizeValue = auctions.reduce((sum: number, auction: any) => {
-            return sum + (auction.prizeValue || 0);
-          }, 0);
-          
-          setDailyStats({
-            totalAuctions,
-            totalPrizeValue: totalPrizeValue > 0 ? totalPrizeValue : 350000
-          });
-          
-          console.log('📈 Daily Stats Updated:', { totalAuctions, totalPrizeValue });
-        }
+          if (result.success && result.data) {
+            const auctions = result.data.auctions || [];
+            
+            // Filter for active (not cancelled) auctions
+            const activeAuctions = auctions.filter((auction: any) => auction.status !== 'CANCELLED');
+            const totalAuctions = activeAuctions.length || 6;
+            
+            // Calculate total prize value by summing prizeValue of active auctions
+            const totalPrizeValue = activeAuctions.reduce((sum: number, auction: any) => {
+              return sum + (auction.prizeValue || 0);
+            }, 0);
+            
+            setDailyStats({
+              totalAuctions,
+              totalPrizeValue: totalPrizeValue > 0 ? totalPrizeValue : 350000
+            });
+            
+            console.log('📈 Daily Stats Updated (Active):', { totalAuctions, totalPrizeValue });
+          }
+
       } catch (error) {
         console.error('Error fetching daily stats:', error);
       }
@@ -2291,16 +2295,18 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
     );
   }
 
-  if (currentPage === 'rules') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Rules onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'rules') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Rules onBack={handleBackToGame} />
+            <Footer onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
 
     if (currentPage === 'forgot') {
       return (

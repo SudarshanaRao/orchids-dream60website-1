@@ -102,12 +102,11 @@ export function Participation({ onBack }: ParticipationProps) {
                       <CreditCard className="w-4 h-4 mr-1" />
                       Product-Based Entry Fees
                     </div>
-                    <div className="text-green-600 text-xs space-y-1">
-                      <div>• Entry fee varies based on product value</div>
-                      <div>• Fair and random generation system</div>
-                        <div>• Example: ₹10k product may have ₹9-₹99 entry</div>
-                      <div>• Full disclosure of fees upon auction opening</div>
-                    </div>
+                        <div className="text-green-600 text-xs space-y-1">
+                          <div>• Entry fee varies based on product value</div>
+                          <div>• Entry fee will company decided based on product worth</div>
+                          <div>• Full disclosure of fees upon auction opening</div>
+                        </div>
                   </div>
                 </div>
               </CardContent>
@@ -200,12 +199,12 @@ export function Participation({ onBack }: ParticipationProps) {
                           <Gift className="w-4 h-4 mr-1" />
                           Participation Fees
                         </h4>
-                        <div className="text-blue-700 text-xs space-y-1">
-                          <div>• Entry fee is product-based</div>
-                          <div>• Randomly generated for fairness</div>
-                          <div>• Paid only when you join</div>
-                          <div>• Non-refundable in all cases</div>
-                        </div>
+                          <div className="text-blue-700 text-xs space-y-1">
+                            <div>• Entry fee is product-based</div>
+                            <div>• Entry fee will company decided</div>
+                            <div>• Paid only when you join</div>
+                            <div>• Non-refundable in all cases</div>
+                          </div>
                       </div>
                       <div>
                         <h4 className="text-blue-800 font-semibold text-xs sm:text-sm mb-2 flex items-center">
@@ -313,7 +312,7 @@ export function Participation({ onBack }: ParticipationProps) {
                         Pro Tip
                       </h4>
                       <div className="text-yellow-700 text-xs relative z-10">
-                          The entry fee is randomly generated based on the product. A high-value product worth ₹10k might have an entry fee between ₹9-₹99. Always check the fee on the auction box before joining!
+                          Entry fee will company decided based on product worth. Always check the fee on the auction box before joining!
                       </div>
                     </div>
                   </div>
