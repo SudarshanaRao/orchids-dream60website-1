@@ -74,7 +74,12 @@ export function PaymentSuccess({
 
     // Transition to summary after 3 seconds
     const timer = setTimeout(() => {
-      setStep('summary');
+      if (initialType === 'entry') {
+        // For entry success, skip summary and go straight to the detail modal on the game page
+        onBackToHome();
+      } else {
+        setStep('summary');
+      }
     }, 3000);
 
     return () => clearTimeout(timer);

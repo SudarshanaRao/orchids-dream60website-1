@@ -19,6 +19,7 @@ import { AboutUs } from './components/AboutUs';
 import { CareersForm } from './components/CareersForm';
 import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
+import { EntrySuccessModal } from './components/EntrySuccessModal';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
 import { Leaderboard } from './components/Leaderboard';
@@ -608,7 +609,12 @@ const [adminUser, setAdminUser] = useState<{
     paidBy?: string;
   } | null>(null);
 
-  const [showEntryFailure, setShowEntryFailure] = useState<{
+    const [showEntrySuccessDetail, setShowEntrySuccessDetail] = useState<{
+      entryFee: number;
+      boxNumber: number;
+    } | null>(null);
+
+    const [showEntryFailure, setShowEntryFailure] = useState<{
     entryFee: number;
     errorMessage: string;
     auctionId?: string;
@@ -1891,49 +1897,56 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
   const handleCloseEntryFailure = useCallback(() => setShowEntryFailure(null), []);
   const handleCloseBidSuccess = useCallback(() => setShowBidSuccess(null), []);
 
-    const handleEntrySuccess = useCallback(() => {
-      if (!showEntrySuccess || !currentUser) return;
+      const handleEntrySuccess = useCallback(() => {
+        if (!showEntrySuccess || !currentUser) return;
 
-      toast.success('Entry Fee Paid!', {
-        description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-        duration: 3000,
-      });
+        toast.success('Entry Fee Paid!', {
+          description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+          duration: 3000,
+        });
 
-      // ✅ Store payment status in localStorage to survive refresh and prevent flickering
-      // Use the auction ID to ensure it's specific to this auction
-      const auctionId = currentAuction.id;
-      const paymentKey = `payment_${currentUser.id}_${auctionId}`;
-      localStorage.setItem(paymentKey, 'true');
-      // Set an expiry for 2 hours (enough for the auction duration)
-      localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+        // ✅ Store payment status in localStorage to survive refresh and prevent flickering
+        // Use the auction ID to ensure it's specific to this auction
+        const auctionId = currentAuction.id;
+        const paymentKey = `payment_${currentUser.id}_${auctionId}`;
+        localStorage.setItem(paymentKey, 'true');
+        // Set an expiry for 2 hours (enough for the auction duration)
+        localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
 
-      // ✅ Close modal and update state instantly
-      setShowEntrySuccess(null);
-      
-      setCurrentAuction(prev => ({
-        ...prev,
-        userHasPaidEntry: true,
-        // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
-        boxes: prev.boxes.map(b => 
-          b.type === 'entry' 
-            ? { ...b, hasPaid: true } 
-            : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
-        )
-      }));
+        // ✅ Prepare detail modal data
+        const entryFee = showEntrySuccess.entryFee;
+        const boxNumber = showEntrySuccess.boxNumber || 1;
 
-      // ✅ NEW: Sticky optimistic payment state update
-      setRecentPaymentSuccess(true);
-      recentPaymentTimestamp.current = Date.now();
+        // ✅ Close primary modal and show detail modal on game page
+        setShowEntrySuccess(null);
+        setShowEntrySuccessDetail({ entryFee, boxNumber });
+        setCurrentPage('game');
+        window.history.pushState({}, '', '/');
+        
+        setCurrentAuction(prev => ({
+          ...prev,
+          userHasPaidEntry: true,
+          // ✅ CLEAR ROUND BOXES to force fresh rendering and show "Synchronizing..." state
+          boxes: prev.boxes.map(b => 
+            b.type === 'entry' 
+              ? { ...b, hasPaid: true } 
+              : { ...b, currentBid: 0, bidder: null, status: 'upcoming' }
+          )
+        }));
 
-      // ✅ Trigger refetch immediately to sync with server
-      console.log('💳 Payment successful - triggering immediate auction data refresh');
-      setForceRefetchTrigger(prev => prev + 1);
-      
-      // Refresh user profile stats too
-      if (currentUser.id) {
-        fetchAndSetUser(currentUser.id);
-      }
-    }, [showEntrySuccess, currentUser, currentAuction.id]);
+        // ✅ NEW: Sticky optimistic payment state update
+        setRecentPaymentSuccess(true);
+        recentPaymentTimestamp.current = Date.now();
+
+        // ✅ Trigger refetch immediately to sync with server
+        console.log('💳 Payment successful - triggering immediate auction data refresh');
+        setForceRefetchTrigger(prev => prev + 1);
+        
+        // Refresh user profile stats too
+        if (currentUser.id) {
+          fetchAndSetUser(currentUser.id);
+        }
+      }, [showEntrySuccess, currentUser, currentAuction.id]);
 
   const handleEntryFailure = useCallback(() => {
     setShowEntryFailure(null);
@@ -2925,8 +2938,21 @@ if (currentPage === 'prizeshowcase') {
                         onBackToHome={handleEntrySuccess}
                         onClose={handleCloseEntrySuccess}
                       />
-                    )}
-                    {showEntryFailure && (
+                      )}
+
+                      {showEntrySuccessDetail && (
+                        <EntrySuccessModal
+                          entryFee={showEntrySuccessDetail.entryFee}
+                          boxNumber={showEntrySuccessDetail.boxNumber}
+                          onContinue={() => {
+                            setShowEntrySuccessDetail(null);
+                            handleBidNowScroll();
+                          }}
+                          onClose={() => setShowEntrySuccessDetail(null)}
+                        />
+                      )}
+                      
+                      {showEntryFailure && (
                       <PaymentFailure
                         amount={showEntryFailure.entryFee}
                         errorMessage={showEntryFailure.errorMessage}
