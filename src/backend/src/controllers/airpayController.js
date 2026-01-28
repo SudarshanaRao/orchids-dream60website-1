@@ -25,10 +25,9 @@ const ivFixed = crypto.randomBytes(8).toString('hex'); // Used in some kit versi
 function decrypt(responsedata, secretKey) {
   let data = responsedata;
   try {
-    const hash = crypto.createHash('sha256').update(data).digest();
-    const iv = hash.slice(0, 16);
+    const iv = data.slice(0, 16);
     const encryptedData = Buffer.from(data.slice(16), 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(iv, 'utf-8'));
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
     decrypted += decipher.final();
     return decrypted;
