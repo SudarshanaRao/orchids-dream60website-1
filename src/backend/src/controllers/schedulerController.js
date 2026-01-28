@@ -1165,7 +1165,8 @@ const getLiveHourlyAuction = async (req, res) => {
       auctionNumber: 1,
       auctionId: 1,
       currentEligibleRank: 1,
-      claimWindowStartedAt: 1
+      claimWindowStartedAt: 1,
+      productDescription: 1
     };
 
     let liveAuction = await HourlyAuction.findOne({ Status: 'LIVE' })
@@ -2090,6 +2091,7 @@ const getHourlyAuctionById = async (req, res) => {
         totalRounds: auction.roundCount,
         roundStats,
         winners: auction.winners || [],
+        productDescription: auction.productDescription || {},
         startedAt: auction.startedAt,
         completedAt: auction.completedAt,
       },

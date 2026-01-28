@@ -82,9 +82,10 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
     adminDashboard: `${API_BASE_URL}/scheduler/admin/dashboard`,
     adminAuctionHistory: `${API_BASE_URL}/scheduler/admin/auction-history`,
       adminAuctionDetails: `${API_BASE_URL}/scheduler/admin/auction-details`,
-      firstUpcomingProduct: `${API_BASE_URL}/scheduler/first-upcoming-product`,
-      hourlyAuctions: `${API_BASE_URL}/scheduler/hourly-auctions`,
-    },
+        firstUpcomingProduct: `${API_BASE_URL}/scheduler/first-upcoming-product`,
+        hourlyAuctions: `${API_BASE_URL}/scheduler/hourly-auctions`,
+        hourlyAuctionDetails: (id: string) => `${API_BASE_URL}/scheduler/hourly-auction/${id}`,
+      },
   
   // User Management
     user: {

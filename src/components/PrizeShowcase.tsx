@@ -333,6 +333,27 @@ interface PrizeShowcaseProps {
     setBoxAFee(a.FeeSplits?.BoxA || 0);
     setBoxBFee(a.FeeSplits?.BoxB || 0);
 
+    // ✅ NEW: Fetch full details if productDescription is missing
+    if (a.hourlyAuctionId && (!a.productDescription || Object.keys(a.productDescription).length === 0)) {
+      console.log('🔍 [PRIZE SHOWCASE] Product description missing, fetching details...');
+      fetch(API_ENDPOINTS.scheduler.hourlyAuctionDetails(a.hourlyAuctionId))
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.summary?.productDescription) {
+            setLiveAuctions(prev => {
+              if (prev.length > 0 && prev[0].auctionId === a.hourlyAuctionId) {
+                return [{
+                  ...prev[0],
+                  productDescription: json.summary.productDescription
+                }];
+              }
+              return prev;
+            });
+          }
+        })
+        .catch(err => console.error('Error fetching auction details:', err));
+    }
+
     // ✅ CRITICAL FIX: Only recalculate end time if auction ID changes or is new
     const isNewAuction = !currentAuctionId || a.hourlyAuctionId !== currentAuctionId;
     
