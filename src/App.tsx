@@ -21,6 +21,7 @@ import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
 import { PaymentSuccess } from './components/PaymentSuccess';
 import { PaymentFailure } from './components/PaymentFailure';
+import { PaymentAnimation } from './components/PaymentAnimation';
 import { Leaderboard } from './components/Leaderboard';
 import { AuctionLeaderboard } from './components/AuctionLeaderboard';
 import { AccountSettings } from './components/AccountSettings';
@@ -308,16 +309,19 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/profile') return 'profile';
     if (path === '/success-page') return 'success-preview';
     if (path === '/failure-page') return 'failure-preview';
-    if (path === '/history' || path.startsWith('/history/')) return 'history';
-    if (path === '/leaderboard') return 'leaderboard';
-    if (path === '/view-guide') return 'view-guide';
-    if (path === '/winning-tips') return 'winning-tips';
-    if (path === '/support-chat') return 'support-chat';
-    if (path === '/tester-feedback') return 'tester-feedback';
-    if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
-    if (path === '/prizeshowcase') return 'prizeshowcase';
+      if (path === '/history' || path.startsWith('/history/')) return 'history';
+      if (path === '/leaderboard') return 'leaderboard';
+      if (path === '/view-guide') return 'view-guide';
+      if (path === '/winning-tips') return 'winning-tips';
+      if (path === '/support-chat') return 'support-chat';
+      if (path === '/tester-feedback') return 'tester-feedback';
+      if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+      if (path === '/prizeshowcase') return 'prizeshowcase';
+      if (path === '/payment/success') return 'payment-success-animation';
+      if (path === '/payment/failure') return 'payment-failure-animation';
 
-    return 'game';
+      return 'game';
+
   });
 
     // ✅ Sync URL with page state and handle browser back/forward
@@ -343,12 +347,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/support') setCurrentPage('support');
         else if (path === '/contact') setCurrentPage('contact');
         else if (path === '/profile') setCurrentPage('profile');
-        else if (path === '/success-page' || path === '/payment/success') {
-          setCurrentPage('success-preview');
-          // Handle transaction data from URL and cookies
+        else if (path === '/payment/success') {
+          setCurrentPage('payment-success-animation');
           const txnId = searchParams.get('txnId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
-          
           if (cookieData) {
             try {
               const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
@@ -364,20 +366,16 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 productName: 'Auction Entry Fee',
                 timeSlot: 'Active'
               } as any);
-              // Optional: Clear cookie after reading
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            } catch (e) {
-              console.error("Error parsing airpay cookie", e);
-            }
+            } catch (e) { console.error("Error parsing airpay cookie", e); }
           } else if (txnId) {
             setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
           }
         }
-        else if (path === '/failure-page' || path === '/payment/failure') {
-          setCurrentPage('failure-preview');
+        else if (path === '/payment/failure') {
+          setCurrentPage('payment-failure-animation');
           const txnId = searchParams.get('txnId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
-
           if (cookieData) {
             try {
               const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
@@ -391,14 +389,17 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 cardName: airpayData.cardName,
                 cardNumber: airpayData.cardNumber
               } as any);
-              // Optional: Clear cookie after reading
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            } catch (e) {
-              console.error("Error parsing airpay cookie", e);
-            }
+            } catch (e) { console.error("Error parsing airpay cookie", e); }
           } else if (txnId) {
             setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
           }
+        }
+        else if (path === '/success-page') {
+          setCurrentPage('success-preview');
+        }
+        else if (path === '/failure-page') {
+          setCurrentPage('failure-preview');
         }
         else if (path === '/history' || path.startsWith('/history/')) {
           setCurrentPage('history');
@@ -1674,8 +1675,11 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           'tester-feedback': '/tester-feedback',
           'transactions': '/transactions',
           'prizeshowcase': '/prizeshowcase',
-        'careers': '/careers'
-      };
+          'success-page': '/success-page',
+          'failure-page': '/failure-page',
+          'careers': '/careers'
+        };
+
     
     const url = urlMap[page] || '/';
     window.history.pushState({}, '', url);
@@ -2496,17 +2500,68 @@ if (currentPage === 'prizeshowcase') {
       );
     }
 
+    if (currentPage === 'payment-success-animation') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <PaymentAnimation 
+              status="success" 
+              onComplete={() => {
+                handleNavigate('game');
+                // Small delay to ensure we are on the game page before scrolling
+                setTimeout(() => {
+                  const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 100);
+              }} 
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'payment-failure-animation') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <PaymentAnimation 
+              status="failure" 
+              onComplete={() => {
+                handleNavigate('game');
+                // Small delay to ensure we are on the game page before scrolling
+                setTimeout(() => {
+                  const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }, 100);
+              }} 
+            />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
     if (currentPage === 'success-preview') {
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
             <PaymentSuccess
-              amount={1000}
+              amount={showEntrySuccess?.entryFee || 0}
               type="entry"
-              boxNumber={0}
-              onBackToHome={handleBackToGame}
-              onClose={handleBackToGame}
+              boxNumber={showEntrySuccess?.boxNumber || 0}
+              auctionId={showEntrySuccess?.auctionId}
+              auctionNumber={showEntrySuccess?.auctionNumber}
+              productName={showEntrySuccess?.productName}
+              productWorth={showEntrySuccess?.productWorth}
+              timeSlot={showEntrySuccess?.timeSlot}
+              paidBy={showEntrySuccess?.paidBy}
+              paymentMethod={showEntrySuccess?.paymentMethod}
+              onBackToHome={handleEntrySuccess}
+              onClose={handleCloseEntrySuccess}
             />
           </TooltipProvider>
         </QueryClientProvider>
@@ -2519,11 +2574,18 @@ if (currentPage === 'prizeshowcase') {
           <TooltipProvider>
             <Sonner />
             <PaymentFailure
-              amount={1000}
-              errorMessage="This is a test failure message for preview."
-              onRetry={handleBackToGame}
-              onBackToHome={handleBackToGame}
-              onClose={handleBackToGame}
+              amount={showEntryFailure?.entryFee || 0}
+              errorMessage={showEntryFailure?.errorMessage}
+              auctionId={showEntryFailure?.auctionId}
+              auctionNumber={showEntryFailure?.auctionNumber}
+              productName={showEntryFailure?.productName}
+              productWorth={showEntryFailure?.productWorth}
+              timeSlot={showEntryFailure?.timeSlot}
+              paidBy={showEntryFailure?.paidBy}
+              paymentMethod={showEntryFailure?.paymentMethod}
+              onRetry={handleRetryPayment}
+              onBackToHome={handleCloseEntryFailure}
+              onClose={handleCloseEntryFailure}
             />
           </TooltipProvider>
         </QueryClientProvider>
