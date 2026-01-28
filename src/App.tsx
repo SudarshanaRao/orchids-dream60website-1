@@ -737,24 +737,29 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           const updateCountdown = () => {
             // If we have upcoming auction data with a specific time slot, use that
             if (upcomingAuctionData?.TimeSlot) {
-              try {
-                const [targetHour, targetMinute] = upcomingAuctionData.TimeSlot.split(':').map(Number);
-                
-                // Create target date based on server time's date but target hour/minute
-                const targetDate = new Date(serverTime.timestamp);
-                targetDate.setHours(targetHour, targetMinute, 0, 0);
-                
-                // If target time is in the past for today, it might be for tomorrow
-                if (targetDate.getTime() < serverTime.timestamp) {
-                  targetDate.setDate(targetDate.getDate() + 1);
-                }
-                
-                const totalSecondsRemaining = Math.max(0, Math.floor((targetDate.getTime() - serverTime.timestamp) / 1000));
-                
-                if (totalSecondsRemaining === 0) {
-                  setUpcomingCountdown('00:00:00');
-                  return;
-                }
+                try {
+                  const [targetHour, targetMinute] = upcomingAuctionData.TimeSlot.split(':').map(Number);
+                  
+                  // TimeSlot is in IST. Convert serverTime to IST first, then set hours/minutes.
+                  // Then calculate difference.
+                  const serverTimeDate = new Date(serverTime.timestamp);
+                  const serverTimeIST = new Date(serverTimeDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+                  
+                  const targetDateIST = new Date(serverTimeIST);
+                  targetDateIST.setHours(targetHour, targetMinute, 0, 0);
+                  
+                  // If target time is in the past for today in IST, it's for tomorrow
+                  if (targetDateIST.getTime() < serverTimeIST.getTime()) {
+                    targetDateIST.setDate(targetDateIST.getDate() + 1);
+                  }
+                  
+                  const diffMs = targetDateIST.getTime() - serverTimeIST.getTime();
+                  const totalSecondsRemaining = Math.max(0, Math.floor(diffMs / 1000));
+                  
+                  if (totalSecondsRemaining === 0) {
+                    setUpcomingCountdown('00:00:00');
+                    return;
+                  }
   
                 const hours = Math.floor(totalSecondsRemaining / 3600);
                 const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
@@ -2754,19 +2759,20 @@ if (currentPage === 'prizeshowcase') {
                                             className="overflow-hidden"
                                           >
                                             <PrizeShowcase
-                                              currentPrize={{
-                                                ...currentAuction,
-                                                prize: upcomingAuctionData.auctionName || upcomingAuctionData.prizeName,
-                                                prizeValue: upcomingAuctionData.prizeValue,
-                                                auctionHour: upcomingAuctionData.TimeSlot
-                                              }}
-                                              isLoggedIn={!!currentUser}
-                                              onLogin={handleShowLogin}
-                                              serverTime={serverTime}
-                                              liveAuctionData={upcomingAuctionData}
-                                              isLoadingLiveAuction={false}
-                                              isUpcoming={true}
-                                              onPayEntry={() => {
+                                                currentPrize={{
+                                                  ...currentAuction,
+                                                  prize: upcomingAuctionData.auctionName || upcomingAuctionData.prizeName,
+                                                  prizeValue: upcomingAuctionData.prizeValue,
+                                                  auctionHour: upcomingAuctionData.TimeSlot
+                                                }}
+                                                isLoggedIn={!!currentUser}
+                                                onLogin={handleShowLogin}
+                                                serverTime={serverTime}
+                                                liveAuctionData={upcomingAuctionData}
+                                                isLoadingLiveAuction={false}
+                                                isUpcoming={true}
+                                                upcomingCountdown={upcomingCountdown}
+                                                onPayEntry={() => {
                                                 // Scroll to current auction to join
                                                 const element = document.getElementById('six-box-system-container');
                                                 if (element) {

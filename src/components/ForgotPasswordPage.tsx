@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Eye, EyeOff, Lock, Phone, ArrowLeft, RefreshCw, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";

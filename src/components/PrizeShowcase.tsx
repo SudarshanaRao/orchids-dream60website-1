@@ -419,14 +419,45 @@ interface PrizeShowcaseProps {
       if (!isUpcoming || !serverTime || upcomingCountdown) return;
 
       const updateUpcomingTimer = () => {
-        // Simplified calculation to the next top of the hour (MM:SS)
-        // As per user request: hour will be zero always, so only minutes and seconds
+        // If we have TimeSlot, use it for accurate countdown
+        const timeSlot = liveAuctionData?.TimeSlot || currentPrize.auctionHour;
+        if (timeSlot) {
+          try {
+            const [targetHour, targetMinute] = timeSlot.split(':').map(Number);
+            const serverTimeDate = new Date(serverTime.timestamp);
+            const serverTimeIST = new Date(serverTimeDate.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            
+            const targetDateIST = new Date(serverTimeIST);
+            targetDateIST.setHours(targetHour, targetMinute, 0, 0);
+            
+            if (targetDateIST.getTime() < serverTimeIST.getTime()) {
+              targetDateIST.setDate(targetDateIST.getDate() + 1);
+            }
+            
+            const diffMs = targetDateIST.getTime() - serverTimeIST.getTime();
+            const totalSecondsRemaining = Math.max(0, Math.floor(diffMs / 1000));
+
+            const hours = Math.floor(totalSecondsRemaining / 3600);
+            const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+            const seconds = totalSecondsRemaining % 60;
+            
+            if (hours > 0) {
+              setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            } else {
+              setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+            }
+            return;
+          } catch (e) {
+            console.error("Error calculating upcoming timer:", e);
+          }
+        }
+
+        // Simplified fallback calculation to the next top of the hour (MM:SS)
         const currentMinute = serverTime.minute;
         const currentSecond = serverTime.second;
         
         const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
         
-        // If we are at the exact top of the hour, it means an auction just started
         if (totalSecondsRemaining >= 3600) {
           setTimeLeft('00:00');
           return;
@@ -438,14 +469,10 @@ interface PrizeShowcaseProps {
         setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
       };
 
-      // Initial call
       updateUpcomingTimer();
-      
-      // We update every second
       const timer = setInterval(updateUpcomingTimer, 1000);
-
       return () => clearInterval(timer);
-    }, [isUpcoming, serverTime, upcomingCountdown]);
+    }, [isUpcoming, serverTime, upcomingCountdown, liveAuctionData?.TimeSlot, currentPrize.auctionHour]);
 
   const handlePayEntry = () => {
     if (!isLoggedIn || liveAuctions.length === 0) return;
