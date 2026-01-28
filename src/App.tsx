@@ -855,34 +855,17 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       // ✅ NEW: Fetch upcoming auction data with polling
       const fetchUpcomingAuction = useCallback(async () => {
         try {
-          console.log('🔄 Fetching upcoming auction data...');
-          // First try to fetch the single first upcoming product
+          console.log('🔄 Fetching first upcoming product from API...');
           const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
           const data = await response.json();
           
           if (data.success && data.data) {
-            console.log('✅ Found upcoming auction from dedicated endpoint:', data.data.auctionName);
-            setUpcomingAuctionData(data.data);
+            const nextAuction = data.data;
+            console.log('✅ Found first upcoming auction:', nextAuction.auctionName);
+            setUpcomingAuctionData(nextAuction);
           } else {
-            // Fallback: Fetch daily auction schedule and find the next one
-            console.log('🔄 Fallback: Searching for next upcoming auction in daily schedule...');
-            const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
-            const dailyData = await dailyResponse.json();
-            
-            if (dailyData.success && dailyData.data?.dailyAuctionConfig) {
-              const auctions = dailyData.data.dailyAuctionConfig;
-              // Find the first auction that is marked as 'UPCOMING'
-              const nextAuction = auctions.find((a: any) => a.Status === 'UPCOMING');
-              
-              if (nextAuction) {
-                console.log('✅ Found fallback upcoming auction from daily schedule:', nextAuction.auctionName);
-                // Include the auctionDate from the parent daily auction for accurate countdown
-                setUpcomingAuctionData({ ...nextAuction, auctionDate: dailyData.data.auctionDate });
-              } else {
-                console.log('⚠️ No upcoming auctions found in daily schedule');
-                setUpcomingAuctionData(null);
-              }
-            }
+            console.log('⚠️ No upcoming auctions found');
+            setUpcomingAuctionData(null);
           }
         } catch (error) {
           console.error('Error fetching upcoming auction:', error);

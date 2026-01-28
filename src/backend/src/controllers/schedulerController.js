@@ -2599,36 +2599,50 @@ const syncMasterToAuctions = async (req, res) => {
  * If hourlyAuctionId is provided, returns that specific upcoming auction
  * If no parameter is provided, returns message indicating no upcoming auctions
  */
-const getFirstUpcomingProduct = async (req, res) => {
-  try {
-    const { hourlyAuctionId } = req.query;
-    const todayIST = getISTDateStart();
-    
-    let upcomingAuction;
+  const getFirstUpcomingProduct = async (req, res) => {
+    try {
+      const { hourlyAuctionId } = req.query;
+      const todayIST = getISTDateStart();
+      
+      let upcomingAuction;
 
-    if (hourlyAuctionId) {
-      upcomingAuction = await HourlyAuction.findOne({
-        hourlyAuctionId: hourlyAuctionId,
-        Status: 'UPCOMING',
-        auctionDate: { $gte: todayIST }
-      }).lean();
-    } else {
-      // Find the next upcoming auction for today or future
-      upcomingAuction = await HourlyAuction.findOne({
-        Status: 'UPCOMING',
-        auctionDate: { $gte: todayIST }
-      })
-      .sort({ auctionDate: 1, TimeSlot: 1 })
-      .lean();
-    }
-    
-    if (!upcomingAuction) {
-      return res.status(200).json({
-        success: false,
-        message: 'No upcoming auctions currently',
-        data: null,
-      });
-    }
+      if (hourlyAuctionId) {
+        upcomingAuction = await HourlyAuction.findOne({
+          hourlyAuctionId: hourlyAuctionId,
+          Status: 'UPCOMING',
+          auctionDate: { $gte: todayIST }
+        }).lean();
+      } else {
+        // ✅ NEW: Follow logic of getHourlyAuctions to find the latest active daily auction first
+        const latestDaily = await DailyAuction
+          .findOne({ isActive: true })
+          .sort({ createdAt: -1 });
+
+        if (!latestDaily) {
+          return res.status(200).json({
+            success: false,
+            message: 'No active daily auction found',
+            data: null,
+          });
+        }
+
+        // Find the first upcoming auction for this latest daily auction
+        upcomingAuction = await HourlyAuction.findOne({
+          dailyAuctionId: latestDaily.dailyAuctionId,
+          Status: 'UPCOMING'
+        })
+        .sort({ TimeSlot: 1 })
+        .lean();
+      }
+      
+      if (!upcomingAuction) {
+        return res.status(200).json({
+          success: false,
+          message: 'No upcoming auctions currently',
+          data: null,
+        });
+      }
+
 
     // ✅ FETCH FRESH DATA FROM DAILY AUCTION SOURCE OF TRUTH
     // This ensures updates to Master/Daily auctions are reflected immediately
