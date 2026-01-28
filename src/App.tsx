@@ -307,8 +307,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
-    if (path === '/success-page') return 'success-preview';
-    if (path === '/failure-page') return 'failure-preview';
+    if (path === '/success-page' || path === '/payment/success') return 'game';
+    if (path === '/failure-page' || path === '/payment/failure') return 'game';
     if (path === '/history' || path.startsWith('/history/')) return 'history';
     if (path === '/leaderboard') return 'leaderboard';
     if (path === '/view-guide') return 'view-guide';
@@ -345,7 +345,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/contact') setCurrentPage('contact');
         else if (path === '/profile') setCurrentPage('profile');
         else if (path === '/success-page' || path === '/payment/success') {
-          setCurrentPage('success-preview');
+          setCurrentPage('game');
           // Handle transaction data from URL and cookies
           const txnId = searchParams.get('txnId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
@@ -356,6 +356,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               setShowEntrySuccess({
                 entryFee: Number(airpayData.amount),
                 boxNumber: 0,
+                auctionId: airpayData.auctionId,
                 transactionId: airpayData.txnId || airpayData.orderId,
                 paymentMethod: airpayData.method,
                 upiId: airpayData.upiId,
@@ -365,17 +366,20 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 productName: 'Auction Entry Fee',
                 timeSlot: 'Active'
               } as any);
-              // Optional: Clear cookie after reading
+              // Clear cookie after reading to prevent repeated modals
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              // Redirect to clean home URL
+              window.history.pushState({}, '', '/');
             } catch (e) {
               console.error("Error parsing airpay cookie", e);
             }
           } else if (txnId) {
             setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
+            window.history.pushState({}, '', '/');
           }
         }
         else if (path === '/failure-page' || path === '/payment/failure') {
-          setCurrentPage('failure-preview');
+          setCurrentPage('game');
           const txnId = searchParams.get('txnId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
 
@@ -385,6 +389,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               setShowEntryFailure({
                 entryFee: Number(airpayData.amount),
                 errorMessage: airpayData.message || 'Payment failed',
+                auctionId: airpayData.auctionId,
                 transactionId: airpayData.txnId || airpayData.orderId,
                 paymentMethod: airpayData.method,
                 upiId: airpayData.upiId,
@@ -392,13 +397,14 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 cardName: airpayData.cardName,
                 cardNumber: airpayData.cardNumber
               } as any);
-              // Optional: Clear cookie after reading
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+              window.history.pushState({}, '', '/');
             } catch (e) {
               console.error("Error parsing airpay cookie", e);
             }
           } else if (txnId) {
             setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
+            window.history.pushState({}, '', '/');
           }
         }
         else if (path === '/history' || path.startsWith('/history/')) {
@@ -607,6 +613,8 @@ const [adminUser, setAdminUser] = useState<{
     productWorth?: number;
     timeSlot?: string;
     paidBy?: string;
+    transactionId?: string;
+    paymentMethod?: string;
   } | null>(null);
 
     const [showEntrySuccessDetail, setShowEntrySuccessDetail] = useState<{
@@ -2937,37 +2945,41 @@ if (currentPage === 'prizeshowcase') {
                         productName={showEntrySuccess.productName}
                         productWorth={showEntrySuccess.productWorth}
                         timeSlot={showEntrySuccess.timeSlot}
-                        paidBy={showEntrySuccess.paidBy}
-                        paymentMethod={showEntrySuccess.paymentMethod}
-                        onBackToHome={handleEntrySuccess}
-                        onClose={handleCloseEntrySuccess}
-                      />
-                      )}
-
-                      {showEntrySuccessDetail && (
-                        <EntrySuccessModal
-                          entryFee={showEntrySuccessDetail.entryFee}
-                          boxNumber={showEntrySuccessDetail.boxNumber}
-                          onContinue={() => {
-                            setShowEntrySuccessDetail(null);
-                            handleBidNowScroll();
-                          }}
-                          onClose={() => setShowEntrySuccessDetail(null)}
+                          paidBy={showEntrySuccess.paidBy}
+                          paymentMethod={showEntrySuccess.paymentMethod}
+                          transactionId={showEntrySuccess.transactionId}
+                          onBackToHome={handleEntrySuccess}
+                          onClose={handleCloseEntrySuccess}
                         />
-                      )}
-                      
-                      {showEntryFailure && (
-                      <PaymentFailure
-                        amount={showEntryFailure.entryFee}
-                        errorMessage={showEntryFailure.errorMessage}
-                        auctionId={showEntryFailure.auctionId}
-                        auctionNumber={showEntryFailure.auctionNumber}
-                        productName={showEntryFailure.productName}
-                        productWorth={showEntryFailure.productWorth}
-                        timeSlot={showEntryFailure.timeSlot}
-                        paidBy={showEntryFailure.paidBy}
-                        paymentMethod={showEntryFailure.paymentMethod}
-                        onRetry={handleRetryPayment}
+                        )}
+
+                        {showEntrySuccessDetail && (
+                          <EntrySuccessModal
+                            entryFee={showEntrySuccessDetail.entryFee}
+                            boxNumber={showEntrySuccessDetail.boxNumber}
+                            auctionId={showEntrySuccessDetail.auctionId}
+                            transactionId={showEntrySuccessDetail.transactionId}
+                            onContinue={() => {
+                              setShowEntrySuccessDetail(null);
+                              handleBidNowScroll();
+                            }}
+                            onClose={() => setShowEntrySuccessDetail(null)}
+                          />
+                        )}
+                        
+                        {showEntryFailure && (
+                        <PaymentFailure
+                          amount={showEntryFailure.entryFee}
+                          errorMessage={showEntryFailure.errorMessage}
+                          auctionId={showEntryFailure.auctionId}
+                          auctionNumber={showEntryFailure.auctionNumber}
+                          productName={showEntryFailure.productName}
+                          productWorth={showEntryFailure.productWorth}
+                          timeSlot={showEntryFailure.timeSlot}
+                          paidBy={showEntryFailure.paidBy}
+                          paymentMethod={showEntryFailure.paymentMethod}
+                          transactionId={showEntryFailure.transactionId}
+                          onRetry={handleRetryPayment}
                         onBackToHome={handleCloseEntryFailure}
                         onClose={handleCloseEntryFailure}
                       />
