@@ -30,7 +30,7 @@ jobs:
 
       # 🚀 FRONTEND DEPLOY (SFTP via SSH)
       - name: Deploy Frontend
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@master
         with:
           host: 145.79.211.27
           port: 65002
@@ -39,3 +39,5 @@ jobs:
           source: "dist/*"
           target: "/home/u425470620/domains/dream60.com/public_html"
           strip_components: 1
+          timeout: 120s
+          command_timeout: 10m
