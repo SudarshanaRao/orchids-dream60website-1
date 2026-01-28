@@ -319,14 +319,20 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     return 'game';
   });
 
-    // ✅ Handle post-payment state for Airpay redirects
-    useEffect(() => {
-      if (currentPage === 'success-preview') {
-        setRecentPaymentSuccess(true);
-        recentPaymentTimestamp.current = Date.now();
-        console.log('✅ Airpay success detected - setting optimistic payment state');
-      }
-    }, [currentPage]);
+      // ✅ Handle post-payment state for Airpay redirects
+      useEffect(() => {
+        if (currentPage === 'success-preview') {
+          setRecentPaymentSuccess(true);
+          recentPaymentTimestamp.current = Date.now();
+          console.log('✅ Airpay success detected - setting optimistic payment state');
+          
+          // ✅ Immediately update currentAuction state to reflect "Joined" status
+          setCurrentAuction(prev => ({
+            ...prev,
+            userHasPaidEntry: true
+          }));
+        }
+      }, [currentPage]);
 
     // ✅ Sync URL with page state and handle browser back/forward
   useEffect(() => {
@@ -2453,13 +2459,14 @@ if (currentPage === 'prizeshowcase') {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <PaymentSuccess
-              amount={Number(searchParams.get('amount')) || 60}
-              type="entry"
-              transactionId={searchParams.get('txnId') || ''}
-              onBackToHome={() => handleBackToGame(true)}
-              onClose={() => handleBackToGame(true)}
-            />
+              <PaymentSuccess
+                amount={Number(searchParams.get('amount')) || 60}
+                type="entry"
+                transactionId={searchParams.get('txnId') || ''}
+                auctionId={searchParams.get('auctionId') || ''}
+                onBackToHome={() => handleBackToGame(true)}
+                onClose={() => handleBackToGame(true)}
+              />
           </TooltipProvider>
         </QueryClientProvider>
       );

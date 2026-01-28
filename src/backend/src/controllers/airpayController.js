@@ -305,6 +305,7 @@ exports.handleAirpayResponse = async (req, res) => {
       bankName: BANK_NAME,
       cardName: CARD_NAME,
       cardNumber: CARD_NUMBER,
+      auctionId: payment.auctionId,
       timestamp: new Date().toISOString()
     };
 
@@ -315,7 +316,7 @@ exports.handleAirpayResponse = async (req, res) => {
 
     const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
     const redirectUrl = finalStatus === 'paid' 
-      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}`
+      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}`
       : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
 
     res.redirect(redirectUrl);

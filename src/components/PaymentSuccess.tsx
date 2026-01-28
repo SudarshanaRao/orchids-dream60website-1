@@ -81,6 +81,7 @@ interface PaymentSuccessProps {
     const productWorth = initialProductWorth;
     const timeSlot = initialTimeSlot;
     const paidBy = initialPaidBy;
+    const auctionNumber = txnData?.auctionNumber || initialAuctionNumber;
 
     const [isMobile, setIsMobile] = useState(false);
 
