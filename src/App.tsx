@@ -10,7 +10,7 @@ import { PrizeShowcase } from './components/PrizeShowcase';
 import { Footer } from './components/Footer';
 import { TermsAndConditions } from './components/TermsAndConditions';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { RefundCancellation } from './components/RefundCancellation';
+import { RefundPolicy } from './components/RefundPolicy';
 import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
@@ -45,9 +45,9 @@ import { toast } from 'sonner';
 import { parseAPITimestamp } from './utils/timezone';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Sonner } from '@/components/ui/sonner';
+import { Button } from '@/components/ui/button';
 import HoverReceiver from "@/visual-edits/VisualEditsMessenger";
 import { BrowserRouter } from 'react-router-dom';
 import { API_ENDPOINTS } from '@/lib/api-config';
@@ -256,296 +256,1384 @@ const generateDemoLeaderboard = (roundNumber: number) => {
   }));
 };
 
-  // ✅ Tutorial steps for "What's New" overlay
-  const whatsNewSteps: TutorialStep[] = [
-    {
-      target: '[data-whatsnew-target="prize-showcase"]',
-      title: "Win Big for Less!",
-      content: "Bid on high-value prizes like iPhones, Watches, and Gadgets at a fraction of their cost.",
-      placement: "bottom"
-    },
-    {
-      target: '[data-whatsnew-target="prize-showcase-section"]',
-      title: "Pay & Participate",
-      content: "Pay the small entry fee to unlock all bidding rounds for the current auction.",
-      placement: "top"
-    },
-    {
-      target: '[data-whatsnew-target="auction-grid"]',
-      title: "The 4-Round Strategy",
-      content: "Progress through 4 rounds. Top bidders move forward, and the Round 4 winner takes home the prize!",
-      placement: "top"
-    }
-  ];
-
   const App = () => {
-      const [isMobile, setIsMobile] = useState(false);
-  
-      useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-      }, []);
-  
-      const auctionGridRef = useRef<HTMLDivElement>(null);
-  
-      const handleBidNowScroll = () => {
-        if (auctionGridRef.current) {
-          auctionGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Add a brief highlight effect
-          auctionGridRef.current.classList.add('highlight-auction-grid');
-          setTimeout(() => {
-            auctionGridRef.current?.classList.remove('highlight-auction-grid');
-          }, 2000);
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      };
-  
-      const [serverTime, setServerTime] = useState<ServerTime | null>(null);
-  
-      // Initialize currentPage based on URL path
-      const [currentPage, setCurrentPage] = useState(() => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const auctionGridRef = useRef<HTMLDivElement>(null);
+
+    const handleBidNowScroll = () => {
+      if (auctionGridRef.current) {
+        auctionGridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Add a brief highlight effect
+        auctionGridRef.current.classList.add('highlight-auction-grid');
+        setTimeout(() => {
+          auctionGridRef.current?.classList.remove('highlight-auction-grid');
+        }, 2000);
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    const [serverTime, setServerTime] = useState<ServerTime | null>(null);
+
+
+  // Initialize currentPage based on URL path
+  const [currentPage, setCurrentPage] = useState(() => {
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+
+    if (path === '/d60-ctrl-x9k7') {
+        const adminUserId = localStorage.getItem('admin_user_id');
+        return adminUserId ? 'admin-dashboard' : 'admin-login';
+      }
+    if (path === '/d60-ctrl-x9k7/signup') return 'admin-signup';
+    if (path === '/login') return 'login';
+    if (path === '/signup') return 'signup';
+    if (path === '/forgot-password') return 'forgot';
+    if (path === '/rules') return 'rules';
+    if (path === '/participation') return 'participation';
+    if (path === '/about') return 'about';
+    if (path === '/careers') return 'careers';
+    if (path === '/terms') return 'terms';
+    if (path === '/privacy') return 'privacy';
+    if (path === '/refund') return 'refund';
+    if (path === '/support') return 'support';
+    if (path === '/contact') return 'contact';
+    if (path === '/profile') return 'profile';
+    if (path === '/success-page') return 'success-preview';
+    if (path === '/failure-page') return 'failure-preview';
+    if (path === '/history' || path.startsWith('/history/')) return 'history';
+    if (path === '/leaderboard') return 'leaderboard';
+    if (path === '/view-guide') return 'view-guide';
+    if (path === '/winning-tips') return 'winning-tips';
+    if (path === '/support-chat') return 'support-chat';
+    if (path === '/tester-feedback') return 'tester-feedback';
+    if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
+    if (path === '/prizeshowcase') return 'prizeshowcase';
+
+    return 'game';
+  });
+
+    // ✅ Sync URL with page state and handle browser back/forward
+    useEffect(() => {
+      const handlePopState = () => {
         const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-  
+        const searchParams = new URLSearchParams(window.location.search);
+        
         if (path === '/d60-ctrl-x9k7') {
             const adminUserId = localStorage.getItem('admin_user_id');
-            return adminUserId ? 'admin-dashboard' : 'admin-login';
+            setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
+          } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
+        else if (path === '/login') setCurrentPage('login');
+        else if (path === '/signup') setCurrentPage('signup');
+        else if (path === '/forgot-password') setCurrentPage('forgot');
+        else if (path === '/rules') setCurrentPage('rules');
+        else if (path === '/participation') setCurrentPage('participation');
+        else if (path === '/about') setCurrentPage('about');
+        else if (path === '/careers') setCurrentPage('careers');
+        else if (path === '/terms') setCurrentPage('terms');
+        else if (path === '/privacy') setCurrentPage('privacy');
+        else if (path === '/refund') setCurrentPage('refund');
+        else if (path === '/support') setCurrentPage('support');
+        else if (path === '/contact') setCurrentPage('contact');
+        else if (path === '/profile') setCurrentPage('profile');
+        else if (path === '/success-page' || path === '/payment/success') {
+          setCurrentPage('success-preview');
+          // Handle transaction data from URL and cookies
+          const txnId = searchParams.get('txnId');
+          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
+          
+          if (cookieData) {
+            try {
+              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
+              setShowEntrySuccess({
+                entryFee: Number(airpayData.amount),
+                boxNumber: 0,
+                transactionId: airpayData.txnId || airpayData.orderId,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                cardNumber: airpayData.cardNumber,
+                productName: 'Auction Entry Fee',
+                timeSlot: 'Active'
+              } as any);
+              // Optional: Clear cookie after reading
+              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            } catch (e) {
+              console.error("Error parsing airpay cookie", e);
+            }
+          } else if (txnId) {
+            setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
           }
-        if (path === '/d60-ctrl-x9k7/signup') return 'admin-signup';
-        if (path === '/login') return 'login';
-        if (path === '/signup') return 'signup';
-        if (path === '/forgot-password') return 'forgot';
-        if (path === '/rules') return 'rules';
-        if (path === '/participation') return 'participation';
-        if (path === '/about') return 'about';
-        if (path === '/careers') return 'careers';
-        if (path === '/terms') return 'terms';
-        if (path === '/privacy') return 'privacy';
-        if (path === '/support') return 'support';
-        if (path === '/contact') return 'contact';
-        if (path === '/profile') return 'profile';
-        if (path === '/success-page' || path === '/payment/success') return 'success-preview';
-        if (path === '/failure-page' || path === '/payment/failure') return 'failure-preview';
-        if (path === '/history' || path.startsWith('/history/')) return 'history';
-        if (path === '/leaderboard') return 'leaderboard';
-        if (path === '/view-guide') return 'view-guide';
-        if (path === '/winning-tips') return 'winning-tips';
-        if (path === '/support-chat') return 'support-chat';
-        if (path === '/tester-feedback') return 'tester-feedback';
-        if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
-        if (path === '/prizeshowcase') return 'prizeshowcase';
-  
-        return 'game';
-      });
-  
-      const [currentUser, setCurrentUser] = useState<{
-        id: string;
-        username: string;
-        mobile?: string;
-        email?: string;
-        isDeleted: boolean;
-        totalAuctions: number;
-        totalWins: number;
-        totalAmountSpent: number;
-        totalAmountWon: number;
-        userType: string;
-        userCode: string;
-        preferences: {
-          emailNotifications: boolean;
-          smsNotifications: boolean;
-          bidAlerts: boolean;
-          winNotifications: boolean;
-        };
-        createdAt: string;
-        updatedAt: string;
-      } | null>(null);
-  
-      const [adminUser, setAdminUser] = useState<{
-        user_id: string;
-        username: string;
-        email: string;
-        userType: string;
-        userCode: string;
-        isSuperAdmin?: boolean;
-      } | null>(null);
-  
-      const [showEntrySuccess, setShowEntrySuccess] = useState<{
-        entryFee: number;
-        boxNumber: number;
-        auctionId?: string;
-        auctionNumber?: string | number;
-        productName?: string;
-        productWorth?: number;
-        timeSlot?: string;
-        paidBy?: string;
-        paymentMethod?: string;
-      } | null>(null);
-  
-      const [showEntryFailure, setShowEntryFailure] = useState<{
-        entryFee: number;
-        errorMessage: string;
-        auctionId?: string;
-        auctionNumber?: string | number;
-        productName?: string;
-        productWorth?: number;
-        timeSlot?: string;
-        paidBy?: string;
-        paymentMethod?: string;
-      } | null>(null);
-  
-      const [showBidSuccess, setShowBidSuccess] = useState<{
-        amount: number;
-        boxNumber: number;
-        productName?: string;
-        productWorth?: number;
-        timeSlot?: string;
-        paidBy?: string;
-      } | null>(null);
-  
-      const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
-      const recentPaymentTimestamp = useRef<number>(0);
-  
-      const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
-        const entryFee1 = 60;
-        const entryFee2 = 60;
-        const auctionHour = serverTime?.hour || 9; // Default to 9 UTC
-        const today = serverTime ? new Date(serverTime.timestamp) : new Date();
-  
-        const startTime = new Date(Date.UTC(
-          today.getUTCFullYear(),
-          today.getUTCMonth(),
-          today.getUTCDate(),
-          auctionHour,
-          0, 
-          0
-        ));
+        }
+        else if (path === '/failure-page' || path === '/payment/failure') {
+          setCurrentPage('failure-preview');
+          const txnId = searchParams.get('txnId');
+          const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
+
+          if (cookieData) {
+            try {
+              const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
+              setShowEntryFailure({
+                entryFee: Number(airpayData.amount),
+                errorMessage: airpayData.message || 'Payment failed',
+                transactionId: airpayData.txnId || airpayData.orderId,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                cardNumber: airpayData.cardNumber
+              } as any);
+              // Optional: Clear cookie after reading
+              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            } catch (e) {
+              console.error("Error parsing airpay cookie", e);
+            }
+          } else if (txnId) {
+            setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
+          }
+        }
+        else if (path === '/history' || path.startsWith('/history/')) {
+          setCurrentPage('history');
+          if (path === '/history') {
+            setSelectedAuctionDetails(null);
+          }
+        } else if (path === '/leaderboard') setCurrentPage('leaderboard');
+        else if (path === '/view-guide') setCurrentPage('view-guide');
+        else if (path === '/winning-tips') setCurrentPage('winning-tips');
+        else if (path === '/support-chat') setCurrentPage('support-chat');
+        else if (path === '/tester-feedback') setCurrentPage('tester-feedback');
+        else if (path === '/transactions' || path.startsWith('/transactions/')) setCurrentPage('transactions');
+        else if (path === '/prizeshowcase') setCurrentPage('prizeshowcase');
+        else setCurrentPage('game');
+      };
+
+      // Initial check for URL parameters
+      handlePopState();
+
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+  // ✅ Fetch server time ONCE on mount, then use local offset
+  useEffect(() => {
+    const initializeServerTime = async () => {
+      const time = await fetchServerTime();
+      if (time) {
+        setServerTime(time);
+      }
+    };
+
+    // Initial fetch to calculate offset
+    initializeServerTime();
+
+    // Update local state every second using calculated offset (no API call)
+    const interval = setInterval(() => {
+      setServerTime(getCurrentServerTime());
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
+
+    // ✅ NEW: Hourly auto-refresh logic (12:00, 1:00, 2:00, etc.)
+    useEffect(() => {
+      let refreshTimeout: ReturnType<typeof setTimeout>;
+
+      const scheduleHourlyRefresh = () => {
+        const now = Date.now() + serverTimeOffset;
+        const date = new Date(now);
         
-        return {
-          id: 'auction-1',
-          title: 'Mega Auction',
-          prize: 'iPhone 15 Pro',
-          prizeValue: 129900,
-          startTime,
-          endTime: new Date(startTime.getTime() + 60 * 60 * 1000),
-          currentRound: getCurrentRoundByTime(serverTime),
-          totalParticipants: 0,
-          userHasPaidEntry: false,
-          auctionHour,
-          userBidsPerRound: {},
-          userQualificationPerRound: {},
-          boxes: [
-            { id: 1, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee1, hasPaid: false },
-            { id: 2, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee2, hasPaid: false },
-            { id: 3, type: "round", roundNumber: 1, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 1, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 1, serverTime).closesAt, leaderboard: generateDemoLeaderboard(1) },
-            { id: 4, type: "round", roundNumber: 2, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 2, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 2, serverTime).closesAt, leaderboard: generateDemoLeaderboard(2) },
-            { id: 5, type: "round", roundNumber: 3, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 3, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 3, serverTime).closesAt, leaderboard: generateDemoLeaderboard(3) },
-            { id: 6, type: "round", roundNumber: 4, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 4, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 4, serverTime).closesAt, leaderboard: generateDemoLeaderboard(4) },
-          ]
-        };
-      });
-  
-      const [dailyStats, setDailyStats] = useState({ totalAuctions: 6, totalPrizeValue: 350000 });
-      const [isAuctionSectionsVisible, setIsAuctionSectionsVisible] = useState(true);
-      const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-      const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
-      const [forceTutorialShow, setForceTutorialShow] = useState<boolean>(false);
-      const [showAmazonVoucherModal, setShowAmazonVoucherModal] = useState<boolean>(false);
-      const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
-      const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
-      const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
-      const [upcomingAuctionData, setUpcomingAuctionData] = useState<any>(null);
-      const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
-      const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
-      const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
-      const [isPlacingBid, setIsPlacingBid] = useState(false);
-      const [previousRound, setPreviousRound] = useState<number>(1);
-      const [forceRefetchTrigger, setForceRefetchTrigger] = useState<number>(0);
-      const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
-      const hasInitiallyLoaded = useRef(false);
-  
-      const handleStartTutorial = () => {
-        setForceTutorialShow(true);
-        setTutorialStartToken(Date.now());
+        // Calculate milliseconds until the next full hour
+        const minutes = date.getUTCMinutes();
+        const seconds = date.getUTCSeconds();
+        const milliseconds = date.getUTCMilliseconds();
+        
+        const msUntilNextHour = ((60 - minutes) * 60 * 1000) - (seconds * 1000) - milliseconds;
+        
+        console.log(`⏰ Hourly refresh scheduled in ${Math.round(msUntilNextHour / 1000 / 60)} minutes`);
+
+        refreshTimeout = setTimeout(() => {
+          console.log('⏰ Hourly mark reached - Reloading page for consistency');
+          window.location.reload();
+        }, msUntilNextHour);
       };
-  
-      const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
-      const [selectedLeaderboard, setSelectedLeaderboard] = useState<{
-        roundNumber?: number;
-        hourlyAuctionId?: string;
-      } | null>(null);
-      const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useState<string | null>(null);
-  
-      // ✅ Helper function to map API user data to local state
-      const mapUserData = (userData: any) => {
-        return {
-          id: userData.user_id || userData.id,
-          username: userData.username,
-          mobile: userData.mobile,
-          email: userData.email,
-          isDeleted: userData.isDeleted || false,
-          totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
-          totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
-          totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
-          totalClaimed: userData.stats?.totalClaimed ?? userData.totalClaimed ?? 0,
-          totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
-          totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
-          userType: userData.userType || 'PLAYER',
-          userCode: userData.userCode || '',
-          preferences: userData.preferences || {
-            emailNotifications: true,
-            smsNotifications: true,
-            bidAlerts: true,
-            winNotifications: true,
-          },
-          createdAt: userData.createdAt || new Date().toISOString(),
-          updatedAt: userData.updatedAt || new Date().toISOString(),
-        };
+
+      scheduleHourlyRefresh();
+
+      return () => {
+        if (refreshTimeout) clearTimeout(refreshTimeout);
       };
-  
-      // ✅ NEW: Fetch user data from API and update state
-      const fetchAndSetUser = async (userId: string) => {
-        try {
-          console.log('🔄 Fetching user data from API for userId:', userId);
-          const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
+    }, []);
+
+    const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    username: string;
+    mobile?: string;
+    email?: string;
+    isDeleted: boolean;
+    totalAuctions: number;
+    totalWins: number;
+    totalAmountSpent: number;
+    totalAmountWon: number;
+    userType: string;
+    userCode: string;
+    preferences: {
+      emailNotifications: boolean;
+      smsNotifications: boolean;
+      bidAlerts: boolean;
+      winNotifications: boolean;
+    };
+    createdAt: string;
+    updatedAt: string;
+  } | null>(null);
+
+  // ✅ Helper function to map API user data to local state
+  const mapUserData = (userData: any) => {
+    return {
+      id: userData.user_id || userData.id,
+      username: userData.username,
+      mobile: userData.mobile,
+      email: userData.email,
+      isDeleted: userData.isDeleted || false,
+      // ✅ CRITICAL FIX: Handle stats from both nested stats object and top-level fields
+      totalAuctions: userData.stats?.totalAuctions ?? userData.totalAuctions ?? 0,
+        totalWins: userData.stats?.totalWins ?? userData.totalWins ?? 0,
+        totalLosses: userData.stats?.totalLosses ?? userData.totalLosses ?? 0,
+        totalClaimed: userData.stats?.totalClaimed ?? userData.totalClaimed ?? 0,
+        totalAmountSpent: userData.stats?.totalSpent ?? userData.totalAmountSpent ?? 0,
+      totalAmountWon: userData.stats?.totalWon ?? userData.totalAmountWon ?? 0,
+      userType: userData.userType || 'PLAYER',
+      userCode: userData.userCode || '',
+      preferences: userData.preferences || {
+        emailNotifications: true,
+        smsNotifications: true,
+        bidAlerts: true,
+        winNotifications: true,
+      },
+      createdAt: userData.createdAt || new Date().toISOString(),
+      updatedAt: userData.updatedAt || new Date().toISOString(),
+    };
+  };
+
+  // ✅ NEW: Fetch user data from API and update state
+  const fetchAndSetUser = async (userId: string) => {
+    try {
+      console.log('🔄 Fetching user data from API for userId:', userId);
+      const response = await fetch(`${API_ENDPOINTS.auth.me.base}?user_id=${userId}`);
+      
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || !contentType || !contentType.includes("application/json")) {
+        console.error('Failed to fetch user data: Invalid response from server', response.status);
+        return;
+      }
+      
+      const result = await response.json();
+      
+        if (result.success && result.user) {
+          console.log('✅ User data fetched from API:', result.user);
+          const mappedUser = mapUserData(result.user);
           
-          const contentType = response.headers.get("content-type");
-          if (!response.ok || !contentType || !contentType.includes("application/json")) {
-            console.error('Failed to fetch user data: Invalid response from server', response.status);
-            return;
-          }
-          
-          const result = await response.json();
-          
-          if (result.success && result.user) {
-            console.log('✅ User data fetched from API:', result.user);
-            const mappedUser = mapUserData(result.user);
-            
+            // ✅ Save updated stats to localStorage for faster restoration on refresh
             localStorage.setItem("totalWins", (mappedUser.totalWins ?? 0).toString());
             localStorage.setItem("totalLosses", (mappedUser.totalLosses ?? 0).toString());
             localStorage.setItem("totalAmountSpent", (mappedUser.totalAmountSpent ?? 0).toString());
             localStorage.setItem("totalAmountWon", (mappedUser.totalAmountWon ?? 0).toString());
-            
-            setCurrentUser(mappedUser);
+          
+          setCurrentUser(mappedUser);
+        console.log('✅ User state updated with stats:', {
+          totalAuctions: mappedUser.totalAuctions,
+          totalWins: mappedUser.totalWins,
+          totalAmountSpent: mappedUser.totalAmountSpent,
+          totalAmountWon: mappedUser.totalAmountWon,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+const [adminUser, setAdminUser] = useState<{
+      user_id: string;
+      username: string;
+      email: string;
+      userType: string;
+      userCode: string;
+      isSuperAdmin?: boolean;
+    } | null>(null);
+
+  const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
+
+  // ✅ Restore selected auction details from localStorage on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/history/details' || path.startsWith('/history/details')) {
+      const storedAuction = localStorage.getItem('selectedAuctionDetails');
+      if (storedAuction) {
+        try {
+          const parsedAuction = JSON.parse(storedAuction);
+          // Convert date strings back to Date objects
+          parsedAuction.date = new Date(parsedAuction.date);
+          if (parsedAuction.claimDeadline) {
+            parsedAuction.claimDeadline = new Date(parsedAuction.claimDeadline);
           }
+          if (parsedAuction.claimedAt) {
+            parsedAuction.claimedAt = new Date(parsedAuction.claimedAt);
+          }
+          setSelectedAuctionDetails(parsedAuction);
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          console.error('Error parsing stored auction:', error);
+          localStorage.removeItem('selectedAuctionDetails');
+        }
+      }
+    }
+  }, []);
+
+  const [showEntrySuccess, setShowEntrySuccess] = useState<{
+    entryFee: number;
+    boxNumber: number;
+    auctionId?: string;
+    auctionNumber?: string | number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
+  } | null>(null);
+
+  const [showEntryFailure, setShowEntryFailure] = useState<{
+    entryFee: number;
+    errorMessage: string;
+    auctionId?: string;
+    auctionNumber?: string | number;
+  } | null>(null);
+
+  const [showBidSuccess, setShowBidSuccess] = useState<{
+    amount: number;
+    boxNumber: number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
+  } | null>(null);
+
+  const [selectedLeaderboard, setSelectedLeaderboard] = useState<{
+    roundNumber?: number;
+    hourlyAuctionId?: string;
+  } | null>(null);
+
+const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useState<string | null>(null);
+
+    // User Activity Tracker
+    const currentPathForTracking = currentPage === 'game' ? '/' : `/${currentPage}`;
+    useActivityTracker(
+      currentUser?.id || null,
+      currentUser?.username || null,
+      currentPathForTracking
+    );
+
+    // Generate random entry fees between ₹1000-₹3500
+  const generateRandomEntryFee = () => Math.floor(Math.random() * 2501) + 1000;
+
+  // ✅ Only initialize currentAuction after server time is loaded
+  const [currentAuction, setCurrentAuction] = useState<Auction>(() => {
+    const entryFee1 = generateRandomEntryFee();
+    const entryFee2 = generateRandomEntryFee();
+    const auctionHour = serverTime?.hour || 9; // Default to 9 UTC (14:30 IST)
+    const today = serverTime ? new Date(serverTime.timestamp) : new Date();
+
+    // ✅ Calculate IST slot start time correctly
+    // 9 UTC -> 14:30 IST
+    // 11 UTC -> 16:30 IST
+    // etc.
+    const startTime = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate(),
+      auctionHour,
+      0, // Auctions start at :00 past the UTC hour (which is :30 past IST hour, e.g. 14:30)
+      0
+    ));
+    
+    return {
+      id: 'auction-1',
+      title: 'Mega Auction',
+      prize: 'iPhone 15 Pro',
+      prizeValue: 129900,
+      startTime,
+      endTime: new Date(startTime.getTime() + 60 * 60 * 1000), // 1 hour duration
+      currentRound: getCurrentRoundByTime(serverTime),
+      totalParticipants: 0,
+      userHasPaidEntry: false,
+      auctionHour,
+      userBidsPerRound: {},
+      userQualificationPerRound: {},
+      boxes: [
+        { id: 1, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee1, hasPaid: false },
+        { id: 2, type: "entry", isOpen: true, currentBid: 0, bidder: null, entryFee: entryFee2, hasPaid: false },
+        { id: 3, type: "round", roundNumber: 1, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 1, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 1, serverTime).closesAt, leaderboard: generateDemoLeaderboard(1) },
+        { id: 4, type: "round", roundNumber: 2, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 2, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 2, serverTime).closesAt, leaderboard: generateDemoLeaderboard(2) },
+        { id: 5, type: "round", roundNumber: 3, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 3, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 3, serverTime).closesAt, leaderboard: generateDemoLeaderboard(3) },
+        { id: 6, type: "round", roundNumber: 4, isOpen: false, currentBid: 0, bidder: null, minBid: 1, opensAt: getRoundBoxTimes(auctionHour, 4, serverTime).opensAt, closesAt: getRoundBoxTimes(auctionHour, 4, serverTime).closesAt, leaderboard: generateDemoLeaderboard(4) },
+      ]
+    };
+  });
+
+  const [isAuctionSectionsVisible, setIsAuctionSectionsVisible] = useState(true);
+
+  // Force show sections if user has participated
+  useEffect(() => {
+    if (currentAuction.userHasPaidEntry) {
+      setIsAuctionSectionsVisible(true);
+    }
+  }, [currentAuction.userHasPaidEntry]);
+
+  // ✅ Update auction state when server time first loads
+  useEffect(() => {
+    if (!serverTime) return;
+    
+    const currentHour = getCurrentAuctionSlot(serverTime);
+    if (!currentHour) return;
+    
+    // Only update if the auction hour is different from current
+    if (currentAuction.auctionHour !== currentHour) {
+      const entryFee1 = generateRandomEntryFee();
+      const entryFee2 = generateRandomEntryFee();
+      const today = new Date(serverTime.timestamp);
+      
+      const startTime = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        currentHour,
+        0,
+        0
+      );
+      
+      const endTime = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        currentHour + 1,
+        0,
+        0
+      );
+
+      const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
+        const { opensAt, closesAt } = getRoundBoxTimes(currentHour, roundNum, serverTime);
+        return {
+          id: roundNum + 2,
+          type: "round",
+          roundNumber: roundNum,
+          isOpen: false,
+          minBid: 10,
+          currentBid: 0,
+          bidder: null,
+          opensAt,
+          closesAt,
+          leaderboard: [],
+          status: "upcoming",
+        };
+      });
+
+      const entryBox1: EntryBox = {
+        id: 1,
+        type: "entry",
+        isOpen: true,
+        entryFee: entryFee1,
+        currentBid: 0,
+        bidder: null,
+        hasPaid: false,
+        status: "upcoming",
+      };
+
+      const entryBox2: EntryBox = {
+        id: 2,
+        type: "entry",
+        isOpen: true,
+        entryFee: entryFee2,
+        currentBid: 0,
+        bidder: null,
+        hasPaid: false,
+        status: "upcoming",
+      };
+
+      setCurrentAuction(prev => ({
+        ...prev,
+        id: `auction-${currentHour}`,
+        startTime,
+        endTime,
+        auctionHour: currentHour,
+        currentRound: getCurrentRoundByTime(serverTime),
+        boxes: [entryBox1, entryBox2, ...roundBoxes],
+      }));
+    }
+  }, [serverTime]); // Run when server time first loads
+
+  const [currentHourlyAuctionId, setCurrentHourlyAuctionId] = useState<string | null>(null);
+  const [isPlacingBid, setIsPlacingBid] = useState(false);
+  // ✅ NEW: Track previous round to detect round changes
+  const [previousRound, setPreviousRound] = useState<number>(1);
+  // ✅ NEW: Force refetch trigger
+  const [forceRefetchTrigger, setForceRefetchTrigger] = useState<number>(0);
+  // ✅ NEW: Track if user just logged in to trigger immediate refresh
+  const [justLoggedIn, setJustLoggedIn] = useState<boolean>(false);
+  // ✅ NEW: Store live auction data to pass to PrizeShowcase
+  const [liveAuctionData, setLiveAuctionData] = useState<any>(null);
+  // ✅ NEW: Track if we're currently fetching live auction data
+    const [isLoadingLiveAuction, setIsLoadingLiveAuction] = useState<boolean>(true);
+
+    const [upcomingAuctionData, setUpcomingAuctionData] = useState<any>(null);
+    const [upcomingCountdown, setUpcomingCountdown] = useState<string>('00:00:00');
+    const [isUpcomingAuctionVisible, setIsUpcomingAuctionVisible] = useState(false);
+
+    // ✅ NEW: Centralized countdown calculation for consistency across all components
+    const calculateCountdown = useCallback((targetTimeStr: string, auctionDateStr?: string, currentTime?: number) => {
+      if (!targetTimeStr || !currentTime) return '00:00:00';
+
+      const [targetHours, targetMinutes] = targetTimeStr.split(':').map(Number);
+      const serverNow = new Date(currentTime);
+      
+      // Use the auctionDate from the object if available, otherwise default to today
+      const auctionDate = auctionDateStr ? new Date(auctionDateStr) : new Date(currentTime);
+      const target = new Date(Date.UTC(
+        auctionDate.getUTCFullYear(),
+        auctionDate.getUTCMonth(),
+        auctionDate.getUTCDate(),
+        targetHours,
+        targetMinutes,
+        0,
+        0
+      ));
+
+      // If target time has passed today and no specific date was provided, it must be for tomorrow
+      if (!auctionDateStr && target.getTime() <= currentTime) {
+        target.setUTCDate(target.getUTCDate() + 1);
+      }
+
+      const totalSecondsRemaining = Math.floor((target.getTime() - currentTime) / 1000);
+      
+      if (totalSecondsRemaining <= 0) return '00:00:00';
+
+      const hours = Math.floor(totalSecondsRemaining / 3600);
+      const minutes = Math.floor((totalSecondsRemaining % 3600) / 60);
+      const seconds = totalSecondsRemaining % 60;
+      
+      if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }, []);
+
+    // ✅ Update countdown timer for upcoming auction every second using server time
+    useEffect(() => {
+      if (!serverTime) return;
+
+      const updateCountdown = () => {
+        if (upcomingAuctionData && upcomingAuctionData.TimeSlot) {
+          const countdown = calculateCountdown(
+            upcomingAuctionData.TimeSlot, 
+            upcomingAuctionData.auctionDate, 
+            serverTime.timestamp
+          );
+          setUpcomingCountdown(countdown);
+        } else {
+          // Fallback: Simplified calculation to the next top of the hour
+          const currentMinute = serverTime.minute;
+          const currentSecond = serverTime.second;
+          const totalSecondsRemaining = 3600 - (currentMinute * 60 + currentSecond);
+          const minutes = Math.floor(totalSecondsRemaining / 60);
+          const seconds = totalSecondsRemaining % 60;
+          setUpcomingCountdown(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
         }
       };
-  
-      // User Activity Tracker
-      const currentPathForTracking = currentPage === 'game' ? '/' : `/${currentPage}`;
-      useActivityTracker(
-        currentUser?.id || null,
-        currentUser?.username || null,
-        currentPathForTracking
-      );
-  
-    const handleNavigate = (page: string, data?: any) => {
+
+      updateCountdown();
+      const timer = setInterval(updateCountdown, 1000);
+      return () => clearInterval(timer);
+    }, [serverTime, upcomingAuctionData, calculateCountdown]);
+
+      // ✅ NEW: Fetch upcoming auction data with polling
+      const fetchUpcomingAuction = useCallback(async () => {
+        try {
+          console.log('🔄 Fetching first upcoming product from API...');
+          const response = await fetch(API_ENDPOINTS.scheduler.firstUpcomingProduct);
+          const data = await response.json();
+          
+          if (data.success && data.data) {
+            const nextAuction = data.data;
+            console.log('✅ Found first upcoming auction:', nextAuction.auctionName);
+            setUpcomingAuctionData(nextAuction);
+          } else {
+            console.log('⚠️ No upcoming auctions found');
+            setUpcomingAuctionData(null);
+          }
+        } catch (error) {
+          console.error('Error fetching upcoming auction:', error);
+        }
+      }, []);
+
+      // Initial fetch and polling for upcoming auction
+      useEffect(() => {
+        if (!serverTime) return;
+        
+        fetchUpcomingAuction();
+        
+        // Poll every 5 minutes (300,000 ms) as requested "every few minutes"
+        const pollInterval = setInterval(fetchUpcomingAuction, 300000);
+        
+        return () => clearInterval(pollInterval);
+      }, [fetchUpcomingAuction, serverTime?.hour, serverTime?.minute, liveAuctionData]);
+
+  // ✅ Track if the first load has completed
+  const hasInitiallyLoaded = useRef(false);
+  // ✅ NEW: Track tutorial/whatsnew token
+  const [tutorialStartToken, setTutorialStartToken] = useState<number>(0);
+  const [forceTutorialShow, setForceTutorialShow] = useState<boolean>(false);
+  // ✅ NEW: Mobile menu state for header (to control from tutorial)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  // ✅ NEW: Show Amazon Voucher modal after first login/signup
+  const [showAmazonVoucherModal, setShowAmazonVoucherModal] = useState<boolean>(false);
+  // ✅ NEW: Track if this is user's first login/signup for tutorial
+  const [isFirstLogin, setIsFirstLogin] = useState<boolean>(false);
+  // ✅ NEW: Daily auction stats for the "Why Join Dream60?" section
+  const [dailyStats, setDailyStats] = useState({ totalAuctions: 6, totalPrizeValue: 350000 });
+  // ✅ NEW: Sticky optimistic payment state
+  const [recentPaymentSuccess, setRecentPaymentSuccess] = useState<boolean>(false);
+  const recentPaymentTimestamp = useRef<number>(0);
+
+  // Tutorial steps for What's New (5 steps)
+  const whatsNewSteps: TutorialStep[] = [
+    {
+      id: 'welcome',
+      title: 'Welcome to Dream60!',
+      description: 'Win amazing prizes with just ₹60! Pay your entry fee, place bids in 4 rounds, and compete to win prizes worth up to ₹3,50,000.',
+      targetElement: '[data-whatsnew-target="prize-showcase"]',
+      position: 'bottom',
+      action: () => handleNavigate('game'),
+    },
+    {
+      id: 'transactions',
+      title: 'Transaction History',
+      description: 'Track all your entry fees, prize claims, and vouchers in one place. Click "Transactions" in the header to view your payment history.',
+      targetElement: '[data-whatsnew-target="transactions"]',
+      mobileTargetElement: '[data-whatsnew-target="mobile-transactions"]',
+      position: 'bottom',
+      action: () => handleNavigate('game'),
+      mobileAction: () => setMobileMenuOpen(true),
+    },
+      {
+        id: 'auction-schedule',
+        title: 'Daily Auction Schedule',
+        description: 'Join auctions from 2:30 PM to 12:30 AM IST. Each auction has 4 bidding rounds of 15 minutes each.',
+        targetElement: '[data-whatsnew-target="auction-schedule"]',
+        position: 'top',
+        scrollBlock: 'start', // Start in the middle of the screen (custom logic in TutorialOverlay)
+        action: () => { setMobileMenuOpen(false); handleNavigate('game'); },
+        mobileAction: () => setMobileMenuOpen(false),
+      },
+
+    {
+      id: 'support',
+      title: 'Need Help?',
+      description: 'Access 24/7 support, view guides, winning tips, and FAQs. Our support team is always ready to assist you.',
+      targetElement: '[data-whatsnew-target="support"]',
+      mobileTargetElement: '[data-whatsnew-target="mobile-support"]',
+      position: 'bottom',
+      action: () => handleNavigate('game'),
+      mobileAction: () => setMobileMenuOpen(true),
+    },
+    {
+      id: 'pwa-install',
+      title: 'Install Dream60 App',
+      description: 'Install Dream60 on your device for faster access, offline support, and instant notifications about auctions.',
+      targetElement: '[data-whatsnew-target="pwa-install"]',
+      position: 'bottom',
+      action: () => setMobileMenuOpen(false),
+      mobileAction: () => setMobileMenuOpen(false),
+    },
+  ];
+
+  const handleStartTutorial = () => {
+    setForceTutorialShow(true);
+    setTutorialStartToken(Date.now());
+  };
+
+  // ✅ NEW: Fetch live auction data and refresh every 15 minutes (aligned with UTC/IST 15-min marks)
+  const fetchLiveAuction = useCallback(async (showLoading = false) => {
+    if (showLoading) {
+      setIsLoadingLiveAuction(true);
+    }
+    try {
+      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+      
+      if (!response.ok) {
+        console.log('⚠️ No live auction available');
+        setLiveAuctionData(null);
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        console.log('✅ Live auction data loaded/refreshed');
+        setLiveAuctionData(result.data);
+        
+        // Update basic auction info
+        setCurrentAuction(prev => ({
+          ...prev,
+          prize: result.data.auctionName || prev.prize,
+          prizeValue: result.data.prizeValue || prev.prizeValue,
+          totalParticipants: result.data.participants?.length || prev.totalParticipants,
+        }));
+      } else {
+        setLiveAuctionData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching live auction:', error);
+    } finally {
+      setIsLoadingLiveAuction(false);
+    }
+  }, []);
+
+    // Effect to trigger fetch on mount and when forced
+    useEffect(() => {
+      // ✅ Background refresh when force triggered to avoid visible "Loading..." flicker
+      const showLoading = forceRefetchTrigger === 0;
+      fetchLiveAuction(showLoading);
+    }, [fetchLiveAuction, forceRefetchTrigger]);
+
+  // Effect to handle 15-minute alignment auto-refresh
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout>;
+
+    const scheduleNextFetch = () => {
+      // Use serverTime for alignment if available, otherwise use local time
+      const now = Date.now() + serverTimeOffset;
+      const date = new Date(now);
+      const minutes = date.getUTCMinutes();
+      const seconds = date.getUTCSeconds();
+      const milliseconds = date.getUTCMilliseconds();
+      
+      // Calculate minutes until next 15-min mark (00, 15, 30, 45)
+      // This aligns with IST boundaries as well (IST = UTC + 5:30)
+      const nextMarkMinutes = (Math.floor(minutes / 15) + 1) * 15;
+      const minutesToWait = nextMarkMinutes - minutes;
+      
+      // Calculate total ms to wait, plus a 2s buffer to ensure server has processed transition
+      const msToWait = (minutesToWait * 60 * 1000) - (seconds * 1000) - milliseconds + 2000;
+      
+      console.log(`⏱️ Next 15-min auto-refresh scheduled in ${Math.round(msToWait / 1000)}s (at :${nextMarkMinutes % 60} UTC/IST boundary)`);
+      
+      timerId = setTimeout(() => {
+        console.log('⏰ 15-minute boundary reached - triggering auto-refresh');
+        fetchLiveAuction(false); // Background refresh
+        scheduleNextFetch();
+      }, msToWait);
+    };
+
+    scheduleNextFetch();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [fetchLiveAuction]);
+
+  // ✅ NEW: Fetch daily auction stats for the "Why Join Dream60?" section
+  useEffect(() => {
+    const fetchDailyStats = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+          if (result.success && result.data) {
+            const auctions = result.data.auctions || [];
+            
+            // Filter for active (not cancelled) auctions
+            const activeAuctions = auctions.filter((auction: any) => auction.status !== 'CANCELLED');
+            const totalAuctions = activeAuctions.length || 6;
+            
+            // Calculate total prize value by summing prizeValue of active auctions
+            const totalPrizeValue = activeAuctions.reduce((sum: number, auction: any) => {
+              return sum + (auction.prizeValue || 0);
+            }, 0);
+            
+            setDailyStats({
+              totalAuctions,
+              totalPrizeValue: totalPrizeValue > 0 ? totalPrizeValue : 350000
+            });
+            
+            console.log('📈 Daily Stats Updated (Active):', { totalAuctions, totalPrizeValue });
+          }
+
+      } catch (error) {
+        console.error('Error fetching daily stats:', error);
+      }
+    };
+
+    fetchDailyStats();
+  }, []);
+
+  // Check for existing session on app initialization
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        // Check for admin session first
+        const adminUserId = localStorage.getItem("admin_user_id");
+        if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
+          const adminEmail = localStorage.getItem("admin_email");
+          const adminUsername = localStorage.getItem("admin_username");
+          const adminIsSuperAdmin = localStorage.getItem("admin_isSuperAdmin") === 'true';
+          setAdminUser({
+            user_id: adminUserId,
+            username: adminUsername || 'admin_dream60',
+            email: adminEmail || 'dream60@gmail.com',
+            userType: 'ADMIN',
+            userCode: '#ADMIN',
+            isSuperAdmin: adminIsSuperAdmin,
+          });
+          if (currentPage === 'admin-login') {
+            setCurrentPage("admin-dashboard");
+          }
+          return;
+        }
+
+        // ✅ Check for regular user session - restore from localStorage only
+        const userId = localStorage.getItem("user_id");
+        const username = localStorage.getItem("username");
+        const email = localStorage.getItem("email");
+
+        if (!userId || !username) return; // No valid session
+
+      // ✅ Restore user from localStorage without API call
+      const storedWins = parseInt(localStorage.getItem("totalWins") || "0", 10);
+      const storedLosses = parseInt(localStorage.getItem("totalLosses") || "0", 10);
+      const storedSpent = parseFloat(localStorage.getItem("totalAmountSpent") || "0");
+      const storedWon = parseFloat(localStorage.getItem("totalAmountWon") || "0");
+
+      const user = mapUserData({
+        user_id: userId,
+        username: username,
+        email: email || '',
+        totalWins: storedWins,
+        totalLosses: storedLosses,
+        totalAmountSpent: storedSpent,
+        totalAmountWon: storedWon,
+      });
+
+      setCurrentUser(user);
+        console.log('✅ Session restored from localStorage');
+      } catch (error) {
+        console.error("Session restore error:", error);
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
+        localStorage.removeItem("email");
+      }
+    };
+
+    checkExistingSession();
+  }, [currentPage]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [currentPage]);
+
+  // ✅ NEW: Fetch user data from API when user is logged in
+  useEffect(() => {
+    if (currentUser?.id) {
+      console.log('🔄 User logged in - fetching updated user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentUser?.id]);
+
+  // ✅ NEW: Refresh user data when navigating back to game page (homepage)
+  useEffect(() => {
+    if (currentPage === 'game' && currentUser?.id) {
+      console.log('🔄 Navigated to homepage - refreshing user data from API');
+      fetchAndSetUser(currentUser.id);
+    }
+  }, [currentPage, currentUser?.id]);
+
+  // ✅ NEW: Detect round changes and trigger refetch
+  useEffect(() => {
+    if (!serverTime || !currentUser?.id || !currentAuction.userHasPaidEntry) return;
+    
+    const currentRound = getCurrentRoundByTime(serverTime);
+    
+    // Check if round has changed
+    if (currentRound !== previousRound) {
+      console.log(`🔄 Round changed from ${previousRound} to ${currentRound} - triggering auction data refresh`);
+        setPreviousRound(currentRound);
+        
+        // Trigger immediate refetch by incrementing the trigger
+        setForceRefetchTrigger(prev => prev + 1);
+      }
+  }, [serverTime, currentUser?.id, currentAuction.userHasPaidEntry, previousRound]);
+
+  // ✅ NEW: Fetch basic auction info immediately when user logs in (before entry payment)
+  useEffect(() => {
+    const fetchBasicAuctionInfo = async () => {
+      if (!currentUser?.id || currentAuction.userHasPaidEntry) return;
+      
+      // ✅ Only fetch on login event
+      if (!justLoggedIn) return;
+      
+      try {
+        console.log('🔄 Fetching basic auction info after login...');
+        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const liveAuction = result.data;
+          
+          console.log('📊 [LOGIN REFRESH] Basic auction info loaded:', {
+            'Prize Name': liveAuction.auctionName,
+            'Prize Value': liveAuction.prizeValue,
+            'Total Participants': liveAuction.participants?.length || 0
+          });
+          
+          // Update only basic auction info
+          setCurrentAuction(prev => ({
+            ...prev,
+            prize: liveAuction.auctionName || prev.prize,
+            prizeValue: liveAuction.prizeValue || prev.prizeValue,
+            totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+          }));
+          
+          // Reset flag after fetch
+          setJustLoggedIn(false);
+        }
+      } catch (error) {
+        console.error('Error fetching basic auction info:', error);
+        setJustLoggedIn(false);
+      }
+    };
+    
+    fetchBasicAuctionInfo();
+  }, [currentUser?.id, justLoggedIn, currentAuction.userHasPaidEntry]);
+
+  // Timer to automatically open boxes based on time schedule
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // ✅ Don't run timer logic if server time hasn't loaded yet
+      if (!serverTime) return;
+      
+      const currentHour = getCurrentAuctionSlot(serverTime);
+      const currentRound = getCurrentRoundByTime(serverTime);
+
+      setCurrentAuction((prev) => {
+        // Switch to new auction hour
+        if (currentHour && currentHour !== prev.auctionHour) {
+          const entryFee1 = generateRandomEntryFee();
+          const entryFee2 = generateRandomEntryFee();
+          const today = new Date(serverTime.timestamp);
+          
+          const startTime = new Date(Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate(),
+            currentHour,
+            0,
+            0
+          ));
+          
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+
+          const roundBoxes: RoundBox[] = [1, 2, 3, 4].map((roundNum) => {
+            const startMinutes = (roundNum - 1) * 15;
+            const endMinutes = roundNum * 15;
+            
+            const opensAt = new Date(Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate(),
+              currentHour,
+              startMinutes,
+              0
+            ));
+            
+            const closesAt = new Date(Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate(),
+              currentHour,
+              endMinutes,
+              0
+            ));
+
+            return {
+              id: roundNum + 2,
+              type: "round",
+              roundNumber: roundNum,
+              isOpen: false,
+              minBid: 10,
+              currentBid: 0,
+              bidder: null,
+              opensAt,
+              closesAt,
+              leaderboard: [],
+              status: "upcoming",
+            };
+          });
+
+          const entryBox1: EntryBox = {
+            id: 1,
+            type: "entry",
+            isOpen: true,
+            entryFee: entryFee1,
+            currentBid: 0,
+            bidder: null,
+            hasPaid: false,
+            status: "upcoming",
+          };
+
+          const entryBox2: EntryBox = {
+            id: 2,
+            type: "entry",
+            isOpen: true,
+            entryFee: entryFee2,
+            currentBid: 0,
+            bidder: null,
+            hasPaid: false,
+            status: "upcoming",
+          };
+
+          return {
+            ...prev,
+            id: `auction-${currentHour}`,
+            startTime,
+            endTime,
+            currentRound,
+            auctionHour: currentHour,
+            userHasPaidEntry: false,
+            userBidsPerRound: {},
+            userQualificationPerRound: {},
+            boxes: [entryBox1, entryBox2, ...roundBoxes],
+          };
+        }
+
+        if (!prev.userHasPaidEntry) {
+          return { ...prev, currentRound };
+        }
+
+        // ✅ Use server time instead of new Date()
+        const now = new Date(serverTime.timestamp);
+
+        const updatedBoxes: AnyBox[] = prev.boxes.map((box) => {
+          if (box.type === "round") {
+            const roundBox = box as RoundBox;
+            const { opensAt, closesAt } = roundBox;
+            const isNowOpen = now >= opensAt && now < closesAt;
+            const isPast = now >= closesAt;
+            const status: BoxStatus = isPast
+              ? "completed"
+              : isNowOpen
+              ? "active"
+              : "locked";
+
+            if (
+              status === "completed" &&
+              roundBox.status !== "completed" &&
+              (!roundBox.leaderboard || roundBox.leaderboard.length === 0)
+            ) {
+              return {
+                ...roundBox,
+                isOpen: isNowOpen,
+                status,
+                leaderboard: generateDemoLeaderboard(roundBox.roundNumber),
+                currentBid: 0,
+                bidder: null,
+              };
+            }
+
+            return { ...roundBox, isOpen: isNowOpen, status };
+          }
+          return box;
+        });
+
+        const hasChanges = updatedBoxes.some((box, index) => {
+          const prevBox = prev.boxes[index] as AnyBox;
+          if (box.isOpen !== prevBox.isOpen) return true;
+          if (box.type === "round" && prevBox.type === "round") {
+            return box.status !== prevBox.status;
+          }
+          return false;
+        });
+
+        return hasChanges || prev.currentRound !== currentRound
+          ? { ...prev, boxes: updatedBoxes, currentRound }
+          : prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [serverTime]); // ✅ Add serverTime as dependency
+
+      // Fetch current hourly auction ID when user is logged in
+          useEffect(() => {
+            const fetchCurrentAuctionId = async (showLoading = false) => {
+              // ✅ CRITICAL FIX: Always fetch when user is logged in
+              // This ensures the user's participation status is correctly loaded from the API on page refresh
+              if (!currentUser?.id) return;
+              
+              // ✅ Reset justLoggedIn flag after triggering refetch
+              if (justLoggedIn) {
+                console.log('🔄 User just logged in - forcing immediate auction data refresh');
+                setJustLoggedIn(false);
+              }
+              
+              // ✅ FIX: Only show loading on initial fetch to prevent flickering every 3s
+              if (showLoading && !hasInitiallyLoaded.current) {
+                setIsLoadingLiveAuction(true);
+              }
 
 
+          
+          try {
+            const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+            if (!response.ok) return;
+            
+            const result = await response.json();
+            
+            // Extract hourlyAuctionId from the response
+            if (result.success && result.data?.hourlyAuctionId) {
+              setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
+              
+              // ✅ NEW: Store live auction data to pass to PrizeShowcase
+              setLiveAuctionData(result.data);
+              
+              // ✅ Check if user has already placed bids in any rounds AND elimination status
+              const liveAuction = result.data;
+              const userBidsMap: { [roundNumber: number]: number } = {};
+              const userQualificationMap: { [roundNumber: number]: boolean } = {};
+              
+              // ✅ NEW: Extract user's entry fee from participants array
+              let userEntryFeeFromAPI: number | undefined = undefined;
+              let userHasPaidEntryFromAPI = false; // ✅ NEW: Track if user has paid entry
+              
+              if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+                const userParticipant = liveAuction.participants.find(
+                  (participant: any) => participant.playerId === currentUser.id
+                );
+                
+                if (userParticipant) {
+                  // ✅ CRITICAL FIX: If user is found in participants, they have paid entry fee
+                  userHasPaidEntryFromAPI = true;
+                  userEntryFeeFromAPI = userParticipant.entryFee;
+                }
+              }
+              
+              // ✅ CRITICAL: Find user in participants array to check isEliminated status
+              let userParticipant = null;
+              if (liveAuction.participants && Array.isArray(liveAuction.participants)) {
+                userParticipant = liveAuction.participants.find(
+                  (participant: any) => participant.playerId === currentUser.id
+                );
+              }
+              
+              if (liveAuction.rounds && Array.isArray(liveAuction.rounds)) {
+                // ✅ First pass: Collect all user bids
+                liveAuction.rounds.forEach((round: any) => {
+                  if (round.playersData && Array.isArray(round.playersData)) {
+                    const userBid = round.playersData.find(
+                      (player: any) => player.playerId === currentUser.id
+                    );
+                    
+                    if (userBid && userBid.auctionPlacedAmount) {
+                      userBidsMap[round.roundNumber] = userBid.auctionPlacedAmount;
+                    }
+                  }
+                });
+                
+                // ✅ Second pass: Set qualification status for each round
+                liveAuction.rounds.forEach((round: any) => {
+                  // Round 1: Always eligible if entry fee is paid
+                  if (round.roundNumber === 1) {
+                    userQualificationMap[1] = true;
+                  }
+                  
+                  // Rounds 2, 3, 4: Check if user is eliminated
+                  if (round.roundNumber > 1) {
+                    // ✅ CRITICAL: If user is eliminated, mark ALL future rounds as not qualified
+                    if (userParticipant && userParticipant.isEliminated === true) {
+                      userQualificationMap[round.roundNumber] = false;
+                    } else if (userParticipant && userParticipant.isEliminated === false) {
+                      // User is NOT eliminated, they can continue
+                      userQualificationMap[round.roundNumber] = true;
+                    }
+                  }
+                });
+              }
+              
+                      // Update local state
+                      setCurrentAuction(prev => {
+                        // ✅ NEW: Check localStorage for sticky payment status (survives refresh)
+                        const auctionId = prev.id;
+                        const paymentKey = `payment_${currentUser.id}_${auctionId}`;
+                        const storedPayment = localStorage.getItem(paymentKey) === 'true';
+                        const storedExpiry = parseInt(localStorage.getItem(`${paymentKey}_expiry`) || '0');
+                        const isPaymentValid = storedPayment && Date.now() < storedExpiry;
 
+                        // ✅ NEW: Sticky userHasPaidEntry logic to prevent flickering
+                        // If the user already has a true status for the SAME auction, don't let it flicker back to false
+                        // due to API lag/latency, especially after placing a bid.
+                        let finalUserHasPaidEntry = userHasPaidEntryFromAPI;
+                        
+                        // ✅ CRITICAL: Once paid for THIS auction, stay paid (sticky for entire auction hour)
+                        if (isPaymentValid) {
+                          finalUserHasPaidEntry = true;
+                        } else if (prev.userHasPaidEntry && prev.id === `auction-${result.data?.auctionHour || prev.auctionHour}`) {
+                          finalUserHasPaidEntry = true;
+                        } else if (!userHasPaidEntryFromAPI && recentPaymentSuccess) {
+                        // Extended timeout to 60 minutes (entire auction duration)
+                        const now = Date.now();
+                        if (now - recentPaymentTimestamp.current < 3600000) {
+                          finalUserHasPaidEntry = true;
+                        } else {
+                          setRecentPaymentSuccess(false);
+                        }
+                      } else if (!userHasPaidEntryFromAPI && (Object.keys(userBidsMap).length > 0 || Object.keys(prev.userBidsPerRound).length > 0)) {
+                        // Trust either API bids or existing local bids
+                        finalUserHasPaidEntry = true;
+                      }
+
+                    const updatedBoxes = prev.boxes.map(box => {
+
+                  if (box.type === 'round') {
+                    const roundBox = box as RoundBox;
+                    const roundData = liveAuction.rounds?.find(
+                      (r: any) => r.roundNumber === roundBox.roundNumber
+                    );
+                    
+                    let updatedBox = { ...roundBox };
+                    
+                    // ✅ NEW: Set winnersAnnounced flag from live auction
+                    if (liveAuction.winnersAnnounced) {
+                      updatedBox.winnersAnnounced = true;
+                    }
+                    
+                    // ✅ DYNAMIC MIN BID CALCULATION
+                    if (roundBox.roundNumber === 1) {
+                      updatedBox.minBid = userEntryFeeFromAPI || 10;
+                    } else {
+                      const previousRoundNumber = roundBox.roundNumber - 1;
+                      const previousRoundData = liveAuction.rounds?.find(
+                        (r: any) => r.roundNumber === previousRoundNumber
+                      );
+                      
+                      if (previousRoundData && previousRoundData.playersData && previousRoundData.playersData.length > 0) {
+                        const highestBidInPreviousRound = Math.max(
+                          ...previousRoundData.playersData.map((p: any) => p.auctionPlacedAmount)
+                        );
+                        const currentRoundConfig = liveAuction.roundConfig?.find(
+                          (rc: any) => rc.round === roundBox.roundNumber
+                        );
+                        const cutoffPercentage = currentRoundConfig?.roundCutoffPercentage || 0;
+                        const cutoffAmount = Math.floor(highestBidInPreviousRound * cutoffPercentage / 100);
+                        updatedBox.minBid = highestBidInPreviousRound - cutoffAmount;
+                      } else {
+                        const entryBox = prev.boxes.find(b => b.type === 'entry' && (b as EntryBox).hasPaid);
+                        const userEntryFee = entryBox ? (entryBox as EntryBox).entryFee : 10;
+                        updatedBox.minBid = userEntryFee || 10;
+                      }
+                    }
+                    
+                    if (roundData) {
+                        if (roundData.startedAt) {
+                          updatedBox.opensAt = new Date(roundData.startedAt);
+                        }
+                        if (roundData.completedAt) {
+                          updatedBox.closesAt = new Date(roundData.completedAt);
+                        } else if (roundData.startedAt) {
+                        const opensAt = new Date(roundData.startedAt);
+                        updatedBox.closesAt = new Date(opensAt.getTime() + 15 * 60 * 1000);
+                      }
+                      
+                      if (roundData.status === 'COMPLETED') {
+                        updatedBox.status = 'completed';
+                      } else if (roundData.status === 'ACTIVE') {
+                        updatedBox.status = 'active';
+                        updatedBox.isOpen = true;
+                      } else if (roundData.status === 'PENDING') {
+                        updatedBox.status = 'upcoming';
+                        updatedBox.isOpen = false;
+                      }
+                    }
+                    
+                    if (roundData && roundData.playersData && roundData.playersData.length > 0) {
+                      const sortedPlayers = [...roundData.playersData].sort((a: any, b: any) => {
+                        if (b.auctionPlacedAmount !== a.auctionPlacedAmount) {
+                          return b.auctionPlacedAmount - a.auctionPlacedAmount;
+                        }
+                        return new Date(a.auctionPlacedTime).getTime() - new Date(b.auctionPlacedTime).getTime();
+                      });
+                      const highestBidder = sortedPlayers[0];
+                      const rank1Player = sortedPlayers.find((player: any) => player.rank === 1);
+                      const highestBidFromAPI = rank1Player?.auctionPlacedAmount || highestBidder.auctionPlacedAmount;
+                      
+                        updatedBox = {
+                          ...updatedBox,
+                          currentBid: highestBidder.auctionPlacedAmount,
+                          bidder: highestBidder.playerUsername,
+                          highestBidFromAPI: highestBidFromAPI,
+                        };
+                      }
+                    
+                    return updatedBox;
+                  }
+                  return box;
+                });
+                
+                return {
+                  ...prev,
+                  prize: liveAuction.auctionName || prev.prize,
+                  prizeValue: liveAuction.prizeValue || prev.prizeValue,
+                  totalParticipants: liveAuction.participants?.length || prev.totalParticipants,
+                  boxes: updatedBoxes,
+                  userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap },
+                  userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap },
+                  winnersAnnounced: liveAuction.winnersAnnounced || false,
+                    userEntryFeeFromAPI: userEntryFeeFromAPI,
+                    userHasPaidEntry: finalUserHasPaidEntry,
+                  };
+                });
+
+            } else {
+              setLiveAuctionData(null);
+            }
+          } catch (error) {
+            console.error('Error fetching live auction:', error);
+            } finally {
+              setIsLoadingLiveAuction(false);
+              hasInitiallyLoaded.current = true;
+            }
+          };
+
+
+        // Initial fetch
+        fetchCurrentAuctionId(forceRefetchTrigger === 0);
+
+        // ✅ ADDED: High-frequency polling (3 seconds) to detect real-time updates like early completion
+        const interval = setInterval(() => {
+          fetchCurrentAuctionId(false); // Background refresh
+        }, 3000);
+
+        return () => clearInterval(interval);
+      }, [currentUser?.id, justLoggedIn, forceRefetchTrigger, recentPaymentSuccess, isPlacingBid]);
+
+  const handleNavigate = (page: string, data?: any) => {
     setCurrentPage(page);
     
     if (page === 'auction-leaderboard' && data?.hourlyAuctionId) {
@@ -572,6 +1660,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         'about': '/about',
         'terms': '/terms',
         'privacy': '/privacy',
+        'refund': '/refund',
         'support': '/support',
         'contact': '/contact',
         'profile': '/profile',
@@ -592,18 +1681,12 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     window.history.pushState({}, '', url);
   };
 
-    const handleBackToGame = (shouldScroll = false) => {
-      setCurrentPage('game');
-      window.history.pushState({}, '', '/');
-      setSelectedLeaderboard(null);
-      setSelectedAuctionDetails(null);
-      
-      if (shouldScroll) {
-        setTimeout(() => {
-          handleBidNowScroll();
-        }, 500);
-      }
-    };
+  const handleBackToGame = () => {
+    setCurrentPage('game');
+    window.history.pushState({}, '', '/');
+    setSelectedLeaderboard(null);
+    setSelectedAuctionDetails(null);
+  };
 
   const handleShowLeaderboard = (
     roundNumber: number,
@@ -1212,16 +2295,18 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     );
   }
 
-  if (currentPage === 'rules') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <Rules onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+    if (currentPage === 'rules') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <Rules onBack={handleBackToGame} />
+            <Footer onNavigate={handleNavigate} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
 
     if (currentPage === 'forgot') {
       return (
@@ -1272,15 +2357,26 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     }
 
     if (currentPage === 'terms') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <TermsAndConditions onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <TermsAndConditions onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    if (currentPage === 'refund') {
+      return (
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Sonner />
+            <RefundPolicy onBack={handleBackToGame} />
+          </TooltipProvider>
+        </QueryClientProvider>
+      );
+    }
 
   if (currentPage === 'privacy') {
     return (
@@ -1288,17 +2384,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         <TooltipProvider>
           <Sonner />
           <PrivacyPolicy onBack={handleBackToGame} />
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  if (currentPage === 'refund-cancellation') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Sonner />
-          <RefundCancellation onBack={handleBackToGame} />
         </TooltipProvider>
       </QueryClientProvider>
     );
@@ -1399,47 +2484,43 @@ if (currentPage === 'prizeshowcase') {
           );
         }
 
-        if (currentPage === 'contact') {
-  
-      return (
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Sonner />
-            <Contact onBack={handleBackToGame} currentUser={currentUser} />
-          </TooltipProvider>
-        </QueryClientProvider>
-        );
-      }
+      if (currentPage === 'contact') {
+
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Sonner />
+          <Contact onBack={handleBackToGame} />
+        </TooltipProvider>
+      </QueryClientProvider>
+      );
+    }
 
     if (currentPage === 'success-preview') {
-      const searchParams = new URLSearchParams(window.location.search);
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-              <PaymentSuccess
-                amount={Number(searchParams.get('amount')) || 60}
-                type="entry"
-                transactionId={searchParams.get('txnId') || ''}
-                auctionId={searchParams.get('auctionId') || ''}
-                onBackToHome={() => handleBackToGame(true)}
-                onClose={() => handleBackToGame(true)}
-              />
+            <PaymentSuccess
+              amount={1000}
+              type="entry"
+              boxNumber={0}
+              onBackToHome={handleBackToGame}
+              onClose={handleBackToGame}
+            />
           </TooltipProvider>
         </QueryClientProvider>
       );
     }
 
     if (currentPage === 'failure-preview') {
-      const searchParams = new URLSearchParams(window.location.search);
       return (
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
             <PaymentFailure
-              amount={Number(searchParams.get('amount')) || 60}
-              errorMessage={searchParams.get('message') || "Payment processing failed"}
-              transactionId={searchParams.get('txnId') || ''}
+              amount={1000}
+              errorMessage="This is a test failure message for preview."
               onRetry={handleBackToGame}
               onBackToHome={handleBackToGame}
               onClose={handleBackToGame}
@@ -1739,20 +2820,20 @@ if (currentPage === 'prizeshowcase') {
                                             className="overflow-hidden"
                                           >
                                             <PrizeShowcase
-                                                currentPrize={{
-                                                  ...currentAuction,
-                                                  prize: upcomingAuctionData.auctionName || upcomingAuctionData.prizeName,
-                                                  prizeValue: upcomingAuctionData.prizeValue,
-                                                  auctionHour: upcomingAuctionData.TimeSlot
-                                                }}
-                                                isLoggedIn={!!currentUser}
-                                                onLogin={handleShowLogin}
-                                                serverTime={serverTime}
-                                                liveAuctionData={upcomingAuctionData}
-                                                isLoadingLiveAuction={false}
-                                                isUpcoming={true}
-                                                upcomingCountdown={upcomingCountdown}
-                                                onPayEntry={() => {
+                                              currentPrize={{
+                                                ...currentAuction,
+                                                prize: upcomingAuctionData.auctionName || upcomingAuctionData.prizeName,
+                                                prizeValue: upcomingAuctionData.prizeValue,
+                                                auctionHour: upcomingAuctionData.TimeSlot
+                                              }}
+                                              isLoggedIn={!!currentUser}
+                                              onLogin={handleShowLogin}
+                                              serverTime={serverTime}
+                                              liveAuctionData={upcomingAuctionData}
+                                              isLoadingLiveAuction={false}
+                                              isUpcoming={true}
+                                              upcomingCountdown={upcomingCountdown}
+                                              onPayEntry={() => {
                                                 // Scroll to current auction to join
                                                 const element = document.getElementById('six-box-system-container');
                                                 if (element) {
