@@ -88,9 +88,25 @@ interface PrizeShowcaseProps {
     isLoadingLiveAuction?: boolean; // ✅ NEW: Loading state from parent
     isUpcoming?: boolean; // ✅ NEW: Whether this is an upcoming auction
     upcomingCountdown?: string; // ✅ NEW: Standardized countdown from parent
+    recentPaymentSuccess?: boolean; // ✅ NEW: Sticky optimistic payment state from parent
+    recentPaymentTimestamp?: number; // ✅ NEW: Timestamp from parent
   }
-  
-      export function PrizeShowcase({ currentPrize, onPayEntry, onPaymentFailure, onUserParticipationChange, isLoggedIn, onLogin, serverTime, liveAuctionData, isLoadingLiveAuction = true, isUpcoming = false, upcomingCountdown }: PrizeShowcaseProps) {
+    
+      export function PrizeShowcase({ 
+        currentPrize, 
+        onPayEntry, 
+        onPaymentFailure, 
+        onUserParticipationChange, 
+        isLoggedIn, 
+        onLogin, 
+        serverTime, 
+        liveAuctionData, 
+        isLoadingLiveAuction = true, 
+        isUpcoming = false, 
+        upcomingCountdown,
+        recentPaymentSuccess: propRecentPaymentSuccess,
+        recentPaymentTimestamp: propRecentPaymentTimestamp
+      }: PrizeShowcaseProps) {
       const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
       const [liveAuctions, setLiveAuctions] = useState<AuctionConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -289,26 +305,29 @@ interface PrizeShowcaseProps {
     setParticipants(participantsList);
     setParticipantsCount(participantsList.length);
 
-      const userId = localStorage.getItem('user_id');
-      if (userId) {
-        let userInParticipants = participantsList.some(
-          (p: Participant) => p.playerId === userId
-        );
+        const userId = localStorage.getItem('user_id');
+        if (userId) {
+          let userInParticipants = participantsList.some(
+            (p: Participant) => p.playerId === userId
+          );
 
-        // ✅ NEW: Sticky optimistic payment logic
-        if (!userInParticipants && recentPaymentSuccess) {
-          const now = Date.now();
-          if (now - recentPaymentTimestamp.current < 15000) {
-            console.log('🛡️ [PRIZE SHOWCASE OPTIMISTIC] Forcing isUserParticipating to true');
-            userInParticipants = true;
-          } else {
+          // ✅ Sticky optimistic payment logic - check both local and prop
+          const activeRecentSuccess = recentPaymentSuccess || propRecentPaymentSuccess;
+          const activeTimestamp = Math.max(recentPaymentTimestamp.current, propRecentPaymentTimestamp || 0);
+
+          if (!userInParticipants && activeRecentSuccess) {
+            const now = Date.now();
+            if (now - activeTimestamp < 15000) {
+              console.log('🛡️ [PRIZE SHOWCASE OPTIMISTIC] Forcing isUserParticipating to true');
+              userInParticipants = true;
+            } else {
+              setRecentPaymentSuccess(false);
+            }
+          } else if (userInParticipants && activeRecentSuccess) {
             setRecentPaymentSuccess(false);
           }
-        } else if (userInParticipants && recentPaymentSuccess) {
-          setRecentPaymentSuccess(false);
-        }
 
-        setIsUserParticipating(userInParticipants);
+          setIsUserParticipating(userInParticipants);
         
         if (onUserParticipationChange) {
           onUserParticipationChange(userInParticipants);

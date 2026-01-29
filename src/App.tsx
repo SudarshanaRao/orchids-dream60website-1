@@ -346,6 +346,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/profile') setCurrentPage('profile');
         else if (path === '/success-page' || path === '/payment/success') {
           setCurrentPage('payment-success');
+          
+          // ✅ Force recent payment success flag for optimistic UI
+          setRecentPaymentSuccess(true);
+          recentPaymentTimestamp.current = Date.now();
+
           // Handle transaction data from URL and cookies
           const txnId = searchParams.get('txnId');
           const hourlyAuctionId = searchParams.get('hourlyAuctionId');
@@ -2738,15 +2743,17 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
                                               className="overflow-hidden"
                                             >
                                               <div id="six-box-system-container" className="space-y-6 sm:space-y-10 mt-4">
-                                                <div data-whatsnew-target="prize-showcase-section">
-                                                  <PrizeShowcase
-                                                    currentPrize={currentAuction}
-                                                    isLoggedIn={!!currentUser}
-                                                    onLogin={handleShowLogin}
-                                                    serverTime={serverTime}
-                                                    liveAuctionData={liveAuctionData}
-                                                    isLoadingLiveAuction={isLoadingLiveAuction}
-                                                    onPayEntry={(_boxId, totalEntryFee, paymentData) => {
+                                                  <div data-whatsnew-target="prize-showcase-section">
+                                                    <PrizeShowcase
+                                                      currentPrize={currentAuction}
+                                                      isLoggedIn={!!currentUser}
+                                                      onLogin={handleShowLogin}
+                                                      serverTime={serverTime}
+                                                      liveAuctionData={liveAuctionData}
+                                                      isLoadingLiveAuction={isLoadingLiveAuction}
+                                                      recentPaymentSuccess={recentPaymentSuccess}
+                                                      recentPaymentTimestamp={recentPaymentTimestamp.current}
+                                                      onPayEntry={(_boxId, totalEntryFee, paymentData) => {
                                                       if (!currentUser) return;
                                                       
                                                       console.log('💳 Payment successful - triggering IMMEDIATE auction data refresh', paymentData);

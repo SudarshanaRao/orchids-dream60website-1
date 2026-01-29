@@ -102,7 +102,9 @@ async function getAirpayRedirectData(reqBody) {
     };
 
     // If userId is provided, fetch latest details from DB
-    const userId = reqBody.userId || reqBody.customvar;
+    const customVarData = reqBody.userId || reqBody.customvar || '';
+    const [userId, auctionId, paymentType] = customVarData.split(':');
+    
     if (userId) {
         try {
             const user = await User.findOne({ user_id: userId });
@@ -169,6 +171,9 @@ async function getAirpayRedirectData(reqBody) {
     
     let finalUrl = `${PAY_URL}?token=${encodeURIComponent(accesstoken)}`;
 
+    // Combine userId, auctionId, and paymentType into customvar for recovery
+    const combinedCustomVar = `${userId || ''}:${reqBody.auctionId || reqBody.hourlyAuctionId || ''}:${reqBody.paymentType || 'ENTRY_FEE'}`;
+
     return {
         url: finalUrl,
         token: accesstoken,
@@ -177,7 +182,7 @@ async function getAirpayRedirectData(reqBody) {
             data: encryptedfData,
             privatekey: privatekey,
             checksum: checksum,
-            customvar: userId || '',
+            customvar: combinedCustomVar,
             token: accesstoken,
             merchant_id: AIRPAY_MID
         },
@@ -255,12 +260,20 @@ exports.handleAirpayResponse = async (req, res) => {
     const MESSAGE = data.message;
     const CUSTOMVAR = data.custom_var;
 
-    // Additional fields from req.body or req.query
-    const PAYMENT_METHOD = req.body.CHMOD || req.query.CHMOD || '';
-    const BANK_NAME = req.body.BANKNAME || req.query.BANKNAME || '';
-    const CARD_NAME = req.body.CARDNAME || req.query.CARDNAME || '';
-    const CARD_NUMBER = req.body.CARDNUMBER || req.query.CARDNUMBER || '';
-    const UPI_ID = req.body.CUSTOMERVPA || req.query.CUSTOMERVPA || '';
+    // Recover userId, auctionId, paymentType from CUSTOMVAR if possible
+    // Format: userId:auctionId:paymentType
+    let recoveredUserId = '';
+    let recoveredAuctionId = '';
+    let recoveredPaymentType = 'ENTRY_FEE';
+
+    if (CUSTOMVAR && CUSTOMVAR.includes(':')) {
+      const parts = CUSTOMVAR.split(':');
+      recoveredUserId = parts[0];
+      recoveredAuctionId = parts[1];
+      recoveredPaymentType = parts[2] || 'ENTRY_FEE';
+    } else if (CUSTOMVAR) {
+      recoveredUserId = CUSTOMVAR;
+    }
 
     // Business Logic Integration
     const finalStatus = (TRANSACTIONSTATUS === '200') ? 'paid' : 'failed';
@@ -275,16 +288,22 @@ exports.handleAirpayResponse = async (req, res) => {
         paidAt: finalStatus === 'paid' ? new Date() : null,
         message: MESSAGE,
         customVar: CUSTOMVAR,
-        paymentMethod: PAYMENT_METHOD,
-        bankName: BANK_NAME,
-        cardName: CARD_NAME,
-        cardNumber: CARD_NUMBER,
-        vpa: UPI_ID
+        paymentMethod: data.chmod || '',
+        bankName: data.bankname || '',
+        cardName: data.cardname || '',
+        cardNumber: data.cardnumber || '',
+        vpa: data.customervpa || '',
+        // Update recovered fields if they were missing or if it's an upsert
+        ...(recoveredUserId && { userId: recoveredUserId }),
+        ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
+        ...(recoveredPaymentType && { paymentType: recoveredPaymentType }),
+        amount: AMOUNT // Ensure amount is set
       },
       { new: true, upsert: true }
     );
 
     if (payment && finalStatus === 'paid') {
+      console.log(`Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
       if (payment.paymentType === 'ENTRY_FEE') {
         await handleEntryFeeSuccess(payment);
       } else {
