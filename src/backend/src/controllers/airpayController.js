@@ -146,12 +146,19 @@ exports.renderTxn = (req, res) => {
   res.render('txn', { title: 'Airpay Transaction' });
 };
 
+// Helper to sanitize name for Airpay
+function sanitizeAirpayName(name) {
+    if (!name) return 'User';
+    // Remove underscores and replace with spaces, then remove anything not a-z, A-Z, or space
+    return name.toString().replace(/_/g, ' ').replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim() || 'User';
+}
+
 // Helper to get Airpay redirect data
 async function getAirpayRedirectData(reqBody) {
     let buyerDetails = {
         email: reqBody.email || reqBody.buyerEmail,
-        firstname: reqBody.firstname || reqBody.buyerFirstName,
-        lastname: reqBody.lastname || reqBody.buyerLastName,
+        firstname: sanitizeAirpayName(reqBody.firstname || reqBody.buyerFirstName),
+        lastname: sanitizeAirpayName(reqBody.lastname || reqBody.buyerLastName || 'D60'),
         phone: reqBody.phone || reqBody.buyerPhone,
         address: reqBody.address || reqBody.buyerAddress || 'NA',
         city: reqBody.city || reqBody.buyerCity || 'NA',
@@ -170,8 +177,8 @@ async function getAirpayRedirectData(reqBody) {
             if (user) {
                 buyerDetails.email = user.email || buyerDetails.email || `${user.username}@dream60.com`;
                 const nameParts = user.username.trim().split(/\s+/);
-                buyerDetails.firstname = buyerDetails.firstname || nameParts[0] || 'User';
-                buyerDetails.lastname = buyerDetails.lastname || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'D60');
+                buyerDetails.firstname = sanitizeAirpayName(nameParts[0] || 'User');
+                buyerDetails.lastname = sanitizeAirpayName(nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'D60');
                 buyerDetails.phone = user.mobile || buyerDetails.phone || '9999999999';
             }
         } catch (err) {
@@ -181,8 +188,8 @@ async function getAirpayRedirectData(reqBody) {
 
     const dataObject = {
         buyer_email: buyerDetails.email || 'user@dream60.com',
-        buyer_firstname: buyerDetails.firstname || 'User',
-        buyer_lastname: buyerDetails.lastname || 'D60',
+        buyer_firstname: buyerDetails.firstname,
+        buyer_lastname: buyerDetails.lastname,
         buyer_address: buyerDetails.address,
         buyer_city: buyerDetails.city,
         buyer_state: buyerDetails.state,

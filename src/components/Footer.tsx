@@ -29,7 +29,7 @@ export function Footer({ onNavigate }: FooterProps) {
       {
         title: 'Company',
         links: [
-          { label: 'About Us', action: 'about' },
+          { label: 'About Game', action: 'about' },
           { label: 'Terms of Use', action: 'terms' },
           { label: 'Privacy Policy', action: 'privacy' },
           { label: 'Refund & Cancellation', action: 'refund-cancellation' }

@@ -27,29 +27,29 @@ interface AboutUsProps {
 
 export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
   const stats = [
-    { label: 'Active Users', value: '500K+', icon: <Users className="w-5 h-5" />, color: 'bg-blue-500' },
-    { label: 'Prizes Won', value: '₹10Cr+', icon: <Award className="w-5 h-5" />, color: 'bg-yellow-500' },
-    { label: 'Cities Covered', value: '100+', icon: <Globe className="w-5 h-5" />, color: 'bg-green-500' },
-    { label: 'Auctions Daily', value: '24+', icon: <Zap className="w-5 h-5" />, color: 'bg-purple-500' },
+    { label: 'Total Winners', value: '10,000+', icon: <Users className="w-5 h-5" />, color: 'bg-blue-500' },
+    { label: 'Daily Auctions', value: '10+', icon: <Zap className="w-5 h-5" />, color: 'bg-yellow-500' },
+    { label: 'Prize Pool', value: '₹3.5L+', icon: < IndianRupee className="w-5 h-5" />, color: 'bg-green-500' },
+    { label: 'Safe & Secure', value: '100%', icon: <Shield className="w-5 h-5" />, color: 'bg-purple-500' },
   ];
 
   const features = [
     {
-      title: 'Real-Time Thrill',
-      description: 'Experience the adrenaline of live 15-minute auction rounds with real-time updates and lightning-fast bidding.',
-      icon: <Zap className="w-6 h-6" />,
+      title: 'Skill-Based Winning',
+      description: 'Unlike traditional auctions, Dream60 rewards strategy and timing, giving everyone a fair chance to win premium prizes.',
+      icon: <Target className="w-6 h-6" />,
       gradient: 'from-amber-400 to-orange-600'
     },
     {
-      title: 'Guaranteed Fairness',
-      description: 'Our platform uses verified algorithms to ensure every participant has an equal opportunity to win.',
+      title: 'Transparent Process',
+      description: 'Experience 100% transparency with real-time bidding, live leaderboards, and verified winner announcements.',
       icon: <Shield className="w-6 h-6" />,
       gradient: 'from-emerald-400 to-teal-600'
     },
     {
-      title: 'Accessible Luxury',
-      description: 'Bringing premium products within reach of everyone through a low-barrier, high-reward auction model.',
-      icon: <Star className="w-6 h-6" />,
+      title: 'Instant Rewards',
+      description: 'Winning has never been easier. Get your prizes credited instantly or delivered to your doorstep with zero hassle.',
+      icon: <Zap className="w-6 h-6" />,
       gradient: 'from-blue-400 to-indigo-600'
     }
   ];
@@ -57,10 +57,13 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24">
       <SupportCenterHeader 
-        title="About Dream60" 
+        title="Game Dream60" 
         icon={<Trophy className="w-6 h-6 text-yellow-500" />} 
-        onBack={onBack} 
-        backLabel="Back to Game"
+        onBack={() => {
+          console.log('Back button clicked');
+          onBack();
+        }} 
+        backLabel="Back to Home"
       />
 
       {/* Hero Section */}
