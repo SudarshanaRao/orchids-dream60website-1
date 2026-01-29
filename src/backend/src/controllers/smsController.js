@@ -19,7 +19,7 @@ const formatMobile = (num) => {
  */
 const sendOtp = async (req, res) => {
   try {
-    const { username, mobile } = req.body;
+    const { username, mobile, reason } = req.body;
 
     if (!mobile) {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
@@ -38,11 +38,20 @@ const sendOtp = async (req, res) => {
     );
 
     const name = username || 'User';
-    // Use the exact requested template
-    const message = `Dear ${name}, use this One Time Password(OTP) ${otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages`;
+    
+    let message;
+    let templateId = '1207172612396743269'; // Default login template
+
+    if (reason === 'Change Mobile') {
+      message = `Dear ${name}, Use this OTP ${otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech`;
+      templateId = '1207176898558880888'; // MOBILE_CHANGE_OTP template ID
+    } else {
+      // Use the exact requested template for login
+      message = `Dear ${name}, use this One Time Password(OTP) ${otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages`;
+    }
     
     const result = await smsRestService.sendSms(formattedMobile, message, 'FINPGS', {
-      templateId: '1207172612396743269'
+      templateId
     });
 
     if (result.success) {

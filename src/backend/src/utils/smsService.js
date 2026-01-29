@@ -274,6 +274,13 @@ const SMS_TEMPLATES = {
     variables: ['name', 'otp'],
     templateId: '1207176908078229051'
   },
+  MOBILE_CHANGE_OTP: {
+    id: 'mobile_change_otp',
+    name: 'Mobile Change OTP',
+    template: 'Dear {name}, Use this OTP {otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech',
+    variables: ['name', 'otp'],
+    templateId: '1207176898558880888'
+  },
 };
 
 const formatTemplate = (templateId, variables = {}) => {

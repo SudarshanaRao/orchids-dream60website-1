@@ -522,7 +522,8 @@ const checkMobile = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
       }
       } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('OTP_VERIFICATION', { name: username || 'User', otp: otpCode });
+        const templateKey = reason === 'Change Mobile' ? 'MOBILE_CHANGE_OTP' : 'OTP_VERIFICATION';
+        const { message, template } = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
         const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
 
