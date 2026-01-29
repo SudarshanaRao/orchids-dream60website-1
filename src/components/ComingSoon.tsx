@@ -17,10 +17,10 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     const now = new Date();
 
     const target = new Date();
-    target.setHours(12, 20, 0, 0);
+    target.setHours(11, 00, 0, 0);
 
     // If midnight already passed, move to next day
-    if (target.getTime() <= now.getTime()) {
+    if (target.getTime() <= now.getTime() + 6) {
       target.setDate(target.getDate());
     }
 
