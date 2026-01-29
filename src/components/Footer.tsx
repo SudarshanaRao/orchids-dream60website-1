@@ -11,12 +11,14 @@ export function Footer({ onNavigate }: FooterProps) {
     const linkGroups = [
       {
         title: 'Platform',
-        links: [
-          { label: 'How to Play', action: 'view-guide' },
-          { label: 'Winning Tips', action: 'winning-tips' },
-          { label: 'Auction Rules', action: 'rules' },
-          { label: 'Play Guide', action: 'participation' }
-        ]
+          links: [
+            { label: 'How to Play', action: 'view-guide' },
+            { label: 'Winning Tips', action: 'winning-tips' },
+            { label: 'Auction Rules', action: 'rules' },
+            { label: 'Play Guide', action: 'participation' },
+            { label: 'Coming Soon', action: 'coming-soon' }
+          ]
+
       },
       {
         title: 'Help & Support',

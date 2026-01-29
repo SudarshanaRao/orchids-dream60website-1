@@ -16,6 +16,7 @@ import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
 import { AboutUs } from './components/AboutUs';
+import { ComingSoon } from './components/ComingSoon';
 import { CareersForm } from './components/CareersForm';
 import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
@@ -300,6 +301,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
     if (path === '/about') return 'about';
+    if (path === '/coming-soon') return 'coming-soon';
     if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
@@ -337,6 +339,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/rules') setCurrentPage('rules');
         else if (path === '/participation') setCurrentPage('participation');
         else if (path === '/about') setCurrentPage('about');
+        else if (path === '/coming-soon') setCurrentPage('coming-soon');
         else if (path === '/careers') setCurrentPage('careers');
         else if (path === '/terms') setCurrentPage('terms');
         else if (path === '/privacy') setCurrentPage('privacy');
@@ -2384,16 +2387,28 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
       );
     }
 
-      if (currentPage === 'careers') {
-        return (
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <Sonner />
-              <CareersForm onBack={handleBackToGame} />
-            </TooltipProvider>
-          </QueryClientProvider>
-        );
-      }
+        if (currentPage === 'careers') {
+          return (
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <Sonner />
+                <CareersForm onBack={handleBackToGame} />
+              </TooltipProvider>
+            </QueryClientProvider>
+          );
+        }
+
+        if (currentPage === 'coming-soon') {
+          return (
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <Sonner />
+                <ComingSoon onComplete={handleBackToGame} />
+              </TooltipProvider>
+            </QueryClientProvider>
+          );
+        }
+
 
       if (currentPage === 'about') {
       return (
