@@ -12,16 +12,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [isExpired, setIsExpired] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const calculateTimeLeft = useCallback(() => {
+    const calculateTimeLeft = useCallback(() => {
     const now = new Date();
     const target = new Date();
-    // Set target to today at 11:20 AM
-    target.setHours(11, 25, 0, 0);
-
-    // If target time has already passed today, set it for tomorrow
-    if (now > target) {
-      target.setDate(target.getDate() + 1);
-    }
+    // Set target to next 12:00 AM (midnight)
+    target.setHours(0, 0, 0, 0);
+    if (target < now) target.setDate(target.getDate() + 1);
 
     const difference = target.getTime() - now.getTime();
 
@@ -139,9 +135,9 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
           Registrations <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Opens Soon</span>
         </h1>
         
-          <p className="text-purple-200 text-lg sm:text-xl mb-12 max-w-lg mx-auto leading-relaxed">
-            Auctions will be notified when they are ready. Get ready for the next big win at <span className="font-bold text-white">11:25 AM</span>!
-          </p>
+            <p className="text-purple-200 text-lg sm:text-xl mb-12 max-w-lg mx-auto leading-relaxed">
+              Auctions will be notified when they are ready. Get ready for the next big win at <span className="font-bold text-white">12:00 AM</span>!
+            </p>
 
         <div className="flex items-center justify-center mb-12">
           <TimeUnit value={timeLeft.hours} label="Hours" />

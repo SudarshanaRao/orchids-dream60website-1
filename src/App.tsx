@@ -268,8 +268,19 @@ const App = () => {
 
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(() => {
-    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+    const [currentPage, setCurrentPage] = useState(() => {
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+  
+      // Redirect to coming-soon if it's before 12:00 AM
+      const now = new Date();
+      const target = new Date();
+      target.setHours(0, 0, 0, 0);
+      if (target < now) target.setDate(target.getDate() + 1);
+      
+      if (path === '/' && now < target) {
+        window.history.replaceState({}, '', '/coming-soon');
+        return 'coming-soon';
+      }
 
     if (path === '/d60-ctrl-x9k7') {
       const adminUserId = localStorage.getItem('admin_user_id');
@@ -309,6 +320,18 @@ const App = () => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
       const searchParams = new URLSearchParams(window.location.search);
       
+      // Redirect to coming-soon if it's before 12:00 AM
+      const now = new Date();
+      const target = new Date();
+      target.setHours(0, 0, 0, 0);
+      if (target < now) target.setDate(target.getDate() + 1);
+
+      if (path === '/' && now < target) {
+        window.history.replaceState({}, '', '/coming-soon');
+        setCurrentPage('coming-soon');
+        return;
+      }
+
       if (path === '/d60-ctrl-x9k7') {
         const adminUserId = localStorage.getItem('admin_user_id');
         setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
