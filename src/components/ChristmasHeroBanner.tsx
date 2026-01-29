@@ -134,7 +134,7 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
             onClick={onJoinNow}
             className="group relative px-8 py-4 bg-yellow-500 hover:bg-yellow-400 rounded-full font-bold text-black uppercase tracking-widest shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transition-all duration-300 active:scale-95 flex items-center gap-2"
           >
-            Notify Me
+            Registrations opens
             <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </motion.button>
         </motion.div>

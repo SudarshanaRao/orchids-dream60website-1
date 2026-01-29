@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const CRC32 = require('crc-32');
 const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
@@ -19,6 +20,7 @@ const TOKEN_URL = "https://kraken.airpay.co.in/airpay/pay/v4/api/oauth2/token.ph
 const PAY_URL = 'https://payments.airpay.co.in/pay/v4/index.php';
 
 const keyHash = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
+const ivFixed = crypto.randomBytes(8).toString('hex'); // Used in some kit versions
 
 /**
  * Sync participant data from HourlyAuction to DailyAuction
@@ -26,6 +28,7 @@ const keyHash = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY
  */
 const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => {
   try {
+    // Find the daily auction
     const dailyAuction = await DailyAuction.findOne({ 
       dailyAuctionId: hourlyAuction.dailyAuctionId 
     });
@@ -35,6 +38,7 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
       return { success: false, message: 'Daily auction not found' };
     }
     
+    // Find the matching config entry by hourlyAuctionId
     const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
       config => config.hourlyAuctionId === hourlyAuction.hourlyAuctionId
     );
@@ -44,11 +48,13 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
       return { success: false, message: 'Config entry not found' };
     }
     
+    // Check if participant already exists in dailyAuctionConfig
     const existingParticipant = dailyAuction.dailyAuctionConfig[configIndex].participants?.find(
       p => p.playerId === participantData.playerId
     );
     
     if (!existingParticipant) {
+      // Add participant to dailyAuctionConfig
       if (!dailyAuction.dailyAuctionConfig[configIndex].participants) {
         dailyAuction.dailyAuctionConfig[configIndex].participants = [];
       }
@@ -57,6 +63,7 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
       dailyAuction.dailyAuctionConfig[configIndex].totalParticipants = 
         dailyAuction.dailyAuctionConfig[configIndex].participants.length;
       
+      // Update total participants today
       dailyAuction.totalParticipantsToday = (dailyAuction.totalParticipantsToday || 0) + 1;
       
       await dailyAuction.save();
@@ -73,7 +80,7 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
   }
 };
 
-// Airpay Helpers
+// Helper functions matching documentation EXACTLY as provided in snippets
 function decrypt(responsedata, secretKey) {
   let data = responsedata;
   try {
@@ -95,6 +102,7 @@ function encryptChecksum(data, salt) {
 }
 
 function encrypt(request, secretKey) {
+  // Using the ivHex logic from the snippet
   const ivLocal = crypto.randomBytes(8).toString('hex');
   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivLocal));
   const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
@@ -133,9 +141,15 @@ async function sendPostData(tokenUrl, postData) {
   }
 }
 
+// Rendering Methods for Airpay Whitelisting & Standard Integration
+exports.renderTxn = (req, res) => {
+  res.render('txn', { title: 'Airpay Transaction' });
+};
+
 // Helper to sanitize name for Airpay
 function sanitizeAirpayName(name) {
     if (!name) return 'User';
+    // Remove underscores and replace with spaces, then remove anything not a-z, A-Z, or space
     return name.toString().replace(/_/g, ' ').replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim() || 'User';
 }
 
@@ -153,6 +167,7 @@ async function getAirpayRedirectData(reqBody) {
         pincode: reqBody.pincode || reqBody.buyerPinCode || '400001'
     };
 
+    // If userId is provided, fetch latest details from DB
     const customVarData = reqBody.userId || reqBody.customvar || '';
     const [userId, auctionId, paymentType] = customVarData.split(':');
     
@@ -222,6 +237,7 @@ async function getAirpayRedirectData(reqBody) {
     
     let finalUrl = `${PAY_URL}?token=${encodeURIComponent(accesstoken)}`;
 
+    // Combine userId, auctionId, and paymentType into customvar for recovery
     const combinedCustomVar = `${userId || ''}:${reqBody.auctionId || reqBody.hourlyAuctionId || ''}:${reqBody.paymentType || 'ENTRY_FEE'}`;
 
     return {
@@ -237,7 +253,7 @@ async function getAirpayRedirectData(reqBody) {
             merchant_id: AIRPAY_MID
         },
         dataObject,
-        buyerDetails
+        buyerDetails // Pass back fetched details
     };
 }
 
@@ -245,6 +261,7 @@ exports.sendToAirpay = async (req, res) => {
   try {
     const redirectData = await getAirpayRedirectData(req.body);
     
+    // Ensure record exists in DB
     const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
     const resolvedAuctionId = auctionId || hourlyAuctionId;
     const orderId = req.body.orderid || req.body.orderId || `D60-${Date.now()}`;
@@ -281,15 +298,12 @@ exports.sendToAirpay = async (req, res) => {
   }
 };
 
-exports.renderTxn = (req, res) => {
-  res.render('txn', { fdata: {} });
-};
-
 exports.handleAirpayResponse = async (req, res) => {
   try {
     console.log('--- Airpay Response Received ---');
     const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
     
+    // Check both body and query for 'response'
     const responseData = req.body.response || req.query.response;
     
     if (!responseData) {
@@ -312,6 +326,8 @@ exports.handleAirpayResponse = async (req, res) => {
     const MESSAGE = data.message;
     const CUSTOMVAR = data.custom_var;
 
+    // Recover userId, auctionId, paymentType from CUSTOMVAR if possible
+    // Format: userId:auctionId:paymentType
     let recoveredUserId = '';
     let recoveredAuctionId = '';
     let recoveredPaymentType = 'ENTRY_FEE';
@@ -325,8 +341,10 @@ exports.handleAirpayResponse = async (req, res) => {
       recoveredUserId = CUSTOMVAR;
     }
 
+    // Business Logic Integration
     const finalStatus = (TRANSACTIONSTATUS === '200') ? 'paid' : 'failed';
     
+    // Use upsert to ensure record exists even if not created during initiation
     const payment = await AirpayPayment.findOneAndUpdate(
       { orderId: TRANSACTIONID },
       { 
@@ -341,32 +359,25 @@ exports.handleAirpayResponse = async (req, res) => {
         cardName: data.cardname || '',
         cardNumber: data.cardnumber || '',
         vpa: data.customervpa || '',
+        // Update recovered fields if they were missing or if it's an upsert
         ...(recoveredUserId && { userId: recoveredUserId }),
         ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
         ...(recoveredPaymentType && { paymentType: recoveredPaymentType }),
-        amount: AMOUNT
+        amount: AMOUNT // Ensure amount is set
       },
       { new: true, upsert: true }
     );
 
     if (payment && finalStatus === 'paid') {
-      console.log(`✅ [AIRPAY_RESPONSE] Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
-      
-      if (!payment.userId || !payment.auctionId) {
-          console.error(`❌ [AIRPAY_RESPONSE] Missing userId or auctionId for payment:`, {
-              orderId: TRANSACTIONID,
-              userId: payment.userId,
-              auctionId: payment.auctionId
-          });
+      console.log(`Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
+      if (payment.paymentType === 'ENTRY_FEE') {
+        await handleEntryFeeSuccess(payment);
       } else {
-          if (payment.paymentType === 'ENTRY_FEE') {
-            await handleEntryFeeSuccess(payment);
-          } else {
-            await handlePrizeClaimSuccess(payment);
-          }
+        await handlePrizeClaimSuccess(payment);
       }
     }
 
+    // Set cookie for frontend transaction summary
     const txnSummary = {
       orderId: TRANSACTIONID,
       txnId: APTRANSACTIONID,
@@ -378,18 +389,18 @@ exports.handleAirpayResponse = async (req, res) => {
       bankName: data.bankname || '',
       cardName: data.cardname || '',
       cardNumber: data.cardnumber || '',
-      auctionId: payment?.auctionId,
+      auctionId: payment.auctionId,
       timestamp: new Date().toISOString()
     };
 
     res.cookie('airpay_txn_data', JSON.stringify(txnSummary), { 
-      maxAge: 3600000,
+      maxAge: 3600000, // 1 hour
       path: '/'
     });
 
     const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
     const redirectUrl = finalStatus === 'paid' 
-      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment?.auctionId}`
+      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}`
       : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
 
     res.redirect(redirectUrl);
@@ -402,6 +413,7 @@ exports.handleAirpayResponse = async (req, res) => {
 exports.handleAirpaySuccess = exports.handleAirpayResponse;
 exports.handleAirpayFailure = exports.handleAirpayResponse;
 
+// Original API Methods (Maintained for backward compatibility and internal app use)
 exports.createOrder = async (req, res) => {
     try {
         const { userId, auctionId, hourlyAuctionId, amount, paymentType = 'ENTRY_FEE' } = req.body;
@@ -413,6 +425,7 @@ exports.createOrder = async (req, res) => {
 
         const orderId = `D60-${Date.now()}`;
         
+        // Get the full redirect data including tokenized URL
         const redirectData = await getAirpayRedirectData({
             ...req.body,
             orderId: orderId,
@@ -426,6 +439,7 @@ exports.createOrder = async (req, res) => {
             orderId,
             status: 'created',
             paymentType,
+            // Store fetched user details in metadata if needed
             message: `Initiated for ${redirectData.buyerDetails.firstname} ${redirectData.buyerDetails.lastname}`
         });
 
@@ -456,6 +470,8 @@ exports.createOrder = async (req, res) => {
     }
 };
 
+exports.handleResponse = exports.handleAirpayResponse; // Alias
+
 async function handleEntryFeeSuccess(payment) {
   const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
   if (!hourlyAuction) {
@@ -463,16 +479,8 @@ async function handleEntryFeeSuccess(payment) {
     return;
   }
 
-  let user = null;
-  let username = 'Unknown User';
-  try {
-    user = await User.findOne({ user_id: payment.userId });
-    if (user) {
-      username = user.username || user.email || user.mobile || 'Unknown User';
-    }
-  } catch (err) {
-    console.error(`❌ [AIRPAY_SUCCESS] Error looking up user:`, err);
-  }
+  const user = await User.findOne({ user_id: payment.userId });
+  const username = user ? (user.username || user.email || user.mobile) : 'Unknown User';
 
   const participantData = {
     playerId: payment.userId,
@@ -487,46 +495,36 @@ async function handleEntryFeeSuccess(payment) {
   };
 
   if (!hourlyAuction.participants.find(p => p.playerId === payment.userId)) {
+    // Add participant to hourly auction
     hourlyAuction.participants.push(participantData);
     hourlyAuction.totalParticipants = hourlyAuction.participants.length;
     
+    // Update Round 1 data in rounds array
     if (hourlyAuction.rounds && hourlyAuction.rounds.length > 0 && hourlyAuction.rounds[0]) {
       hourlyAuction.rounds[0].totalParticipants = hourlyAuction.totalParticipants;
     }
     
     await hourlyAuction.save();
+
     console.log(`✅ [AIRPAY_SUCCESS] User ${username} added to HourlyAuction ${hourlyAuction.hourlyAuctionId}`);
 
+    // Sync to DailyAuction
     try {
       await syncParticipantToDailyAuction(hourlyAuction, participantData);
     } catch (syncError) {
       console.error(`❌ [AIRPAY_SUCCESS] Sync to DailyAuction failed:`, syncError);
     }
-  } else {
-    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} already exists as participant in ${payment.auctionId}`);
-  }
 
-  try {
-    const existingJoin = await HourlyAuctionJoin.findOne({
+    // Create Join record
+    await HourlyAuctionJoin.create({
       userId: payment.userId,
+      username,
       hourlyAuctionId: payment.auctionId,
+      paymentId: payment._id,
+      status: 'joined',
     });
 
-    if (!existingJoin) {
-      await HourlyAuctionJoin.create({
-        userId: payment.userId,
-        username,
-        hourlyAuctionId: payment.auctionId,
-        paymentId: payment._id,
-        status: 'joined',
-      });
-      console.log(`✅ [AIRPAY_SUCCESS] HourlyAuctionJoin record created for ${username}`);
-    }
-  } catch (err) {
-    console.error(`❌ [AIRPAY_SUCCESS] Failed to create Join record:`, err);
-  }
-
-  try {
+    // Create History entry
     await AuctionHistory.createEntry({
       userId: payment.userId,
       username,
@@ -537,20 +535,16 @@ async function handleEntryFeeSuccess(payment) {
       prizeValue: hourlyAuction.prizeValue,
       TimeSlot: hourlyAuction.TimeSlot,
       entryFeePaid: payment.amount,
-      paymentMethod: payment.paymentMethod || 'airpay',
+      paymentMethod: 'airpay',
       razorpayPaymentId: payment.orderId, 
       paymentDetails: payment.airpayResponse
     });
-    console.log(`✅ [AIRPAY_SUCCESS] AuctionHistory entry created/updated for ${username}`);
-  } catch (err) {
-    console.error(`❌ [AIRPAY_SUCCESS] Failed to create AuctionHistory entry:`, err);
-  }
 
-  try {
+    // Sync user stats
     await syncUserStats(payment.userId);
-    console.log(`✅ [AIRPAY_SUCCESS] User stats synced for ${username}`);
-  } catch (err) {
-    console.error(`❌ [AIRPAY_SUCCESS] User stats sync failed:`, err);
+    console.log(`✅ [AIRPAY_SUCCESS] All operations completed for user ${username}`);
+  } else {
+    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} already joined auction ${payment.auctionId}`);
   }
 }
 
@@ -568,8 +562,7 @@ async function handlePrizeClaimSuccess(payment) {
     );
 
     if (updatedEntry) {
-      console.log(`✅ [AIRPAY_PRIZE] Prize claim submitted for ${updatedEntry.username} (Rank ${updatedEntry.finalRank})`);
-
+      // Mark all other pending winners' claims as EXPIRED
       const expireResult = await AuctionHistory.updateMany(
         { 
           hourlyAuctionId: payment.auctionId, 
@@ -589,70 +582,34 @@ async function handlePrizeClaimSuccess(payment) {
 
       console.log(`✅ [AIRPAY_PRIZE] Marked ${expireResult.modifiedCount} other winners as EXPIRED`);
 
+      // Immediately update currentEligibleRank to next rank (though usually claimed means it's over)
       const nextRankToUpdate = updatedEntry.finalRank + 1;
-
       if (nextRankToUpdate <= 3) {
         await AuctionHistory.updateMany(
           { hourlyAuctionId: payment.auctionId, isWinner: true },
           { $set: { currentEligibleRank: nextRankToUpdate } }
         );
-
-        const nextWinnerUpdate = await AuctionHistory.updateOne(
-          {
-            hourlyAuctionId: payment.auctionId,
-            finalRank: nextRankToUpdate,
-            isWinner: true,
-            prizeClaimStatus: 'PENDING'
-          },
-          {
-            $set: {
-              currentEligibleRank: nextRankToUpdate,
-              claimWindowStartedAt: new Date(),
-              claimDeadline: new Date(Date.now() + 15 * 60 * 1000)
-            }
-          }
-        );
-        
-        if (nextWinnerUpdate.modifiedCount > 0) {
-          console.log(`✅ [AIRPAY_PRIZE] Rank ${nextRankToUpdate} winner can now claim immediately`);
-        }
       }
 
-      try {
-        await AuctionHistory.syncClaimStatus(payment.auctionId);
-        console.log(`✅ [AIRPAY_PRIZE] Claim status synced to auctions`);
-      } catch (syncError) {
-        console.error(`❌ [AIRPAY_PRIZE] Sync claim status failed:`, syncError);
-      }
+      // Sync claim status to HourlyAuction and DailyAuction
+      await AuctionHistory.syncClaimStatus(payment.auctionId);
 
-      try {
-        const user = await User.findOne({ user_id: payment.userId });
-        if (user && user.email) {
-          await sendPrizeClaimedEmail(user.email, {
-            username: updatedEntry.username || user.username,
-            auctionName: updatedEntry.auctionName || payment.auctionName,
-            prizeAmount: updatedEntry.prizeAmountWon || 0,
-            claimDate: updatedEntry.claimedAt || new Date(),
-            transactionId: payment.airpayTransactionId,
-            rewardType: 'Cash Prize',
-          });
-          console.log(`✅ [AIRPAY_PRIZE] Confirmation email sent to ${user.email}`);
-        }
-      } catch (emailError) {
-        console.error('⚠️ [AIRPAY_PRIZE] Failed to send prize claimed email:', emailError);
+      // Send Prize Claimed confirmation email
+      const user = await User.findOne({ user_id: payment.userId });
+      if (user && user.email) {
+        await sendPrizeClaimedEmail(user.email, {
+          username: updatedEntry.username || user.username,
+          auctionName: updatedEntry.auctionName || payment.auctionName,
+          prizeAmount: updatedEntry.prizeAmountWon || 0,
+          claimDate: updatedEntry.claimedAt || new Date(),
+          transactionId: payment.airpayTransactionId,
+          rewardType: 'Cash Prize',
+        });
       }
+      
+      console.log(`✅ [AIRPAY_PRIZE] Prize claim processed for ${updatedEntry.username}`);
     }
   } catch (error) {
     console.error('❌ [AIRPAY_PRIZE] Error handling prize claim success:', error);
   }
 }
-
-module.exports = {
-  createOrder: exports.createOrder,
-  sendToAirpay: exports.sendToAirpay,
-  handleAirpayResponse: exports.handleAirpayResponse,
-  handleAirpaySuccess: exports.handleAirpayResponse,
-  handleAirpayFailure: exports.handleAirpayResponse,
-  handleResponse: exports.handleAirpayResponse,
-  renderTxn: exports.renderTxn,
-};
