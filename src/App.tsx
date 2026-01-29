@@ -271,16 +271,20 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState(() => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
   
-      // Redirect to coming-soon if it's before 12:00 AM
-      const now = new Date();
-      const target = new Date();
-      target.setHours(0, 0, 0, 0);
-      if (target < now) target.setDate(target.getDate() + 1);
-      
-      if (path === '/' && now < target) {
-        window.history.replaceState({}, '', '/coming-soon');
-        return 'coming-soon';
-      }
+    // Redirect to coming-soon if it's before the launch time (12:00 AM)
+    const now = new Date();
+    const launchDate = new Date();
+    launchDate.setHours(0, 0, 0, 0);
+    // If it's already past today's midnight, the target is tomorrow's midnight
+    if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
+    
+    // Check if we've already completed the countdown in this session
+    const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+
+    if (path === '/' && now < launchDate && !hasCompletedCountdown) {
+      window.history.replaceState({}, '', '/coming-soon');
+      return 'coming-soon';
+    }
 
     if (path === '/d60-ctrl-x9k7') {
       const adminUserId = localStorage.getItem('admin_user_id');
@@ -320,13 +324,15 @@ const App = () => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
       const searchParams = new URLSearchParams(window.location.search);
       
-      // Redirect to coming-soon if it's before 12:00 AM
+      // Redirect to coming-soon if it's before the launch time (12:00 AM)
       const now = new Date();
-      const target = new Date();
-      target.setHours(0, 0, 0, 0);
-      if (target < now) target.setDate(target.getDate() + 1);
+      const launchDate = new Date();
+      launchDate.setHours(0, 0, 0, 0);
+      if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
 
-      if (path === '/' && now < target) {
+      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+
+      if (path === '/' && now < launchDate && !hasCompletedCountdown) {
         window.history.replaceState({}, '', '/coming-soon');
         setCurrentPage('coming-soon');
         return;
@@ -864,6 +870,7 @@ const App = () => {
   };
 
   const handleBackToGame = () => {
+    sessionStorage.setItem('countdown_completed', 'true');
     setCurrentPage('game');
     window.history.pushState({}, '', '/');
     setSelectedLeaderboard(null);

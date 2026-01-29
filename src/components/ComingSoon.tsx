@@ -16,8 +16,8 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     const now = new Date();
     const target = new Date();
     // Set target to next 12:00 AM (midnight)
-    target.setHours(0, 0, 0, 0);
-    if (target < now) target.setDate(target.getDate() + 1);
+    target.setHours(11, 50, 0, 0);
+    if (target < now) target.setDate(target.getDate());
 
     const difference = target.getTime() - now.getTime();
 
@@ -131,13 +131,18 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
           <Clock className="w-10 h-10 text-white" />
         </motion.div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-6 tracking-tight">
-          Registrations <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Opens Soon</span>
+        <h1 className="text-5xl sm:text-7xl font-black text-white mb-6 tracking-tighter leading-none">
+          DREAM<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-indigo-500">60</span>
         </h1>
+        <div className="h-1 w-24 bg-gradient-to-r from-purple-500 to-indigo-500 mx-auto mb-8 rounded-full" />
         
-            <p className="text-purple-200 text-lg sm:text-xl mb-12 max-w-lg mx-auto leading-relaxed">
-              Auctions will be notified when they are ready. Get ready for the next big win at <span className="font-bold text-white">12:00 AM</span>!
-            </p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-6 tracking-tight">
+          Experience the <span className="text-purple-400">Future</span> of Winning
+        </h2>
+        
+        <p className="text-purple-200/80 text-lg sm:text-xl mb-12 max-w-lg mx-auto leading-relaxed font-light">
+          We're preparing something extraordinary. The grand reveal happens at <span className="font-bold text-white underline decoration-purple-500 underline-offset-4">12:00 AM</span>.
+        </p>
 
         <div className="flex items-center justify-center mb-12">
           <TimeUnit value={timeLeft.hours} label="Hours" />
