@@ -73,13 +73,26 @@ router.post('/sendtoairpay', runValidation, airpayController.sendToAirpay);
  * @swagger
  * /api/airpay/responsefromairpay:
  *   post:
- *     summary: Handle response from Airpay (Webhook/Redirect)
+ *     summary: Handle response from Airpay (Redirect)
  *     tags: [Airpay]
  *     responses:
  *       302:
  *         description: Redirects to frontend success or failure page
  */
 router.post('/responsefromairpay', airpayController.handleAirpayResponse);
+
+/**
+ * @swagger
+ * /api/airpay/webhook:
+ *   post:
+ *     summary: Airpay Server-to-Server (S2S) Webhook
+ *     description: Endpoint for Airpay to notify the server directly about payment status
+ *     tags: [Airpay]
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.post('/webhook', airpayController.handleAirpayWebhook);
 
 /**
  * @swagger

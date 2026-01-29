@@ -72,7 +72,7 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
       return { success: true, message: 'Participant synced to DailyAuction' };
     }
     
-    console.log(`ℹ️ [AIRPAY_SYNC] Participant ${participantData.playerUsername} already exists in DailyAuction`);
+    console.log(`ℹ [AIRPAY_SYNC] Participant ${participantData.playerUsername} already exists in DailyAuction`);
     return { success: true, message: 'Participant already exists' };
   } catch (error) {
     console.error(`❌ [AIRPAY_SYNC] Error syncing participant:`, error);
@@ -301,102 +301,109 @@ exports.sendToAirpay = async (req, res) => {
   }
 };
 
+/**
+ * Common logic to process Airpay response (used by redirect and webhook handlers)
+ */
+async function processAirpayPayment(responseData) {
+  const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
+  const decrypteddata = decrypt(responseData, key);
+  console.log('Decrypted Airpay Response (raw):', decrypteddata);
+  
+  let data = {};
+  try {
+    data = JSON.parse(decrypteddata);
+    if (data.data) data = data.data;
+  } catch (e) {
+    const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
+    if (match) {
+      let token = JSON.parse("{" + match[0] + "}");
+      data = token.data;
+    } else {
+      throw new Error('Could not parse Airpay response data');
+    }
+  }
+
+  const TRANSACTIONID = data.orderid || data.ORDERID;
+  const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID;
+  const AMOUNT = data.amount || data.AMOUNT;
+  const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || '').toString();
+  const MESSAGE = data.message || data.MESSAGE || '';
+  const CUSTOMVAR = data.custom_var || data.CUSTOMVAR;
+
+  let recoveredUserId = '';
+  let recoveredAuctionId = '';
+  let recoveredPaymentType = 'ENTRY_FEE';
+
+  if (CUSTOMVAR) {
+    const separator = CUSTOMVAR.includes('|') ? '|' : (CUSTOMVAR.includes(':') ? ':' : null);
+    if (separator) {
+      const parts = CUSTOMVAR.split(separator);
+      recoveredUserId = parts[0];
+      recoveredAuctionId = parts[1];
+      recoveredPaymentType = parts[2] || 'ENTRY_FEE';
+    } else {
+      recoveredUserId = CUSTOMVAR;
+    }
+  }
+
+  const finalStatus = (TRANSACTIONSTATUS === '200' || TRANSACTIONSTATUS.toUpperCase() === 'SUCCESS') ? 'paid' : 'failed';
+  
+  console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
+
+  const payment = await AirpayPayment.findOneAndUpdate(
+    { orderId: TRANSACTIONID },
+    { 
+      status: finalStatus, 
+      airpayTransactionId: APTRANSACTIONID,
+      airpayResponse: data,
+      paidAt: finalStatus === 'paid' ? new Date() : null,
+      message: MESSAGE,
+      customVar: CUSTOMVAR,
+      paymentMethod: data.chmod || data.CHMOD || '',
+      bankName: data.bankname || data.BANKNAME || '',
+      cardName: data.cardname || data.CARDNAME || '',
+      cardNumber: data.cardnumber || data.CARDNUMBER || '',
+      vpa: data.customervpa || data.VPA || '',
+      ...(recoveredUserId && { userId: recoveredUserId }),
+      ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
+      ...(recoveredPaymentType && { paymentType: recoveredPaymentType }),
+      amount: AMOUNT
+    },
+    { new: true, upsert: true }
+  );
+
+  if (payment && finalStatus === 'paid') {
+    console.log(`Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
+    if (payment.paymentType === 'ENTRY_FEE') {
+      await handleEntryFeeSuccess(payment);
+    } else {
+      await handlePrizeClaimSuccess(payment);
+    }
+  }
+
+  return {
+    payment,
+    data,
+    finalStatus,
+    TRANSACTIONID,
+    APTRANSACTIONID,
+    AMOUNT,
+    MESSAGE
+  };
+}
+
 exports.handleAirpayResponse = async (req, res) => {
   try {
-    console.log('--- Airpay Response Received ---');
-    const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-    
-    // Check both body and query for 'response'
+    console.log('--- Airpay Redirect Response Received ---');
     const responseData = req.body.response || req.query.response;
     
     if (!responseData) {
       console.error('Airpay Error: Missing response data');
-      const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
+      const frontendUrl = getFrontendUrl();
       return res.redirect(`${frontendUrl}/payment/failure?message=${encodeURIComponent('Payment response data missing from Airpay')}`);
     }
 
-    const decrypteddata = decrypt(responseData, key);
-    console.log('Decrypted Airpay Response (raw):', decrypteddata);
-    
-    let data = {};
-    try {
-      // Try parsing as direct JSON first (common in newer versions)
-      data = JSON.parse(decrypteddata);
-      if (data.data) data = data.data; // Handle if still wrapped in "data"
-    } catch (e) {
-      // Fallback to existing regex extraction for older XML/Partial JSON formats
-      const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
-      if (match) {
-        let token = JSON.parse("{" + match[0] + "}");
-        data = token.data;
-      } else {
-        throw new Error('Could not parse Airpay response data');
-      }
-    }
-
-    // Support both lowercase and all-caps keys from Airpay
-    const TRANSACTIONID = data.orderid || data.ORDERID;
-    const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID;
-    const AMOUNT = data.amount || data.AMOUNT;
-    const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || '').toString();
-    const MESSAGE = data.message || data.MESSAGE || '';
-    const CUSTOMVAR = data.custom_var || data.CUSTOMVAR;
-
-    // Recover userId, auctionId, paymentType from CUSTOMVAR if possible
-    // Format: userId|auctionId|paymentType or userId:auctionId:paymentType
-    let recoveredUserId = '';
-    let recoveredAuctionId = '';
-    let recoveredPaymentType = 'ENTRY_FEE';
-
-    if (CUSTOMVAR) {
-      const separator = CUSTOMVAR.includes('|') ? '|' : (CUSTOMVAR.includes(':') ? ':' : null);
-      if (separator) {
-        const parts = CUSTOMVAR.split(separator);
-        recoveredUserId = parts[0];
-        recoveredAuctionId = parts[1];
-        recoveredPaymentType = parts[2] || 'ENTRY_FEE';
-      } else {
-        recoveredUserId = CUSTOMVAR;
-      }
-    }
-
-    // Business Logic Integration - Check for '200' or 'SUCCESS'
-    const finalStatus = (TRANSACTIONSTATUS === '200' || TRANSACTIONSTATUS.toUpperCase() === 'SUCCESS') ? 'paid' : 'failed';
-    
-    console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
-
-    // Use upsert to ensure record exists even if not created during initiation
-    const payment = await AirpayPayment.findOneAndUpdate(
-      { orderId: TRANSACTIONID },
-      { 
-        status: finalStatus, 
-        airpayTransactionId: APTRANSACTIONID,
-        airpayResponse: data,
-        paidAt: finalStatus === 'paid' ? new Date() : null,
-        message: MESSAGE,
-        customVar: CUSTOMVAR,
-        paymentMethod: data.chmod || data.CHMOD || '',
-        bankName: data.bankname || data.BANKNAME || '',
-        cardName: data.cardname || data.CARDNAME || '',
-        cardNumber: data.cardnumber || data.CARDNUMBER || '',
-        vpa: data.customervpa || data.VPA || '',
-        // Update recovered fields if they were missing or if it's an upsert
-        ...(recoveredUserId && { userId: recoveredUserId }),
-        ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
-        ...(recoveredPaymentType && { paymentType: recoveredPaymentType }),
-        amount: AMOUNT // Ensure amount is set
-      },
-      { new: true, upsert: true }
-    );
-
-    if (payment && finalStatus === 'paid') {
-      console.log(`Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
-      if (payment.paymentType === 'ENTRY_FEE') {
-        await handleEntryFeeSuccess(payment);
-      } else {
-        await handlePrizeClaimSuccess(payment);
-      }
-    }
+    const { payment, data, finalStatus, TRANSACTIONID, APTRANSACTIONID, AMOUNT, MESSAGE } = await processAirpayPayment(responseData);
 
     // Set cookie for frontend transaction summary
     const txnSummary = {
@@ -419,18 +426,7 @@ exports.handleAirpayResponse = async (req, res) => {
       path: '/'
     });
 
-    const allowedOriginsRaw = process.env.CLIENT_URL || '';
-    const origins = allowedOriginsRaw.split(',').map(o => o.trim()).filter(Boolean);
-    
-    let frontendUrl = 'http://localhost:3000';
-    if (process.env.VITE_ENVIRONMENT === 'production') {
-      frontendUrl = 'https://dream60.com';
-    } else if (origins.some(o => o.includes('test.dream60.com'))) {
-      frontendUrl = 'https://test.dream60.com';
-    } else if (origins.length > 0) {
-      frontendUrl = origins[0];
-    }
-
+    const frontendUrl = getFrontendUrl();
     const redirectUrl = finalStatus === 'paid' 
       ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}&hourlyAuctionId=${payment.auctionId}`
       : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
@@ -442,6 +438,46 @@ exports.handleAirpayResponse = async (req, res) => {
     res.status(500).send("Error processing payment response: " + error.message);
   }
 };
+
+/**
+ * Handle Airpay Webhook (S2S notification)
+ */
+exports.handleAirpayWebhook = async (req, res) => {
+  try {
+    console.log('--- Airpay Webhook (S2S) Received ---');
+    // Airpay S2S often sends data in the same format as the redirect response
+    const responseData = req.body.response || req.query.response;
+    
+    if (!responseData) {
+      console.warn('Airpay Webhook Warning: Missing response data in payload', req.body);
+      return res.status(400).send('OK'); // Return OK even on error to stop retries if desired, or 400
+    }
+
+    await processAirpayPayment(responseData);
+    
+    console.log('✅ Airpay Webhook processed successfully');
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('❌ Airpay Webhook error:', error);
+    // Airpay usually expects a 200 OK to stop retries, even if processing failed locally
+    res.status(200).send('OK'); 
+  }
+};
+
+function getFrontendUrl() {
+  const allowedOriginsRaw = process.env.CLIENT_URL || '';
+  const origins = allowedOriginsRaw.split(',').map(o => o.trim()).filter(Boolean);
+  
+  let frontendUrl = 'http://localhost:3000';
+  if (process.env.VITE_ENVIRONMENT === 'production') {
+    frontendUrl = 'https://dream60.com';
+  } else if (origins.some(o => o.includes('test.dream60.com'))) {
+    frontendUrl = 'https://test.dream60.com';
+  } else if (origins.length > 0) {
+    frontendUrl = origins[0];
+  }
+  return frontendUrl;
+}
 
 exports.handleAirpaySuccess = exports.handleAirpayResponse;
 exports.handleAirpayFailure = exports.handleAirpayResponse;
@@ -577,7 +613,7 @@ async function handleEntryFeeSuccess(payment) {
     await syncUserStats(payment.userId);
     console.log(`✅ [AIRPAY_SUCCESS] All operations completed for user ${username}`);
   } else {
-    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} already joined auction ${payment.auctionId}`);
+    console.log(`ℹ [AIRPAY_SUCCESS] User ${username} already joined auction ${payment.auctionId}`);
   }
 }
 
