@@ -39,8 +39,8 @@ const sendOtp = async (req, res) => {
 
     let username = providedUsername;
     
-    // If reason is Change Mobile and username not provided, try to fetch it using user_id
-    if (reason === 'Change Mobile' && !username && user_id) {
+    // If reason is Change Mobile or verification for change and username not provided, try to fetch it using user_id
+    if (['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) && !username && user_id) {
       const User = require('../models/user');
       const user = await User.findOne({ user_id });
       if (user) {
@@ -53,7 +53,7 @@ const sendOtp = async (req, res) => {
     let message;
     let templateId = '1207172612396743269'; // Default login template
 
-    if (reason === 'Change Mobile') {
+    if (['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason)) {
       message = ` Dear ${name}, Use this OTP ${otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech `;
       templateId = '1207176952069976461'; // MOBILE_CHANGE_OTP template ID
     } else if (reason === 'Forgot Password') {

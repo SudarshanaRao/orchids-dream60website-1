@@ -172,6 +172,19 @@ async function getAirpayRedirectData(reqBody) {
     const customVarData = reqBody.userId || reqBody.customvar || '';
     const [userId, auctionId, paymentType] = customVarData.split(':');
     
+    // Determine the base URL for callbacks/redirects
+    const getBaseUrl = () => {
+        if (process.env.API_BASE_URL) return process.env.API_BASE_URL;
+        
+        // Fallback detection logic
+        if (process.env.VITE_ENVIRONMENT === 'production' || process.env.NODE_ENV === 'production') {
+            return 'https://prod-api.dream60.com';
+        }
+        return 'https://dev-api.dream60.com';
+    };
+
+    const baseUrl = getBaseUrl();
+
     if (userId) {
         try {
             const user = await User.findOne({ user_id: userId });
@@ -202,8 +215,9 @@ async function getAirpayRedirectData(reqBody) {
         isocurrency: 'INR',
         currency: '356',
         merchant_id: AIRPAY_MID,
-        success_url: process.env.AIRPAY_SUCCESS_URL || (process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/api/airpay/success` : 'https://dev-api.dream60.com/api/airpay/success'),
-        failure_url: process.env.AIRPAY_FAILURE_URL || (process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/api/airpay/failure` : 'https://dev-api.dream60.com/api/airpay/failure')
+        success_url: process.env.AIRPAY_SUCCESS_URL || `${baseUrl}/api/airpay/success`,
+        failure_url: process.env.AIRPAY_FAILURE_URL || `${baseUrl}/api/airpay/failure`,
+        callback_url: process.env.AIRPAY_WEBHOOK_URL || `${baseUrl}/api/airpay/webhook`
     };
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
@@ -552,7 +566,10 @@ exports.createOrder = async (req, res) => {
                     customvar: userId,
                     token: redirectData.token,
                     currency: '356',
-                    isocurrency: 'INR'
+                    isocurrency: 'INR',
+                    success_url: redirectData.dataObject.success_url,
+                    failure_url: redirectData.dataObject.failure_url,
+                    callback_url: redirectData.dataObject.callback_url
                 }
             }
         });

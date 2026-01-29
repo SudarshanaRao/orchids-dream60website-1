@@ -61,13 +61,15 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
         return;
       }
 
+      const userId = localStorage.getItem('user_id');
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: newDigits,
           type: 'mobile',
-          reason: 'New Mobile Verification'
+          reason: 'New Mobile Verification',
+          user_id: userId
         }),
       });
 
@@ -188,13 +190,15 @@ export function NewPhoneInputModal({ currentPhone, onClose, onSuccess }: NewPhon
     setError(null);
     setOtpHint(null);
     try {
+      const userId = localStorage.getItem('user_id');
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: newDigits,
           type: 'mobile',
-          reason: 'New Mobile Verification'
+          reason: 'New Mobile Verification',
+          user_id: userId
         }),
       });
 

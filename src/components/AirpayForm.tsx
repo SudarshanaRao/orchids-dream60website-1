@@ -14,6 +14,9 @@ interface AirpayFormProps {
     token?: string;
     currency?: string;
     isocurrency?: string;
+    success_url?: string;
+    failure_url?: string;
+    callback_url?: string;
   };
 }
 
@@ -36,10 +39,12 @@ export function AirpayForm({ url, params }: AirpayFormProps) {
       <input type="hidden" name="checksum" value={params.checksum} />
       <input type="hidden" name="chmod" value={params.chmod || ''} />
       <input type="hidden" name="customvar" value={params.customvar || ''} />
-        <input type="hidden" name="token" value={params.token} />
-        <input type="hidden" name="currency" value="356" />
-        <input type="hidden" name="isocurrency" value="INR" />
-      </form>
-
+      <input type="hidden" name="token" value={params.token} />
+      <input type="hidden" name="currency" value="356" />
+      <input type="hidden" name="isocurrency" value="INR" />
+      {params.success_url && <input type="hidden" name="success_url" value={params.success_url} />}
+      {params.failure_url && <input type="hidden" name="failure_url" value={params.failure_url} />}
+      {params.callback_url && <input type="hidden" name="callback_url" value={params.callback_url} />}
+    </form>
   );
 }

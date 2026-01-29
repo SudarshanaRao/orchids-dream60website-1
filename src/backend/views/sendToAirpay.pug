@@ -50,16 +50,18 @@ html
             input#buyerState.form-control(type='hidden',  name='buyerState' value=fdata.buyerState || fdata.state)
           div.form-group
             input#buyerCountry.form-control(type='hidden',  name='buyerCountry' value=fdata.buyerCountry || fdata.country)
-          div.form-group
-            input#buyerPinCode.form-control(type='hidden',  name='buyerPinCode' value=fdata.buyerPinCode || fdata.pincode)
-          div.form-group
-            input#orderid.form-control(type='hidden',  name='orderid' value=fdata.orderid || fdata.orderId)
+            div.form-group
+              input#buyerPinCode.form-control(type='hidden',  name='buyerPinCode' value=fdata.buyerPinCode || fdata.pincode)
+            div.form-group
+              input#orderid.form-control(type='hidden',  name='orderid' value=fdata.orderid || fdata.orderId)
             div.form-group
               input#amount.form-control(type='hidden',  name='amount' value=fdata.amount)
             div.form-group
               input#success_url.form-control(type='hidden',  name='success_url' value=fdata.success_url)
             div.form-group
               input#failure_url.form-control(type='hidden',  name='failure_url' value=fdata.failure_url)
+            div.form-group
+              input#callback_url.form-control(type='hidden',  name='callback_url' value=fdata.callback_url)
             div.form-group
               input#txnsubtype.form-control(type='hidden',  name='txnsubtype' value=fdata.txnsubtype || '')
 

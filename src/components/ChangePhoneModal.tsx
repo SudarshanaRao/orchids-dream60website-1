@@ -26,13 +26,15 @@ export function ChangePhoneModal({ currentPhone, onClose, onOldPhoneVerified, on
       setLoading(true);
       setError(null);
       try {
+      const userId = localStorage.getItem('user_id');
       const response = await fetch(API_ENDPOINTS.auth.sendVerificationOtp, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           identifier: currentDigits,
           type: 'mobile',
-          reason: 'Current Mobile Verification'
+          reason: 'Current Mobile Verification',
+          user_id: userId
         }),
       });
 

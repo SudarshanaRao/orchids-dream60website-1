@@ -510,8 +510,8 @@ const sendVerificationOtp = async (req, res) => {
 
     let username = providedUsername;
     
-    // If reason is Change Mobile and username not provided, try to fetch it using user_id
-    if (reason === 'Change Mobile' && !username && user_id) {
+    // If reason is Change Mobile or verification for change and username not provided, try to fetch it using user_id
+    if (['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) && !username && user_id) {
       const user = await User.findOne({ user_id });
       if (user) {
         username = user.username;
@@ -532,7 +532,7 @@ const sendVerificationOtp = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
       }
     } else if (type === 'mobile') {
-      const templateKey = reason === 'Change Mobile' ? 'MOBILE_CHANGE_OTP' : 
+      const templateKey = ['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) ? 'MOBILE_CHANGE_OTP' : 
                          reason === 'Forgot Password' ? 'PASSWORD_RESET' : 'OTP_VERIFICATION';
       const { message, template } = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
       const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
