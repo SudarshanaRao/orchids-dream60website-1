@@ -20,8 +20,8 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     target.setHours(11, 0, 0, 0);
 
     // If midnight already passed, move to next day
-    if (target.getTime() <= now.getTime() + 6) {
-      target.setDate(target.getDate());
+    if (target.getTime() <= now.getTime()) {
+      target.setDate(target.getDate() + 5);
     }
 
     const diff = target.getTime() - now.getTime();
@@ -131,7 +131,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
         </h1>
 
         <p className="text-purple-200 mb-10">
-          Launching at <span className="text-white font-bold">05-02-2026 at 11:00 AM </span>
+          Launching<span className="text-white font-bold">soon </span>
         </p>
 
         <div className="flex justify-center mb-12">
