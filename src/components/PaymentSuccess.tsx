@@ -72,7 +72,7 @@ export function PaymentSuccess({
     // audioRef.current = new Audio('/success-sound.mp3');
     // audioRef.current.play().catch(() => {});
 
-    // Transition to summary after 3 seconds
+    // Transition after 0.8 seconds to feel fast
     const timer = setTimeout(() => {
       if (initialType === 'entry') {
         // For entry success, skip summary and go straight to the detail modal on the game page
@@ -80,7 +80,7 @@ export function PaymentSuccess({
       } else {
         setStep('summary');
       }
-    }, 1500);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);

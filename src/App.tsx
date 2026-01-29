@@ -1938,13 +1938,13 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
             const transactionId = showEntrySuccess.transactionId;
             const hourlyAuctionId = showEntrySuccess.hourlyAuctionId;
 
-            // ✅ Smooth scroll to live auction banner or prize showcase as requested
-            setTimeout(() => {
-              const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
-              }
-            }, 100);
+              // ✅ Smooth scroll to live auction banner or prize showcase as requested
+              setTimeout(() => {
+                const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }, 10);
 
             // ✅ Close primary modal and show detail modal on game page
             setShowEntrySuccess(null);
