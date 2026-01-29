@@ -118,38 +118,11 @@ const razorpayController = require('../controllers/razorpayController');
  *         createdAt:
  *           type: string
  *           format: date-time
- *         updatedAt:
- *           type: string
- *           format: date-time
- *
-   *     VerifyPaymentSuccessData:
-   *       type: object
-   *       properties:
-   *         payment:
-   *           $ref: '#/components/schemas/AirpayPayment'
-   *         joined:
-   *           type: boolean
-   *           example: true
-   *         auctionId:
+   *         updatedAt:
    *           type: string
-   *           example: "673f0ba1baa3e0a7b15b5678"
-   *         hourlyAuctionId:
-   *           type: string
-   *           example: "673f0ba1baa3e0a7b15b5678"
+   *           format: date-time
    *
-   *     VerifyPaymentResponse:
-   *       type: object
-   *       properties:
-   *         success:
-   *           type: boolean
-   *           example: true
-   *         message:
-   *           type: string
-   *           example: "Payment verified & user joined auction"
-   *         data:
-   *           $ref: '#/components/schemas/VerifyPaymentSuccessData'
- *
- *     ErrorResponse:
+   *     ErrorResponse:
  *       type: object
  *       properties:
  *         success:

@@ -23,32 +23,49 @@ const { validateTxn, runValidation } = require('../validate/validateTransaction'
    *         userId:
    *           type: string
    *           example: "673f0b8ebaa3e0a7b15b1234"
-   *         hourlyAuctionId:
+   *         auctionId:
    *           type: string
    *           example: "673f0ba1baa3e0a7b15b5678"
    *         amount:
-   *           type: integer
-   *           example: 9900
-   *           description: Amount in paise
+   *           type: number
+   *           example: 99.00
    *         currency:
    *           type: string
    *           example: "INR"
-   *         airpayOrderId:
+   *         orderId:
    *           type: string
    *           example: "D60-1735512345678"
-   *         airpayPaymentId:
+   *         airpayTransactionId:
    *           type: string
    *           example: "123456789"
-   *         vpa:
-   *           type: string
-   *           example: "user@okaxis"
    *         paymentMethod:
    *           type: string
    *           example: "upi"
+   *         bankName:
+   *           type: string
+   *           example: "ICICI"
+   *         cardName:
+   *           type: string
+   *           example: "VISA"
+   *         cardNumber:
+   *           type: string
+   *           example: "4111********1111"
+   *         vpa:
+   *           type: string
+   *           example: "user@okaxis"
    *         status:
    *           type: string
    *           enum: [created, paid, failed]
    *           example: "paid"
+   *         paymentType:
+   *           type: string
+   *           enum: [ENTRY_FEE, PRIZE_CLAIM]
+   *           example: "ENTRY_FEE"
+   *         message:
+   *           type: string
+   *         airpayResponse:
+   *           type: object
+   *           description: Full decrypted response from Airpay
    *         createdAt:
    *           type: string
    *           format: date-time
@@ -70,6 +87,12 @@ const { validateTxn, runValidation } = require('../validate/validateTransaction'
    *         hourlyAuctionId:
    *           type: string
    *           example: "673f0ba1baa3e0a7b15b5678"
+   *         finalStatus:
+   *           type: string
+   *           example: "paid"
+   *         message:
+   *           type: string
+   *           example: "Success"
  *
  *     VerifyPaymentResponse:
  *       type: object
