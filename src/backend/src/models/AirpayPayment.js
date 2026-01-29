@@ -44,6 +44,9 @@ const AirpayPaymentSchema = new mongoose.Schema(
     cardName: String,
     cardNumber: String,
     vpa: String, // UPI ID
+    transactionStatus: String, // Raw status from Airpay (e.g., '200', 'SUCCESS')
+    transactionDate: String, // Date from Airpay response
+    airpayAmount: String, // Amount from Airpay response
     
     // Metadata
     auctionName: String,

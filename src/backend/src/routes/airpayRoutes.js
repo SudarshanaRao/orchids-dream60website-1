@@ -50,10 +50,19 @@ const { validateTxn, runValidation } = require('../validate/validateTransaction'
    *         cardNumber:
    *           type: string
    *           example: "4111********1111"
-   *         vpa:
-   *           type: string
-   *           example: "user@okaxis"
-   *         status:
+     *         vpa:
+     *           type: string
+     *           example: "user@okaxis"
+     *         transactionStatus:
+     *           type: string
+     *           example: "200"
+     *         transactionDate:
+     *           type: string
+     *           example: "2024-12-30"
+     *         airpayAmount:
+     *           type: string
+     *           example: "99.00"
+     *         status:
    *           type: string
    *           enum: [created, paid, failed]
    *           example: "paid"
