@@ -477,103 +477,140 @@ exports.createOrder = async (req, res) => {
 exports.handleResponse = exports.handleAirpayResponse; // Alias
 
 async function handleEntryFeeSuccess(payment) {
-  const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
+  // Find the auction - prioritize the one in the payment, but fallback to current live if needed
+  let hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
+  
   if (!hourlyAuction) {
-    console.error(`❌ [AIRPAY_SUCCESS] Hourly auction not found: ${payment.auctionId}`);
+    console.warn(`⚠️ [AIRPAY_SUCCESS] Auction ${payment.auctionId} not found. Searching for current LIVE auction.`);
+    hourlyAuction = await HourlyAuction.findOne({ Status: 'LIVE' });
+  }
+
+  if (!hourlyAuction) {
+    console.error(`❌ [AIRPAY_SUCCESS] No active or matching hourly auction found for payment ${payment.orderId}`);
     return;
   }
 
   const user = await User.findOne({ user_id: payment.userId });
   const username = user ? (user.username || user.email || user.mobile) : 'Unknown User';
 
+  // Calculate current IST time for 15-minute window check
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istTime = new Date(now.getTime() + istOffset);
+  const currentMinute = istTime.getUTCMinutes();
+
+  console.log(`🕒 [AIRPAY_SUCCESS] Processing success for ${username}. Current IST Minute: ${currentMinute}, Auction Round: ${hourlyAuction.currentRound}`);
+
+  // 15-minute check: Only allow joining within the first 15 minutes of the auction hour
+  // and only if the auction is still in its first round
+  if (currentMinute >= 15 || hourlyAuction.currentRound !== 1) {
+    console.warn(`⚠️ [AIRPAY_SUCCESS] Join window closed for user ${username}. Payment received at minute ${currentMinute}, but join only allowed in first 15 mins. Auction Round: ${hourlyAuction.currentRound}`);
+    
+    // Create history entry even if join is rejected, so user/admin can see the payment
+    await AuctionHistory.createEntry({
+      userId: payment.userId,
+      username,
+      hourlyAuctionId: hourlyAuction.hourlyAuctionId,
+      dailyAuctionId: hourlyAuction.dailyAuctionId,
+      auctionDate: hourlyAuction.auctionDate,
+      auctionName: hourlyAuction.auctionName,
+      prizeValue: hourlyAuction.prizeValue,
+      TimeSlot: hourlyAuction.TimeSlot,
+      entryFeePaid: payment.amount,
+      paymentMethod: 'airpay',
+      razorpayPaymentId: payment.orderId, 
+      paymentDetails: { 
+        ...payment.airpayResponse, 
+        note: 'Payment received after 15-minute join window. User NOT added to participants.' 
+      }
+    });
+    return;
+  }
+
+  // Create participant data
   const participantData = {
     playerId: payment.userId,
     playerUsername: username,
     entryFee: payment.amount,
     joinedAt: new Date(),
-    currentRound: 1,
+    currentRound: hourlyAuction.currentRound || 1, // Set to current active round
     isEliminated: false,
     eliminatedInRound: null,
     totalBidsPlaced: 0,
     totalAmountBid: 0,
   };
 
-  // 15-minute check for joining
-  const now = new Date();
-  const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-  const currentMinute = istTime.getUTCMinutes();
+  // Check if already a participant to avoid duplicates
+  const isAlreadyJoined = hourlyAuction.participants.some(p => p.playerId === payment.userId);
 
-  if (currentMinute >= 15 || hourlyAuction.currentRound !== 1) {
-    console.warn(`⚠️ [AIRPAY_SUCCESS] Join window closed for user ${username}. Payment received but user cannot join auction ${payment.auctionId}. Minute: ${currentMinute}, Round: ${hourlyAuction.currentRound}`);
-    // Still create history entry for the payment, but don't add to participants or joins
-    await AuctionHistory.createEntry({
-      userId: payment.userId,
-      username,
-      hourlyAuctionId: hourlyAuction.hourlyAuctionId,
-      dailyAuctionId: hourlyAuction.dailyAuctionId,
-      auctionDate: hourlyAuction.auctionDate,
-      auctionName: hourlyAuction.auctionName,
-      prizeValue: hourlyAuction.prizeValue,
-      TimeSlot: hourlyAuction.TimeSlot,
-      entryFeePaid: payment.amount,
-      paymentMethod: 'airpay',
-      razorpayPaymentId: payment.orderId, 
-      paymentDetails: { ...payment.airpayResponse, note: 'Payment received after 15-minute join window. User not joined to auction.' }
-    });
-    return;
-  }
-
-  if (!hourlyAuction.participants.find(p => p.playerId === payment.userId)) {
-    // Add participant to hourly auction
+  if (!isAlreadyJoined) {
+    // 1. Add to HourlyAuction
     hourlyAuction.participants.push(participantData);
     hourlyAuction.totalParticipants = hourlyAuction.participants.length;
     
-    // Update Round 1 data in rounds array
+    // Sync totalParticipants to Round 1 if it's active
     if (hourlyAuction.rounds && hourlyAuction.rounds.length > 0 && hourlyAuction.rounds[0]) {
       hourlyAuction.rounds[0].totalParticipants = hourlyAuction.totalParticipants;
     }
     
     await hourlyAuction.save();
+    console.log(`✅ [AIRPAY_SUCCESS] Added ${username} to HourlyAuction ${hourlyAuction.hourlyAuctionId}`);
 
-    console.log(`✅ [AIRPAY_SUCCESS] User ${username} added to HourlyAuction ${hourlyAuction.hourlyAuctionId}`);
-
-    // Sync to DailyAuction
+    // 2. Sync to DailyAuction
     try {
       await syncParticipantToDailyAuction(hourlyAuction, participantData);
     } catch (syncError) {
-      console.error(`❌ [AIRPAY_SUCCESS] Sync to DailyAuction failed:`, syncError);
+      console.error(`❌ [AIRPAY_SUCCESS] DailyAuction sync failed:`, syncError);
     }
 
-    // Create Join record
-    await HourlyAuctionJoin.create({
-      userId: payment.userId,
-      username,
-      hourlyAuctionId: payment.auctionId,
-      paymentId: payment._id,
-      status: 'joined',
-    });
+    // 3. Create HourlyAuctionJoin record
+    try {
+      await HourlyAuctionJoin.findOneAndUpdate(
+        { userId: payment.userId, hourlyAuctionId: hourlyAuction.hourlyAuctionId },
+        {
+          username,
+          paymentId: payment._id,
+          paymentModel: 'AirpayPayment',
+          status: 'joined'
+        },
+        { upsert: true, new: true }
+      );
+      console.log(`✅ [AIRPAY_SUCCESS] Created HourlyAuctionJoin for ${username}`);
+    } catch (joinError) {
+      console.error(`❌ [AIRPAY_SUCCESS] HourlyAuctionJoin creation failed:`, joinError);
+    }
 
-    // Create History entry
-    await AuctionHistory.createEntry({
-      userId: payment.userId,
-      username,
-      hourlyAuctionId: hourlyAuction.hourlyAuctionId,
-      dailyAuctionId: hourlyAuction.dailyAuctionId,
-      auctionDate: hourlyAuction.auctionDate,
-      auctionName: hourlyAuction.auctionName,
-      prizeValue: hourlyAuction.prizeValue,
-      TimeSlot: hourlyAuction.TimeSlot,
-      entryFeePaid: payment.amount,
-      paymentMethod: 'airpay',
-      razorpayPaymentId: payment.orderId, 
-      paymentDetails: payment.airpayResponse
-    });
+    // 4. Create AuctionHistory entry
+    try {
+      await AuctionHistory.createEntry({
+        userId: payment.userId,
+        username,
+        hourlyAuctionId: hourlyAuction.hourlyAuctionId,
+        dailyAuctionId: hourlyAuction.dailyAuctionId,
+        auctionDate: hourlyAuction.auctionDate,
+        auctionName: hourlyAuction.auctionName,
+        prizeValue: hourlyAuction.prizeValue,
+        TimeSlot: hourlyAuction.TimeSlot,
+        entryFeePaid: payment.amount,
+        paymentMethod: 'airpay',
+        razorpayPaymentId: payment.orderId, 
+        paymentDetails: payment.airpayResponse
+      });
+      console.log(`✅ [AIRPAY_SUCCESS] Created AuctionHistory for ${username}`);
+    } catch (historyError) {
+      console.error(`❌ [AIRPAY_SUCCESS] AuctionHistory creation failed:`, historyError);
+    }
 
-    // Sync user stats
-    await syncUserStats(payment.userId);
-    console.log(`✅ [AIRPAY_SUCCESS] All operations completed for user ${username}`);
+    // 5. Sync user stats
+    try {
+      await syncUserStats(payment.userId);
+    } catch (statsError) {
+      console.error(`❌ [AIRPAY_SUCCESS] User stats sync failed:`, statsError);
+    }
+
+    console.log(`🎉 [AIRPAY_SUCCESS] User ${username} successfully joined auction ${hourlyAuction.hourlyAuctionCode}`);
   } else {
-    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} already joined auction ${payment.auctionId}`);
+    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} was already a participant in auction ${hourlyAuction.hourlyAuctionId}`);
   }
 }
 

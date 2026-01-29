@@ -17,8 +17,13 @@ const HourlyAuctionJoinSchema = new mongoose.Schema(
     },
     paymentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'RazorpayPayment',
       required: true,
+    },
+    paymentModel: {
+      type: String,
+      required: true,
+      enum: ['RazorpayPayment', 'AirpayPayment'],
+      default: 'RazorpayPayment'
     },
     status: {
       type: String,
