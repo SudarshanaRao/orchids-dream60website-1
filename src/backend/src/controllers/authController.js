@@ -499,13 +499,23 @@ const checkMobile = async (req, res) => {
 };
 
 // POST /auth/send-verification-otp
-// Body: { identifier, type, reason }
-  const sendVerificationOtp = async (req, res) => {
+// Body: { identifier, type, reason, user_id, username }
+const sendVerificationOtp = async (req, res) => {
   try {
-    const { identifier, type, reason = 'Verification', username } = req.body || {};
+    const { identifier, type, reason = 'Verification', user_id, username: providedUsername } = req.body || {};
     
     if (!identifier || !type) {
       return res.status(400).json({ success: false, message: 'Identifier and type are required' });
+    }
+
+    let username = providedUsername;
+    
+    // If reason is Change Mobile and username not provided, try to fetch it using user_id
+    if (reason === 'Change Mobile' && !username && user_id) {
+      const user = await User.findOne({ user_id });
+      if (user) {
+        username = user.username;
+      }
     }
 
     const otpCode = generateOtp();

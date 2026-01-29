@@ -19,7 +19,7 @@ const formatMobile = (num) => {
  */
 const sendOtp = async (req, res) => {
   try {
-    const { username, mobile, reason } = req.body;
+    const { username: providedUsername, mobile, reason, user_id } = req.body;
 
     if (!mobile) {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
@@ -37,6 +37,17 @@ const sendOtp = async (req, res) => {
       { upsert: true, new: true }
     );
 
+    let username = providedUsername;
+    
+    // If reason is Change Mobile and username not provided, try to fetch it using user_id
+    if (reason === 'Change Mobile' && !username && user_id) {
+      const User = require('../models/user');
+      const user = await User.findOne({ user_id });
+      if (user) {
+        username = user.username;
+      }
+    }
+
     const name = username || 'User';
     
     let message;
@@ -50,7 +61,8 @@ const sendOtp = async (req, res) => {
       templateId = '1207176908078229051'; // PASSWORD_RESET template ID
     } else {
       // Use the exact requested template for login
-      message = `Dear ${name}, use this One Time Password(OTP) ${otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages`;
+      message = `Dear ${name}, use this OTP ${otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech`;
+      templateId = '1207176898558880888'; // Using the one from smsService.js
     }
     
     const result = await smsRestService.sendSms(formattedMobile, message, 'FINPGS', {
