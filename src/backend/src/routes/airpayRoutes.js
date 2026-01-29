@@ -12,6 +12,130 @@ const { validateTxn, runValidation } = require('../validate/validateTransaction'
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     AirpayPayment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: "6751a7a8f1b3e1a31cb91234"
+ *         userId:
+ *           type: string
+ *           example: "673f0b8ebaa3e0a7b15b1234"
+ *         auctionId:
+ *           type: string
+ *           example: "673f0ba1baa3e0a7b15b5678"
+ *         amount:
+ *           type: number
+ *           example: 99.00
+ *         currency:
+ *           type: string
+ *           example: "INR"
+ *         orderId:
+ *           type: string
+ *           example: "D60-1735512345678"
+ *         airpayTransactionId:
+ *           type: string
+ *           example: "123456789"
+ *         status:
+ *           type: string
+ *           enum: [created, paid, failed]
+ *           example: "paid"
+ *         paymentType:
+ *           type: string
+ *           enum: [ENTRY_FEE, PRIZE_CLAIM]
+ *           example: "ENTRY_FEE"
+ *         paymentMethod:
+ *           type: string
+ *           example: "pg"
+ *         vpa:
+ *           type: string
+ *           example: "user@upi"
+ *         message:
+ *           type: string
+ *           example: "Success"
+ *         paidAt:
+ *           type: string
+ *           format: date-time
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *
+ *     VerifyPaymentSuccessData:
+ *       type: object
+ *       properties:
+ *         payment:
+ *           $ref: '#/components/schemas/AirpayPayment'
+ *         joined:
+ *           type: boolean
+ *           example: true
+ *         auctionId:
+ *           type: string
+ *           example: "673f0ba1baa3e0a7b15b5678"
+ *
+ *     VerifyPaymentResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Payment verified & user joined auction"
+ *         data:
+ *           $ref: '#/components/schemas/VerifyPaymentSuccessData'
+ *
+ *     AirpayOrderData:
+ *       type: object
+ *       properties:
+ *         orderId:
+ *           type: string
+ *           example: "D60-1735512345678"
+ *         url:
+ *           type: string
+ *           example: "https://payments.airpay.co.in/pay/v4/index.php?token=..."
+ *         token:
+ *           type: string
+ *           example: "abcdef123456"
+ *         params:
+ *           type: object
+ *           properties:
+ *             mercid:
+ *               type: string
+ *             data:
+ *               type: string
+ *             privatekey:
+ *               type: string
+ *             checksum:
+ *               type: string
+ *
+ *     AirpayOrderResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         data:
+ *           $ref: '#/components/schemas/AirpayOrderData'
+ *
+ *     ErrorResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: false
+ *         message:
+ *           type: string
+ *         error:
+ *           type: string
+ */
+
+/**
+ * @swagger
  * /api/airpay/create-order:
  *   post:
  *     summary: Create a new Airpay order
@@ -39,8 +163,16 @@ const { validateTxn, runValidation } = require('../validate/validateTransaction'
  *     responses:
  *       200:
  *         description: Order created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AirpayOrderResponse'
  *       400:
  *         description: Invalid request parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/create-order', airpayController.createOrder);
 
