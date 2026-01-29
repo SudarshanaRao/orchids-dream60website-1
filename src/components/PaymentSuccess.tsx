@@ -72,15 +72,13 @@ export function PaymentSuccess({
     // audioRef.current = new Audio('/success-sound.mp3');
     // audioRef.current.play().catch(() => {});
 
-    // Transition after 0.8 seconds to feel fast
+    // Transition after 2 seconds to feel deliberate and allow reading
     const timer = setTimeout(() => {
+      setStep('summary');
       if (initialType === 'entry') {
-        // For entry success, skip summary and go straight to the detail modal on the game page
-        onBackToHome();
-      } else {
-        setStep('summary');
+        setCountdown(3); // Shorter countdown for entry
       }
-    }, 800);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -92,6 +90,12 @@ export function PaymentSuccess({
           if (prev <= 1) {
             clearInterval(interval);
             onBackToHome();
+            // Fallback: if after 1 second we are still on this page, force a reload
+            setTimeout(() => {
+              if (window.location.pathname.includes('success') || window.location.pathname.includes('failure')) {
+                window.location.href = '/';
+              }
+            }, 1000);
             return 0;
           }
           return prev - 1;

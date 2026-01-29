@@ -4,6 +4,7 @@ const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
 const AuctionHistory = require('../models/AuctionHistory');
+const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
 const { syncUserStats } = require('./userController');
 const { sendPrizeClaimedEmail } = require('../utils/emailService');
@@ -20,6 +21,64 @@ const PAY_URL = 'https://payments.airpay.co.in/pay/v4/index.php';
 
 const keyHash = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
 const ivFixed = crypto.randomBytes(8).toString('hex'); // Used in some kit versions
+
+/**
+ * Sync participant data from HourlyAuction to DailyAuction
+ * This ensures dailyAuctionConfig.participants stays in sync with hourlyAuction.participants
+ */
+const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => {
+  try {
+    // Find the daily auction
+    const dailyAuction = await DailyAuction.findOne({ 
+      dailyAuctionId: hourlyAuction.dailyAuctionId 
+    });
+    
+    if (!dailyAuction) {
+      console.warn(`⚠️ [AIRPAY_SYNC] Daily auction not found: ${hourlyAuction.dailyAuctionId}`);
+      return { success: false, message: 'Daily auction not found' };
+    }
+    
+    // Find the matching config entry by hourlyAuctionId
+    const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
+      config => config.hourlyAuctionId === hourlyAuction.hourlyAuctionId
+    );
+    
+    if (configIndex === -1) {
+      console.warn(`⚠️ [AIRPAY_SYNC] Config entry not found for hourlyAuctionId: ${hourlyAuction.hourlyAuctionId}`);
+      return { success: false, message: 'Config entry not found' };
+    }
+    
+    // Check if participant already exists in dailyAuctionConfig
+    const existingParticipant = dailyAuction.dailyAuctionConfig[configIndex].participants?.find(
+      p => p.playerId === participantData.playerId
+    );
+    
+    if (!existingParticipant) {
+      // Add participant to dailyAuctionConfig
+      if (!dailyAuction.dailyAuctionConfig[configIndex].participants) {
+        dailyAuction.dailyAuctionConfig[configIndex].participants = [];
+      }
+      
+      dailyAuction.dailyAuctionConfig[configIndex].participants.push(participantData);
+      dailyAuction.dailyAuctionConfig[configIndex].totalParticipants = 
+        dailyAuction.dailyAuctionConfig[configIndex].participants.length;
+      
+      // Update total participants today
+      dailyAuction.totalParticipantsToday = (dailyAuction.totalParticipantsToday || 0) + 1;
+      
+      await dailyAuction.save();
+      
+      console.log(`✅ [AIRPAY_SYNC] Participant ${participantData.playerUsername} synced to DailyAuction for TimeSlot ${hourlyAuction.TimeSlot}`);
+      return { success: true, message: 'Participant synced to DailyAuction' };
+    }
+    
+    console.log(`ℹ️ [AIRPAY_SYNC] Participant ${participantData.playerUsername} already exists in DailyAuction`);
+    return { success: true, message: 'Participant already exists' };
+  } catch (error) {
+    console.error(`❌ [AIRPAY_SYNC] Error syncing participant:`, error);
+    return { success: false, message: error.message };
+  }
+};
 
 // Helper functions matching documentation EXACTLY as provided in snippets
 function decrypt(responsedata, secretKey) {
@@ -318,11 +377,11 @@ exports.handleAirpayResponse = async (req, res) => {
       amount: AMOUNT,
       status: finalStatus,
       message: MESSAGE,
-      method: PAYMENT_METHOD,
-      upiId: UPI_ID,
-      bankName: BANK_NAME,
-      cardName: CARD_NAME,
-      cardNumber: CARD_NUMBER,
+      method: data.chmod || 'airpay',
+      upiId: data.customervpa || '',
+      bankName: data.bankname || '',
+      cardName: data.cardname || '',
+      cardNumber: data.cardnumber || '',
       auctionId: payment.auctionId,
       timestamp: new Date().toISOString()
     };
@@ -408,10 +467,13 @@ exports.handleResponse = exports.handleAirpayResponse; // Alias
 
 async function handleEntryFeeSuccess(payment) {
   const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
-  if (!hourlyAuction) return;
+  if (!hourlyAuction) {
+    console.error(`❌ [AIRPAY_SUCCESS] Hourly auction not found: ${payment.auctionId}`);
+    return;
+  }
 
   const user = await User.findOne({ user_id: payment.userId });
-  const username = user ? user.username : 'Unknown User';
+  const username = user ? (user.username || user.email || user.mobile) : 'Unknown User';
 
   const participantData = {
     playerId: payment.userId,
@@ -420,15 +482,33 @@ async function handleEntryFeeSuccess(payment) {
     joinedAt: new Date(),
     currentRound: 1,
     isEliminated: false,
+    eliminatedInRound: null,
     totalBidsPlaced: 0,
     totalAmountBid: 0,
   };
 
   if (!hourlyAuction.participants.find(p => p.playerId === payment.userId)) {
+    // Add participant to hourly auction
     hourlyAuction.participants.push(participantData);
     hourlyAuction.totalParticipants = hourlyAuction.participants.length;
+    
+    // Update Round 1 data in rounds array
+    if (hourlyAuction.rounds && hourlyAuction.rounds.length > 0 && hourlyAuction.rounds[0]) {
+      hourlyAuction.rounds[0].totalParticipants = hourlyAuction.totalParticipants;
+    }
+    
     await hourlyAuction.save();
 
+    console.log(`✅ [AIRPAY_SUCCESS] User ${username} added to HourlyAuction ${hourlyAuction.hourlyAuctionId}`);
+
+    // Sync to DailyAuction
+    try {
+      await syncParticipantToDailyAuction(hourlyAuction, participantData);
+    } catch (syncError) {
+      console.error(`❌ [AIRPAY_SUCCESS] Sync to DailyAuction failed:`, syncError);
+    }
+
+    // Create Join record
     await HourlyAuctionJoin.create({
       userId: payment.userId,
       username,
@@ -437,6 +517,7 @@ async function handleEntryFeeSuccess(payment) {
       status: 'joined',
     });
 
+    // Create History entry
     await AuctionHistory.createEntry({
       userId: payment.userId,
       username,
@@ -449,31 +530,79 @@ async function handleEntryFeeSuccess(payment) {
       entryFeePaid: payment.amount,
       paymentMethod: 'airpay',
       razorpayPaymentId: payment.orderId, 
+      paymentDetails: payment.airpayResponse
     });
 
+    // Sync user stats
     await syncUserStats(payment.userId);
+    console.log(`✅ [AIRPAY_SUCCESS] All operations completed for user ${username}`);
+  } else {
+    console.log(`ℹ️ [AIRPAY_SUCCESS] User ${username} already joined auction ${payment.auctionId}`);
   }
 }
 
 async function handlePrizeClaimSuccess(payment) {
-  await AuctionHistory.submitPrizeClaim(
-    payment.userId,
-    payment.auctionId,
-    {
-      upiId: payment.airpayResponse?.custom_var || 'Airpay Payment',
+  try {
+    const claimData = {
+      upiId: payment.vpa || payment.airpayResponse?.customervpa || 'Airpay Payment',
       paymentReference: payment.airpayTransactionId,
-    }
-  );
+    };
 
-  const user = await User.findOne({ user_id: payment.userId });
-  if (user && user.email) {
-    await sendPrizeClaimedEmail(user.email, {
-      username: user.username,
-      auctionName: payment.auctionName,
-      prizeAmount: payment.amount,
-      claimDate: new Date(),
-      transactionId: payment.airpayTransactionId,
-      rewardType: 'Cash Prize',
-    });
+    const updatedEntry = await AuctionHistory.submitPrizeClaim(
+      payment.userId,
+      payment.auctionId,
+      claimData
+    );
+
+    if (updatedEntry) {
+      // Mark all other pending winners' claims as EXPIRED
+      const expireResult = await AuctionHistory.updateMany(
+        { 
+          hourlyAuctionId: payment.auctionId, 
+          prizeClaimStatus: 'PENDING',
+          userId: { $ne: payment.userId }
+        },
+        {
+          $set: {
+            prizeClaimStatus: 'EXPIRED',
+            claimNotes: `Prize claimed by rank ${updatedEntry.finalRank} winner (${updatedEntry.username})`,
+            claimedBy: updatedEntry.username,
+            claimedByRank: updatedEntry.finalRank,
+            claimedAt: updatedEntry.claimedAt
+          }
+        }
+      );
+
+      console.log(`✅ [AIRPAY_PRIZE] Marked ${expireResult.modifiedCount} other winners as EXPIRED`);
+
+      // Immediately update currentEligibleRank to next rank (though usually claimed means it's over)
+      const nextRankToUpdate = updatedEntry.finalRank + 1;
+      if (nextRankToUpdate <= 3) {
+        await AuctionHistory.updateMany(
+          { hourlyAuctionId: payment.auctionId, isWinner: true },
+          { $set: { currentEligibleRank: nextRankToUpdate } }
+        );
+      }
+
+      // Sync claim status to HourlyAuction and DailyAuction
+      await AuctionHistory.syncClaimStatus(payment.auctionId);
+
+      // Send Prize Claimed confirmation email
+      const user = await User.findOne({ user_id: payment.userId });
+      if (user && user.email) {
+        await sendPrizeClaimedEmail(user.email, {
+          username: updatedEntry.username || user.username,
+          auctionName: updatedEntry.auctionName || payment.auctionName,
+          prizeAmount: updatedEntry.prizeAmountWon || 0,
+          claimDate: updatedEntry.claimedAt || new Date(),
+          transactionId: payment.airpayTransactionId,
+          rewardType: 'Cash Prize',
+        });
+      }
+      
+      console.log(`✅ [AIRPAY_PRIZE] Prize claim processed for ${updatedEntry.username}`);
+    }
+  } catch (error) {
+    console.error('❌ [AIRPAY_PRIZE] Error handling prize claim success:', error);
   }
 }

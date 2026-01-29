@@ -45,11 +45,11 @@ interface PaymentFailureProps {
     onBackToHome,
     onClose
   }: PaymentFailureProps) {
-    const [countdown, setCountdown] = useState(2);
+    const [countdown, setCountdown] = useState(5);
     const [txnData, setTxnSummary] = useState<any>(null);
 
     useEffect(() => {
-      // Try to read transaction data from cookie (set by backend airpayController)
+      // Try to read transaction data from cookie
       const getCookie = (name: string) => {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -62,44 +62,23 @@ interface PaymentFailureProps {
         try {
           const parsed = JSON.parse(decodeURIComponent(cookieData));
           setTxnSummary(parsed);
-          console.log('❌ Found Airpay transaction data in cookie (Failure):', parsed);
         } catch (e) {
           console.error('Error parsing transaction cookie:', e);
         }
       }
-    }, []);
 
-    // Use cookie data if available, otherwise fallback to props
-    const amount = txnData?.amount || initialAmount;
-    const type = initialType;
-    const transactionId = txnData?.txnId || initialTransactionId || txnData?.orderId;
-    const paymentMethod = txnData?.method || initialPaymentMethod;
-    const errorMessage = txnData?.message || initialErrorMessage;
-    const upiId = txnData?.upiId || initialUpiId;
-    const bankName = txnData?.bankName || initialBankName;
-    const cardName = txnData?.cardName || initialCardName;
-    const cardNumber = txnData?.cardNumber || initialCardNumber;
-    const timestamp = txnData?.timestamp ? new Date(txnData.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN');
-    const productName = initialProductName;
-    const auctionNumber = initialAuctionNumber;
-    const timeSlot = initialTimeSlot;
-    const paidBy = initialPaidBy;
-
-    const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-    useEffect(() => {
+      // Transition after 5 seconds
       const interval = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(interval);
             onBackToHome();
+            // Fallback: if after 1 second we are still on this page, force a reload
+            setTimeout(() => {
+              if (window.location.pathname.includes('failure') || window.location.pathname.includes('success')) {
+                window.location.href = '/';
+              }
+            }, 1000);
             return 0;
           }
           return prev - 1;
@@ -108,6 +87,8 @@ interface PaymentFailureProps {
 
       return () => clearInterval(interval);
     }, [onBackToHome]);
+
+    const errorMessage = txnData?.message || initialErrorMessage;
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -145,19 +126,37 @@ interface PaymentFailureProps {
               className="mt-4 text-center"
             >
               <h2 className="text-white text-2xl font-bold tracking-tight">Payment Failed</h2>
-              <p className="text-white/80 text-xs font-medium mt-0.5">
-                {errorMessage || 'Your payment couldn\'t be processed'}
+              <p className="text-white/80 text-xs font-medium mt-0.5 px-4">
+                {errorMessage}
               </p>
-              <p className="text-white/60 text-[10px] mt-4">Redirecting back...</p>
-              <div className="mt-2 flex justify-center gap-1">
-                {[1, 2].map((i) => (
+              <p className="text-white/60 text-[10px] mt-6">Redirecting in {countdown}s...</p>
+              <div className="mt-2 flex justify-center gap-1.5">
+                {[1, 2, 3, 4, 5].map((i) => (
                   <div 
                     key={i} 
-                    className={`h-1 w-8 rounded-full transition-all duration-300 ${i <= (2 - countdown + 1) ? 'bg-white' : 'bg-white/20'}`} 
+                    className={`h-1 w-6 rounded-full transition-all duration-300 ${i <= (5 - countdown + 1) ? 'bg-white' : 'bg-white/20'}`} 
                   />
                 ))}
               </div>
             </motion.div>
+          </div>
+          
+          <div className="p-6 bg-white flex flex-col gap-3">
+            <Button 
+              onClick={onRetry}
+              className="w-full py-6 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button 
+              onClick={onBackToHome}
+              variant="outline"
+              className="w-full py-6 rounded-2xl border-2 border-gray-100 text-gray-600 font-bold"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
           </div>
         </motion.div>
       </div>

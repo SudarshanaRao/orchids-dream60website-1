@@ -1920,10 +1920,13 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
   const handleCloseEntryFailure = useCallback(() => setShowEntryFailure(null), []);
   const handleCloseBidSuccess = useCallback(() => setShowBidSuccess(null), []);
 
-        const handleEntrySuccess = useCallback(() => {
-          if (!showEntrySuccess || !currentUser) return;
+          const handleEntrySuccess = useCallback(() => {
+            if (!showEntrySuccess || !currentUser) {
+              handleBackToGame();
+              return;
+            }
 
-          toast.success('Entry Fee Paid!', {
+            toast.success('Entry Fee Paid!', {
             description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
             duration: 3000,
           });
