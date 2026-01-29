@@ -58,7 +58,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24">
       <SupportCenterHeader 
-        title="Game Dream60" 
+        title="Dream60" 
         icon={<Trophy className="w-6 h-6 text-yellow-500" />} 
         onBack={() => {
           console.log('Back button clicked');
@@ -82,7 +82,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-purple-100 text-purple-600 text-xs font-bold uppercase tracking-wider mb-8">
               <Sparkles className="w-4 h-4" />
-              Revolutionizing Indian E-Commerce
+              Revolutionizing Indian First Live Auction Platform
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-6 leading-[1.1]">
               India's Favorite <br />
