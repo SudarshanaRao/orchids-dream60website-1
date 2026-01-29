@@ -271,11 +271,11 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState(() => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
   
-    // Redirect to coming-soon if it's before the launch time (12:00 AM)
+    // Redirect to coming-soon if it's before the launch time (11:58 PM)
     const now = new Date();
     const launchDate = new Date();
-    launchDate.setHours(0, 0, 0, 0);
-    // If it's already past today's midnight, the target is tomorrow's midnight
+    launchDate.setHours(23, 58, 0, 0);
+    // If it's already past today's 11:58 PM, the target is tomorrow's 11:58 PM
     if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
     
     // Check if we've already completed the countdown in this session
@@ -324,10 +324,10 @@ const App = () => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
       const searchParams = new URLSearchParams(window.location.search);
       
-      // Redirect to coming-soon if it's before the launch time (12:00 AM)
+      // Redirect to coming-soon if it's before the launch time (11:58 PM)
       const now = new Date();
       const launchDate = new Date();
-      launchDate.setHours(0, 0, 0, 0);
+      launchDate.setHours(23, 58, 0, 0);
       if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
 
       const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
