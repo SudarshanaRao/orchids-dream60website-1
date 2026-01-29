@@ -233,17 +233,6 @@ async function getAirpayRedirectData(reqBody) {
     // Combine userId, auctionId, and paymentType into customvar for recovery
     const combinedCustomVar = `${userId || ''}:${reqBody.auctionId || reqBody.hourlyAuctionId || ''}:${reqBody.paymentType || 'ENTRY_FEE'}`;
 
-    // 15-minute check for entry fee
-    if (reqBody.paymentType === 'ENTRY_FEE' || !reqBody.paymentType) {
-      const now = new Date();
-      // IST is UTC + 5:30
-      const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-      const currentMinute = istTime.getUTCMinutes();
-      if (currentMinute >= 15) {
-        throw new Error('Join window closed. You can only join within the first 15 minutes of each hour.');
-      }
-    }
-
     return {
         url: finalUrl,
         token: accesstoken,
@@ -497,31 +486,6 @@ async function handleEntryFeeSuccess(payment) {
     totalBidsPlaced: 0,
     totalAmountBid: 0,
   };
-
-  // 15-minute check for joining
-  const now = new Date();
-  const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
-  const currentMinute = istTime.getUTCMinutes();
-
-  if (currentMinute >= 15 || hourlyAuction.currentRound !== 1) {
-    console.warn(`⚠️ [AIRPAY_SUCCESS] Join window closed for user ${username}. Payment received but user cannot join auction ${payment.auctionId}. Minute: ${currentMinute}, Round: ${hourlyAuction.currentRound}`);
-    // Still create history entry for the payment, but don't add to participants or joins
-    await AuctionHistory.createEntry({
-      userId: payment.userId,
-      username,
-      hourlyAuctionId: hourlyAuction.hourlyAuctionId,
-      dailyAuctionId: hourlyAuction.dailyAuctionId,
-      auctionDate: hourlyAuction.auctionDate,
-      auctionName: hourlyAuction.auctionName,
-      prizeValue: hourlyAuction.prizeValue,
-      TimeSlot: hourlyAuction.TimeSlot,
-      entryFeePaid: payment.amount,
-      paymentMethod: 'airpay',
-      razorpayPaymentId: payment.orderId, 
-      paymentDetails: { ...payment.airpayResponse, note: 'Payment received after 15-minute join window. User not joined to auction.' }
-    });
-    return;
-  }
 
   if (!hourlyAuction.participants.find(p => p.playerId === payment.userId)) {
     // Add participant to hourly auction
