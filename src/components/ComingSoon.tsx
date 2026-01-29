@@ -14,7 +14,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   const calculateTimeLeft = useCallback(() => {
     const now = new Date();
     const target = new Date();
-    target.setHours(11, 8, 0, 0);
+    target.setHours(11, 11, 0, 0);
 
     // If target time has already passed today, set it for tomorrow
     if (now > target) {
