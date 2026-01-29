@@ -307,8 +307,6 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/support') return 'support';
     if (path === '/contact') return 'contact';
     if (path === '/profile') return 'profile';
-    if (path === '/success-page' || path === '/payment/success') return 'game';
-    if (path === '/failure-page' || path === '/payment/failure') return 'game';
     if (path === '/history' || path.startsWith('/history/')) return 'history';
     if (path === '/leaderboard') return 'leaderboard';
     if (path === '/view-guide') return 'view-guide';
@@ -317,6 +315,8 @@ const generateDemoLeaderboard = (roundNumber: number) => {
     if (path === '/tester-feedback') return 'tester-feedback';
     if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
     if (path === '/prizeshowcase') return 'prizeshowcase';
+    if (path === '/success-page' || path === '/payment/success') return 'payment-success';
+    if (path === '/failure-page' || path === '/payment/failure') return 'payment-failure';
 
     return 'game';
   });
@@ -345,7 +345,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
         else if (path === '/contact') setCurrentPage('contact');
         else if (path === '/profile') setCurrentPage('profile');
         else if (path === '/success-page' || path === '/payment/success') {
-          setCurrentPage('game');
+          setCurrentPage('payment-success');
           // Handle transaction data from URL and cookies
           const txnId = searchParams.get('txnId');
           const hourlyAuctionId = searchParams.get('hourlyAuctionId');
@@ -365,12 +365,11 @@ const generateDemoLeaderboard = (roundNumber: number) => {
                 cardName: airpayData.cardName,
                 cardNumber: airpayData.cardNumber,
                 productName: 'Auction Entry Fee',
-                timeSlot: 'Active'
+                timeSlot: 'Active',
+                hourlyAuctionId: airpayData.hourlyAuctionId
               } as any);
               // Clear cookie after reading to prevent repeated modals
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-              // Redirect to clean home URL
-              window.history.pushState({}, '', '/');
             } catch (e) {
               console.error("Error parsing airpay cookie", e);
             }
@@ -382,11 +381,10 @@ const generateDemoLeaderboard = (roundNumber: number) => {
               transactionId: txnId || '',
               hourlyAuctionId: hourlyAuctionId || ''
             } as any));
-            window.history.pushState({}, '', '/');
           }
         }
         else if (path === '/failure-page' || path === '/payment/failure') {
-          setCurrentPage('game');
+          setCurrentPage('payment-failure');
           const txnId = searchParams.get('txnId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
 
@@ -2503,31 +2501,81 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         );
       }
 
-if (currentPage === 'prizeshowcase') {
-          return (
-            <QueryClientProvider client={queryClient}>
-              <TooltipProvider>
-                <BrowserRouter>
-                  <Sonner />
-                  <PrizeShowcasePage 
-                    onBack={handleBackToGame} 
-                    onJoinAuction={() => {
-                      handleBackToGame();
-                      // Scroll to auction grid on next tick
-                      setTimeout(() => {
-                        const grid = document.getElementById('auction-grid');
-                        if (grid) {
-                          grid.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }, 100);
-                    }}
-                    hourlyAuctionId={selectedPrizeShowcaseAuctionId}
-                  />
-                </BrowserRouter>
-              </TooltipProvider>
-            </QueryClientProvider>
-          );
-        }
+      if (currentPage === 'prizeshowcase') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <BrowserRouter>
+                <Sonner />
+                <PrizeShowcasePage 
+                  onBack={handleBackToGame} 
+                  onJoinAuction={() => {
+                    handleBackToGame();
+                    // Scroll to auction grid on next tick
+                    setTimeout(() => {
+                      const grid = document.getElementById('auction-grid');
+                      if (grid) {
+                        grid.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }, 100);
+                  }}
+                  hourlyAuctionId={selectedPrizeShowcaseAuctionId}
+                />
+              </BrowserRouter>
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      if (currentPage === 'payment-success') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <PaymentSuccess
+                amount={showEntrySuccess?.entryFee || 0}
+                type="entry"
+                boxNumber={showEntrySuccess?.boxNumber || 0}
+                auctionId={showEntrySuccess?.auctionId}
+                auctionNumber={showEntrySuccess?.auctionNumber}
+                productName={showEntrySuccess?.productName}
+                productWorth={showEntrySuccess?.productWorth}
+                timeSlot={showEntrySuccess?.timeSlot}
+                paidBy={showEntrySuccess?.paidBy}
+                paymentMethod={showEntrySuccess?.paymentMethod}
+                transactionId={showEntrySuccess?.transactionId}
+                onBackToHome={handleEntrySuccess}
+                onClose={handleCloseEntrySuccess}
+              />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
+
+      if (currentPage === 'payment-failure') {
+        return (
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Sonner />
+              <PaymentFailure
+                amount={showEntryFailure?.entryFee || 0}
+                errorMessage={showEntryFailure?.errorMessage || 'Payment failed'}
+                auctionId={showEntryFailure?.auctionId}
+                auctionNumber={showEntryFailure?.auctionNumber}
+                productName={showEntryFailure?.productName}
+                productWorth={showEntryFailure?.productWorth}
+                timeSlot={showEntryFailure?.timeSlot}
+                paidBy={showEntryFailure?.paidBy}
+                paymentMethod={showEntryFailure?.paymentMethod}
+                transactionId={showEntryFailure?.transactionId}
+                onRetry={handleRetryPayment}
+                onBackToHome={handleBackToGame}
+                onClose={handleCloseEntryFailure}
+              />
+            </TooltipProvider>
+          </QueryClientProvider>
+        );
+      }
 
       if (currentPage === 'contact') {
 
