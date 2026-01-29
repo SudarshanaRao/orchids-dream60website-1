@@ -55,7 +55,7 @@ const sendOtp = async (req, res) => {
 
     if (reason === 'Change Mobile') {
       message = `Dear ${name}, Use this OTP ${otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech`;
-      templateId = '1207176898558880888'; // MOBILE_CHANGE_OTP template ID
+      templateId = '1207176952069976461'; // MOBILE_CHANGE_OTP template ID
     } else if (reason === 'Forgot Password') {
       message = `Dear ${name}, Your password reset verification code for Dream60 account is ${otp}. This code will expire in 10 minutes. - Finpages Tech`;
       templateId = '1207176908078229051'; // PASSWORD_RESET template ID
