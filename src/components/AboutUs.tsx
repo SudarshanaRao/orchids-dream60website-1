@@ -14,7 +14,8 @@ import {
   Zap,
   Star,
   Smartphone,
-  Trophy
+  Trophy,
+  IndianRupee
 } from 'lucide-react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -29,7 +30,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
   const stats = [
     { label: 'Total Winners', value: '10,000+', icon: <Users className="w-5 h-5" />, color: 'bg-blue-500' },
     { label: 'Daily Auctions', value: '10+', icon: <Zap className="w-5 h-5" />, color: 'bg-yellow-500' },
-    { label: 'Prize Pool', value: '₹3.5L+', icon: < IndianRupee className="w-5 h-5" />, color: 'bg-green-500' },
+    { label: 'Prize Pool', value: '₹3.5L+', icon: <IndianRupee className="w-5 h-5" />, color: 'bg-green-500' },
     { label: 'Safe & Secure', value: '100%', icon: <Shield className="w-5 h-5" />, color: 'bg-purple-500' },
   ];
 
