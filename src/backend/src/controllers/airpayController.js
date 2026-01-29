@@ -281,6 +281,10 @@ exports.sendToAirpay = async (req, res) => {
   }
 };
 
+exports.renderTxn = (req, res) => {
+  res.render('txn', { fdata: {} });
+};
+
 exports.handleAirpayResponse = async (req, res) => {
   try {
     console.log('--- Airpay Response Received ---');
@@ -649,4 +653,6 @@ module.exports = {
   handleAirpayResponse: exports.handleAirpayResponse,
   handleAirpaySuccess: exports.handleAirpayResponse,
   handleAirpayFailure: exports.handleAirpayResponse,
+  handleResponse: exports.handleAirpayResponse,
+  renderTxn: exports.renderTxn,
 };
