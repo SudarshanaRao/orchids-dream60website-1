@@ -3,17 +3,106 @@ const router = express.Router();
 const airpayController = require('../controllers/airpayController');
 const { validateTxn, runValidation } = require('../validate/validateTransaction');
 
-// Whitelisting / Manual Testing Routes (Pug Views)
-router.get('/txn', airpayController.renderTxn);
+/**
+ * @swagger
+ * tags:
+ *   name: Airpay
+ *   description: Airpay payment integration endpoints
+ */
+
+/**
+ * @swagger
+ * /api/airpay/create-order:
+ *   post:
+ *     summary: Create a new Airpay order
+ *     tags: [Airpay]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *               - userId
+ *               - auctionId
+ *             properties:
+ *               amount:
+ *                 type: number
+ *               userId:
+ *                 type: string
+ *               auctionId:
+ *                 type: string
+ *               paymentType:
+ *                 type: string
+ *                 enum: [ENTRY_FEE, PRIZE_CLAIM]
+ *     responses:
+ *       200:
+ *         description: Order created successfully
+ *       400:
+ *         description: Invalid request parameters
+ */
+router.post('/create-order', airpayController.createOrder);
+
+/**
+ * @swagger
+ * /api/airpay/sendtoairpay:
+ *   post:
+ *     summary: Render the redirection form to Airpay
+ *     tags: [Airpay]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               amount:
+ *                 type: string
+ *               userId:
+ *                 type: string
+ *               auctionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Redirection form rendered
+ */
 router.post('/sendtoairpay', runValidation, airpayController.sendToAirpay);
+
+/**
+ * @swagger
+ * /api/airpay/responsefromairpay:
+ *   post:
+ *     summary: Handle response from Airpay (Webhook/Redirect)
+ *     tags: [Airpay]
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend success or failure page
+ */
 router.post('/responsefromairpay', airpayController.handleAirpayResponse);
 
-// Success/Failure Whitelist URLs for Airpay
+/**
+ * @swagger
+ * /api/airpay/success:
+ *   all:
+ *     summary: Whitelisted success URL for Airpay redirects
+ *     tags: [Airpay]
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend success page
+ */
 router.all('/success', airpayController.handleAirpaySuccess);
-router.all('/failure', airpayController.handleAirpayFailure);
 
-// Application API Routes (JSON)
-router.post('/create-order', airpayController.createOrder);
-router.post('/response', airpayController.handleResponse);
+/**
+ * @swagger
+ * /api/airpay/failure:
+ *   all:
+ *     summary: Whitelisted failure URL for Airpay redirects
+ *     tags: [Airpay]
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend failure page
+ */
+router.all('/failure', airpayController.handleAirpayFailure);
 
 module.exports = router;

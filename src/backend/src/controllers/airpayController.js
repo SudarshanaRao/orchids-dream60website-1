@@ -200,7 +200,9 @@ async function getAirpayRedirectData(reqBody) {
         buyer_pincode: buyerDetails.pincode,
         isocurrency: 'INR',
         currency: '356',
-        merchant_id: AIRPAY_MID
+        merchant_id: AIRPAY_MID,
+        success_url: process.env.AIRPAY_SUCCESS_URL || (process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/api/airpay/success` : 'https://dev-api.dream60.com/api/airpay/success'),
+        failure_url: process.env.AIRPAY_FAILURE_URL || (process.env.API_BASE_URL ? `${process.env.API_BASE_URL}/api/airpay/failure` : 'https://dev-api.dream60.com/api/airpay/failure')
     };
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);
@@ -430,7 +432,7 @@ exports.handleAirpayResponse = async (req, res) => {
     }
 
     const redirectUrl = finalStatus === 'paid' 
-      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}`
+      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}&hourlyAuctionId=${payment.auctionId}`
       : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
 
     console.log(`Redirecting user to: ${redirectUrl}`);

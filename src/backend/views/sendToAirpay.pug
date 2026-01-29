@@ -54,7 +54,12 @@ html
             input#buyerPinCode.form-control(type='hidden',  name='buyerPinCode' value=fdata.buyerPinCode || fdata.pincode)
           div.form-group
             input#orderid.form-control(type='hidden',  name='orderid' value=fdata.orderid || fdata.orderId)
-          div.form-group
-            input#amount.form-control(type='hidden',  name='amount' value=fdata.amount)
-          div.form-group
-            input#txnsubtype.form-control(type='hidden',  name='txnsubtype' value=fdata.txnsubtype || '')
+            div.form-group
+              input#amount.form-control(type='hidden',  name='amount' value=fdata.amount)
+            div.form-group
+              input#success_url.form-control(type='hidden',  name='success_url' value=fdata.success_url)
+            div.form-group
+              input#failure_url.form-control(type='hidden',  name='failure_url' value=fdata.failure_url)
+            div.form-group
+              input#txnsubtype.form-control(type='hidden',  name='txnsubtype' value=fdata.txnsubtype || '')
+
