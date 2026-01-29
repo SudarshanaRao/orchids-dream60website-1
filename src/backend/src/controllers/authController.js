@@ -239,9 +239,9 @@ const forgotPassword = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
-      } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
-        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+    } else if (type === 'mobile') {
+      const { message, template } = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
@@ -320,14 +320,13 @@ const resendOtp = async (req, res) => {
         console.warn('Email send failed:', emailResult.message);
         // Continue anyway - OTP still generated
       }
-      } else if (type === 'mobile') {
-        const { message, template } = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
-        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
+    } else if (type === 'mobile') {
+      const { message, template } = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
       }
-    }
     }
 
     // ✅ In production, DO NOT return OTP in response
@@ -522,12 +521,11 @@ const checkMobile = async (req, res) => {
       if (!emailResult.success) {
         console.warn('Email send failed:', emailResult.message);
       }
-      } else if (type === 'mobile') {
-        const templateKey = reason === 'Change Mobile' ? 'MOBILE_CHANGE_OTP' : 
-                           reason === 'Forgot Password' ? 'PASSWORD_RESET' : 'OTP_VERIFICATION';
-        const { message, template } = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
-        const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
-
+    } else if (type === 'mobile') {
+      const templateKey = reason === 'Change Mobile' ? 'MOBILE_CHANGE_OTP' : 
+                         reason === 'Forgot Password' ? 'PASSWORD_RESET' : 'OTP_VERIFICATION';
+      const { message, template } = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
+      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
         console.warn('SMS send failed:', smsResult.error);
