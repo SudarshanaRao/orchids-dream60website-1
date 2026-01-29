@@ -191,7 +191,7 @@ app.use('/admin', adminRoutes);
 app.use('/admin/emails', emailRoutes);
 app.use('/priceMart', priceMartRoutes);
 app.use('/scheduler', schedulerRoutes);
-app.use('/api/razorpay', razorpayRoutes);
+// app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/airpay', airpayRoutes);
 app.use('/utility', utilityRoutes);
 app.use('/user', userHistoryRoutes);
