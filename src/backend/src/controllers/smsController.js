@@ -54,14 +54,14 @@ const sendOtp = async (req, res) => {
     let templateId = '1207172612396743269'; // Default login template
 
     if (reason === 'Change Mobile') {
-      message = `Dear ${name}, Use this OTP ${otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech`;
+      message = ` Dear ${name}, Use this OTP ${otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech `;
       templateId = '1207176952069976461'; // MOBILE_CHANGE_OTP template ID
     } else if (reason === 'Forgot Password') {
-      message = `Dear ${name}, Your password reset verification code for Dream60 account is ${otp}. This code will expire in 10 minutes. - Finpages Tech`;
+      message = ` Dear ${name}, Your password reset verification code for Dream60 account is ${otp}. This code will expire in 10 minutes. - Finpages Tech \n`;
       templateId = '1207176908078229051'; // PASSWORD_RESET template ID
     } else {
       // Use the exact requested template for login
-      message = `Dear ${name}, use this OTP ${otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech`;
+      message = `Dear ${name}, use this OTP ${otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech `;
       templateId = '1207176898558880888'; // Using the one from smsService.js
     }
     

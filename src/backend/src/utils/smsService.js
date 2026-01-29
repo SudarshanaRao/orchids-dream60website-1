@@ -228,58 +228,86 @@ const SMS_TEMPLATES = {
   OTP_VERIFICATION: {
     id: 'otp_verification',
     name: 'OTP Verification',
-    template: 'Dear {name}, use this OTP {otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech',
+    template: 'Dear {name}, use this OTP {otp} to login to your Dream60 Account. Its only valid for 10 minutes - Finpages Tech ',
     variables: ['name', 'otp'],
     templateId: '1207176898558880888'
   },
   WELCOME_SMS: {
     id: 'welcome_sms',
     name: 'Welcome SMS',
-    template: 'Dear {name}, Welcome to Dream60! Your registration is successful. You can now join auctions and win exciting gadgets. - Finpages Tech',
+    template: 'Dear {name}, Welcome to Dream60! Your registration is successful. You can now join auctions and win exciting gadgets. - Finpages Tech ',
     variables: ['name'],
     templateId: '1207176923373608591'
   },
   WINNER_PAYMENT: {
     id: 'winner_payment',
     name: 'Winner Payment',
-    template: 'Congratulations {name}, You have won in Dream60. To claim your prize, kindly complete the required payment of ₹ {amount}/- at your earliest convenience. - Finpages Tech',
+    template: 'Congratulations {name} ,You have won in Dream60. To claim your prize, kindly complete the required payment of ₹ {amount}/- at your earliest convenience. - Finpages Tech ',
     variables: ['name', 'amount'],
     templateId: '1207176916032535720'
   },
   REFUND_NOTIFICATION: {
     id: 'refund_notification',
     name: 'Refund Notification',
-    template: 'Dear {name}, Your {timeSlot} time slot bid has been cancelled, and the refund process has been initiated. The amount will be credited soon to the original payment source. Thank you for your patience. - Finpages Tech',
+    template: 'Dear {name}, Your {timeSlot} time slot bid has been cancelled, and the refund process has been initiated. The amount will be credited soon to the original payment source. Thank you for your patience. - Finpages Tech ',
     variables: ['name', 'timeSlot'],
     templateId: '1207176916920661369'
   },
   MOBILE_UPDATE: {
     id: 'mobile_update',
     name: 'Mobile Update',
-    template: 'Dear {name}, Your mobile number has been updated successfully. If this wasn\'t done by you, please reach out to our support team right away. - Finpages Tech',
+    template: ' Dear {name}, Your mobile number has been updated successfully. If this wasn\'t done by you, please reach out to our support team right away. - Finpages Tech \n',
     variables: ['name'],
     templateId: '1207176916974016632'
   },
   RANK_ACHIEVEMENT: {
     id: 'rank_achievement',
     name: 'Rank Achievement',
-    template: 'Congratulations {name} You have achieved Rank {rank}. Please wait for your turn to claim the prize. - Finpages Tech',
+    template: ' Congratulations {name} You have achieved Rank {rank}. Please wait for your turn to claim the prize. - Finpages Tech \n',
     variables: ['name', 'rank'],
     templateId: '1207176923013569344'
   },
   PASSWORD_RESET: {
     id: 'password_reset',
     name: 'Password Reset',
-    template: 'Dear {name}, Your password reset verification code for Dream60 account is {otp}. This code will expire in 10 minutes. - Finpages Tech',
+    template: ' Dear {name}, Your password reset verification code for Dream60 account is {otp}. This code will expire in 10 minutes. - Finpages Tech \n',
     variables: ['name', 'otp'],
     templateId: '1207176908078229051'
   },
   MOBILE_CHANGE_OTP: {
     id: 'mobile_change_otp',
     name: 'Mobile Change OTP',
-    template: 'Dear {name}, Use this OTP {otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech',
+    template: ' Dear {name}, Use this OTP {otp} to change your registered mobile number. Valid only for 10 Minutes. Do not share with anyone. – Finpages Tech ',
     variables: ['name', 'otp'],
     templateId: '1207176952069976461'
+  },
+  REFERRAL_INVITATION: {
+    id: 'referral_invitation',
+    name: 'Referral Invitation',
+    template: 'I\'m inviting you on Nifty10 to play fantasy stock prediction and win real cash prizes. Just enter my referral code {code} while sign up, you will get a bonus cash of ₹{bonus} . Install on{link} - finpages',
+    variables: ['code', 'bonus', 'link'],
+    templateId: '1207174296988263792'
+  },
+  OTP_LOGIN_NIFTY10: {
+    id: 'otp_login_nifty10',
+    name: 'OTP Login Nifty10',
+    template: 'Dear {name}, use this One Time Password(OTP) {otp} to login to your Nifty10 App. Its only valid for 10 minutes - Finpages',
+    variables: ['name', 'otp'],
+    templateId: '1207172612396743269'
+  },
+  REFUND_SUCCESS_NIFTY10: {
+    id: 'refund_success_nifty10',
+    name: 'Refund Success Nifty10',
+    template: 'Dear User, Bids refund has been credited to your Nifty10 wallet - FINPAGES',
+    variables: [],
+    templateId: '1207174659231618433'
+  },
+  REFUND_DETAILED_NIFTY10: {
+    id: 'refund_detailed_nifty10',
+    name: 'Refund Detailed Nifty10',
+    template: 'Dear {name}, We would like to inform you that the bid amount Rs. {amount} has been successfully refunded to your Nifty10 wallet. Thank you for choosing Nifty10. - Finpages',
+    variables: ['name', 'amount'],
+    templateId: '1207174662585501182'
   },
 };
 
