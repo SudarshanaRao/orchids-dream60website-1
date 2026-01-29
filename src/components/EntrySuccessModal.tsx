@@ -311,6 +311,29 @@ export function EntrySuccessModal({ entryFee, boxNumber, auctionId, transactionI
                         </div>
                       </motion.div>
                     </div>
+
+                    {/* Transaction Details */}
+                    {(transactionId || auctionId) && (
+                      <motion.div 
+                        className="mt-4 pt-4 border-t border-purple-100/50 space-y-2"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.0 }}
+                      >
+                        {transactionId && (
+                          <div className="flex justify-between items-center text-[10px] sm:text-xs">
+                            <span className="text-[#6B3FA0]/60 font-medium">Transaction ID</span>
+                            <span className="text-[#6B3FA0] font-mono font-semibold">{transactionId}</span>
+                          </div>
+                        )}
+                        {auctionId && (
+                          <div className="flex justify-between items-center text-[10px] sm:text-xs">
+                            <span className="text-[#6B3FA0]/60 font-medium">Auction ID</span>
+                            <span className="text-[#6B3FA0] font-mono font-semibold">{auctionId}</span>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
                   </div>
                 </motion.div>
 

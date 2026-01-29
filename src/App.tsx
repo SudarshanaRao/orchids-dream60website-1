@@ -1907,33 +1907,41 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
   const handleCloseEntryFailure = useCallback(() => setShowEntryFailure(null), []);
   const handleCloseBidSuccess = useCallback(() => setShowBidSuccess(null), []);
 
-      const handleEntrySuccess = useCallback(() => {
-        if (!showEntrySuccess || !currentUser) return;
+        const handleEntrySuccess = useCallback(() => {
+          if (!showEntrySuccess || !currentUser) return;
 
-        toast.success('Entry Fee Paid!', {
-          description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
-          duration: 3000,
-        });
+          toast.success('Entry Fee Paid!', {
+            description: `Successfully paid ₹${showEntrySuccess.entryFee}. You're now in the auction!`,
+            duration: 3000,
+          });
 
-        // ✅ Store payment status in localStorage to survive refresh and prevent flickering
-        // Use the auction ID to ensure it's specific to this auction
-        const auctionId = currentAuction.id;
-        const paymentKey = `payment_${currentUser.id}_${auctionId}`;
-        localStorage.setItem(paymentKey, 'true');
-        // Set an expiry for 2 hours (enough for the auction duration)
-        localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
+          // ✅ Store payment status in localStorage to survive refresh and prevent flickering
+          // Use the auction ID to ensure it's specific to this auction
+          const auctionId = currentAuction.id;
+          const paymentKey = `payment_${currentUser.id}_${auctionId}`;
+          localStorage.setItem(paymentKey, 'true');
+          // Set an expiry for 2 hours (enough for the auction duration)
+          localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
 
-        // ✅ Prepare detail modal data
-        const entryFee = showEntrySuccess.entryFee;
-        const boxNumber = showEntrySuccess.boxNumber || 1;
-        const successAuctionId = showEntrySuccess.auctionId;
-        const transactionId = showEntrySuccess.transactionId;
+          // ✅ Prepare detail modal data
+          const entryFee = showEntrySuccess.entryFee;
+          const boxNumber = showEntrySuccess.boxNumber || 1;
+          const successAuctionId = showEntrySuccess.auctionId;
+          const transactionId = showEntrySuccess.transactionId;
 
-        // ✅ Close primary modal and show detail modal on game page
-        setShowEntrySuccess(null);
-        setShowEntrySuccessDetail({ entryFee, boxNumber, auctionId: successAuctionId, transactionId });
-        setCurrentPage('game');
-        window.history.pushState({}, '', '/');
+          // ✅ Smooth scroll to live auction banner or prize showcase as requested
+          setTimeout(() => {
+            const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
+
+          // ✅ Close primary modal and show detail modal on game page
+          setShowEntrySuccess(null);
+          setShowEntrySuccessDetail({ entryFee, boxNumber, auctionId: successAuctionId, transactionId });
+          setCurrentPage('game');
+          window.history.pushState({}, '', '/');
         
         setCurrentAuction(prev => ({
           ...prev,
