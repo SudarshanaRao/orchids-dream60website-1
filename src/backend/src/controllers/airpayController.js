@@ -84,9 +84,10 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 function decrypt(responsedata, secretKey) {
   let data = responsedata;
   try {
-    const iv = data.slice(0, 16);
+    const hash = crypto.createHash('sha256').update(data).digest();
+    const iv = hash.slice(0, 16);
     const encryptedData = Buffer.from(data.slice(16), 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(iv, 'utf-8'));
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
     decrypted += decipher.final();
     return decrypted;
@@ -311,24 +312,34 @@ async function processAirpayPayment(responseData) {
   
   let data = {};
   try {
-    data = JSON.parse(decrypteddata);
-    if (data.data) data = data.data;
-  } catch (e) {
     const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
     if (match) {
       let token = JSON.parse("{" + match[0] + "}");
       data = token.data;
+      console.log('✅ Parsed Airpay Data via Regex:', data);
     } else {
-      throw new Error('Could not parse Airpay response data');
+      data = JSON.parse(decrypteddata);
+      if (data.data) data = data.data;
+      console.log('✅ Parsed Airpay Data via direct JSON:', data);
     }
+  } catch (e) {
+    console.error('❌ Error parsing Airpay response:', e.message);
+    throw new Error('Could not parse Airpay response data: ' + e.message);
   }
 
   const TRANSACTIONID = data.orderid || data.ORDERID;
-  const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID;
+  const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID || data.ap_transaction_id;
   const AMOUNT = data.amount || data.AMOUNT;
-  const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || '').toString();
+  const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || data.transactionstatus || '').toString();
   const MESSAGE = data.message || data.MESSAGE || '';
-  const CUSTOMVAR = data.custom_var || data.CUSTOMVAR;
+  const CUSTOMVAR = data.custom_var || data.CUSTOMVAR || data.customvar;
+
+  console.log('--- Airpay Response Details ---');
+  console.log('Order ID:', TRANSACTIONID);
+  console.log('Airpay Txn ID:', APTRANSACTIONID);
+  console.log('Status:', TRANSACTIONSTATUS);
+  console.log('Amount:', AMOUNT);
+  console.log('Custom Var:', CUSTOMVAR);
 
   let recoveredUserId = '';
   let recoveredAuctionId = '';
@@ -350,35 +361,44 @@ async function processAirpayPayment(responseData) {
   
   console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
 
+  // Fetch existing payment to preserve metadata if it's an update
+  const existingPayment = await AirpayPayment.findOne({ orderId: TRANSACTIONID });
+
   const payment = await AirpayPayment.findOneAndUpdate(
     { orderId: TRANSACTIONID },
     { 
       status: finalStatus, 
       airpayTransactionId: APTRANSACTIONID,
       airpayResponse: data,
-      paidAt: finalStatus === 'paid' ? new Date() : null,
+      paidAt: finalStatus === 'paid' ? (existingPayment?.paidAt || new Date()) : null,
       message: MESSAGE,
       customVar: CUSTOMVAR,
       paymentMethod: data.chmod || data.CHMOD || '',
       bankName: data.bankname || data.BANKNAME || '',
       cardName: data.cardname || data.CARDNAME || '',
       cardNumber: data.cardnumber || data.CARDNUMBER || '',
-      vpa: data.customervpa || data.VPA || '',
-      ...(recoveredUserId && { userId: recoveredUserId }),
-      ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
-      ...(recoveredPaymentType && { paymentType: recoveredPaymentType }),
-      amount: AMOUNT
+      vpa: data.customervpa || data.VPA || data.VPAID || '',
+      userId: recoveredUserId || existingPayment?.userId,
+      auctionId: recoveredAuctionId || existingPayment?.auctionId,
+      paymentType: recoveredPaymentType || existingPayment?.paymentType || 'ENTRY_FEE',
+      amount: AMOUNT || existingPayment?.amount
     },
     { new: true, upsert: true }
   );
 
   if (payment && finalStatus === 'paid') {
-    console.log(`Processing successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
-    if (payment.paymentType === 'ENTRY_FEE') {
-      await handleEntryFeeSuccess(payment);
-    } else {
-      await handlePrizeClaimSuccess(payment);
+    console.log(`✅ [AIRPAY_PROCESS] Successful payment for order ${TRANSACTIONID}, type ${payment.paymentType}`);
+    try {
+      if (payment.paymentType === 'ENTRY_FEE') {
+        await handleEntryFeeSuccess(payment);
+      } else if (payment.paymentType === 'PRIZE_CLAIM') {
+        await handlePrizeClaimSuccess(payment);
+      }
+    } catch (handlerError) {
+      console.error(`❌ [AIRPAY_HANDLER_ERROR] Error in success handler:`, handlerError);
     }
+  } else if (finalStatus === 'failed') {
+    console.warn(`⚠️ [AIRPAY_PROCESS] Payment failed for order ${TRANSACTIONID}: ${MESSAGE}`);
   }
 
   return {
