@@ -15,7 +15,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     const calculateTimeLeft = useCallback(() => {
     const now = new Date();
     const target = new Date();
-    target.setHours(11, 58, 0, 0);
+    target.setHours(12, 15, 0, 0);
     if (target < now) target.setDate(target.getDate());
 
     const difference = target.getTime() - now.getTime();
