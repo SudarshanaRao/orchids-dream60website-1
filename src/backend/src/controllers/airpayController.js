@@ -238,7 +238,8 @@ async function getAirpayRedirectData(reqBody) {
     let finalUrl = `${PAY_URL}?token=${encodeURIComponent(accesstoken)}`;
 
     // Combine userId, auctionId, and paymentType into customvar for recovery
-    const combinedCustomVar = `${userId || ''}:${reqBody.auctionId || reqBody.hourlyAuctionId || ''}:${reqBody.paymentType || 'ENTRY_FEE'}`;
+    // Format: userId|auctionId|paymentType
+    const combinedCustomVar = `${userId || ''}|${reqBody.auctionId || reqBody.hourlyAuctionId || ''}|${reqBody.paymentType || 'ENTRY_FEE'}`;
 
     return {
         url: finalUrl,
@@ -313,37 +314,55 @@ exports.handleAirpayResponse = async (req, res) => {
     }
 
     const decrypteddata = decrypt(responseData, key);
-    const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
-    if (!match) throw new Error('No match found for "data" key in response.');
+    console.log('Decrypted Airpay Response (raw):', decrypteddata);
+    
+    let data = {};
+    try {
+      // Try parsing as direct JSON first (common in newer versions)
+      data = JSON.parse(decrypteddata);
+      if (data.data) data = data.data; // Handle if still wrapped in "data"
+    } catch (e) {
+      // Fallback to existing regex extraction for older XML/Partial JSON formats
+      const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
+      if (match) {
+        let token = JSON.parse("{" + match[0] + "}");
+        data = token.data;
+      } else {
+        throw new Error('Could not parse Airpay response data');
+      }
+    }
 
-    let token = JSON.parse("{" + match[0] + "}");
-    const data = token.data;
-
-    const TRANSACTIONID = data.orderid;
-    const APTRANSACTIONID = data.ap_transactionid;
-    const AMOUNT = data.amount;
-    const TRANSACTIONSTATUS = data.transaction_status;
-    const MESSAGE = data.message;
-    const CUSTOMVAR = data.custom_var;
+    // Support both lowercase and all-caps keys from Airpay
+    const TRANSACTIONID = data.orderid || data.ORDERID;
+    const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID;
+    const AMOUNT = data.amount || data.AMOUNT;
+    const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || '').toString();
+    const MESSAGE = data.message || data.MESSAGE || '';
+    const CUSTOMVAR = data.custom_var || data.CUSTOMVAR;
 
     // Recover userId, auctionId, paymentType from CUSTOMVAR if possible
-    // Format: userId:auctionId:paymentType
+    // Format: userId|auctionId|paymentType or userId:auctionId:paymentType
     let recoveredUserId = '';
     let recoveredAuctionId = '';
     let recoveredPaymentType = 'ENTRY_FEE';
 
-    if (CUSTOMVAR && CUSTOMVAR.includes(':')) {
-      const parts = CUSTOMVAR.split(':');
-      recoveredUserId = parts[0];
-      recoveredAuctionId = parts[1];
-      recoveredPaymentType = parts[2] || 'ENTRY_FEE';
-    } else if (CUSTOMVAR) {
-      recoveredUserId = CUSTOMVAR;
+    if (CUSTOMVAR) {
+      const separator = CUSTOMVAR.includes('|') ? '|' : (CUSTOMVAR.includes(':') ? ':' : null);
+      if (separator) {
+        const parts = CUSTOMVAR.split(separator);
+        recoveredUserId = parts[0];
+        recoveredAuctionId = parts[1];
+        recoveredPaymentType = parts[2] || 'ENTRY_FEE';
+      } else {
+        recoveredUserId = CUSTOMVAR;
+      }
     }
 
-    // Business Logic Integration
-    const finalStatus = (TRANSACTIONSTATUS === '200') ? 'paid' : 'failed';
+    // Business Logic Integration - Check for '200' or 'SUCCESS'
+    const finalStatus = (TRANSACTIONSTATUS === '200' || TRANSACTIONSTATUS.toUpperCase() === 'SUCCESS') ? 'paid' : 'failed';
     
+    console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
+
     // Use upsert to ensure record exists even if not created during initiation
     const payment = await AirpayPayment.findOneAndUpdate(
       { orderId: TRANSACTIONID },
@@ -354,11 +373,11 @@ exports.handleAirpayResponse = async (req, res) => {
         paidAt: finalStatus === 'paid' ? new Date() : null,
         message: MESSAGE,
         customVar: CUSTOMVAR,
-        paymentMethod: data.chmod || '',
-        bankName: data.bankname || '',
-        cardName: data.cardname || '',
-        cardNumber: data.cardnumber || '',
-        vpa: data.customervpa || '',
+        paymentMethod: data.chmod || data.CHMOD || '',
+        bankName: data.bankname || data.BANKNAME || '',
+        cardName: data.cardname || data.CARDNAME || '',
+        cardNumber: data.cardnumber || data.CARDNUMBER || '',
+        vpa: data.customervpa || data.VPA || '',
         // Update recovered fields if they were missing or if it's an upsert
         ...(recoveredUserId && { userId: recoveredUserId }),
         ...(recoveredAuctionId && { auctionId: recoveredAuctionId }),
@@ -384,11 +403,11 @@ exports.handleAirpayResponse = async (req, res) => {
       amount: AMOUNT,
       status: finalStatus,
       message: MESSAGE,
-      method: data.chmod || 'airpay',
-      upiId: data.customervpa || '',
-      bankName: data.bankname || '',
-      cardName: data.cardname || '',
-      cardNumber: data.cardnumber || '',
+      method: data.chmod || data.CHMOD || 'airpay',
+      upiId: data.customervpa || data.VPA || '',
+      bankName: data.bankname || data.BANKNAME || '',
+      cardName: data.cardname || data.CARDNAME || '',
+      cardNumber: data.cardnumber || data.CARDNUMBER || '',
       auctionId: payment.auctionId,
       timestamp: new Date().toISOString()
     };
@@ -398,15 +417,27 @@ exports.handleAirpayResponse = async (req, res) => {
       path: '/'
     });
 
-    const frontendUrl = process.env.VITE_ENVIRONMENT === 'production' ? 'https://dream60.com' : 'http://localhost:3000';
+    const allowedOriginsRaw = process.env.CLIENT_URL || '';
+    const origins = allowedOriginsRaw.split(',').map(o => o.trim()).filter(Boolean);
+    
+    let frontendUrl = 'http://localhost:3000';
+    if (process.env.VITE_ENVIRONMENT === 'production') {
+      frontendUrl = 'https://dream60.com';
+    } else if (origins.some(o => o.includes('test.dream60.com'))) {
+      frontendUrl = 'https://test.dream60.com';
+    } else if (origins.length > 0) {
+      frontendUrl = origins[0];
+    }
+
     const redirectUrl = finalStatus === 'paid' 
       ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}`
       : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
 
+    console.log(`Redirecting user to: ${redirectUrl}`);
     res.redirect(redirectUrl);
   } catch (error) {
     console.error('handleAirpayResponse error:', error);
-    res.status(500).send("Error processing payment response");
+    res.status(500).send("Error processing payment response: " + error.message);
   }
 };
 
