@@ -2400,7 +2400,7 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <Sonner />
-            <AboutUs onNavigate={handleNavigate} />
+              <AboutUs onBack={handleBackToGame} onNavigate={handleNavigate} />
             <Footer onNavigate={handleNavigate} />
           </TooltipProvider>
         </QueryClientProvider>
