@@ -348,6 +348,7 @@ const generateDemoLeaderboard = (roundNumber: number) => {
           setCurrentPage('game');
           // Handle transaction data from URL and cookies
           const txnId = searchParams.get('txnId');
+          const hourlyAuctionId = searchParams.get('hourlyAuctionId');
           const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
           
           if (cookieData) {
@@ -373,8 +374,14 @@ const generateDemoLeaderboard = (roundNumber: number) => {
             } catch (e) {
               console.error("Error parsing airpay cookie", e);
             }
-          } else if (txnId) {
-            setShowEntrySuccess(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, boxNumber: 0, transactionId: txnId } as any);
+          } else if (txnId || hourlyAuctionId) {
+            setShowEntrySuccess(prev => ({
+              ...(prev || {}),
+              entryFee: Number(searchParams.get('amount')) || 0,
+              boxNumber: 0,
+              transactionId: txnId || '',
+              hourlyAuctionId: hourlyAuctionId || ''
+            } as any));
             window.history.pushState({}, '', '/');
           }
         }
@@ -615,14 +622,17 @@ const [adminUser, setAdminUser] = useState<{
     paidBy?: string;
     transactionId?: string;
     paymentMethod?: string;
+    hourlyAuctionId?: string;
   } | null>(null);
 
-    const [showEntrySuccessDetail, setShowEntrySuccessDetail] = useState<{
-      entryFee: number;
-      boxNumber: number;
-      auctionId?: string;
-      transactionId?: string;
-    } | null>(null);
+      const [showEntrySuccessDetail, setShowEntrySuccessDetail] = useState<{
+        entryFee: number;
+        boxNumber: number;
+        auctionId?: string;
+        transactionId?: string;
+        hourlyAuctionId?: string;
+      } | null>(null);
+
 
     const [showEntryFailure, setShowEntryFailure] = useState<{
     entryFee: number;
@@ -1923,24 +1933,26 @@ const [selectedPrizeShowcaseAuctionId, setSelectedPrizeShowcaseAuctionId] = useS
           // Set an expiry for 2 hours (enough for the auction duration)
           localStorage.setItem(`${paymentKey}_expiry`, (Date.now() + 2 * 60 * 60 * 1000).toString());
 
-          // ✅ Prepare detail modal data
-          const entryFee = showEntrySuccess.entryFee;
-          const boxNumber = showEntrySuccess.boxNumber || 1;
-          const successAuctionId = showEntrySuccess.auctionId;
-          const transactionId = showEntrySuccess.transactionId;
+            // ✅ Prepare detail modal data
+            const entryFee = showEntrySuccess.entryFee;
+            const boxNumber = showEntrySuccess.boxNumber || 1;
+            const successAuctionId = showEntrySuccess.auctionId;
+            const transactionId = showEntrySuccess.transactionId;
+            const hourlyAuctionId = showEntrySuccess.hourlyAuctionId;
 
-          // ✅ Smooth scroll to live auction banner or prize showcase as requested
-          setTimeout(() => {
-            const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth' });
-            }
-          }, 100);
+            // ✅ Smooth scroll to live auction banner or prize showcase as requested
+            setTimeout(() => {
+              const element = document.querySelector('[data-whatsnew-target="prize-showcase-section"]');
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+              }
+            }, 100);
 
-          // ✅ Close primary modal and show detail modal on game page
-          setShowEntrySuccess(null);
-          setShowEntrySuccessDetail({ entryFee, boxNumber, auctionId: successAuctionId, transactionId });
-          setCurrentPage('game');
+            // ✅ Close primary modal and show detail modal on game page
+            setShowEntrySuccess(null);
+            setShowEntrySuccessDetail({ entryFee, boxNumber, auctionId: successAuctionId, transactionId, hourlyAuctionId });
+            setCurrentPage('game');
+
           window.history.pushState({}, '', '/');
         
         setCurrentAuction(prev => ({
