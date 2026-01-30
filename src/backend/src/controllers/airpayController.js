@@ -82,24 +82,23 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 };
 
 // Helper functions matching documentation EXACTLY as provided in snippets
-function decrypt(responseData, secretKey) {
-  console.log('Decrypt function input length:', responseData?.length);
+function decrypt(responsedata, secretKey) {
+  let data = responsedata;
+  console.log('Decrypt function input', responsedata)
   try {
-    const iv = Buffer.from(responseData.substring(0, 16), 'utf8');
-    const encryptedText = Buffer.from(responseData.substring(16), 'base64');
-
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(secretKey, 'utf8'),
-      iv
-    );
-
-    let decrypted = decipher.update(encryptedText, undefined, 'utf8');
-    decrypted += decipher.final('utf8');
+    const hash = crypto.createHash('sha256').update(data).digest();
+    const iv = hash.slice(0, 16);
+    console.log('iv', iv);
+    const encryptedData = Buffer.from(data.slice(16), 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
+    let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
+    console.log(decrypted);
+    decrypted += decipher.final();
+    console.log('decrypted>>>>>>>>>')
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    throw error;
+    throw error; // Re-throw for proper handling
   }
 }
 
@@ -110,8 +109,8 @@ function encryptChecksum(data, salt) {
 
 function encrypt(request, secretKey) {
   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivHex));
-  const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
-  const data = ivHex + raw.toString('base64');
+    const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
+    const data = ivHex + raw.toString('base64');
   return data;
 }
 
@@ -354,23 +353,22 @@ async function processAirpayPayment(responseData) {
   
   let data = {};
   try {
-    data = JSON.parse(decrypteddata);
-    if (data.data) data = data.data;
-    console.log('✅ Parsed Airpay Data via direct JSON:', data);
-  } catch (e) {
-    // Robust fallback to extract data object via regex if direct JSON.parse fails
-    try {
-      const match = decrypteddata.match(/"data"\s*:\s*(\{.*?\})/);
-      if (match) {
-        data = JSON.parse(match[1]);
-        console.log('✅ Parsed Airpay Data via Regex:', data);
-      } else {
-        throw new Error('No data block found in decrypted response');
-      }
-    } catch (innerError) {
-      console.error('❌ Error parsing Airpay response:', e.message);
-      throw new Error('Could not parse Airpay response data: ' + e.message);
+    // Attempt to extract the data object using the specific regex provided in the demo
+    const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
+    if (match) {
+      const nestedObjectString = match[0];
+      const parsedData = JSON.parse("{" + nestedObjectString + "}");
+      data = parsedData.data;
+      console.log('✅ Parsed Airpay Data via Demo Regex:', data);
+    } else {
+      // Fallback to full JSON parse if regex fails
+      const fullData = JSON.parse(decrypteddata);
+      data = fullData.data || fullData;
+      console.log('✅ Parsed Airpay Data via JSON Fallback:', data);
     }
+  } catch (e) {
+    console.error('❌ Error parsing Airpay response:', e.message);
+    throw new Error('Could not parse Airpay response data: ' + e.message);
   }
 
   const TRANSACTIONID = data.orderid || data.ORDERID;
@@ -379,6 +377,7 @@ async function processAirpayPayment(responseData) {
   const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || data.transactionstatus || '').toString().toUpperCase();
   const MESSAGE = data.message || data.MESSAGE || '';
   const CUSTOMVAR = data.custom_var || data.CUSTOMVAR || data.customvar;
+  const ap_SecureHash = data.ap_securehash;
 
   // Recovery logic for userId, auctionId, paymentType from customvar (Format: userId|auctionId|paymentType)
   let recoveredUserId, recoveredAuctionId, recoveredPaymentType;
@@ -486,6 +485,7 @@ exports.handleAirpayResponse = async (req, res) => {
       cardName: data.cardname || data.CARDNAME || '',
       cardNumber: data.cardnumber || data.CARDNUMBER || '',
       auctionId: payment.auctionId,
+      hourlyAuctionId: payment.auctionId, // Explicitly set for frontend consistency
       timestamp: new Date().toISOString()
     };
 
@@ -495,7 +495,7 @@ exports.handleAirpayResponse = async (req, res) => {
     });
 
     const frontendUrl = getFrontendUrl();
-    const redirectUrl = `${frontendUrl}/payment/result?orderId=${TRANSACTIONID}`;
+    const redirectUrl = `${frontendUrl}/payment/${finalStatus === 'paid' ? 'success' : 'failure'}?orderId=${TRANSACTIONID}`;
 
     console.log(`Redirecting user to: ${redirectUrl}`);
     res.redirect(redirectUrl);
