@@ -82,23 +82,24 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 };
 
 // Helper functions matching documentation EXACTLY as provided in snippets
-function decrypt(responsedata, secretKey) {
-  let data = responsedata;
-  console.log('Decrypt function input', responsedata)
+function decrypt(responseData, secretKey) {
+  console.log('Decrypt function input length:', responseData?.length);
   try {
-    const hash = crypto.createHash('sha256').update(data).digest();
-    const iv = hash.slice(0, 16);
-    console.log('iv', iv);
-    const encryptedData = Buffer.from(data.slice(16), 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
-    let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
-    console.log(decrypted);
-    decrypted += decipher.final();
-    console.log('decrypted>>>>>>>>>')
+    const iv = Buffer.from(responseData.substring(0, 16), 'utf8');
+    const encryptedText = Buffer.from(responseData.substring(16), 'base64');
+
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc',
+      Buffer.from(secretKey, 'utf8'),
+      iv
+    );
+
+    let decrypted = decipher.update(encryptedText, undefined, 'utf8');
+    decrypted += decipher.final('utf8');
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    throw error; // Re-throw for proper handling
+    throw error;
   }
 }
 
@@ -228,9 +229,10 @@ async function getAirpayRedirectData(reqBody) {
         isocurrency: 'INR',
         currency: '356',
         merchant_id: AIRPAY_MID,
-        success_url: process.env.AIRPAY_SUCCESS_URL || `${baseUrl}/api/airpay/success`,
-        failure_url: process.env.AIRPAY_FAILURE_URL || `${baseUrl}/api/airpay/failure`,
-        callback_url: process.env.AIRPAY_WEBHOOK_URL || `${baseUrl}/api/airpay/webhook`
+        // Force backend URLs to ensure Airpay POSTs to the API, not the frontend directly
+        success_url: `${baseUrl}/api/airpay/success`,
+        failure_url: `${baseUrl}/api/airpay/failure`,
+        callback_url: `${baseUrl}/api/airpay/webhook`
     };
 
     const udata = (AIRPAY_USERNAME + ':|:' + AIRPAY_PASSWORD);

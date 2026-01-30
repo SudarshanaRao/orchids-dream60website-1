@@ -231,23 +231,27 @@ router.post('/sendtoairpay', runValidation, airpayController.sendToAirpay);
  * @swagger
  * /api/airpay/responsefromairpay:
  *   post:
- *     summary: Handle response from Airpay (Redirect)
- *     description: Endpoint where Airpay redirects the user after a payment attempt. Receives encrypted payment data.
+ *     summary: Handle response from Airpay (Legacy/Redirect)
+ *     description: Endpoint where Airpay redirects the user after a payment attempt. Receives encrypted payment data. Processes the payment and redirects to the frontend results page.
  *     tags: [Airpay]
  *     requestBody:
  *       content:
  *         application/x-www-form-urlencoded:
  *           schema:
  *             type: object
+ *             required:
+ *               - merchant_id
+ *               - response
  *             properties:
  *               merchant_id:
  *                 type: string
+ *                 example: "339005"
  *               response:
  *                 type: string
- *                 description: Encrypted response data from Airpay
+ *                 description: Encrypted response data from Airpay (AES-256-CBC with first 16 chars as IV)
  *     responses:
  *       302:
- *         description: Redirects to frontend success or failure page
+ *         description: Redirects to frontend results page (e.g., /payment/result?orderId=XXX)
  */
 router.post('/responsefromairpay', airpayController.handleAirpayResponse);
 
@@ -256,22 +260,26 @@ router.post('/responsefromairpay', airpayController.handleAirpayResponse);
  * /api/airpay/webhook:
  *   post:
  *     summary: Airpay Server-to-Server (S2S) Webhook
- *     description: Endpoint for Airpay to notify the server directly about payment status. Receives encrypted payment data via POST.
+ *     description: Endpoint for Airpay to notify the server directly about payment status. Receives encrypted payment data via POST. Ensures idempotency by checking if the payment was already processed via redirect.
  *     tags: [Airpay]
  *     requestBody:
  *       content:
  *         application/x-www-form-urlencoded:
  *           schema:
  *             type: object
+ *             required:
+ *               - merchant_id
+ *               - response
  *             properties:
  *               merchant_id:
  *                 type: string
+ *                 example: "339005"
  *               response:
  *                 type: string
  *                 description: Encrypted response data from Airpay
  *     responses:
  *       200:
- *         description: OK
+ *         description: OK (stops Airpay retries)
  */
 router.post('/webhook', airpayController.handleAirpayWebhook);
 
@@ -279,23 +287,27 @@ router.post('/webhook', airpayController.handleAirpayWebhook);
  * @swagger
  * /api/airpay/success:
  *   all:
- *     summary: Whitelisted success URL for Airpay redirects
- *     description: Receives the POST response from Airpay upon successful payment and processes it.
+ *     summary: Backend Success URL for Airpay Redirects
+ *     description: The official success_url provided to Airpay. Receives the encrypted POST response, decrypts it, updates the DB (joins user to auction), and redirects the user to the frontend result page.
  *     tags: [Airpay]
  *     requestBody:
  *       content:
  *         application/x-www-form-urlencoded:
  *           schema:
  *             type: object
+ *             required:
+ *               - merchant_id
+ *               - response
  *             properties:
  *               merchant_id:
  *                 type: string
+ *                 example: "339005"
  *               response:
  *                 type: string
  *                 description: Encrypted response data from Airpay
  *     responses:
  *       302:
- *         description: Redirects to frontend success page
+ *         description: Redirects to frontend results page (/payment/result?orderId=XXX)
  */
 router.all('/success', airpayController.handleAirpaySuccess);
 
@@ -303,23 +315,27 @@ router.all('/success', airpayController.handleAirpaySuccess);
  * @swagger
  * /api/airpay/failure:
  *   all:
- *     summary: Whitelisted failure URL for Airpay redirects
- *     description: Receives the POST response from Airpay upon failed payment and processes it.
+ *     summary: Backend Failure URL for Airpay Redirects
+ *     description: The official failure_url provided to Airpay. Receives the encrypted POST response, logs the failure, and redirects the user to the frontend result page.
  *     tags: [Airpay]
  *     requestBody:
  *       content:
  *         application/x-www-form-urlencoded:
  *           schema:
  *             type: object
+ *             required:
+ *               - merchant_id
+ *               - response
  *             properties:
  *               merchant_id:
  *                 type: string
+ *                 example: "339005"
  *               response:
  *                 type: string
  *                 description: Encrypted response data from Airpay
  *     responses:
  *       302:
- *         description: Redirects to frontend failure page
+ *         description: Redirects to frontend results page (/payment/result?orderId=XXX)
  */
 router.all('/failure', airpayController.handleAirpayFailure);
 
