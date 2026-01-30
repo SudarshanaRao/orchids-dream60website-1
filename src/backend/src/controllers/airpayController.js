@@ -81,19 +81,19 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 };
 
 // Helper functions matching documentation EXACTLY as provided in snippets
-function decrypt(responsedata, secretKey) {
-  let data = responsedata;
-  console.log('Decrypt function input', responsedata)
+function decrypt(responseData, secretKey) {
   try {
-    const hash = crypto.createHash('sha256').update(data).digest();
-    const iv = hash.slice(0, 16);
-    console.log('iv', iv);
-    const encryptedData = Buffer.from(data.slice(16), 'base64');
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
-    let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
-    console.log(decrypted);
-    decrypted += decipher.final();
-    console.log('decrypted>>>>>>>>>')
+    const iv = Buffer.from(responseData.substring(0, 16), 'utf8');
+    const encryptedText = Buffer.from(responseData.substring(16), 'base64');
+
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc',
+      Buffer.from(secretKey, 'utf8'),
+      iv
+    );
+
+    let decrypted = decipher.update(encryptedText, undefined, 'utf8');
+    decrypted += decipher.final('utf8');
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
@@ -247,14 +247,27 @@ async function getAirpayRedirectData(reqBody) {
     let accessTokenResponse = await sendPostData(TOKEN_URL, reqs);
     if (!accessTokenResponse) throw new Error("Failed to get access token");
 
-    const parsedTokenResponse = JSON.parse(accessTokenResponse);
-    const decryptedTokenData = decrypt(parsedTokenResponse.response, key);
+    let accesstoken;
+    try {
+        const parsedTokenResponse = JSON.parse(accessTokenResponse);
+        if (parsedTokenResponse.response) {
+            const decryptedTokenData = decrypt(parsedTokenResponse.response, key);
+            try {
+                const tokenObj = JSON.parse(decryptedTokenData);
+                accesstoken = (tokenObj.data && tokenObj.data.access_token) ? tokenObj.data.access_token : tokenObj.access_token;
+            } catch (e) {
+                const match = decryptedTokenData.match(/"access_token"\s*:\s*"([^"]+)"/);
+                if (match) accesstoken = match[1];
+            }
+        } else {
+            accesstoken = (parsedTokenResponse.data && parsedTokenResponse.data.access_token) ? parsedTokenResponse.data.access_token : parsedTokenResponse.access_token;
+        }
+    } catch (e) {
+        console.error('Error parsing token response:', e);
+        throw new Error('Failed to parse Airpay token response');
+    }
     
-    const match = decryptedTokenData.match(/"data"\s*:\s*\{[^}]*\}/);
-    if (!match) throw new Error('No match found for "data" key in token response.');
-    
-    let tokenObj = JSON.parse("{" + match[0] + "}");
-    let accesstoken = tokenObj.data.access_token;
+    if (!accesstoken) throw new Error('Could not retrieve access token from Airpay response');
     
     let finalUrl = `${PAY_URL}?token=${encodeURIComponent(accesstoken)}`;
 
@@ -330,57 +343,51 @@ async function processAirpayPayment(responseData) {
   
   let data = {};
   try {
-    const match = decrypteddata.match(/"data"\s*:\s*\{[^}]*\}/);
-    if (match) {
-      let token = JSON.parse("{" + match[0] + "}");
-      data = token.data;
-      console.log('✅ Parsed Airpay Data via Regex:', data);
-    } else {
-      data = JSON.parse(decrypteddata);
-      if (data.data) data = data.data;
-      console.log('✅ Parsed Airpay Data via direct JSON:', data);
-    }
+    data = JSON.parse(decrypteddata);
+    if (data.data) data = data.data;
+    console.log('✅ Parsed Airpay Data via direct JSON:', data);
   } catch (e) {
-    console.error('❌ Error parsing Airpay response:', e.message);
-    throw new Error('Could not parse Airpay response data: ' + e.message);
+    // Robust fallback to extract data object via regex if direct JSON.parse fails
+    try {
+      const match = decrypteddata.match(/"data"\s*:\s*(\{.*?\})/);
+      if (match) {
+        data = JSON.parse(match[1]);
+        console.log('✅ Parsed Airpay Data via Regex:', data);
+      } else {
+        throw new Error('No data block found in decrypted response');
+      }
+    } catch (innerError) {
+      console.error('❌ Error parsing Airpay response:', e.message);
+      throw new Error('Could not parse Airpay response data: ' + e.message);
+    }
   }
 
   const TRANSACTIONID = data.orderid || data.ORDERID;
   const APTRANSACTIONID = data.ap_transactionid || data.TRANSACTIONID || data.ap_transaction_id;
   const AMOUNT = data.amount || data.AMOUNT;
-  const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || data.transactionstatus || '').toString();
+  const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || data.transactionstatus || '').toString().toUpperCase();
   const MESSAGE = data.message || data.MESSAGE || '';
   const CUSTOMVAR = data.custom_var || data.CUSTOMVAR || data.customvar;
 
-  console.log('--- Airpay Response Details ---');
-  console.log('Order ID:', TRANSACTIONID);
-  console.log('Airpay Txn ID:', APTRANSACTIONID);
-  console.log('Status:', TRANSACTIONSTATUS);
-  console.log('Amount:', AMOUNT);
-  console.log('Custom Var:', CUSTOMVAR);
-
-  let recoveredUserId = '';
-  let recoveredAuctionId = '';
-  let recoveredPaymentType = 'ENTRY_FEE';
-
-  if (CUSTOMVAR) {
-    const separator = CUSTOMVAR.includes('|') ? '|' : (CUSTOMVAR.includes(':') ? ':' : null);
-    if (separator) {
-      const parts = CUSTOMVAR.split(separator);
-      recoveredUserId = parts[0];
-      recoveredAuctionId = parts[1];
-      recoveredPaymentType = parts[2] || 'ENTRY_FEE';
-    } else {
-      recoveredUserId = CUSTOMVAR;
-    }
+  // 1. Idempotency Check - Important for Webhook/Redirect overlap
+  const existingPayment = await AirpayPayment.findOne({ orderId: TRANSACTIONID });
+  if (existingPayment?.status === 'paid') {
+      console.log(`ℹ [AIRPAY_PROCESS] Payment ${TRANSACTIONID} already processed as paid. Skipping.`);
+      return { 
+          payment: existingPayment, 
+          data, 
+          finalStatus: 'paid', 
+          TRANSACTIONID, 
+          APTRANSACTIONID, 
+          AMOUNT, 
+          MESSAGE 
+      };
   }
 
-  const finalStatus = (TRANSACTIONSTATUS === '200' || TRANSACTIONSTATUS.toUpperCase() === 'SUCCESS') ? 'paid' : 'failed';
+  // 2. Strict Status Logic - Only trust SUCCESS
+  const finalStatus = TRANSACTIONSTATUS === 'SUCCESS' ? 'paid' : 'failed';
   
   console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
-
-  // Fetch existing payment to preserve metadata if it's an update
-  const existingPayment = await AirpayPayment.findOne({ orderId: TRANSACTIONID });
 
   const payment = await AirpayPayment.findOneAndUpdate(
     { orderId: TRANSACTIONID },
@@ -468,9 +475,7 @@ exports.handleAirpayResponse = async (req, res) => {
     });
 
     const frontendUrl = getFrontendUrl();
-    const redirectUrl = finalStatus === 'paid' 
-      ? `${frontendUrl}/payment/success?txnId=${TRANSACTIONID}&amount=${AMOUNT}&auctionId=${payment.auctionId}&hourlyAuctionId=${payment.auctionId}`
-      : `${frontendUrl}/payment/failure?txnId=${TRANSACTIONID}&message=${encodeURIComponent(MESSAGE)}`;
+    const redirectUrl = `${frontendUrl}/payment/result?orderId=${TRANSACTIONID}`;
 
     console.log(`Redirecting user to: ${redirectUrl}`);
     res.redirect(redirectUrl);
