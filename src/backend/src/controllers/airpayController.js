@@ -83,13 +83,17 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 // Helper functions matching documentation EXACTLY as provided in snippets
 function decrypt(responsedata, secretKey) {
   let data = responsedata;
+  console.log('Decrypt function input', responsedata)
   try {
     const hash = crypto.createHash('sha256').update(data).digest();
     const iv = hash.slice(0, 16);
+    console.log('iv', iv);
     const encryptedData = Buffer.from(data.slice(16), 'base64');
     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
+    console.log(decrypted);
     decrypted += decipher.final();
+    console.log('decrypted>>>>>>>>>')
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
