@@ -20,7 +20,8 @@ const TOKEN_URL = "https://kraken.airpay.co.in/airpay/pay/v4/api/oauth2/token.ph
 const PAY_URL = 'https://payments.airpay.co.in/pay/v4/index.php';
 
 const keyHash = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
-const ivFixed = crypto.randomBytes(8).toString('hex'); // Used in some kit versions
+const iv = crypto.randomBytes(8);
+const ivHex = iv.toString('hex');
 
 /**
  * Sync participant data from HourlyAuction to DailyAuction
@@ -81,23 +82,23 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 };
 
 // Helper functions matching documentation EXACTLY as provided in snippets
-function decrypt(responseData, secretKey) {
+function decrypt(responsedata, secretKey) {
+  let data = responsedata;
+  console.log('Decrypt function input', responsedata)
   try {
-    const iv = Buffer.from(responseData.substring(0, 16), 'utf8');
-    const encryptedText = Buffer.from(responseData.substring(16), 'base64');
-
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc',
-      Buffer.from(secretKey, 'utf8'),
-      iv
-    );
-
-    let decrypted = decipher.update(encryptedText, undefined, 'utf8');
-    decrypted += decipher.final('utf8');
+    const hash = crypto.createHash('sha256').update(data).digest();
+    const iv = hash.slice(0, 16);
+    console.log('iv', iv);
+    const encryptedData = Buffer.from(data.slice(16), 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
+    let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
+    console.log(decrypted);
+    decrypted += decipher.final();
+    console.log('decrypted>>>>>>>>>')
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    throw error;
+    throw error; // Re-throw for proper handling
   }
 }
 
@@ -107,11 +108,9 @@ function encryptChecksum(data, salt) {
 }
 
 function encrypt(request, secretKey) {
-  // Using the ivHex logic from the snippet
-  const ivLocal = crypto.randomBytes(8).toString('hex');
-  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivLocal));
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), Buffer.from(ivHex));
   const raw = Buffer.concat([cipher.update(request, 'utf-8'), cipher.final()]);
-  const data = ivLocal + raw.toString('base64');
+  const data = ivHex + raw.toString('base64');
   return data;
 }
 
@@ -125,8 +124,18 @@ function checksumcal(postData) {
   for (const value of Object.values(sortedData)) {
       data += value;
   }
-  const dateStr = new Date().toISOString().split('T')[0];
-  return crypto.createHash('sha256').update(data + dateStr).digest('hex');
+  console.log(data + new Date().toISOString().split('T')[0]);
+  return calculateChecksumHelper(data + new Date().toISOString().split('T')[0]);
+}
+
+function calculateChecksumHelper(data) {
+  const checksum = makeEnc(data);
+  return checksum;
+}
+
+function makeEnc(data) {
+  const key = crypto.createHash('sha256').update(data).digest('hex');
+  return key;
 }
 
 async function sendPostData(tokenUrl, postData) {
@@ -368,6 +377,15 @@ async function processAirpayPayment(responseData) {
   const TRANSACTIONSTATUS = (data.transaction_status || data.STATUS || data.transactionstatus || '').toString().toUpperCase();
   const MESSAGE = data.message || data.MESSAGE || '';
   const CUSTOMVAR = data.custom_var || data.CUSTOMVAR || data.customvar;
+
+  // Recovery logic for userId, auctionId, paymentType from customvar (Format: userId|auctionId|paymentType)
+  let recoveredUserId, recoveredAuctionId, recoveredPaymentType;
+  if (CUSTOMVAR && CUSTOMVAR.includes('|')) {
+      const parts = CUSTOMVAR.split('|');
+      recoveredUserId = parts[0];
+      recoveredAuctionId = parts[1];
+      recoveredPaymentType = parts[2];
+  }
 
   // 1. Idempotency Check - Important for Webhook/Redirect overlap
   const existingPayment = await AirpayPayment.findOne({ orderId: TRANSACTIONID });
