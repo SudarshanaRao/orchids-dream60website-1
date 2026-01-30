@@ -1,136 +1,166 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useRazorpay, RazorpayOrderOptions } from 'react-razorpay';
 import { toast } from 'sonner';
-import { API_BASE_URL } from '@/lib/api-config';
+import { API_ENDPOINTS, API_BASE_URL } from '@/lib/api-config';
 
-interface PrizeClaimPaymentData {
+interface CreatePrizeClaimOrderPayload {
   userId: string;
   hourlyAuctionId: string;
   amount: number;
-  currency: string;
-  username: string;
+  currency?: string;
+  username?: string;
 }
 
-interface UserDetails {
-  name: string;
-  email: string;
-  contact: string;
-  upiId: string;
+interface PaymentResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
 }
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
+interface OrderResponse {
+  success: boolean;
+  message: string;
+  data: {
+    razorpayKeyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    hourlyAuctionId: string;
+    paymentId: string;
+    rank: number;
+    prizeValue: number;
+    userInfo?: {
+      name: string;
+      email: string;
+      contact: string;
+    };
+    // Airpay fields
+    url?: string;
+    params?: Record<string, any>;
+  };
+}
+
+interface VerifyResponse {
+  success: boolean;
+  message: string;
+  data: {
+    payment: any;
+    claimed: boolean;
+    hourlyAuctionId: string;
+    rank: number;
+    prizeAmount: number;
+    upiId: string;
+    claimedAt: string;
+    username: string;
+  };
 }
 
 export const usePrizeClaimPayment = () => {
+  const { error: razorpayError, isLoading: razorpayLoading, Razorpay } = useRazorpay();
   const [loading, setLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'failed'>('idle');
 
-    const initiatePrizeClaimPayment = (
-      paymentData: PrizeClaimPaymentData,
-      userDetails: UserDetails,
-      onSuccess: (response: any) => void,
+  const initiatePrizeClaimPayment = useCallback(
+    async (
+      payload: CreatePrizeClaimOrderPayload,
+      userDetails: { name: string; email: string; contact: string; upiId: string },
+      onSuccess: (response: VerifyResponse) => void,
       onFailure: (error: string) => void
     ) => {
-      setLoading(true);
+      try {
+        setLoading(true);
+        setPaymentStatus('idle');
 
-      const provider = import.meta.env.VITE_PAYMENT_PROVIDER || 'razorpay';
+        const provider = import.meta.env.VITE_PAYMENT_PROVIDER || 'razorpay';
 
-      if (provider === 'airpay') {
-        // Airpay flow
-        fetch(`${API_BASE_URL}/api/airpay/create-order`, {
+        if (provider === 'airpay') {
+          // 1. Create Airpay order on backend
+          const response = await fetch(`${API_BASE_URL}/api/airpay/create-order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: payload.userId,
+              hourlyAuctionId: payload.hourlyAuctionId,
+              amount: payload.amount,
+              username: payload.username || userDetails.name,
+              paymentType: 'PRIZE_CLAIM',
+            }),
+          });
+
+          const orderData = await response.json();
+
+          if (!response.ok || !orderData.success || !orderData.data) {
+            throw new Error(orderData.message || 'Failed to create Airpay order');
+          }
+
+          // 2. Airpay uses a form redirect
+          const { url, params } = orderData.data;
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          Object.entries(params).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = String(value);
+            form.appendChild(input);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+
+        // --- Razorpay Flow ---
+        
+        // 1. Create prize claim order on backend
+        const orderResponse = await fetch(API_ENDPOINTS.razorpay.prizeClaimCreateOrder, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            userId: paymentData.userId,
-            hourlyAuctionId: paymentData.hourlyAuctionId,
-            amount: paymentData.amount,
-            username: paymentData.username,
-            paymentType: 'PRIZE_CLAIM',
-          }),
-        })
-          .then((res) => res.json())
-          .then((orderData) => {
-            if (!orderData.success || !orderData.data) {
-              throw new Error(orderData.message || 'Failed to create Airpay order');
-            }
+          body: JSON.stringify(payload),
+        });
 
-            // Airpay uses a form redirect
-            const { url, params } = orderData.data;
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = url;
+        const orderData: OrderResponse = await orderResponse.json();
 
-            Object.entries(params).forEach(([key, value]) => {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = key;
-              input.value = String(value);
-              form.appendChild(input);
-            });
+        if (!orderResponse.ok || !orderData.success) {
+          throw new Error(orderData.message || 'Failed to create prize claim order');
+        }
 
-            document.body.appendChild(form);
-            form.submit();
-          })
-          .catch((error) => {
-            console.error('Airpay prize claim error:', error);
-            setLoading(false);
-            onFailure(error.message || 'Failed to initiate Airpay payment');
-          });
-        return;
-      }
+        if (!orderData.data.orderId) {
+          throw new Error('Order ID not received');
+        }
 
-      // Default Razorpay flow
-      fetch(`${API_BASE_URL}/razorpay/create-order`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          receipt: `prize_claim_${paymentData.hourlyAuctionId}_${Date.now()}`,
-          notes: {
-            userId: paymentData.userId,
-            hourlyAuctionId: paymentData.hourlyAuctionId,
-            username: paymentData.username,
-            type: 'PRIZE_CLAIM',
-          },
-        }),
-      })
-        .then((res) => res.json())
-        .then((orderData) => {
-          if (!orderData.success || !orderData.data) {
-            throw new Error('Failed to create payment order');
-          }
+        const actualUserDetails = orderData.data.userInfo || userDetails;
+        const finalEmail = actualUserDetails.email || userDetails.email;
+        const finalUpiId = userDetails.upiId || actualUserDetails.email || finalEmail;
+        
+        if (!finalEmail) {
+          throw new Error('Email not found. Please update your profile with a valid email address.');
+        }
 
-          const options = {
-            key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_w8ybF9gV5hCbD5',
-            amount: orderData.data.amount,
-            currency: orderData.data.currency,
-            name: 'Dream60 - Prize Claim',
-            description: `Prize Claim Payment - ${paymentData.username}`,
-            order_id: orderData.data.id,
-            prefill: {
-              name: userDetails.name,
-              email: userDetails.email,
-              contact: userDetails.contact,
-            },
-            theme: {
-              color: '#8456BC',
-            },
-            modal: {
-              ondismiss: () => {
-                setLoading(false);
-                toast.error('Payment cancelled');
-              },
-            },
-            handler: async (response: any) => {
-              try {
-                // Verify payment with backend
-                const verifyRes = await fetch(`${API_BASE_URL}/razorpay/verify-payment`, {
+        // 2. Razorpay checkout options
+        const options: RazorpayOrderOptions = {
+          key: orderData.data.razorpayKeyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: orderData.data.amount,
+          currency: orderData.data.currency,
+          name: 'DREAM60',
+          description: `Prize Claim Payment - Rank ${orderData.data.rank}`,
+          order_id: orderData.data.orderId,
+          
+          handler: async (response: PaymentResponse) => {
+            try {
+              if (!finalUpiId) {
+                throw new Error('UPI ID/Email is required for prize claim verification');
+              }
+              
+              const verifyResponse = await fetch(
+                API_ENDPOINTS.razorpay.prizeClaimVerifyPayment,
+                {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -139,56 +169,94 @@ export const usePrizeClaimPayment = () => {
                     razorpay_order_id: response.razorpay_order_id,
                     razorpay_payment_id: response.razorpay_payment_id,
                     razorpay_signature: response.razorpay_signature,
-                    userId: paymentData.userId,
-                    hourlyAuctionId: paymentData.hourlyAuctionId,
-                    type: 'PRIZE_CLAIM',
+                    username: actualUserDetails.name,
+                    upiId: finalUpiId,
                   }),
-                });
-
-                const verifyData = await verifyRes.json();
-
-                if (verifyData.success) {
-                  // Submit prize claim to backend
-                  const claimRes = await fetch(`${API_BASE_URL}/scheduler/user-auction-history/claim-prize`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      userId: paymentData.userId,
-                      hourlyAuctionId: paymentData.hourlyAuctionId,
-                      upiId: userDetails.email, // Use email as identifier
-                      paymentReference: response.razorpay_payment_id,
-                    }),
-                  });
-
-                  const claimData = await claimRes.json();
-
-                  if (claimData.success) {
-                    setLoading(false);
-                    onSuccess(claimData);
-                  } else {
-                    throw new Error(claimData.message || 'Failed to claim prize');
-                  }
-                } else {
-                  throw new Error('Payment verification failed');
                 }
-              } catch (error: any) {
-                setLoading(false);
-                onFailure(error.message || 'Payment verification failed');
+              );
+
+              const verifyData: VerifyResponse = await verifyResponse.json();
+
+              if (verifyResponse.ok && verifyData.success) {
+                setPaymentStatus('success');
+                toast.success('Prize Claimed Successfully!', {
+                  description: `Your prize of ₹${verifyData.data.prizeAmount} has been claimed. Payment received!`,
+                });
+                onSuccess(verifyData);
+              } else {
+                throw new Error(verifyData.message || 'Prize claim verification failed');
               }
+            } catch (verifyError) {
+              const errorMsg = verifyError instanceof Error ? verifyError.message : 'Prize claim verification failed';
+              setPaymentStatus('failed');
+              toast.error('Verification Failed', {
+                description: errorMsg,
+              });
+              onFailure(errorMsg);
+            }
+          },
+
+          modal: {
+            ondismiss: () => {
+              setLoading(false);
+              setPaymentStatus('failed');
+              toast.error('Payment Cancelled', {
+                description: 'You cancelled the prize claim payment.',
+              });
+              onFailure('Payment cancelled by user');
             },
-          };
+          },
 
-          const razorpay = new window.Razorpay(options);
-          razorpay.open();
-        })
-        .catch((error) => {
-          console.error('Prize claim payment error:', error);
-          setLoading(false);
-          onFailure(error.message || 'Failed to initiate payment');
+          prefill: {
+            name: actualUserDetails.name,
+            email: finalEmail,
+            contact: actualUserDetails.contact || '9999999999',
+          },
+
+          theme: {
+            color: '#6B3FA0',
+          },
+
+          retry: {
+            enabled: true,
+            max_count: 3,
+          },
+        };
+
+        if (Razorpay) {
+          const rzpInstance = new Razorpay(options);
+          
+          rzpInstance.on('payment.failed', (response: any) => {
+            setPaymentStatus('failed');
+            toast.error('Payment Failed', {
+              description: response.error.description || 'Prize claim payment failed',
+            });
+            onFailure(response.error.description || 'Payment failed');
+          });
+
+          rzpInstance.open();
+        } else {
+          throw new Error('Razorpay SDK not loaded');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Prize claim payment initiation failed';
+        setPaymentStatus('failed');
+        toast.error('Error', {
+          description: errorMessage,
         });
-    };
+        onFailure(errorMessage);
+        console.error('Prize claim payment error:', err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [Razorpay]
+  );
 
-  return { initiatePrizeClaimPayment, loading };
+  return {
+    initiatePrizeClaimPayment,
+    loading,
+    paymentStatus,
+    error: razorpayError,
+  };
 };

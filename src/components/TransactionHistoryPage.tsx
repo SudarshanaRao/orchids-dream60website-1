@@ -577,18 +577,27 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                       {detailMethodIcon}
                       <span className="truncate">{paymentMethodLabel(selectedTransaction)}</span>
                     </div>
-                    {selectedTransaction.paymentDetails?.upiApp && (
-                      <div className="text-xs text-purple-600">App: {selectedTransaction.paymentDetails.upiApp}</div>
-                    )}
-                    {selectedTransaction.paymentDetails?.wallet && (
-                      <div className="text-xs text-purple-600">Wallet: {selectedTransaction.paymentDetails.wallet}</div>
-                    )}
-                    {selectedTransaction.paymentDetails?.vpa && (
-                      <div className="text-xs text-purple-600">UPI ID: {selectedTransaction.paymentDetails.vpa}</div>
-                    )}
-                    {selectedTransaction.paymentDetails?.bank && (
-                      <div className="text-xs text-purple-600">Bank: {selectedTransaction.paymentDetails.bank}</div>
-                    )}
+                      {selectedTransaction.paymentDetails?.upiApp && (
+                        <div className="text-xs text-purple-600">App: {selectedTransaction.paymentDetails.upiApp}</div>
+                      )}
+                      {selectedTransaction.paymentDetails?.wallet && (
+                        <div className="text-xs text-purple-600">Wallet: {selectedTransaction.paymentDetails.wallet}</div>
+                      )}
+                      {selectedTransaction.paymentDetails?.vpa && (
+                        <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-md mt-1 border border-emerald-100 flex items-center gap-1.5 w-fit">
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>UPI ID: {selectedTransaction.paymentDetails.vpa}</span>
+                        </div>
+                      )}
+                      {selectedTransaction.vpa && !selectedTransaction.paymentDetails?.vpa && (
+                        <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-md mt-1 border border-emerald-100 flex items-center gap-1.5 w-fit">
+                          <Wallet className="w-3.5 h-3.5" />
+                          <span>UPI ID: {selectedTransaction.vpa}</span>
+                        </div>
+                      )}
+                      {selectedTransaction.paymentDetails?.bank && (
+                        <div className="text-xs text-purple-600">Bank: {selectedTransaction.paymentDetails.bank}</div>
+                      )}
                     {selectedTransaction.paymentDetails?.card?.network && (
                       <div className="text-xs text-purple-600">Card Network: {selectedTransaction.paymentDetails.card.network}</div>
                     )}
