@@ -791,6 +791,8 @@ router.get('/transactions/:id', async (req, res) => {
       $or: [
         { razorpayOrderId: id },
         { razorpayPaymentId: id },
+        { orderId: id },
+        { airpayTransactionId: id },
       ],
     };
 
@@ -798,7 +800,11 @@ router.get('/transactions/:id', async (req, res) => {
       query.$or.push({ _id: id });
     }
 
-    const payment = await RazorpayPayment.findOne(query).lean();
+    // Try finding in Razorpay first, then Airpay
+    let payment = await RazorpayPayment.findOne(query).lean();
+    if (!payment) {
+      payment = await AirpayPayment.findOne(query).lean();
+    }
 
     if (!payment) {
       return res.status(404).json({
