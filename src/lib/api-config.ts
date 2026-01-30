@@ -108,11 +108,16 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       billingPortal: `${API_BASE_URL}/api/billing-portal`,
     },
 
-    // Airpay Payments
-    airpay: {
-      createOrder: `${API_BASE_URL}/api/airpay/create-order`,
-      response: `${API_BASE_URL}/api/airpay/response`,
-    },
+      // Airpay Payments
+      airpay: {
+        createOrder: `${API_BASE_URL}/api/airpay/create-order`,
+        response: `${API_BASE_URL}/api/airpay/response`,
+      },
+
+      // Unified Payments
+      payments: {
+        status: `${API_BASE_URL}/api/payments/status`,
+      },
 
   
   // Push Notifications

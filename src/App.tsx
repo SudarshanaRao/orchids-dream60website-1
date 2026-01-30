@@ -313,7 +313,7 @@ const App = () => {
     if (path === '/tester-feedback') return 'tester-feedback';
     if (path === '/transactions' || path.startsWith('/transactions/')) return 'transactions';
     if (path === '/prizeshowcase') return 'prizeshowcase';
-    if (path === '/success-page' || path === '/payment/success') return 'payment-success';
+    if (path === '/success-page' || path === '/payment/success' || path === '/payment/result') return 'payment-success';
     if (path === '/failure-page' || path === '/payment/failure') return 'payment-failure';
 
     return 'game';
@@ -356,13 +356,47 @@ const App = () => {
       else if (path === '/support') setCurrentPage('support');
       else if (path === '/contact') setCurrentPage('contact');
       else if (path === '/profile') setCurrentPage('profile');
-      else if (path === '/success-page' || path === '/payment/success') {
+      else if (path === '/success-page' || path === '/payment/success' || path === '/payment/result') {
         setCurrentPage('payment-success');
         setRecentPaymentSuccess(true);
         recentPaymentTimestamp.current = Date.now();
 
-        const txnId = searchParams.get('txnId');
+        const orderId = searchParams.get('orderId') || searchParams.get('txnId');
         const hourlyAuctionId = searchParams.get('hourlyAuctionId');
+        
+        // Safety: Prevent modal reopening on refresh
+        const sessionKey = `entry_done_${orderId}`;
+        const alreadyShown = sessionStorage.getItem(sessionKey);
+
+        if (orderId && !alreadyShown) {
+          // Verify payment status from backend using unified endpoint
+          fetch(`${API_ENDPOINTS.payments.status}?orderId=${orderId}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.success && data.status === 'paid') {
+                if (data.paymentType === 'ENTRY_FEE') {
+                  // Mark as shown to prevent loop
+                  sessionStorage.setItem(sessionKey, 'true');
+                  
+                  // Prepare data for success state
+                  const successData = {
+                    entryFee: data.amount,
+                    boxNumber: 0,
+                    auctionId: data.auctionId,
+                    transactionId: data.orderId,
+                    hourlyAuctionId: data.auctionId,
+                    auctionName: data.auctionData?.auctionName,
+                    timeSlot: data.auctionData?.timeSlot
+                  };
+                  
+                  // Show the summary page first (following existing pattern)
+                  setShowEntrySuccess(successData as any);
+                }
+              }
+            })
+            .catch(err => console.error("Error verifying payment status:", err));
+        }
+
         const cookieData = document.cookie.split('; ').find(row => row.startsWith('airpay_txn_data='));
         
         if (cookieData) {
@@ -386,12 +420,12 @@ const App = () => {
           } catch (e) {
             console.error("Error parsing airpay cookie", e);
           }
-        } else if (txnId || hourlyAuctionId) {
+        } else if (orderId || hourlyAuctionId) {
           setShowEntrySuccess(prev => ({
             ...(prev || {}),
             entryFee: Number(searchParams.get('amount')) || 0,
             boxNumber: 0,
-            transactionId: txnId || '',
+            transactionId: orderId || '',
             hourlyAuctionId: hourlyAuctionId || ''
           } as any));
         }

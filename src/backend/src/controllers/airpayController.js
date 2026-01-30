@@ -495,7 +495,7 @@ exports.handleAirpayResponse = async (req, res) => {
     });
 
     const frontendUrl = getFrontendUrl();
-    const redirectUrl = `${frontendUrl}/payment/${finalStatus === 'paid' ? 'success' : 'failure'}?orderId=${TRANSACTIONID}`;
+    const redirectUrl = `${frontendUrl}/payment/result?orderId=${TRANSACTIONID}`;
 
     console.log(`Redirecting user to: ${redirectUrl}`);
     res.redirect(redirectUrl);
@@ -751,3 +751,46 @@ async function handlePrizeClaimSuccess(payment) {
     console.error('❌ [AIRPAY_PRIZE] Error handling prize claim success:', error);
   }
 }
+
+/**
+ * Get payment status for frontend verification
+ */
+exports.getPaymentStatus = async (req, res) => {
+  try {
+    const { orderId } = req.query;
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'orderId is required' });
+    }
+
+    const payment = await AirpayPayment.findOne({ orderId });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Find auction details if it's an entry fee
+    let auctionData = null;
+    if (payment.paymentType === 'ENTRY_FEE' && payment.auctionId) {
+      const auction = await HourlyAuction.findOne({ hourlyAuctionId: payment.auctionId });
+      if (auction) {
+        auctionData = {
+          auctionName: auction.auctionName,
+          timeSlot: auction.TimeSlot,
+          prizeValue: auction.prizeValue
+        };
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      status: payment.status, // 'created', 'paid', 'failed'
+      paymentType: payment.paymentType,
+      amount: payment.amount,
+      auctionId: payment.auctionId,
+      orderId: payment.orderId,
+      auctionData
+    });
+  } catch (error) {
+    console.error('Error fetching payment status:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

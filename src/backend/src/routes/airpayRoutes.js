@@ -204,6 +204,24 @@ router.post('/create-order', airpayController.createOrder);
 
 /**
  * @swagger
+ * /api/airpay/status:
+ *   get:
+ *     summary: Get Airpay payment status
+ *     tags: [Airpay]
+ *     parameters:
+ *       - in: query
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Payment status retrieved
+ */
+router.get('/status', airpayController.getPaymentStatus);
+
+/**
+ * @swagger
  * /api/airpay/sendtoairpay:
  *   post:
  *     summary: Render the redirection form to Airpay
