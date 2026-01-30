@@ -403,10 +403,17 @@ async function processAirpayPayment(responseData) {
       };
   }
 
-  // 2. Strict Status Logic - Only trust SUCCESS
-  const finalStatus = TRANSACTIONSTATUS === 'SUCCESS' ? 'paid' : 'failed';
+  // 2. Comprehensive Success Logic - Check multiple status fields from Airpay
+  const isSuccess = 
+    data.transaction_payment_status === 'SUCCESS' || 
+    data.transaction_status === 200 || 
+    data.transaction_status === '200' || 
+    data.STATUS === 'SUCCESS' ||
+    TRANSACTIONSTATUS === 'SUCCESS';
+
+  const finalStatus = isSuccess ? 'paid' : 'failed';
   
-  console.log(`Airpay status: ${TRANSACTIONSTATUS} -> Final: ${finalStatus}`);
+  console.log(`Airpay status: ${TRANSACTIONSTATUS} (Payment Status: ${data.transaction_payment_status || 'N/A'}) -> Final: ${finalStatus}`);
 
   const payment = await AirpayPayment.findOneAndUpdate(
     { orderId: TRANSACTIONID },
