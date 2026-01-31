@@ -374,24 +374,23 @@ const App = () => {
             .then(res => res.json())
             .then(data => {
               if (data.success && data.status === 'paid') {
-                if (data.paymentType === 'ENTRY_FEE') {
-                  // Mark as shown to prevent loop
-                  sessionStorage.setItem(sessionKey, 'true');
-                  
-                  // Prepare data for success state
-                  const successData = {
-                    entryFee: data.amount,
-                    boxNumber: 0,
-                    auctionId: data.auctionId,
-                    transactionId: data.orderId,
-                    hourlyAuctionId: data.auctionId,
-                    auctionName: data.auctionData?.auctionName,
-                    timeSlot: data.auctionData?.timeSlot
-                  };
-                  
-                  // Show the summary page first (following existing pattern)
-                  setShowEntrySuccess(successData as any);
-                }
+                sessionStorage.setItem(sessionKey, 'true');
+                
+                // For entry fee and claim, show success data
+                const successData = {
+                  amount: data.amount,
+                  type: data.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
+                  boxNumber: 0,
+                  auctionId: data.auctionId,
+                  transactionId: data.orderId,
+                  hourlyAuctionId: data.auctionId,
+                  productName: data.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
+                  timeSlot: data.auctionData?.timeSlot
+                };
+                
+                setShowEntrySuccess(successData as any);
+                // ✅ CRITICAL: Do NOT show the secondary detail modal on the result page to avoid duplicates
+                setShowEntrySuccessDetail(null);
               }
             })
             .catch(err => console.error("Error verifying payment status:", err));
@@ -403,7 +402,8 @@ const App = () => {
           try {
             const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
             setShowEntrySuccess({
-              entryFee: Number(airpayData.amount),
+              amount: Number(airpayData.amount),
+              type: airpayData.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
               boxNumber: 0,
               auctionId: airpayData.auctionId,
               transactionId: airpayData.txnId || airpayData.orderId,
@@ -412,7 +412,7 @@ const App = () => {
               bankName: airpayData.bankName,
               cardName: airpayData.cardName,
               cardNumber: airpayData.cardNumber,
-              productName: 'Auction Entry Fee',
+              productName: airpayData.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
               timeSlot: 'Active',
               hourlyAuctionId: airpayData.hourlyAuctionId
             } as any);
@@ -423,7 +423,8 @@ const App = () => {
         } else if (orderId || hourlyAuctionId) {
           setShowEntrySuccess(prev => ({
             ...(prev || {}),
-            entryFee: Number(searchParams.get('amount')) || 0,
+            amount: Number(searchParams.get('amount')) || 0,
+            type: searchParams.get('type') === 'claim' ? 'claim' : 'entry',
             boxNumber: 0,
             transactionId: orderId || '',
             hourlyAuctionId: hourlyAuctionId || ''
@@ -1022,7 +1023,25 @@ const App = () => {
       case 'tester-feedback': return <TesterFeedback user={currentUser} onBack={handleBackToGame} />;
       case 'transactions': return currentUser ? <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} /> : null;
       case 'prizeshowcase': return <BrowserRouter><PrizeShowcasePage onBack={handleBackToGame} onJoinAuction={() => { handleBackToGame(); setTimeout(() => document.getElementById('auction-grid')?.scrollIntoView({ behavior: 'smooth' }), 100); }} hourlyAuctionId={selectedPrizeShowcaseAuctionId} /></BrowserRouter>;
-      case 'payment-success': return <PaymentSuccess amount={showEntrySuccess?.entryFee || 0} type="entry" boxNumber={showEntrySuccess?.boxNumber || 0} auctionId={showEntrySuccess?.auctionId} auctionNumber={showEntrySuccess?.auctionNumber} productName={showEntrySuccess?.productName} productWorth={showEntrySuccess?.productWorth} timeSlot={showEntrySuccess?.timeSlot} paidBy={showEntrySuccess?.paidBy} paymentMethod={showEntrySuccess?.paymentMethod} transactionId={showEntrySuccess?.transactionId} onBackToHome={handleEntrySuccess} onClose={handleCloseEntrySuccess} />;
+        case 'payment-success': return <PaymentSuccess 
+          amount={showEntrySuccess?.amount || showEntrySuccess?.entryFee || 0} 
+          type={showEntrySuccess?.type || 'entry'} 
+          boxNumber={showEntrySuccess?.boxNumber || 0} 
+          auctionId={showEntrySuccess?.auctionId} 
+          auctionNumber={showEntrySuccess?.auctionNumber} 
+          productName={showEntrySuccess?.productName} 
+          productWorth={showEntrySuccess?.productWorth} 
+          timeSlot={showEntrySuccess?.timeSlot} 
+          paidBy={showEntrySuccess?.paidBy} 
+          paymentMethod={showEntrySuccess?.paymentMethod} 
+          transactionId={showEntrySuccess?.transactionId} 
+          upiId={showEntrySuccess?.upiId}
+          bankName={showEntrySuccess?.bankName}
+          cardName={showEntrySuccess?.cardName}
+          cardNumber={showEntrySuccess?.cardNumber}
+          onBackToHome={handleEntrySuccess} 
+          onClose={handleCloseEntrySuccess} 
+        />;
       case 'payment-failure': return <PaymentFailure amount={showEntryFailure?.entryFee || 0} errorMessage={showEntryFailure?.errorMessage || 'Payment failed'} auctionId={showEntryFailure?.auctionId} auctionNumber={showEntryFailure?.auctionNumber} productName={showEntryFailure?.productName} productWorth={showEntryFailure?.productWorth} timeSlot={showEntryFailure?.timeSlot} paidBy={showEntryFailure?.paidBy} paymentMethod={showEntryFailure?.paymentMethod} transactionId={showEntryFailure?.transactionId} onRetry={() => setShowEntryFailure(null)} onBackToHome={handleBackToGame} onClose={handleCloseEntryFailure} />;
       case 'contact': return <Contact onBack={handleBackToGame} />;
       default: return (
@@ -1078,10 +1097,22 @@ const App = () => {
           <HowDream60Works />
           <Footer onNavigate={handleNavigate} />
           <style>{`@keyframes highlight-fade { 0% { box-shadow: 0 0 0 0px rgba(139, 92, 246, 0.7); border-radius: 1.5rem; } 50% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0.3); border-radius: 1.5rem; } 100% { box-shadow: 0 0 0 0px rgba(139, 92, 246, 0); border-radius: 1.5rem; } } .highlight-auction-grid { animation: highlight-fade 2s ease-in-out infinite; z-index: 50; position: relative; }`}</style>
-          <AnimatePresence mode="sync">
-            {showEntrySuccessDetail && <EntrySuccessModal entryFee={showEntrySuccessDetail.entryFee} boxNumber={showEntrySuccessDetail.boxNumber} auctionId={showEntrySuccessDetail.auctionId} transactionId={showEntrySuccessDetail.transactionId} onContinue={() => { setShowEntrySuccessDetail(null); handleBidNowScroll(); }} onClose={() => setShowEntrySuccessDetail(null)} />}
-            {showBidSuccess && <PaymentSuccess amount={showBidSuccess.amount} type="bid" boxNumber={showBidSuccess.boxNumber} auctionId={currentAuction.id} auctionNumber={liveAuctionData?.TimeSlot || currentAuction.auctionHour} productName={currentAuction.prizeName || 'Auction Prize'} productWorth={currentAuction.prizeValue} timeSlot={liveAuctionData?.TimeSlot || currentAuction.auctionHour} paidBy={currentUser?.username || currentUser?.email} paymentMethod="Wallet / UPI" onBackToHome={() => { setShowBidSuccess(null); setCurrentPage('game'); }} onClose={() => setShowBidSuccess(null)} />}
-          </AnimatePresence>
+            <AnimatePresence mode="sync">
+              {showBidSuccess && <PaymentSuccess 
+                amount={showBidSuccess.amount} 
+                type="bid" 
+                boxNumber={showBidSuccess.boxNumber} 
+                auctionId={currentAuction.id} 
+                auctionNumber={liveAuctionData?.TimeSlot || currentAuction.auctionHour} 
+                productName={currentAuction.prizeName || 'Auction Prize'} 
+                productWorth={currentAuction.prizeValue} 
+                timeSlot={liveAuctionData?.TimeSlot || currentAuction.auctionHour} 
+                paidBy={currentUser?.username || currentUser?.email} 
+                paymentMethod="Wallet / UPI" 
+                onBackToHome={() => { setShowBidSuccess(null); setCurrentPage('game'); }} 
+                onClose={() => setShowBidSuccess(null)} 
+              />}
+            </AnimatePresence>
           {currentUser && <TutorialOverlay steps={whatsNewSteps} tutorialId="dream60-whatsnew-v2" startToken={tutorialStartToken} forceShow={forceTutorialShow} onComplete={() => { setMobileMenuOpen(false); setForceTutorialShow(false); handleNavigate('game'); }} returnTo="" />}
           <AmazonVoucherModal isVisible={showAmazonVoucherModal} onClose={() => setShowAmazonVoucherModal(false)} />
         </div>

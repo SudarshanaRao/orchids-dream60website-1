@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Clock, Download, IndianRupee, Printer, Share2, ArrowRight } from 'lucide-react';
+import { Check, Clock, Download, IndianRupee, Printer, Share2, ArrowRight, Sparkles, Trophy, Zap, Target, TrendingUp, CheckCircle, X, ShieldCheck, Landmark, CreditCard, Wallet } from 'lucide-react';
 import { Button } from './ui/button';
 import { useEffect, useState, useRef } from 'react';
 import jsPDF from 'jspdf';
@@ -45,9 +45,17 @@ export function PaymentSuccess({
   onClose
 }: PaymentSuccessProps) {
   const [step, setStep] = useState<'animation' | 'summary'>('animation');
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(initialType === 'entry' ? 3 : 5);
   const [txnData, setTxnSummary] = useState<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Computed values
+  const amount = txnData?.amount || initialAmount;
+  const transactionId = txnData?.txnId || initialTransactionId || txnData?.orderId || 'N/A';
+  const paymentMethod = txnData?.method || initialPaymentMethod;
+  const timestamp = txnData?.timestamp ? new Date(txnData.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN');
+  const upiId = txnData?.upiId || initialUpiId;
+  const bankName = txnData?.bankName || initialBankName;
+  const productName = initialProductName || txnData?.productName || 'Auction Entry';
 
   useEffect(() => {
     // Try to read transaction data from cookie
@@ -68,19 +76,19 @@ export function PaymentSuccess({
       }
     }
 
-    // Play success sound (optional, if available)
-    // audioRef.current = new Audio('/success-sound.mp3');
-    // audioRef.current.play().catch(() => {});
-
-    // Transition after 2 seconds to feel deliberate and allow reading
+    // Transition after 2.5 seconds to feel deliberate and allow reading
     const timer = setTimeout(() => {
       setStep('summary');
-      if (initialType === 'entry') {
-        setCountdown(3); // Shorter countdown for entry
-      }
-    }, 2000);
+    }, 2500);
 
-    return () => clearTimeout(timer);
+    // Disable body scroll
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      clearTimeout(timer);
+      document.body.style.overflow = originalOverflow;
+    };
   }, []);
 
   useEffect(() => {
@@ -90,12 +98,6 @@ export function PaymentSuccess({
           if (prev <= 1) {
             clearInterval(interval);
             onBackToHome();
-            // Fallback: if after 1 second we are still on this page, force a reload
-            setTimeout(() => {
-              if (window.location.pathname.includes('success') || window.location.pathname.includes('failure')) {
-                window.location.href = '/';
-              }
-            }, 1000);
             return 0;
           }
           return prev - 1;
@@ -105,189 +107,313 @@ export function PaymentSuccess({
     }
   }, [step, onBackToHome]);
 
-  const amount = txnData?.amount || initialAmount;
-  const transactionId = txnData?.txnId || initialTransactionId || txnData?.orderId || 'N/A';
-  const paymentMethod = txnData?.method || initialPaymentMethod;
-  const timestamp = txnData?.timestamp ? new Date(txnData.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN');
-
   const downloadReceipt = () => {
     const doc = new jsPDF();
     
     // Header
-    doc.setFillColor(16, 185, 129); // emerald-500
-    doc.rect(0, 0, 210, 40, 'F');
+    doc.setFillColor(83, 49, 123); // Primary Purple (#53317B)
+    doc.rect(0, 0, 210, 45, 'F');
+    
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.text('DREAM60', 105, 25, { align: 'center' });
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DREAM60', 105, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Premium Online Auction Platform', 105, 30, { align: 'center' });
     
     // Title
     doc.setTextColor(31, 41, 55);
-    doc.setFontSize(18);
-    doc.text('Payment Receipt', 105, 55, { align: 'center' });
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('OFFICIAL PAYMENT RECEIPT', 105, 65, { align: 'center' });
     
-    // Details
+    // Separator
+    doc.setDrawColor(83, 49, 123);
+    doc.setLineWidth(1);
+    doc.line(40, 72, 170, 72);
+    
+    // Transaction Details Table-like Layout
     doc.setFontSize(12);
-    let y = 75;
+    let y = 85;
     const details = [
+      ['Transaction Status:', 'SUCCESSFUL'],
       ['Transaction ID:', transactionId],
-      ['Amount Paid:', `Rs. ${amount}`],
-      ['Payment For:', initialProductName],
+      ['Payment Type:', initialType === 'entry' ? 'Entry Fee' : initialType === 'claim' ? 'Prize Claim' : 'Auction Bid'],
+      ['Amount Paid:', `Rs. ${amount.toLocaleString('en-IN')}`],
       ['Payment Method:', paymentMethod],
+      ['UPI ID:', upiId || 'N/A'],
+      ['Bank Name:', bankName || 'N/A'],
       ['Date & Time:', timestamp],
-      ['Status:', 'SUCCESS']
+      ['Product/Auction:', productName],
     ];
     
     details.forEach(([label, value]) => {
+      // Background for label
+      doc.setFillColor(245, 243, 255);
+      doc.rect(40, y - 6, 130, 10, 'F');
+      
       doc.setFont('helvetica', 'bold');
-      doc.text(label, 40, y);
+      doc.setTextColor(83, 49, 123);
+      doc.text(label, 45, y);
+      
       doc.setFont('helvetica', 'normal');
-      doc.text(value, 100, y);
-      y += 10;
+      doc.setTextColor(31, 41, 55);
+      doc.text(String(value), 110, y);
+      y += 12;
     });
     
+    // Footer Section
+    y += 10;
     doc.setDrawColor(229, 231, 235);
-    doc.line(40, y + 5, 170, y + 5);
+    doc.setLineWidth(0.5);
+    doc.line(40, y, 170, y);
     
+    y += 15;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(16, 185, 129); // Success Green
+    doc.text('Thank you for choosing Dream60!', 105, y, { align: 'center' });
+    
+    y += 10;
     doc.setFontSize(10);
-    doc.text('Thank you for participating in Dream60!', 105, y + 20, { align: 'center' });
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(107, 114, 128);
+    doc.text('This is a computer-generated receipt and does not require a physical signature.', 105, y, { align: 'center' });
+    doc.text('Visit www.dream60.com for more information.', 105, y + 6, { align: 'center' });
     
-    doc.save(`Dream60_Receipt_${transactionId}.pdf`);
-    toast.success('Receipt downloaded successfully');
+    // Save PDF
+    doc.save(`Dream60_Invoice_${transactionId}.pdf`);
+    toast.success('Invoice downloaded successfully! 🎉');
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-gradient-to-br from-[#1A0B2E]/95 via-[#2D1B4D]/90 to-[#1A0B2E]/95 backdrop-blur-xl overflow-y-auto">
       <AnimatePresence mode="wait">
         {step === 'animation' ? (
           <motion.div
             key="animation-step"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.2 }}
-            className="flex flex-col items-center text-center"
+            exit={{ opacity: 0, scale: 1.2, filter: 'blur(20px)' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col items-center text-center p-6"
           >
-            <div className="relative">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-                className="w-32 h-32 rounded-full bg-emerald-500 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.5)]"
-              >
-                <Check className="w-16 h-16 text-white" strokeWidth={3} />
-              </motion.div>
-              
-              {/* Confetti-like particles */}
-              {[...Array(12)].map((_, i) => (
+            <div className="relative mb-8">
+              {/* Success Rings */}
+              {[...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                  className="absolute inset-0"
+                  initial={{ scale: 1, opacity: 0 }}
                   animate={{ 
-                    opacity: [0, 1, 0], 
-                    scale: [0, 1, 0.5],
-                    x: Math.cos(i * 30 * (Math.PI / 180)) * 100,
-                    y: Math.sin(i * 30 * (Math.PI / 180)) * 100
+                    scale: [1, 2, 3],
+                    opacity: [0.6, 0.2, 0]
                   }}
-                  transition={{ duration: 1, delay: 0.3, repeat: Infinity, repeatDelay: 0.5 }}
-                  className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full bg-yellow-400"
-                />
+                  transition={{
+                    duration: 2.5,
+                    repeat: Infinity,
+                    delay: i * 0.6,
+                    ease: "easeOut"
+                  }}
+                >
+                  <div className="w-32 h-32 rounded-full border-4 border-emerald-400/30" />
+                </motion.div>
               ))}
+              
+              <motion.div
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+                className="w-32 h-32 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-[0_20px_50px_rgba(16,185,129,0.4)] relative z-10"
+              >
+                <Check className="w-16 h-16 text-white" strokeWidth={4} />
+              </motion.div>
+
+              {/* Sparkle effects */}
+              <motion.div
+                animate={{ 
+                  opacity: [0, 1, 0],
+                  scale: [0.5, 1.2, 0.5],
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute -top-4 -right-4"
+              >
+                <Sparkles className="w-8 h-8 text-yellow-400" />
+              </motion.div>
             </div>
             
-            <motion.h2 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-4xl font-black text-white mt-8 mb-2 tracking-tight"
             >
-              PAYMENT SUCCESSFUL!
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-emerald-300 text-lg font-medium"
-            >
-              Your entry has been confirmed
-            </motion.p>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight drop-shadow-lg">
+                PAYMENT SUCCESSFUL!
+              </h2>
+              <div className="flex items-center justify-center gap-3 py-2 px-6 bg-white/10 backdrop-blur-md rounded-full border border-white/20">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <span className="text-emerald-50 text-lg font-bold">Transaction Secured & Verified</span>
+              </div>
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div
             key="summary-step"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl"
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 25 }}
+            className="w-full max-w-lg bg-white rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.5)] border border-white/20 relative"
           >
-            <div className="bg-emerald-500 p-8 text-center text-white relative">
-              <div className="absolute top-4 right-4 bg-white/20 rounded-full px-3 py-1 text-xs font-bold backdrop-blur-sm">
-                SUCCESS
-              </div>
-              <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3 shadow-lg">
-                <IndianRupee className="w-10 h-10 text-emerald-500" />
-              </div>
-              <h3 className="text-3xl font-black mb-1">₹{amount}</h3>
-              <p className="text-emerald-100 opacity-80 text-sm font-medium">Transaction Complete</p>
-            </div>
-
-            <div className="p-8 space-y-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-                  <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Transaction ID</span>
-                  <span className="text-gray-900 font-bold font-mono text-sm">{transactionId}</span>
-                </div>
-                <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-                  <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Purpose</span>
-                  <span className="text-gray-900 font-bold text-sm">{initialProductName}</span>
-                </div>
-                <div className="flex justify-between items-center pb-4 border-b border-gray-100">
-                  <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Method</span>
-                  <span className="text-gray-900 font-bold text-sm">{paymentMethod}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Date & Time</span>
-                  <span className="text-gray-900 font-bold text-sm">{timestamp}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button 
-                  onClick={downloadReceipt}
-                  variant="outline" 
-                  className="w-full py-6 rounded-2xl border-2 border-emerald-100 text-emerald-600 font-bold hover:bg-emerald-50 hover:border-emerald-200"
+            {/* Header with Amount */}
+            <div className="bg-gradient-to-br from-[#53317B] via-[#6B3FA0] to-[#8456BC] p-10 text-center text-white relative">
+              <div className="absolute top-6 right-8">
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-full px-4 py-1.5 text-[10px] font-black tracking-widest uppercase flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Receipt
-                </Button>
-                <Button 
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: 'Dream60 Payment Success',
-                        text: `I just joined a Dream60 auction! Txn ID: ${transactionId}`,
-                        url: window.location.origin
-                      });
-                    } else {
-                      toast.info('Share feature not supported on this browser');
-                    }
-                  }}
-                  variant="outline" 
-                  className="w-full py-6 rounded-2xl border-2 border-gray-100 text-gray-600 font-bold hover:bg-gray-50"
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Verified
+                </motion.div>
               </div>
-
-              <Button 
-                onClick={onBackToHome}
-                className="w-full py-8 rounded-2xl bg-gray-900 hover:bg-black text-white font-black text-lg group shadow-xl"
+              
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-24 h-24 bg-white/15 backdrop-blur-2xl rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/30 shadow-2xl"
               >
-                CONTINUE TO AUCTION
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
+                <IndianRupee className="w-12 h-12 text-white" />
+              </motion.div>
+              
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <h3 className="text-5xl font-black mb-2 tracking-tighter">₹{amount.toLocaleString('en-IN')}</h3>
+                <p className="text-purple-100 opacity-90 text-base font-bold flex items-center justify-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  Successfully Received
+                </p>
+              </motion.div>
+            </div>
+  
+            {/* Transaction Details */}
+            <div className="p-8 sm:p-10 space-y-8 bg-white">
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-purple-900/40 tracking-[0.2em] uppercase mb-4">Transaction Details</h4>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Transaction ID */}
+                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <Zap className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-gray-500 text-sm font-bold">Transaction ID</span>
+                    </div>
+                    <span className="text-purple-900 font-black font-mono text-sm">{transactionId}</span>
+                  </div>
 
-              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm font-medium">
-                <Clock className="w-4 h-4" />
-                <span>Redirecting in {countdown}s...</span>
+                  {/* Payment Details (UPI / Bank) */}
+                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        {upiId ? <Target className="w-4 h-4 text-purple-600" /> : <Landmark className="w-4 h-4 text-purple-600" />}
+                      </div>
+                      <span className="text-gray-500 text-sm font-bold">{upiId ? 'UPI ID' : 'Bank'}</span>
+                    </div>
+                    <span className="text-purple-900 font-black text-sm">{upiId || bankName || 'Verified Payment'}</span>
+                  </div>
+
+                  {/* Type / Purpose */}
+                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <Trophy className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-gray-500 text-sm font-bold">Payment For</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-purple-900 font-black text-sm">{productName}</span>
+                      {initialType === 'entry' && boxNumber && <span className="text-[10px] text-purple-500 font-bold uppercase">Box #{boxNumber}</span>}
+                    </div>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <span className="text-gray-500 text-sm font-bold">Date & Time</span>
+                    </div>
+                    <span className="text-purple-900 font-black text-sm">{timestamp}</span>
+                  </div>
+                </div>
+              </div>
+  
+              {/* Action Buttons */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    onClick={downloadReceipt}
+                    className="w-full h-14 rounded-2xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-3 group"
+                  >
+                    <Download className="w-5 h-5 group-hover:bounce" />
+                    Download Invoice
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: 'Dream60 Payment Success',
+                          text: `Successfully joined Dream60 auction! Transaction ID: ${transactionId}`,
+                          url: window.location.origin
+                        }).catch(() => {});
+                      } else {
+                        toast.info('Share feature not supported on this browser');
+                      }
+                    }}
+                    className="w-full h-14 rounded-2xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-3 group"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share Status
+                  </Button>
+                </div>
+  
+                <Button 
+                  onClick={onBackToHome}
+                  className="w-full h-16 rounded-2xl bg-[#53317B] hover:bg-[#432763] text-white font-black text-xl group shadow-2xl shadow-purple-900/20 relative overflow-hidden"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-3">
+                    {initialType === 'entry' ? 'START BIDDING NOW' : 'GO TO AUCTION HISTORY'}
+                    <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                  </span>
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  />
+                </Button>
+  
+                <div className="flex items-center justify-center gap-2 text-purple-900/40 text-xs font-black uppercase tracking-widest">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Redirecting in {countdown}s</span>
+                </div>
+              </div>
+
+              {/* Security Badge */}
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <div className="flex items-center gap-1.5 grayscale opacity-50">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="text-[10px] font-bold">SECURE SSL</span>
+                </div>
+                <div className="flex items-center gap-1.5 grayscale opacity-50">
+                  <Landmark className="w-4 h-4" />
+                  <span className="text-[10px] font-bold">RBI VERIFIED</span>
+                </div>
               </div>
             </div>
           </motion.div>
