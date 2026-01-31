@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -1153,11 +1154,15 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
 
 
 export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: AuctionHistoryProps) {
-  const [activeTab, setActiveTab] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'all');
   const [isSwitching, setIsSwitching] = useState(false);
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const currentPage = parseInt(searchParams.get('page') || '1');
+  const itemsPerPage = 10;
   
   // ✅ NEW: User profile state - fetch once for all cards
   const [userProfile, setUserProfile] = useState<{
@@ -1179,10 +1184,93 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   });
   
     // ✅ Computed values from stats and history
+    const allFilteredHistory = history;
     const wonAuctions = history.filter(a => a.status === 'won');
     const lostAuctions = history.filter(a => a.status === 'lost');
     const claimedAuctions = history.filter(a => a.prizeClaimStatus === 'CLAIMED');
-    
+
+    const getPaginatedItems = (items: AuctionHistoryItem[]) => {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      return items.slice(startIndex, startIndex + itemsPerPage);
+    };
+
+    const currentHistory = activeTab === 'all' 
+      ? getPaginatedItems(allFilteredHistory)
+      : activeTab === 'won'
+      ? getPaginatedItems(wonAuctions)
+      : getPaginatedItems(lostAuctions);
+
+    const totalPages = Math.ceil(
+      (activeTab === 'all' ? allFilteredHistory.length : activeTab === 'won' ? wonAuctions.length : lostAuctions.length) / itemsPerPage
+    );
+
+    const handlePageChange = (newPage: number) => {
+      setSearchParams(prev => {
+        prev.set('page', newPage.toString());
+        return prev;
+      });
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    };
+
+    const Pagination = () => {
+      if (totalPages <= 1) return null;
+
+      return (
+        <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="border-purple-200 text-purple-700 hover:bg-purple-50"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Prev
+          </Button>
+          
+          <div className="flex items-center gap-1">
+            {[...Array(totalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              // Show limited pages on mobile
+              if (totalPages > 5) {
+                if (pageNum !== 1 && pageNum !== totalPages && Math.abs(pageNum - currentPage) > 1) {
+                  if (pageNum === 2 || pageNum === totalPages - 1) return <span key={pageNum} className="text-purple-300">...</span>;
+                  return null;
+                }
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`w-8 h-8 p-0 ${
+                    currentPage === pageNum 
+                      ? "bg-purple-600 text-white" 
+                      : "border-purple-200 text-purple-700 hover:bg-purple-50"
+                  }`}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="border-purple-200 text-purple-700 hover:bg-purple-50"
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </div>
+      );
+    };
+
     // ✅ Calculate success rate based on claims as requested
     const successRate = history.length > 0 
       ? Math.round((claimedAuctions.length / history.length) * 100) 
@@ -1993,15 +2081,21 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             </CardHeader>
             
               <CardContent className="p-2 sm:p-4 md:p-6 relative z-10">
-                <Tabs 
-                  value={activeTab} 
-                  onValueChange={(value) => {
-                    setIsSwitching(true);
-                    setActiveTab(value);
-                    setTimeout(() => setIsSwitching(false), 500); // Smooth transition duration
-                  }} 
-                  className="w-full"
-                >
+                  <Tabs 
+                    value={activeTab} 
+                    onValueChange={(value) => {
+                      setIsSwitching(true);
+                      setActiveTab(value);
+                      setSearchParams(prev => {
+                        prev.set('tab', value);
+                        prev.set('page', '1');
+                        return prev;
+                      });
+                      setTimeout(() => setIsSwitching(false), 500); // Smooth transition duration
+                    }} 
+                    className="w-full"
+                  >
+
                   <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
                   <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-6 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
                     <TabsTrigger 
@@ -2049,21 +2143,25 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                           transition={{ duration: 0.3 }}
                           className="space-y-2 sm:space-y-3 md:space-y-4"
                         >
-                          {history.length > 0 ? (
-                            history.map((auction, index) => (
-                              <AuctionCard 
-                                key={`all-${auction.id}`}
-                                auction={auction}
-                                index={index}
-                                tabPrefix="all"
-                                user={user}
-                                onViewDetails={onViewDetails}
-                                onClaimSuccess={() => fetchAuctionHistory()}
-                                userProfile={userProfile}
-                                serverTime={serverTime}
-                              />
-                            ))
-                          ) : (
+                            {currentHistory.length > 0 ? (
+                              <>
+                                {currentHistory.map((auction, index) => (
+                                  <AuctionCard 
+                                    key={`all-${auction.id}`}
+                                    auction={auction}
+                                    index={index}
+                                    tabPrefix="all"
+                                    user={user}
+                                    onViewDetails={onViewDetails}
+                                    onClaimSuccess={() => fetchAuctionHistory()}
+                                    userProfile={userProfile}
+                                    serverTime={serverTime}
+                                  />
+                                ))}
+                                <Pagination />
+                              </>
+                            ) : (
+
                             <div className="text-center py-6 sm:py-12">
                               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
                                 <Trophy className="w-5 h-5 sm:w-8 sm:h-8" />
@@ -2098,21 +2196,25 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                           transition={{ duration: 0.3 }}
                           className="space-y-2 sm:space-y-3 md:space-y-4"
                         >
-                          {wonAuctions.length > 0 ? (
-                            wonAuctions.map((auction, index) => (
-                              <AuctionCard 
-                                key={`won-${auction.id}`}
-                                auction={auction}
-                                index={index}
-                                tabPrefix="won"
-                                user={user}
-                                onViewDetails={onViewDetails}
-                                onClaimSuccess={() => fetchAuctionHistory()}
-                                userProfile={userProfile}
-                                serverTime={serverTime}
-                              />
-                            ))
-                          ) : (
+                            {currentHistory.length > 0 ? (
+                              <>
+                                {currentHistory.map((auction, index) => (
+                                  <AuctionCard 
+                                    key={`won-${auction.id}`}
+                                    auction={auction}
+                                    index={index}
+                                    tabPrefix="won"
+                                    user={user}
+                                    onViewDetails={onViewDetails}
+                                    onClaimSuccess={() => fetchAuctionHistory()}
+                                    userProfile={userProfile}
+                                    serverTime={serverTime}
+                                  />
+                                ))}
+                                <Pagination />
+                              </>
+                            ) : (
+
                             <div className="text-center py-6 sm:py-12">
                               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-fuchsia-600 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
                                 <Crown className="w-5 h-5 sm:w-8 sm:h-8" />
@@ -2147,21 +2249,25 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                           transition={{ duration: 0.3 }}
                           className="space-y-2 sm:space-y-3 md:space-y-4"
                         >
-                          {lostAuctions.length > 0 ? (
-                            lostAuctions.map((auction, index) => (
-                              <AuctionCard 
-                                key={`lost-${auction.id}`}
-                                auction={auction}
-                                index={index}
-                                tabPrefix="lost"
-                                user={user}
-                                onViewDetails={onViewDetails}
-                                onClaimSuccess={() => fetchAuctionHistory()}
-                                userProfile={userProfile}
-                                serverTime={serverTime}
-                              />
-                            ))
-                          ) : (
+                            {currentHistory.length > 0 ? (
+                              <>
+                                {currentHistory.map((auction, index) => (
+                                  <AuctionCard 
+                                    key={`lost-${auction.id}`}
+                                    auction={auction}
+                                    index={index}
+                                    tabPrefix="lost"
+                                    user={user}
+                                    onViewDetails={onViewDetails}
+                                    onClaimSuccess={() => fetchAuctionHistory()}
+                                    userProfile={userProfile}
+                                    serverTime={serverTime}
+                                  />
+                                ))}
+                                <Pagination />
+                              </>
+                            ) : (
+
                             <div className="text-center py-6 sm:py-12">
                               <div className="w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-4 shadow-xl text-white">
                                 <Sparkles className="w-5 h-5 sm:w-8 sm:h-8" />

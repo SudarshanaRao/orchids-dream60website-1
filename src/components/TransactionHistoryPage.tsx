@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import jsPDF from 'jspdf';
 import {
@@ -17,6 +18,8 @@ import {
   BarChart3,
   Gift,
   Download,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -56,6 +59,7 @@ interface TransactionItem {
 
 
 export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [transactions, setTransactions] = useState<{
     entryFees: TransactionItem[];
@@ -65,6 +69,11 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   const [isLoading, setIsLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionItem | null>(null);
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'entry');
+  
+  const currentPage = parseInt(searchParams.get('page') || '1');
+  const itemsPerPage = 10;
+  
   const DETAIL_STORAGE_KEY = 'd60_last_transaction_detail';
 
   const allTransactions = useMemo(
@@ -404,9 +413,76 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     doc.save(`Dream60_${tx.paymentType}_Receipt_${Date.now()}.pdf`);
   };
 
+  const handlePageChange = (newPage: number) => {
+    setSearchParams(prev => {
+      prev.set('page', newPage.toString());
+      return prev;
+    });
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const Pagination = ({ totalItems }: { totalItems: number }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="border-purple-200 text-purple-700 hover:bg-purple-50"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Prev
+        </Button>
+        
+        <div className="flex items-center gap-1">
+          {[...Array(totalPages)].map((_, i) => {
+            const pageNum = i + 1;
+            if (totalPages > 5) {
+              if (pageNum !== 1 && pageNum !== totalPages && Math.abs(pageNum - currentPage) > 1) {
+                if (pageNum === 2 || pageNum === totalPages - 1) return <span key={pageNum} className="text-purple-300">...</span>;
+                return null;
+              }
+            }
+            
+            return (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePageChange(pageNum)}
+                className={`w-8 h-8 p-0 ${
+                  currentPage === pageNum 
+                    ? "bg-purple-600 text-white" 
+                    : "border-purple-200 text-purple-700 hover:bg-purple-50"
+                }`}
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="border-purple-200 text-purple-700 hover:bg-purple-50"
+        >
+          Next
+          <ChevronRight className="w-4 h-4 ml-1" />
+        </Button>
+      </div>
+    );
+  };
+
   const renderTransactionList = (items: TransactionItem[], emptyLabel: string) => {
     if (isLoading) {
-      return <LoadingProfile message="Loading Transactions" subMessage="Updating History" />;
+      return <LoadingProfile />;
     }
 
     if (!items || items.length === 0) {
@@ -418,9 +494,13 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
       );
     }
 
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = items.slice(startIndex, startIndex + itemsPerPage);
+
     return (
+      <>
         <div className="space-y-2 sm:space-y-3" data-whatsnew-target="transactions-list">
-          {items.map((item, idx) => (
+          {paginatedItems.map((item, idx) => (
             <Card
               key={`${item.orderId || item.paymentId || idx}`}
               className="relative overflow-hidden border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-sm cursor-pointer hover:border-purple-300 hover:shadow-md transition"
@@ -483,6 +563,8 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
           </Card>
         ))}
       </div>
+      <Pagination totalItems={items.length} />
+    </>
     );
   };
 
@@ -813,8 +895,20 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                 </div>
               </CardHeader>
 
-              <CardContent className="relative z-10 p-3 sm:p-5">
-                <Tabs defaultValue="entry" className="w-full">
+                <CardContent className="relative z-10 p-3 sm:p-5">
+                  <Tabs 
+                    value={activeTab} 
+                    onValueChange={(value) => {
+                      setActiveTab(value);
+                      setSearchParams(prev => {
+                        prev.set('tab', value);
+                        prev.set('page', '1');
+                        return prev;
+                      });
+                    }}
+                    className="w-full"
+                  >
+
                   <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
                     <TabsList className="inline-flex w-auto min-w-full sm:grid sm:w-full grid-cols-3 mb-3 sm:mb-4 bg-purple-100/60 backdrop-blur-xl p-0.5 sm:p-1 rounded-xl sm:rounded-xl border border-purple-200/50 shadow-inner">
                       <TabsTrigger
