@@ -1552,6 +1552,17 @@ const placeBid = async (req, res) => {
     
     // Get current round number
     const currentRound = auction.currentRound;
+
+    // ✅ NEW: Validate minimum bid for Round 1 must be at least the entry fee the user actually paid
+    if (currentRound === 1) {
+      const userPaidFee = participant.entryFee || auction.EntryFee || 10;
+      if (auctionValue < userPaidFee) {
+        return res.status(400).json({
+          success: false,
+          message: `Minimum bid for Round 1 is your entry fee (₹${userPaidFee})`,
+        });
+      }
+    }
     
     // ✅ NEW: Check if player qualified from previous round (for rounds 2, 3, 4)
     if (currentRound > 1) {

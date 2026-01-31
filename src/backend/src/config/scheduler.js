@@ -6,6 +6,8 @@ const { midnightResetAndCreate, syncHourlyStatusToDailyConfig } = require('../co
 const HourlyAuction = require('../models/HourlyAuction');
 const AuctionHistory = require('../models/AuctionHistory');
 const PushSubscription = require('../models/PushSubscription');
+const User = require('../models/user');
+const { sendSms, formatTemplate } = require('../utils/smsService');
 const mongoose = require('mongoose');
 
 // ... existing code ...
@@ -51,6 +53,60 @@ const getISTDateStart = () => {
   
   // Create start of day in IST (stored as UTC for MongoDB comparison)
   return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+};
+
+/**
+ * Send SMS to winners after auction completion
+ * @param {Object} auction - HourlyAuction document
+ */
+const sendWinnerSms = async (auction) => {
+  try {
+    if (!auction.winners || auction.winners.length === 0) return;
+
+    console.log(`     📱 [WINNER-SMS] Sending SMS to ${auction.winners.length} winners for ${auction.hourlyAuctionCode}`);
+
+    for (const winner of auction.winners) {
+      try {
+        // Fetch user to get mobile number
+        const user = await User.findOne({ user_id: winner.playerId });
+        if (!user || !user.mobile) {
+          console.log(`        ⚠️ [WINNER-SMS] User ${winner.playerUsername} not found or has no mobile number`);
+          continue;
+        }
+
+        let result;
+        if (winner.rank === 1) {
+          // Rank 1 Template
+          const formatted = formatTemplate('WINNER_PAYMENT', {
+            name: winner.playerUsername,
+            amount: winner.finalAuctionAmount
+          });
+          result = await sendSms(user.mobile, formatted.message, { 
+            templateId: formatted.template.templateId 
+          });
+        } else if (winner.rank === 2 || winner.rank === 3) {
+          // Rank 2 & 3 Template
+          const formatted = formatTemplate('RANK_ACHIEVEMENT', {
+            name: winner.playerUsername,
+            rank: winner.rank
+          });
+          result = await sendSms(user.mobile, formatted.message, { 
+            templateId: formatted.template.templateId 
+          });
+        }
+
+        if (result?.success) {
+          console.log(`        ✅ [WINNER-SMS] SMS sent to ${winner.playerUsername} (Rank ${winner.rank})`);
+        } else {
+          console.error(`        ❌ [WINNER-SMS] Failed to send SMS to ${winner.playerUsername}:`, result?.error);
+        }
+      } catch (err) {
+        console.error(`        ❌ [WINNER-SMS] Error processing winner ${winner.playerUsername}:`, err.message);
+      }
+    }
+  } catch (error) {
+    console.error(`     ❌ [WINNER-SMS] Error in sendWinnerSms for ${auction.hourlyAuctionCode}:`, error);
+  }
 };
 
 /**
@@ -132,6 +188,10 @@ const markWinnersInHistory = async (auction) => {
     console.log(`        🏆 Winners marked: ${winnersMarked.length}`);
     console.log(`        📊 Non-winners marked: ${nonWinnersResult.modifiedCount}`);
     console.log(`        👥 Total participants recorded: ${totalParticipants}`);
+
+    // ✅ STEP 3: Send automated SMS to winners (Rank 1, 2, 3)
+    await sendWinnerSms(auction);
+
   } catch (error) {
     console.error(`     ❌ [HISTORY] Error marking winners in history for ${auction.hourlyAuctionCode}:`, error);
   }

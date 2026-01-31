@@ -876,7 +876,19 @@ const App = () => {
               }
               return box;
             });
-            return { ...prev, prize: liveAuction.auctionName || prev.prize, prizeValue: liveAuction.prizeValue || prev.prizeValue, totalParticipants: liveAuction.participants?.length || prev.totalParticipants, boxes: updatedBoxes, userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap }, userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap }, winnersAnnounced: liveAuction.winnersAnnounced || false, userHasPaidEntry: finalPaid };
+              return { 
+                ...prev, 
+                prize: liveAuction.auctionName || prev.prize, 
+                prizeValue: liveAuction.prizeValue || prev.prizeValue, 
+                totalParticipants: liveAuction.participants?.length || prev.totalParticipants, 
+                boxes: updatedBoxes, 
+                userBidsPerRound: { ...prev.userBidsPerRound, ...userBidsMap }, 
+                userQualificationPerRound: { ...prev.userQualificationPerRound, ...userQualificationMap }, 
+                winnersAnnounced: liveAuction.winnersAnnounced || false, 
+                userHasPaidEntry: finalPaid,
+                userEntryFee: userEntryFee // ✅ Added this line
+              };
+
           });
         } else setLiveAuctionData(null);
       } catch (error) { console.error('Error fetching live auction:', error); }

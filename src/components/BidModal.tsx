@@ -50,9 +50,17 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   // If prizeValue is 10000, max bid is 9000 (90%)
   const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
   
-  const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+    const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    // ✅ Sync bidAmount if minBidAmount changes (e.g. data updates)
+    useEffect(() => {
+      if (bidAmount === '' || (typeof bidAmount === 'number' && bidAmount < minBidAmount)) {
+        setBidAmount(minBidAmount);
+      }
+    }, [minBidAmount]);
+
   
   // Check if user is not qualified for this round (rounds 2, 3, 4)
   const isNotQualified = !isEntryBox && box.roundNumber && box.roundNumber > 1 && isUserQualified === false;

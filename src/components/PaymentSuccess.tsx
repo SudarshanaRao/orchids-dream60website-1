@@ -53,9 +53,13 @@ export function PaymentSuccess({
   const transactionId = txnData?.txnId || initialTransactionId || txnData?.orderId || 'N/A';
   const paymentMethod = txnData?.method || initialPaymentMethod;
   const timestamp = txnData?.timestamp ? new Date(txnData.timestamp).toLocaleString('en-IN') : new Date().toLocaleString('en-IN');
-  const upiId = txnData?.upiId || initialUpiId;
-  const bankName = txnData?.bankName || initialBankName;
-  const productName = initialProductName || txnData?.productName || 'Auction Entry';
+    const upiId = txnData?.upiId || initialUpiId;
+    const bankName = txnData?.bankName || initialBankName;
+    const cardName = txnData?.cardName || initialCardName;
+    const cardNumber = txnData?.cardNumber || initialCardNumber;
+    const productName = initialProductName || txnData?.productName || 'Auction Entry';
+    const status = txnData?.status || 'SUCCESS';
+
 
   useEffect(() => {
     // Try to read transaction data from cookie
@@ -263,160 +267,176 @@ export function PaymentSuccess({
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-            className="w-full max-w-lg bg-white rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.5)] border border-white/20 relative"
+            className="w-[95%] sm:w-[70%] max-w-4xl bg-white rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.5)] border border-white/20 relative"
           >
-            {/* Header with Amount */}
-            <div className="bg-gradient-to-br from-[#53317B] via-[#6B3FA0] to-[#8456BC] p-10 text-center text-white relative">
-              <div className="absolute top-6 right-8">
+            <div className="flex flex-col md:flex-row h-full">
+              {/* Left Column: Header with Amount (Fixed width on desktop) */}
+              <div className="md:w-2/5 bg-gradient-to-br from-[#53317B] via-[#6B3FA0] to-[#8456BC] p-10 text-center text-white relative flex flex-col justify-center">
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 md:left-8 md:translate-x-0">
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-full px-4 py-1.5 text-[10px] font-black tracking-widest uppercase flex items-center gap-2 mx-auto"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Verified
+                  </motion.div>
+                </div>
+                
                 <motion.div 
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-full px-4 py-1.5 text-[10px] font-black tracking-widest uppercase flex items-center gap-2"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-24 h-24 bg-white/15 backdrop-blur-2xl rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/30 shadow-2xl"
                 >
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Verified
+                  <IndianRupee className="w-12 h-12 text-white" />
+                </motion.div>
+                
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h3 className="text-5xl font-black mb-2 tracking-tighter">₹{amount.toLocaleString('en-IN')}</h3>
+                  <p className="text-purple-100 opacity-90 text-base font-bold flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    Successfully Received
+                  </p>
                 </motion.div>
               </div>
-              
-              <motion.div 
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="w-24 h-24 bg-white/15 backdrop-blur-2xl rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/30 shadow-2xl"
-              >
-                <IndianRupee className="w-12 h-12 text-white" />
-              </motion.div>
-              
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <h3 className="text-5xl font-black mb-2 tracking-tighter">₹{amount.toLocaleString('en-IN')}</h3>
-                <p className="text-purple-100 opacity-90 text-base font-bold flex items-center justify-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
-                  Successfully Received
-                </p>
-              </motion.div>
-            </div>
+    
+                {/* Right Column: Transaction Details */}
+                <div className="md:w-3/5 p-6 sm:p-10 space-y-6 bg-white overflow-y-auto max-h-[70vh] md:max-h-none">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-purple-900/40 tracking-[0.2em] uppercase mb-4">Transaction Summary</h4>
+                    
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* Status */}
+                      <div className="flex justify-between items-center p-3 bg-emerald-50/30 rounded-xl border border-emerald-100/50">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">Status</span>
+                        </div>
+                        <span className="text-emerald-700 font-black text-xs sm:text-sm">{status}</span>
+                      </div>
+
+                      {/* Transaction ID */}
+                      <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-purple-600" />
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">Transaction ID</span>
+                        </div>
+                        <span className="text-purple-900 font-black font-mono text-xs sm:text-sm break-all ml-4 text-right">{transactionId}</span>
+                      </div>
+    
+                      {/* Payment Details (UPI / Bank / Card) */}
+                      <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                        <div className="flex items-center gap-2">
+                          {upiId ? <Wallet className="w-4 h-4 text-purple-600" /> : <Landmark className="w-4 h-4 text-purple-600" />}
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">{upiId ? 'UPI ID / VPA' : 'Bank Name'}</span>
+                        </div>
+                        <span className="text-purple-900 font-black text-xs sm:text-sm">{upiId || bankName || paymentMethod}</span>
+                      </div>
   
-            {/* Transaction Details */}
-            <div className="p-8 sm:p-10 space-y-8 bg-white">
-              <div className="space-y-4">
-                <h4 className="text-xs font-black text-purple-900/40 tracking-[0.2em] uppercase mb-4">Transaction Details</h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  {/* Transaction ID */}
-                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <Zap className="w-4 h-4 text-purple-600" />
+                      {/* Card Info if available */}
+                      {(cardName || cardNumber) && (
+                        <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-purple-600" />
+                            <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">Card Details</span>
+                          </div>
+                          <span className="text-purple-900 font-black text-xs sm:text-sm">{cardName || 'Card'} {cardNumber ? `**** ${cardNumber.slice(-4)}` : ''}</span>
+                        </div>
+                      )}
+    
+                      {/* Type / Purpose */}
+                      <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-purple-600" />
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">Purpose</span>
+                        </div>
+                        <div className="flex flex-col items-end text-right">
+                          <span className="text-purple-900 font-black text-xs sm:text-sm">{productName}</span>
+                          {initialType === 'entry' && boxNumber && <span className="text-[10px] text-purple-500 font-black uppercase">Box #{boxNumber}</span>}
+                        </div>
                       </div>
-                      <span className="text-gray-500 text-sm font-bold">Transaction ID</span>
-                    </div>
-                    <span className="text-purple-900 font-black font-mono text-sm">{transactionId}</span>
-                  </div>
-
-                  {/* Payment Details (UPI / Bank) */}
-                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                        {upiId ? <Target className="w-4 h-4 text-purple-600" /> : <Landmark className="w-4 h-4 text-purple-600" />}
+    
+                      {/* Timestamp */}
+                      <div className="flex justify-between items-center p-3 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-purple-600" />
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold uppercase">Date & Time</span>
+                        </div>
+                        <span className="text-purple-900 font-black text-xs sm:text-sm text-right">{timestamp}</span>
                       </div>
-                      <span className="text-gray-500 text-sm font-bold">{upiId ? 'UPI ID' : 'Bank'}</span>
-                    </div>
-                    <span className="text-purple-900 font-black text-sm">{upiId || bankName || 'Verified Payment'}</span>
-                  </div>
-
-                  {/* Type / Purpose */}
-                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <Trophy className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <span className="text-gray-500 text-sm font-bold">Payment For</span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-purple-900 font-black text-sm">{productName}</span>
-                      {initialType === 'entry' && boxNumber && <span className="text-[10px] text-purple-500 font-bold uppercase">Box #{boxNumber}</span>}
                     </div>
                   </div>
 
-                  {/* Timestamp */}
-                  <div className="flex justify-between items-center p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <span className="text-gray-500 text-sm font-bold">Date & Time</span>
-                    </div>
-                    <span className="text-purple-900 font-black text-sm">{timestamp}</span>
+    
+                {/* Action Buttons */}
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={downloadReceipt}
+                      className="w-full h-12 rounded-xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-2 text-xs"
+                    >
+                      <Download className="w-4 h-4" />
+                      Invoice
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'Dream60 Payment Success',
+                            text: `Successfully joined Dream60 auction! Transaction ID: ${transactionId}`,
+                            url: window.location.origin
+                          }).catch(() => {});
+                        } else {
+                          toast.info('Share feature not supported on this browser');
+                        }
+                      }}
+                      className="w-full h-12 rounded-xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-2 text-xs"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share
+                    </Button>
                   </div>
-                </div>
-              </div>
-  
-              {/* Action Buttons */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+    
                   <Button 
-                    onClick={downloadReceipt}
-                    className="w-full h-14 rounded-2xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-3 group"
+                    onClick={onBackToHome}
+                    className="w-full h-14 rounded-xl bg-[#53317B] hover:bg-[#432763] text-white font-black text-lg group shadow-xl shadow-purple-900/20 relative overflow-hidden"
                   >
-                    <Download className="w-5 h-5 group-hover:bounce" />
-                    Download Invoice
+                    <span className="relative z-10 flex items-center justify-center gap-3 uppercase tracking-tighter">
+                      {initialType === 'entry' ? 'START BIDDING NOW' : 'GO TO AUCTION HISTORY'}
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                    </span>
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                      animate={{ x: ['-100%', '100%'] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                    />
                   </Button>
-                  <Button 
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: 'Dream60 Payment Success',
-                          text: `Successfully joined Dream60 auction! Transaction ID: ${transactionId}`,
-                          url: window.location.origin
-                        }).catch(() => {});
-                      } else {
-                        toast.info('Share feature not supported on this browser');
-                      }
-                    }}
-                    className="w-full h-14 rounded-2xl bg-white border-2 border-purple-100 text-purple-700 font-bold hover:bg-purple-50 hover:border-purple-200 shadow-sm flex items-center justify-center gap-3 group"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Share Status
-                  </Button>
+    
+                  <div className="flex items-center justify-center gap-2 text-purple-900/40 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <Clock className="w-3 h-3" />
+                    <span>Redirecting in {countdown}s</span>
+                  </div>
                 </div>
   
-                <Button 
-                  onClick={onBackToHome}
-                  className="w-full h-16 rounded-2xl bg-[#53317B] hover:bg-[#432763] text-white font-black text-xl group shadow-2xl shadow-purple-900/20 relative overflow-hidden"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-3">
-                    {initialType === 'entry' ? 'START BIDDING NOW' : 'GO TO AUCTION HISTORY'}
-                    <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                  </span>
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                    animate={{ x: ['-100%', '100%'] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                  />
-                </Button>
-  
-                <div className="flex items-center justify-center gap-2 text-purple-900/40 text-xs font-black uppercase tracking-widest">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Redirecting in {countdown}s</span>
-                </div>
-              </div>
-
-              {/* Security Badge */}
-              <div className="flex items-center justify-center gap-4 pt-2">
-                <div className="flex items-center gap-1.5 grayscale opacity-50">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span className="text-[10px] font-bold">SECURE SSL</span>
-                </div>
-                <div className="flex items-center gap-1.5 grayscale opacity-50">
-                  <Landmark className="w-4 h-4" />
-                  <span className="text-[10px] font-bold">RBI VERIFIED</span>
+                {/* Security Badge */}
+                <div className="flex items-center justify-center gap-6 pt-2 grayscale opacity-40">
+                  <div className="flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">SECURE SSL</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Landmark className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-wider">RBI VERIFIED</span>
+                  </div>
                 </div>
               </div>
             </div>
           </motion.div>
+
         )}
       </AnimatePresence>
     </div>
