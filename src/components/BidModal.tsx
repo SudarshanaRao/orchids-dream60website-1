@@ -34,33 +34,30 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   
   // Min bid calculation:
   // - Entry box: use entry fee
-  // - Round 1: use user's entry fee as minimum (Strictly enforced)
+  // - Round 1: use user's entry fee as minimum
   // - Round 2+: use the minBid passed from parent (calculated based on previous round's top bid and cutoff percentage)
   const baseminBidAmount = isEntryBox 
     ? entryFeeAmount 
-    : (box.roundNumber === 1 ? (userEntryFee || entryFeeAmount || 34) : (box.minBid || 10));
+    : (box.roundNumber === 1 ? (userEntryFee || entryFeeAmount) : (box.minBid || 10));
   
   // ✅ CRITICAL: Ensure minimum bid is ALWAYS higher than user's previous round bid
   // If user bid ₹1000 in Round 1, they MUST bid ₹1000 + entry fee (₹34) = ₹1034 in Round 2
   const minBidAmount = userPreviousBid 
     ? Math.max(baseminBidAmount, userPreviousBid + (userEntryFee || 1))
     : baseminBidAmount;
-
-  // For Round 1, strictly enforce that bid cannot be less than entry fee
-  const effectiveMinAmount = Math.max(minBidAmount, (userPreviousBid || 0) + 1);
   
   // Max bid calculation: prizeValue - 10% discount = 90% of prize value
   // If prizeValue is 10000, max bid is 9000 (90%)
   const maxBidAmount = isEntryBox ? entryFeeAmount : Math.floor(prizeValue * 0.9);
   
-  const [bidAmount, setBidAmount] = useState<number | ''>(effectiveMinAmount);
+  const [bidAmount, setBidAmount] = useState<number | ''>(minBidAmount);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
   // Check if user is not qualified for this round (rounds 2, 3, 4)
   const isNotQualified = !isEntryBox && box.roundNumber && box.roundNumber > 1 && isUserQualified === false;
   
-  const isValidBid = bidAmount !== '' && bidAmount >= effectiveMinAmount && bidAmount <= maxBidAmount && 
+  const isValidBid = bidAmount !== '' && bidAmount >= minBidAmount && bidAmount <= maxBidAmount && 
     (!userPreviousBid || bidAmount > userPreviousBid);
 
   useEffect(() => {
@@ -156,12 +153,14 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     return `Round ${box.id - 2}`;
   };
 
+  const effectiveMin = Math.max(minBidAmount, (userPreviousBid || 0) + 1);
+
   // Calculate bid strength
   const getBidStrength = (amount: number | '') => {
     if (amount === '' || isEntryBox) return { label: 'Entry', color: 'purple', percentage: 100 };
     
-    const range = maxBidAmount - effectiveMinAmount;
-    const position = amount - effectiveMinAmount;
+    const range = maxBidAmount - effectiveMin;
+    const position = amount - effectiveMin;
     const percentage = (position / range) * 100;
     
     if (percentage >= 80) return { label: 'Maximum', color: 'red', percentage };
@@ -176,19 +175,19 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
   // Smart bid recommendation
   const getRecommendedBid = () => {
     if (isEntryBox) return entryFeeAmount;
-    const buffer = Math.max(50, Math.floor((maxBidAmount - effectiveMinAmount) * 0.15));
-    return Math.min(effectiveMinAmount + buffer, maxBidAmount);
+    const buffer = Math.max(50, Math.floor((maxBidAmount - effectiveMin) * 0.15));
+    return Math.min(effectiveMin + buffer, maxBidAmount);
   };
 
   const recommendedBid = getRecommendedBid();
 
   // Quick bid options with smart labels
   const quickBidOptions = [
-    { label: 'Safe', amount: effectiveMinAmount, icon: Target },
+    { label: 'Safe', amount: effectiveMin, icon: Target },
     { label: 'Smart', amount: Math.min(recommendedBid, maxBidAmount), icon: Sparkles },
     { label: 'Bold', amount: Math.min(Math.floor(maxBidAmount * 0.7), maxBidAmount), icon: TrendingUp },
     { label: 'Max', amount: maxBidAmount, icon: Award }
-  ].filter(bid => bid.amount <= maxBidAmount && bid.amount >= effectiveMinAmount);
+  ].filter(bid => bid.amount <= maxBidAmount && bid.amount >= effectiveMin);
 
   // Quick increment amounts - multiples of entry fee paid for this auction
   // Use userEntryFee (actual entry fee user paid from API) for round boxes, box.entryFee for entry boxes
