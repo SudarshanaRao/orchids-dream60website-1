@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useRazorpay, RazorpayOrderOptions } from 'react-razorpay';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, API_BASE_URL } from '@/lib/api-config';
+import { getPaymentProvider } from '@/utils/payment-utils';
 
 interface CreatePrizeClaimOrderPayload {
   userId: string;
@@ -21,14 +22,14 @@ interface OrderResponse {
   success: boolean;
   message: string;
   data: {
-    razorpayKeyId: string;
+    razorpayKeyId?: string;
     orderId: string;
-    amount: number;
-    currency: string;
-    hourlyAuctionId: string;
-    paymentId: string;
-    rank: number;
-    prizeValue: number;
+    amount?: number;
+    currency?: string;
+    hourlyAuctionId?: string;
+    paymentId?: string;
+    rank?: number;
+    prizeValue?: number;
     userInfo?: {
       name: string;
       email: string;
@@ -71,11 +72,11 @@ export const usePrizeClaimPayment = () => {
         setLoading(true);
         setPaymentStatus('idle');
 
-        const provider = import.meta.env.VITE_PAYMENT_PROVIDER || 'razorpay';
+        const provider = getPaymentProvider();
 
         if (provider === 'airpay') {
           // 1. Create Airpay order on backend
-          const response = await fetch(`${API_BASE_URL}/api/airpay/create-order`, {
+          const response = await fetch(API_ENDPOINTS.airpay.createOrder, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -89,14 +90,27 @@ export const usePrizeClaimPayment = () => {
             }),
           });
 
-          const orderData = await response.json();
+          const orderData: OrderResponse = await response.json();
 
           if (!response.ok || !orderData.success || !orderData.data) {
             throw new Error(orderData.message || 'Failed to create Airpay order');
           }
 
-          // 2. Airpay uses a form redirect
+          // 2. Store pending details in cookies for recovery
+          const pendingDetails = {
+            auctionId: payload.hourlyAuctionId,
+            amount: payload.amount,
+            paymentType: 'PRIZE_CLAIM',
+            timestamp: Date.now()
+          };
+          document.cookie = `pending_payment_details=${encodeURIComponent(JSON.stringify(pendingDetails))}; path=/; max-age=3600`;
+
+          // 3. Airpay uses a form redirect
           const { url, params } = orderData.data;
+          if (!url || !params) {
+            throw new Error('Airpay redirect data missing');
+          }
+
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = url;
@@ -146,10 +160,10 @@ export const usePrizeClaimPayment = () => {
         // 2. Razorpay checkout options
         const options: RazorpayOrderOptions = {
           key: orderData.data.razorpayKeyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: orderData.data.amount,
-          currency: orderData.data.currency,
+          amount: orderData.data.amount || payload.amount * 100,
+          currency: orderData.data.currency || 'INR',
           name: 'DREAM60',
-          description: `Prize Claim Payment - Rank ${orderData.data.rank}`,
+          description: `Prize Claim Payment`,
           order_id: orderData.data.orderId,
           
           handler: async (response: PaymentResponse) => {
@@ -180,7 +194,7 @@ export const usePrizeClaimPayment = () => {
               if (verifyResponse.ok && verifyData.success) {
                 setPaymentStatus('success');
                 toast.success('Prize Claimed Successfully!', {
-                  description: `Your prize of ₹${verifyData.data.prizeAmount} has been claimed. Payment received!`,
+                  description: `Your prize has been claimed. Payment received!`,
                 });
                 onSuccess(verifyData);
               } else {

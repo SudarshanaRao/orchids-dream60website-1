@@ -1,70 +1,22 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Trophy, Zap, X, ArrowRight, IndianRupee, Sparkles, Target, TrendingUp, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { CheckCircle, Trophy, Zap, X, ArrowRight, IndianRupee, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { Button } from './ui/button';
-import { API_ENDPOINTS } from '@/lib/api-config';
 
 interface EntrySuccessModalProps {
-  entryFee?: number;
-  boxNumber?: number;
-  auctionId?: string;
-  transactionId?: string;
-  hourlyAuctionId?: string;
+  entryFee: number;
+  boxNumber: number;
   onContinue: () => void;
   onClose: () => void;
+  auctionId?: string;
+  transactionId?: string;
 }
 
-export function EntrySuccessModal({ 
-  entryFee: initialEntryFee, 
-  boxNumber = 1, 
-  auctionId, 
-  transactionId, 
-  hourlyAuctionId,
-  onContinue, 
-  onClose 
-}: EntrySuccessModalProps) {
+export function EntrySuccessModal({ entryFee, boxNumber, onContinue, onClose }: EntrySuccessModalProps) {
   const [countdown, setCountdown] = useState(3);
   const [showContinue, setShowContinue] = useState(false);
-  const [loading, setLoading] = useState(!!hourlyAuctionId);
-  const [auctionDetails, setAuctionDetails] = useState<{
-    entryFee: number;
-    prizeName: string;
-    prizeValue: number;
-  } | null>(null);
 
   useEffect(() => {
-    async function fetchAuctionDetails() {
-      if (!hourlyAuctionId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(API_ENDPOINTS.scheduler.hourlyAuctionDetails(hourlyAuctionId));
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          setAuctionDetails({
-            entryFee: data.data.entryFee,
-            prizeName: data.data.auctionName || data.data.prizeName,
-            prizeValue: data.data.prizeValue
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching auction details:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchAuctionDetails();
-  }, [hourlyAuctionId]);
-
-  const entryFee = auctionDetails?.entryFee ?? initialEntryFee ?? 0;
-
-  useEffect(() => {
-    if (loading) return;
-
     // Disable body scroll when modal opens
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -96,24 +48,11 @@ export function EntrySuccessModal({
       document.removeEventListener('keydown', handleEscape);
       clearInterval(timer);
     };
-  }, [onClose, onContinue, loading]);
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-[#221432]/95 backdrop-blur-xl z-50 flex items-center justify-center">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <Loader2 className="w-12 h-12 text-purple-500" />
-        </motion.div>
-      </div>
-    );
-  }
+  }, [onClose, onContinue]);
 
   return (
     <motion.div 
-      className="fixed inset-0 bg-gradient-to-br from-[#221432]/95 via-[#3A2257]/90 to-[#221432]/95 backdrop-blur-xl z-50 overflow-y-auto"
+      className="fixed inset-0 bg-gradient-to-br from-[#221432]/95 via-[#3A2257]/90 to-[#221432]/95 backdrop-blur-xl z-[100] overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -312,18 +251,8 @@ export function EntrySuccessModal({
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.8 }}
                       >
-                        {auctionDetails?.prizeName ? `${auctionDetails.prizeName} - Successfully Entered` : `Box ${boxNumber} - Successfully Paid`}
+                        Box {boxNumber} - Successfully Paid
                       </motion.div>
-                      {auctionDetails?.prizeValue && (
-                        <motion.div 
-                          className="text-[10px] sm:text-xs text-amber-600 mt-1 font-bold"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.85 }}
-                        >
-                          Win Prize Worth ₹{auctionDetails.prizeValue.toLocaleString('en-IN')}
-                        </motion.div>
-                      )}
                     </div>
                     
                     {/* Status Cards */}
@@ -382,29 +311,6 @@ export function EntrySuccessModal({
                         </div>
                       </motion.div>
                     </div>
-
-                    {/* Transaction Details */}
-                    {(transactionId || auctionId) && (
-                      <motion.div 
-                        className="mt-4 pt-4 border-t border-purple-100/50 space-y-2"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 1.0 }}
-                      >
-                        {transactionId && (
-                          <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                            <span className="text-[#6B3FA0]/60 font-medium">Transaction ID</span>
-                            <span className="text-[#6B3FA0] font-mono font-semibold">{transactionId}</span>
-                          </div>
-                        )}
-                        {auctionId && (
-                          <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                            <span className="text-[#6B3FA0]/60 font-medium">Auction ID</span>
-                            <span className="text-[#6B3FA0] font-mono font-semibold">{auctionId}</span>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
                   </div>
                 </motion.div>
 
