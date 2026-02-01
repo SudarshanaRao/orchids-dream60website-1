@@ -5,8 +5,12 @@ const DailyAuction = require('../models/DailyAuction');
 const HourlyAuction = require('../models/HourlyAuction');
 const AuctionHistory = require('../models/AuctionHistory');
 const OTP = require('../models/OTP');
+const Refund = require('../models/Refund');
+const AirpayPayment = require('../models/AirpayPayment');
+const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
 const bcrypt = require('bcryptjs');
-const { sendOtpEmail } = require('../utils/emailService');
+const { sendOtpEmail, sendEmailWithTemplate, buildEmailTemplate, getPrimaryClientUrl } = require('../utils/emailService');
+const { sendSms, SMS_TEMPLATES } = require('../utils/smsService');
 
 const ADMIN_APPROVAL_EMAIL = 'dream60.official@gmail.com';
 
@@ -819,6 +823,180 @@ const setSuperAdminByEmail = async (req, res) => {
   }
 };
 
+/**
+ * Cancel Hourly Auction
+ */
+const cancelHourlyAuction = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
+    const { auctionId } = req.params;
+    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId: auctionId });
+    if (!hourlyAuction) return res.status(404).json({ success: false, message: 'Auction not found' });
+
+    if (hourlyAuction.Status === 'CANCELLED') {
+      return res.status(400).json({ success: false, message: 'Auction is already cancelled' });
+    }
+
+    // Update HourlyAuction status
+    hourlyAuction.Status = 'CANCELLED';
+    await hourlyAuction.save();
+
+    // Sync status to DailyAuction
+    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
+    if (dailyAuction) {
+      const configIndex = dailyAuction.dailyAuctionConfig.findIndex(c => c.hourlyAuctionId === auctionId);
+      if (configIndex !== -1) {
+        dailyAuction.dailyAuctionConfig[configIndex].Status = 'CANCELLED';
+        await dailyAuction.save();
+      }
+    }
+
+    // Process participants for refunds and notifications
+    const participants = hourlyAuction.participants || [];
+    const refundResults = [];
+
+    for (const participant of participants) {
+      try {
+        const user = await User.findOne({ user_id: participant.playerId });
+        if (!user) continue;
+
+        // Find successful entry fee payment
+        const payment = await AirpayPayment.findOne({
+          userId: participant.playerId,
+          auctionId: auctionId,
+          status: 'paid',
+          paymentType: 'ENTRY_FEE'
+        });
+
+        if (payment) {
+          // Create Refund record
+          const refund = await Refund.create({
+            userId: participant.playerId,
+            username: participant.playerUsername,
+            orderId: payment.orderId,
+            hourlyAuctionId: auctionId,
+            amount: payment.amount,
+            reason: 'Auction Cancelled by Admin',
+            status: 'PENDING'
+          });
+          refundResults.push({ userId: participant.playerId, status: 'REFUND_PENDING', refundId: refund._id });
+        }
+
+        // Send SMS
+        await sendSms(user.mobile, `Dear ${participant.playerUsername}, Your ${hourlyAuction.TimeSlot} time slot bid has been cancelled, and the refund process has been initiated. The amount will be credited soon to the original payment source. Thank you for your patience. - Finpages Tech`, {
+          templateId: '1207176916920661369'
+        });
+
+        // Send Email
+        const primaryClientUrl = getPrimaryClientUrl();
+        const emailHtml = buildEmailTemplate({
+          primaryClientUrl,
+          title: 'Auction Cancelled',
+          status: 'REFUND INITIATED',
+          bodyHtml: `
+            <h2 class="hero-title">Auction Cancelled</h2>
+            <p class="hero-text">Dear ${participant.playerUsername},</p>
+            <p class="hero-text">We regret to inform you that the auction <strong>${hourlyAuction.auctionName}</strong> for the <strong>${hourlyAuction.TimeSlot}</strong> time slot has been cancelled.</p>
+            <p class="hero-text">A refund for your entry fee has been initiated and will be credited to your original payment source shortly.</p>
+            <div class="alert-box alert-success">
+              <div class="alert-title">Refund Status</div>
+              <div class="alert-desc">The refund process is now pending and will be completed soon.</div>
+            </div>
+            <p class="hero-text">Thank you for your patience and understanding.</p>
+          `
+        });
+
+        await sendEmailWithTemplate(user.email, 'Auction Cancelled', {}, `Auction Cancelled: ${hourlyAuction.auctionName}`, emailHtml);
+
+        // Update AuctionHistory
+        await AuctionHistory.findOneAndUpdate(
+          { userId: participant.playerId, hourlyAuctionId: auctionId },
+          { prizeClaimStatus: 'CANCELLED', claimNotes: 'Auction cancelled by admin' }
+        );
+
+        // Update HourlyAuctionJoin
+        await HourlyAuctionJoin.findOneAndUpdate(
+          { userId: participant.playerId, hourlyAuctionId: auctionId },
+          { status: 'cancelled' }
+        );
+
+      } catch (err) {
+        console.error(`Error processing participant ${participant.playerId} for cancellation:`, err);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Auction cancelled successfully. Refunds initiated and notifications sent.',
+      data: {
+        auctionId,
+        participantsCount: participants.length,
+        refundsCreated: refundResults.length
+      }
+    });
+
+  } catch (err) {
+    console.error('Cancel Hourly Auction Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+  }
+};
+
+/**
+ * Get Refunds
+ */
+const getRefunds = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
+    const refunds = await Refund.find().sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, data: refunds });
+  } catch (err) {
+    console.error('Get Refunds Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Update Refund Status
+ */
+const updateRefundStatus = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
+    const { refundId } = req.params;
+    const { status, notes } = req.body;
+
+    const refund = await Refund.findById(refundId);
+    if (!refund) return res.status(404).json({ success: false, message: 'Refund record not found' });
+
+    refund.status = status;
+    if (notes) refund.notes = notes;
+    if (status === 'COMPLETED') {
+      refund.processedAt = new Date();
+      refund.processedBy = userId;
+    }
+
+    await refund.save();
+    return res.status(200).json({ success: true, message: 'Refund status updated', data: refund });
+  } catch (err) {
+    console.error('Update Refund Status Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   sendAdminSignupOtp,
@@ -836,4 +1014,7 @@ module.exports = {
   getAnalyticsData,
   updateUserSuperAdminStatus,
   setSuperAdminByEmail,
+  cancelHourlyAuction,
+  getRefunds,
+  updateRefundStatus,
 };

@@ -15,10 +15,14 @@ const {
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,
   deletePushSubscriptionAdmin,
-  getAnalyticsData,
-  updateUserSuperAdminStatus,
-  setSuperAdminByEmail,
-} = require('../controllers/adminController');
+    getAnalyticsData,
+    updateUserSuperAdminStatus,
+    setSuperAdminByEmail,
+    cancelHourlyAuction,
+    getRefunds,
+    updateRefundStatus,
+  } = require('../controllers/adminController');
+
 
 const {
   getEligibleWinners,
@@ -725,6 +729,106 @@ router.get('/analytics', getAnalyticsData);
 router.put('/users/super-admin', updateUserSuperAdminStatus);
 
 router.post('/set-super-admin', setSuperAdminByEmail);
+
+/**
+ * @swagger
+ * /admin/hourly-auctions/{auctionId}/cancel:
+ *   post:
+ *     summary: CANCEL HOURLY AUCTION (ADMIN)
+ *     description: Cancel an active or upcoming hourly auction, initiate refunds, and notify participants (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: auctionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Hourly auction ID to cancel
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     responses:
+ *       200:
+ *         description: Auction cancelled successfully
+ *       400:
+ *         description: Auction already cancelled or invalid request
+ *       403:
+ *         description: Access denied
+ *       404:
+ *         description: Auction not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/hourly-auctions/:auctionId/cancel', cancelHourlyAuction);
+
+/**
+ * @swagger
+ * /admin/refunds:
+ *   get:
+ *     summary: GET ALL REFUNDS (ADMIN)
+ *     description: Get list of all refund records (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     responses:
+ *       200:
+ *         description: Refunds retrieved successfully
+ *       403:
+ *         description: Access denied
+ *       500:
+ *         description: Server error
+ */
+router.get('/refunds', getRefunds);
+
+/**
+ * @swagger
+ * /admin/refunds/{refundId}:
+ *   patch:
+ *     summary: UPDATE REFUND STATUS (ADMIN)
+ *     description: Update the status of a refund record (requires admin user_id)
+ *     tags: [Admin]
+ *     parameters:
+ *       - name: refundId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Refund record ID
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, COMPLETED, FAILED]
+ *               notes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Refund status updated successfully
+ *       404:
+ *         description: Refund record not found
+ *       500:
+ *         description: Server error
+ */
+router.patch('/refunds/:refundId', updateRefundStatus);
 
 // Voucher Management Routes
 router.get('/vouchers/eligible-winners', getEligibleWinners);

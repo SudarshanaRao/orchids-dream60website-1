@@ -52,7 +52,7 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/scheduler/cancel-auction/${auction.hourlyAuctionId}?user_id=${adminUserId}`, {
+      const response = await fetch(`${API_BASE}/admin/hourly-auctions/${auction.hourlyAuctionId}/cancel?user_id=${adminUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

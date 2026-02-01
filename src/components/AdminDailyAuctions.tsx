@@ -18,7 +18,8 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
       const response = await fetch(`${API_BASE}/scheduler/daily-auction?user_id=${adminUserId}`);
       const data = await response.json();
       if (data.success && data.data) {
-        setAuctions(data.data.auctions || []);
+        // DailyAuction model has dailyAuctionConfig array which contains the slots
+        setAuctions(data.data.dailyAuctionConfig || []);
       }
     } catch (error) {
       console.error('Error fetching daily auctions:', error);
