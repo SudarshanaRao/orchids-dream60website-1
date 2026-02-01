@@ -493,7 +493,8 @@ exports.handleAirpayResponse = async (req, res) => {
       cardNumber: data.cardnumber || data.CARDNUMBER || '',
       auctionId: payment.auctionId,
       hourlyAuctionId: payment.auctionId, // Explicitly set for frontend consistency
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      transactionTime: data.transaction_time || data.date || data.TRANSACTIONDATE || data.TRANSDATE || ''
     };
 
     res.cookie('airpay_txn_data', JSON.stringify(txnSummary), { 

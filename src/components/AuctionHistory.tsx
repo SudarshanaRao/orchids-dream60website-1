@@ -84,6 +84,7 @@ interface AuctionHistoryItem {
     claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
     currentEligibleRank?: number; // Which rank can currently claim
     winnersAnnouncedAt?: number; // When winners were declared (UTC ms)
+    transactionTime?: string; // ✅ NEW: Actual transaction time from Airpay
   }
 
 // Circular Progress Component
@@ -127,13 +128,14 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
           </linearGradient>
         </defs>
       </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
-          <span className="text-[10px] sm:text-xs text-purple-600 font-semibold uppercase tracking-wider">Success</span>
-        </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-900">{percentage}%</span>
+        <span className="text-[10px] sm:text-xs text-purple-600 font-semibold uppercase tracking-wider">Success</span>
+      </div>
     </div>
   );
 };
+
 
 // Separate AuctionCard Component (fixes hooks error)
   const AuctionCard = ({ 
@@ -754,24 +756,24 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                           : `Claimed by ${localAuction.claimedBy}`
                         }
                       </p>
-                      {localAuction.claimedAt && (
-                        <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
-                          Claimed on {
-                            (() => {
-                              const date = new Date(localAuction.claimedAt);
-                              const correctedDate = new Date(date.getTime() - (5.5 * 60 * 60 * 1000)); 
-                              return correctedDate.toLocaleString('en-IN', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                                timeZone: 'Asia/Kolkata'
-                              });
-                            })()
-                          }
-                        </p>
-                      )}
+                        {(localAuction.claimedAt || localAuction.transactionTime) && (
+                          <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
+                            Claimed on {
+                              localAuction.transactionTime || (() => {
+                                const date = new Date(localAuction.claimedAt!);
+                                return date.toLocaleString('en-IN', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'Asia/Kolkata'
+                                });
+                              })()
+                            }
+                          </p>
+                        )}
+
                     </div>
                   </div>
                 </div>
@@ -812,25 +814,24 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                         <p className="text-[8px] sm:text-[10px] text-green-700">
                           Claimed by {localAuction.claimedBy || 'Winner'}
                         </p>
-                        {localAuction.claimedAt && (
-  <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
-    Claimed on {
-      (() => {
-        const d = new Date(localAuction.claimedAt);
-        const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
+                        {(localAuction.claimedAt || localAuction.transactionTime) && (
+                          <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
+                            Claimed on {
+                              localAuction.transactionTime || (() => {
+                                const d = new Date(localAuction.claimedAt!);
+                                return d.toLocaleString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'Asia/Kolkata'
+                                });
+                              })()
+                            }
+                          </p>
+                        )}
 
-        return adjusted.toLocaleString('en-IN', {
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: 'Asia/Kolkata'
-        });
-      })()
-    }
-  </p>
-)}
 
                       </div>
                     </div>
@@ -851,25 +852,24 @@ const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-r
                         <p className="text-[8px] sm:text-[10px] text-green-700">
                           Amazon voucher worth ₹{localAuction.prizeValue.toLocaleString('en-IN')} delivered
                         </p>
-                        {localAuction.claimedAt && (
-  <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
-    Claimed on {
-      (() => {
-        const d = new Date(localAuction.claimedAt);
-        const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
+                        {(localAuction.claimedAt || localAuction.transactionTime) && (
+                          <p className="text-[8px] sm:text-[10px] text-green-600 mt-0.5">
+                            Claimed on {
+                              localAuction.transactionTime || (() => {
+                                const d = new Date(localAuction.claimedAt!);
+                                return d.toLocaleString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'Asia/Kolkata'
+                                });
+                              })()
+                            }
+                          </p>
+                        )}
 
-        return adjusted.toLocaleString('en-IN', {
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: 'Asia/Kolkata'
-        });
-      })()
-    }
-  </p>
-)}
 
                       </div>
                     </div>
@@ -1439,10 +1439,12 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             claimedByRank: auction.claimedByRank,
             claimNotes: auction.claimNotes,
             // ✅ NEW: Priority claim system fields - converted to UTC timestamps
-              claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
-              winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
-              currentEligibleRank: auction.currentEligibleRank,
-            };
+                claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
+                winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
+                currentEligibleRank: auction.currentEligibleRank,
+                transactionTime: auction.airpayResponse?.transaction_time, // ✅ NEW: Actual transaction time from Airpay
+              };
+
 
         });
         

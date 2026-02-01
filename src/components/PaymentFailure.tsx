@@ -13,19 +13,35 @@ interface PaymentFailureProps {
   onClose?: () => void;
 }
 
-export function PaymentFailure({ 
-  amount, 
-  type = 'entry',
-  errorMessage = 'Payment processing failed',
-  transactionId,
-  onRetry,
-  onBackToHome,
-  onClose
-}: PaymentFailureProps) {
-  const [countdown, setCountdown] = useState(10);
+  export function PaymentFailure({ 
+    amount, 
+    type = 'entry',
+    errorMessage = 'Payment processing failed',
+    transactionId: initialTransactionId,
+    onRetry,
+    onBackToHome,
+    onClose
+  }: PaymentFailureProps) {
+    const [countdown, setCountdown] = useState(10);
+    const [txnData, setTxnSummary] = useState<any>(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
+    useEffect(() => {
+      const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(';').shift();
+        return null;
+      };
+
+      const cookieData = getCookie('airpay_txn_data');
+      if (cookieData) {
+        try {
+          setTxnSummary(JSON.parse(decodeURIComponent(cookieData)));
+        } catch (e) { console.error(e); }
+      }
+
+      const timer = setInterval(() => {
+
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
@@ -96,11 +112,12 @@ export function PaymentFailure({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-              <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-purple-600" />} />
-              <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-purple-600" />} />
-              <DetailRow label="Time" value={new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-purple-600" />} />
-            </div>
+              <div className="grid grid-cols-1 gap-3">
+                <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-purple-600" />} />
+                <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-purple-600" />} />
+                <DetailRow label="Time" value={txnData?.transactionTime || new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-purple-600" />} />
+              </div>
+
           </div>
 
           <div className="mt-8 space-y-4">

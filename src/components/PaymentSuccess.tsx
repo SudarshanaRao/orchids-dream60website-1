@@ -75,25 +75,27 @@ export function PaymentSuccess({
   }, [onBackToHome]);
 
   const amount = txnData?.amount || initialAmount;
-  const transactionId = txnData?.txnId || initialTransactionId || 'N/A';
-  const paymentMethod = txnData?.method || initialPaymentMethod || 'UPI / Card';
-  const upiId = txnData?.upiId || initialUpiId;
-  const bankName = txnData?.bankName || initialBankName;
-  const productName = initialProductName || txnData?.productName || (type === 'entry' ? 'Auction Entry' : 'Winner Claim');
+    const transactionId = txnData?.txnId || initialTransactionId || 'N/A';
+    const paymentMethod = txnData?.method || initialPaymentMethod || 'UPI / Card';
+    const upiId = txnData?.upiId || initialUpiId;
+    const bankName = txnData?.bankName || initialBankName;
+    const productName = initialProductName || txnData?.productName || (type === 'entry' ? 'Auction Entry' : 'Winner Claim');
+    const displayTime = txnData?.transactionTime || new Date().toLocaleString();
 
-  const downloadReceipt = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text('DREAM60 PAYMENT RECEIPT', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(`Transaction ID: ${transactionId}`, 20, 40);
-    doc.text(`Amount: Rs. ${amount}`, 20, 50);
-    doc.text(`Method: ${paymentMethod}`, 20, 60);
-    doc.text(`Purpose: ${productName}`, 20, 70);
-    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 80);
-    doc.save(`Dream60_Receipt_${transactionId}.pdf`);
-    toast.success('Receipt downloaded!');
-  };
+    const downloadReceipt = () => {
+      const doc = new jsPDF();
+      doc.setFontSize(20);
+      doc.text('DREAM60 PAYMENT RECEIPT', 105, 20, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(`Transaction ID: ${transactionId}`, 20, 40);
+      doc.text(`Amount: Rs. ${amount}`, 20, 50);
+      doc.text(`Method: ${paymentMethod}`, 20, 60);
+      doc.text(`Purpose: ${productName}`, 20, 70);
+      doc.text(`Date: ${displayTime}`, 20, 80);
+      doc.save(`Dream60_Receipt_${transactionId}.pdf`);
+      toast.success('Receipt downloaded!');
+    };
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-[#05010D]/90 backdrop-blur-2xl overflow-y-auto font-sans">
@@ -141,9 +143,10 @@ export function PaymentSuccess({
               <DetailRow label="Transaction ID" value={transactionId} icon={<Zap className="w-4 h-4 text-purple-600" />} />
               <DetailRow label="Method" value={paymentMethod} icon={<Landmark className="w-4 h-4 text-purple-600" />} />
               {upiId && <DetailRow label="UPI ID" value={upiId} icon={<Wallet className="w-4 h-4 text-purple-600" />} />}
-              <DetailRow label="Purpose" value={productName} icon={<Target className="w-4 h-4 text-purple-600" />} />
-              <DetailRow label="Time" value={new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-purple-600" />} />
-            </div>
+                <DetailRow label="Purpose" value={productName} icon={<Target className="w-4 h-4 text-purple-600" />} />
+                <DetailRow label="Time" value={displayTime} icon={<Clock className="w-4 h-4 text-purple-600" />} />
+              </div>
+
           </div>
 
           <div className="mt-8 space-y-4">
