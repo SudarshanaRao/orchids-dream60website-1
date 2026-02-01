@@ -508,17 +508,20 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               role="button"
             >
               <CardContent className="p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      item.paymentType === 'PRIZE_CLAIM'
-                        ? 'bg-gradient-to-br from-emerald-500 to-green-600'
-                        : 'bg-gradient-to-br from-purple-500 to-violet-600'
-                    } text-white font-bold`}
-                  >
-                    <IndianRupee className="w-5 h-5" />
-                  </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        item.paymentType === 'PRIZE_CLAIM'
+                          ? 'bg-gradient-to-br from-emerald-500 to-green-600'
+                          : 'bg-gradient-to-br from-purple-500 to-violet-600'
+                      } text-white font-bold relative`}
+                    >
+                      <span className="absolute -top-2 -left-2 w-5 h-5 bg-purple-900 text-white text-[10px] rounded-full flex items-center justify-center font-bold border border-white shadow-sm z-20">
+                        {startIndex + idx + 1}
+                      </span>
+                      <IndianRupee className="w-5 h-5" />
+                    </div>
                   <div>
                     <div className="text-sm font-bold text-purple-900">₹{item.amount?.toLocaleString('en-IN') || 0}</div>
                     <div className="text-[11px] text-purple-600">{paymentTypeLabel(item.paymentType)}</div>
@@ -947,26 +950,16 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                   <TabsContent value="prize" className="mt-0">
                     {renderTransactionList(transactions.prizeClaims, 'No prize claim payments yet')}
                   </TabsContent>
-                  <TabsContent value="voucher" className="mt-0">
-                    <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
-                      Amazon voucher transactions are coming soon.
-                    </div>
-                  </TabsContent>
-
-                  <div className="mt-4">
-                    <Pagination totalItems={
-                      activeTab === 'entry' 
-                        ? (transactions.entryFees?.length || 0)
-                        : activeTab === 'prize'
-                        ? (transactions.prizeClaims?.length || 0)
-                        : (transactions.vouchers?.length || 0)
-                    } />
-                  </div>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </motion.div>
+                    <TabsContent value="voucher" className="mt-0">
+                      <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
+                        Amazon voucher transactions are coming soon.
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </motion.div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
