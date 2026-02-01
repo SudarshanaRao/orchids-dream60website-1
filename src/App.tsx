@@ -511,7 +511,19 @@ const App = () => {
     return () => { if (refreshTimeout) clearTimeout(refreshTimeout); };
   }, []);
 
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(() => {
+    const userId = localStorage.getItem("user_id");
+    if (!userId) return null;
+    return {
+      id: userId,
+      username: localStorage.getItem("username") || '',
+      email: localStorage.getItem("email") || '',
+      totalWins: parseInt(localStorage.getItem("totalWins") || "0"),
+      totalLosses: parseInt(localStorage.getItem("totalLosses") || "0"),
+      totalAmountSpent: parseFloat(localStorage.getItem("totalAmountSpent") || "0"),
+      totalAmountWon: parseFloat(localStorage.getItem("totalAmountWon") || "0")
+    };
+  });
 
   const mapUserData = (userData: any) => {
     return {
@@ -558,7 +570,18 @@ const App = () => {
     }
   };
 
-  const [adminUser, setAdminUser] = useState<any | null>(null);
+  const [adminUser, setAdminUser] = useState<any | null>(() => {
+    const adminUserId = localStorage.getItem('admin_user_id');
+    if (!adminUserId) return null;
+    return {
+      user_id: adminUserId,
+      username: localStorage.getItem("admin_username") || 'admin',
+      email: localStorage.getItem("admin_email") || '',
+      userType: 'ADMIN',
+      userCode: '#ADMIN',
+      isSuperAdmin: localStorage.getItem("admin_isSuperAdmin") === 'true'
+    };
+  });
   const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
 
   useEffect(() => {

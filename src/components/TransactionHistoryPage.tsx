@@ -896,9 +896,18 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
               </CardHeader>
 
                 <CardContent className="relative z-10 p-3 sm:p-5">
-                  <Tabs 
-                    value={activeTab} 
-                    onValueChange={(value) => {
+                    <div className="mb-4">
+                      <Pagination totalItems={
+                        activeTab === 'entry' 
+                          ? (transactions.entryFees?.length || 0)
+                          : activeTab === 'prize'
+                          ? (transactions.prizeClaims?.length || 0)
+                          : (transactions.vouchers?.length || 0)
+                      } />
+                    </div>
+                    <Tabs 
+                      value={activeTab} 
+                      onValueChange={(value) => {
                       setActiveTab(value);
                       setSearchParams(prev => {
                         prev.set('tab', value);
@@ -932,7 +941,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     </TabsList>
                   </div>
 
-                  <TabsContent value="entry" className="mt-0">
+                    <TabsContent value="entry" className="mt-0">
                     {renderTransactionList(transactions.entryFees, 'No entry fee payments yet')}
                   </TabsContent>
                   <TabsContent value="prize" className="mt-0">
@@ -943,6 +952,16 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                       Amazon voucher transactions are coming soon.
                     </div>
                   </TabsContent>
+
+                  <div className="mt-4">
+                    <Pagination totalItems={
+                      activeTab === 'entry' 
+                        ? (transactions.entryFees?.length || 0)
+                        : activeTab === 'prize'
+                        ? (transactions.prizeClaims?.length || 0)
+                        : (transactions.vouchers?.length || 0)
+                    } />
+                  </div>
                 </Tabs>
               </CardContent>
             </Card>

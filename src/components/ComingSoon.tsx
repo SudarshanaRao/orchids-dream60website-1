@@ -8,7 +8,7 @@ interface ComingSoonProps {
 }
 
 // Configurable target date
-const TARGET_DATE = new Date('2026-02-05T11:00:00');
+const TARGET_DATE = new Date('2026-01-31T22:27:00');
 
 export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
@@ -130,7 +130,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     const displayValue = value.toString().padStart(2, '0');
     
     return (
-      <div className="relative h-8 sm:h-14 md:h-20 w-full flex items-center justify-center overflow-hidden">
+      <div className="relative h-6 sm:h-10 md:h-14 w-full flex items-center justify-center overflow-hidden">
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={value}
@@ -143,7 +143,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
             }}
             className={`absolute font-black tabular-nums tracking-tighter ${
               isLastTen ? 'text-[#FFD700] drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]' : 'text-white'
-            } text-2xl sm:text-4xl md:text-6xl`}
+            } text-xl sm:text-2xl md:text-4xl`}
           >
             {displayValue}
           </motion.span>
@@ -258,26 +258,26 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
             <Sparkles className="w-3 h-3 text-[#FFD700]" />
           </motion.div>
 
-          <motion.h1 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-2xl sm:text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight"
-          >
-            Dream60 is <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] via-white to-[#FFD700] bg-[length:200%_auto] animate-shimmer italic">
-              Launching Soon
-            </span>
-          </motion.h1>
+            <motion.h1 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="text-lg sm:text-2xl md:text-4xl font-black text-white tracking-tighter leading-tight"
+            >
+              Dream60 is <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] via-white to-[#FFD700] bg-[length:200%_auto] animate-shimmer italic">
+                Launching Soon
+              </span>
+            </motion.h1>
 
-          <motion.p 
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-base sm:text-xl md:text-2xl text-slate-400 font-medium max-w-2xl mx-auto leading-snug px-4"
-          >
-            India’s Most Exciting Live Auction Experience Begins In…
-          </motion.p>
+            <motion.p 
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-xs sm:text-base md:text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-snug px-4"
+            >
+              India’s Most Exciting Live Auction Experience Begins In…
+            </motion.p>
         </div>
 
         {/* Countdown Area */}
@@ -285,15 +285,15 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
           {!isLaunching ? (
             <motion.div 
               key="countdown"
-              className="space-y-8 sm:space-y-10 md:space-y-12"
+              className="space-y-6 sm:space-y-8 md:space-y-10"
             >
               <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-6 px-2">
                 <TimeUnit value={timeLeft.days} label="Days" />
-                <div className="text-white/10 text-xl sm:text-3xl md:text-5xl font-thin pb-4 sm:pb-8 md:pb-12">:</div>
+                <div className="text-white/10 text-lg sm:text-2xl md:text-4xl font-thin pb-4 sm:pb-6 md:pb-8">:</div>
                 <TimeUnit value={timeLeft.hours} label="Hours" />
-                <div className="text-white/10 text-xl sm:text-3xl md:text-5xl font-thin pb-4 sm:pb-8 md:pb-12">:</div>
+                <div className="text-white/10 text-lg sm:text-2xl md:text-4xl font-thin pb-4 sm:pb-6 md:pb-8">:</div>
                 <TimeUnit value={timeLeft.minutes} label="Minutes" />
-                <div className="text-white/10 text-xl sm:text-3xl md:text-5xl font-thin pb-4 sm:pb-8 md:pb-12">:</div>
+                <div className="text-white/10 text-lg sm:text-2xl md:text-4xl font-thin pb-4 sm:pb-6 md:pb-8">:</div>
                 <TimeUnit value={timeLeft.seconds} label="Seconds" isLastTen={isLastTen} />
               </div>
 

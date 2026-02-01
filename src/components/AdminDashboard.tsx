@@ -43,6 +43,9 @@ import { AdminEmailManagement } from './AdminEmailManagement';
   import { SuperAdminUserAnalytics } from './SuperAdminUserAnalytics';
   import { AdminVoucherManagement } from './AdminVoucherManagement';
   import { AdminSmsManagement } from './AdminSmsManagement';
+import { AdminDailyAuctions } from './AdminDailyAuctions';
+import { AdminHourlyAuctions } from './AdminHourlyAuctions';
+import { AdminRefundManagement } from './AdminRefundManagement';
 
 
 interface AdminUser {
@@ -149,9 +152,9 @@ interface CombinedUser {
 }
 
 
-export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
-    const validTabs = ['overview', 'users', 'auctions', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
-    type TabType = typeof validTabs[number];
+  export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
+      const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
+      type TabType = typeof validTabs[number];
     
     const getInitialTab = (): TabType => {
       const hash = window.location.hash.replace('#', '');
@@ -564,19 +567,52 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
               <Users className="w-5 h-5 inline-block mr-2" />
               Users
             </button>
-            <button
-              onClick={() => setActiveTab('auctions')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'auctions'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-              <Trophy className="w-5 h-5 inline-block mr-2" />
-              Master Auctions
-            </button>
-            <button
-              onClick={() => setActiveTab('emails')}
+              <button
+                onClick={() => setActiveTab('auctions')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'auctions'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Trophy className="w-5 h-5 inline-block mr-2" />
+                Master Auctions
+              </button>
+              <button
+                onClick={() => setActiveTab('daily-auctions')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'daily-auctions'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Calendar className="w-5 h-5 inline-block mr-2" />
+                Daily Auctions
+              </button>
+              <button
+                onClick={() => setActiveTab('hourly-auctions')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'hourly-auctions'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <Clock className="w-5 h-5 inline-block mr-2" />
+                Hourly Auctions
+              </button>
+              <button
+                onClick={() => setActiveTab('refunds')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'refunds'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+                <IndianRupee className="w-5 h-5 inline-block mr-2" />
+                Refunds
+              </button>
+              <button
+                onClick={() => setActiveTab('emails')}
               className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'emails'
                   ? 'text-purple-700 border-b-2 border-purple-700'
@@ -1127,10 +1163,22 @@ export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => 
                 <SuperAdminUserAnalytics adminUserId={adminUser.user_id} />
               )}
 
-              {activeTab === 'vouchers' && (
-                <AdminVoucherManagement adminUserId={adminUser.user_id} />
-              )}
-          </main>
+                {activeTab === 'vouchers' && (
+                  <AdminVoucherManagement adminUserId={adminUser.user_id} />
+                )}
+
+                {activeTab === 'daily-auctions' && (
+                  <AdminDailyAuctions adminUserId={adminUser.user_id} />
+                )}
+
+                {activeTab === 'hourly-auctions' && (
+                  <AdminHourlyAuctions adminUserId={adminUser.user_id} />
+                )}
+
+                {activeTab === 'refunds' && (
+                  <AdminRefundManagement adminUserId={adminUser.user_id} />
+                )}
+            </main>
 
       {/* Create/Edit Master Auction Modal */}
       {showCreateAuction && (
