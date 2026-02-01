@@ -1209,7 +1209,13 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
         prev.set('page', newPage.toString());
         return prev;
       });
-      window.scrollTo({ top: 400, behavior: 'smooth' });
+      // Scroll to top of the list area instead of hardcoded 400
+      const listElement = document.getElementById('auction-history-list');
+      if (listElement) {
+        listElement.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 400, behavior: 'smooth' });
+      }
     };
 
     const Pagination = () => {
