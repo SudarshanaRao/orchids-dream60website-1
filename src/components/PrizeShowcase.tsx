@@ -134,17 +134,8 @@ interface PrizeShowcaseProps {
     const recentPaymentTimestamp = useRef<number>(0);
 
   
-    // ✅ Add safety check for currentPrize
-    if (!currentPrize || !currentPrize.boxes) {
-      return (
-        <div className="flex items-center justify-center p-8 bg-white/50 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-600 rounded-full animate-spin"></div>
-            <p className="text-purple-900 font-medium">Loading auction data...</p>
-          </div>
-        </div>
-      );
-    }
+    // ✅ Removed early return to follow Rules of Hooks
+    // We handle the missing currentPrize case inside the main return statement instead.
 
 
 
@@ -546,16 +537,16 @@ interface PrizeShowcaseProps {
     );
   };
 
-  const entryBoxes = currentPrize.boxes.filter(box => box.type === 'entry');
+  const entryBoxes = currentPrize?.boxes?.filter(box => box.type === 'entry') || [];
   const hasAnyPaidEntry =
-    isLoggedIn && (isUserParticipating || currentPrize.userHasPaidEntry || entryBoxes.some(box => box.hasPaid));
+    isLoggedIn && (isUserParticipating || currentPrize?.userHasPaidEntry || entryBoxes.some(box => box.hasPaid));
 
-  const totalEntryFee = boxAFee + boxBFee;
+  const totalEntryFeeValue = boxAFee + boxBFee;
 
   const displayPrize =
-    liveAuctions.length > 0 ? liveAuctions[0].auctionName : currentPrize.prize;
+    liveAuctions.length > 0 ? liveAuctions[0].auctionName : currentPrize?.prize || '';
   const displayPrizeValue =
-    liveAuctions.length > 0 ? liveAuctions[0].prizeValue : currentPrize.prizeValue;
+    liveAuctions.length > 0 ? liveAuctions[0].prizeValue : currentPrize?.prizeValue || 0;
   const displayImage = liveAuctions.length > 0 ? liveAuctions[0].imageUrl : null;
   
   const displayProductImages: ProductImage[] = liveAuctions.length > 0 && liveAuctions[0].productImages && liveAuctions[0].productImages.length > 0
@@ -565,7 +556,7 @@ interface PrizeShowcaseProps {
     : [];
 
   // ✅ UPDATED: Simplified disable logic - removed timeLoading dependency
-  const isPayButtonDisabled = isLoading || totalEntryFee === 0 || paymentLoading || !isJoinWindowOpen;
+  const isPayButtonDisabled = isLoading || totalEntryFeeValue === 0 || paymentLoading || !isJoinWindowOpen;
 
   // Show "No Live Auction" state when there's no auction
   if (noLiveAuction && !isLoading) {
@@ -603,6 +594,18 @@ interface PrizeShowcaseProps {
 
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Safety check for currentPrize after all hooks have been called
+  if (!currentPrize || !currentPrize.boxes) {
+    return (
+      <div className="flex items-center justify-center p-8 bg-white/50 backdrop-blur-md rounded-2xl border border-white/40 shadow-xl">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-600 rounded-full animate-spin"></div>
+          <p className="text-purple-900 font-medium">Loading auction data...</p>
         </div>
       </div>
     );
@@ -754,79 +757,80 @@ interface PrizeShowcaseProps {
                                 </span>
                               </div>
                               <div className="flex items-center gap-0.5 sm:gap-1">
-                                <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
-                                {isLoading ? (
-                                  <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
-                                ) : (
-                                  <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
-                                    {totalEntryFee.toLocaleString('en-IN')}
-                                  </span>
-                                )}
+                                  <IndianRupee className="w-4  sm:w-5 h-5 text-[#6B3FA0]" />
+                                  {isLoading ? (
+                                    <div className="w-16 h-6 bg-gradient-to-r from-purple-200 to-purple-300 rounded animate-pulse"></div>
+                                  ) : (
+                                    <span className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-[#53317B] to-[#8456BC] bg-clip-text text-transparent">
+                                      {totalEntryFeeValue.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Join Window Status & Pay Button */}
-                      {isUpcoming ? (
-                        <div className="relative group/upcoming">
-                          <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-400/30 to-purple-500/30 rounded-xl blur-md opacity-40"></div>
-                          <div className="relative backdrop-blur-xl bg-gradient-to-br from-blue-50/90 to-purple-50/85 border-2 border-blue-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-blue-700">
-                              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-1 sm:p-1.5 rounded-lg shadow-md">
-                                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                              </div>
-                              <span className="text-xs sm:text-sm md:text-base font-bold">
-                                Opens at {liveAuctionData?.TimeSlot || currentPrize.auctionHour}
-                              </span>
-                            </div>
-                            <p className="text-[10px] sm:text-xs text-blue-600 mt-1 ml-6 sm:ml-8 font-medium">
-                              This auction is scheduled to start soon. Check back then!
-                            </p>
-                                  <Button
-                                    disabled={true}
-                                    className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
-                                  >
-                                    {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingCountdown})
-                                  </Button>
-
-                          </div>
-                        </div>
-                      ) : !isJoinWindowOpen ? (
-                        <div className="relative group/closed">
-                          <div className="absolute -inset-[1px] bg-gradient-to-r from-red-400/30 to-orange-500/30 rounded-xl blur-md opacity-40"></div>
-                          <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-50/90 to-orange-50/85 border-2 border-red-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
-                            <div className="flex items-center gap-1.5 sm:gap-2 text-red-700">
-                              <div className="bg-gradient-to-br from-red-500 to-orange-600 p-1 sm:p-1.5 rounded-lg shadow-md">
-                                <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                              </div>
-                              <span className="text-xs sm:text-sm md:text-base font-bold">
-                                Join Window Closed
-                              </span>
-                            </div>
-                            <p className="text-[10px] sm:text-xs text-red-600 mt-1 ml-6 sm:ml-8 font-medium">
-                              You can only join within the first 15 minutes of each hour.
-                            </p>
-                            
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          {/* Pay Now Button */}
-                          {isLoggedIn ? (
-                            <>
-                              <Button
-                                onClick={handlePayEntry}
-                                disabled={isPayButtonDisabled}
-                                className="w-full relative overflow-hidden bg-gradient-to-r from-[#6B3FA0] via-[#8456BC] to-[#9F7ACB] text-white hover:from-[#8456BC] hover:via-[#9F7ACB] hover:to-[#B99FD9] shadow-xl text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] group/button disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-                                  <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                  <span>
-                                    {paymentLoading ? 'Processing...' : `Pay Now - ₹${totalEntryFee.toLocaleString('en-IN')}`}
-                                  </span>
+                        {/* Join Window Status & Pay Button */}
+                        {isUpcoming ? (
+                          <div className="relative group/upcoming">
+                            <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-400/30 to-purple-500/30 rounded-xl blur-md opacity-40"></div>
+                            <div className="relative backdrop-blur-xl bg-gradient-to-br from-blue-50/90 to-purple-50/85 border-2 border-blue-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-blue-700">
+                                <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-1 sm:p-1.5 rounded-lg shadow-md">
+                                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                </div>
+                                <span className="text-xs sm:text-sm md:text-base font-bold">
+                                  Opens at {liveAuctionData?.TimeSlot || currentPrize.auctionHour}
                                 </span>
+                              </div>
+                              <p className="text-[10px] sm:text-xs text-blue-600 mt-1 ml-6 sm:ml-8 font-medium">
+                                This auction is scheduled to start soon. Check back then!
+                              </p>
+                                    <Button
+                                      disabled={true}
+                                      className="w-full mt-3 relative overflow-hidden bg-gray-400 text-white shadow-none text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold cursor-not-allowed opacity-70"
+                                    >
+                                      {liveAuctionData?.TimeSlot || currentPrize.auctionHour} (Starts in {upcomingCountdown})
+                                    </Button>
+
+                            </div>
+                          </div>
+                        ) : !isJoinWindowOpen ? (
+                          <div className="relative group/closed">
+                            <div className="absolute -inset-[1px] bg-gradient-to-r from-red-400/30 to-orange-500/30 rounded-xl blur-md opacity-40"></div>
+                            <div className="relative backdrop-blur-xl bg-gradient-to-br from-red-50/90 to-orange-50/85 border-2 border-red-300/50 rounded-xl p-2.5 sm:p-3 shadow-lg">
+                              <div className="flex items-center gap-1.5 sm:gap-2 text-red-700">
+                                <div className="bg-gradient-to-br from-red-500 to-orange-600 p-1 sm:p-1.5 rounded-lg shadow-md">
+                                  <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                </div>
+                                <span className="text-xs sm:text-sm md:text-base font-bold">
+                                  Join Window Closed
+                                </span>
+                              </div>
+                              <p className="text-[10px] sm:text-xs text-red-600 mt-1 ml-6 sm:ml-8 font-medium">
+                                You can only join within the first 15 minutes of each hour.
+                              </p>
+                              
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Pay Now Button */}
+                            {isLoggedIn ? (
+                              <>
+                                <Button
+                                  onClick={handlePayEntry}
+                                  disabled={isPayButtonDisabled}
+                                  className="w-full relative overflow-hidden bg-gradient-to-r from-[#6B3FA0] via-[#8456BC] to-[#9F7ACB] text-white hover:from-[#8456BC] hover:via-[#9F7ACB] hover:to-[#B99FD9] shadow-xl text-xs sm:text-sm md:text-base py-2 sm:py-2.5 md:py-3 rounded-xl font-bold transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] group/button disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <span className="relative z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                                    <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <span>
+                                      {paymentLoading ? 'Processing...' : `Pay Now - ₹${totalEntryFeeValue.toLocaleString('en-IN')}`}
+                                    </span>
+                                  </span>
+
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-1000"></div>
                               </Button>
 

@@ -765,10 +765,11 @@ const autoActivateAuctions = async () => {
           console.log(`  ➕ [AUTO-ACTIVATE] Created missing local auction doc for ${ext.hourlyAuctionId} (TimeSlot ${ext.TimeSlot})`);
         }
 
-        // ✅ CRITICAL FIX: Skip auctions that are already COMPLETED
+        // ✅ CRITICAL FIX: Skip auctions that are already COMPLETED or CANCELLED
         // This prevents re-activating auctions that completed early (≤3 qualified players)
-        if (local.Status === 'COMPLETED') {
-          console.log(`  ⏭️ [AUTO-ACTIVATE] Skipping ${local.hourlyAuctionCode || local.hourlyAuctionId} - Already COMPLETED`);
+        // or were manually cancelled by an admin.
+        if (local.Status === 'COMPLETED' || local.Status === 'CANCELLED') {
+          console.log(`  ⏭️ [AUTO-ACTIVATE] Skipping ${local.hourlyAuctionCode || local.hourlyAuctionId} - Status: ${local.Status}`);
           continue;
         }
 
