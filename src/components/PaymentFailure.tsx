@@ -60,67 +60,68 @@ interface PaymentFailureProps {
     };
   }, [onBackToHome]);
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-[#05010D]/90 backdrop-blur-2xl overflow-y-auto font-sans">
-      <motion.div 
-        className="w-full max-w-4xl h-full max-h-[70vh] relative group/modal flex flex-col sm:flex-row overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl"
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Visual Status */}
-        <div className="w-full sm:w-2/5 p-8 flex flex-col items-center justify-center text-center relative overflow-hidden bg-gradient-to-br from-rose-600 to-red-800">
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", delay: 0.2 }}
-            className="relative z-10 mb-6"
-          >
-            <XCircle className="w-20 h-20 text-white drop-shadow-2xl" strokeWidth={2.5} />
-          </motion.div>
-          <div className="relative z-10">
-            <h2 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase">Payment Failed</h2>
-            <p className="text-white/70 text-sm font-medium">Something went wrong with your transaction</p>
-          </div>
-          <div className="mt-8 relative z-10 w-full">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
-              <span className="text-white/60 text-xs font-bold uppercase tracking-widest block mb-1">Attempted Amount</span>
-              <div className="flex items-center justify-center gap-1 text-4xl font-black text-white">
-                <IndianRupee className="w-6 h-6" />
-                {amount.toLocaleString('en-IN')}
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#05010D]/95 backdrop-blur-2xl overflow-y-auto font-sans">
+        <motion.div 
+          className="w-full max-w-4xl h-auto sm:h-[600px] max-h-[90vh] relative group/modal flex flex-col sm:flex-row overflow-hidden rounded-[2rem] sm:rounded-[3rem] border border-white/10 shadow-2xl"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Visual Status */}
+          <div className="w-full sm:w-[350px] p-8 flex flex-col items-center justify-center text-center relative overflow-hidden bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-rose-400 via-red-600 to-orange-900">
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.2 }}
+              className="relative z-10 mb-6"
+            >
+              <div className="w-24 h-24 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/30 shadow-inner">
+                <XCircle className="w-12 h-12 text-white drop-shadow-2xl" strokeWidth={3} />
+              </div>
+            </motion.div>
+            <div className="relative z-10">
+              <h2 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase">Failed</h2>
+              <p className="text-white/80 text-sm font-medium px-4">Your payment could not be processed at this time</p>
+            </div>
+            <div className="mt-8 relative z-10 w-full px-2">
+              <div className="bg-black/20 backdrop-blur-md rounded-2xl p-5 border border-white/10 shadow-lg">
+                <span className="text-white/60 text-[10px] font-black uppercase tracking-widest block mb-1 text-center">Attempted Amount</span>
+                <div className="flex items-center justify-center gap-1 text-4xl font-black text-white">
+                  <IndianRupee className="w-6 h-6 opacity-70" strokeWidth={3} />
+                  {amount.toLocaleString('en-IN')}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Details & Actions */}
-        <div className="w-full sm:w-3/5 bg-white p-6 sm:p-10 flex flex-col h-full overflow-y-auto">
-          <div className="flex-1 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Transaction Summary</h3>
-              {onClose && <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button>}
-            </div>
-
-            <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 flex items-start gap-3">
-              <div className="p-2 bg-white rounded-xl shadow-sm">
-                <XCircle className="w-5 h-5 text-rose-600" />
+  
+          {/* Details & Actions */}
+          <div className="flex-1 bg-white p-6 sm:p-10 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto space-y-6 pr-1 custom-scrollbar">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">Transaction Summary</h3>
+                {onClose && <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button>}
               </div>
-              <div>
-                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest block mb-1">Error Message</span>
-                <p className="text-sm font-bold text-rose-800 leading-tight">{errorMessage}</p>
+  
+              <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 flex items-start gap-3">
+                <div className="p-2 bg-white rounded-xl shadow-sm">
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest block mb-1">Error Message</span>
+                  <p className="text-sm font-bold text-rose-800 leading-tight">{errorMessage}</p>
+                </div>
               </div>
-            </div>
-
+  
               <div className="grid grid-cols-1 gap-3">
-                <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-purple-600" />} />
-                <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-purple-600" />} />
-                <DetailRow label="Time" value={txnData?.transactionTime || new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-purple-600" />} />
+                <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-rose-600" />} />
+                <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-rose-600" />} />
+                <DetailRow label="Time" value={txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-rose-600" />} />
               </div>
-
-          </div>
-
-          <div className="mt-8 space-y-4">
+            </div>
+  
+            <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">
             <Button 
               onClick={onRetry}
               className="w-full h-14 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-2xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
