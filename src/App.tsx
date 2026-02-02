@@ -1057,7 +1057,7 @@ const App = () => {
       case 'support-chat': return <SupportChatPage onBack={handleBackToGame} onNavigate={handleNavigate} />;
       case 'tester-feedback': return <TesterFeedback user={currentUser} onBack={handleBackToGame} />;
       case 'transactions': return currentUser ? <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} /> : null;
-      case 'prizeshowcase': return <BrowserRouter><PrizeShowcasePage onBack={handleBackToGame} onJoinAuction={() => { handleBackToGame(); setTimeout(() => document.getElementById('auction-grid')?.scrollIntoView({ behavior: 'smooth' }), 100); }} hourlyAuctionId={selectedPrizeShowcaseAuctionId} /></BrowserRouter>;
+      case 'prizeshowcase': return <PrizeShowcasePage onBack={handleBackToGame} onJoinAuction={() => { handleBackToGame(); setTimeout(() => document.getElementById('auction-grid')?.scrollIntoView({ behavior: 'smooth' }), 100); }} hourlyAuctionId={selectedPrizeShowcaseAuctionId} />;
         case 'payment-success': return <PaymentSuccess 
           amount={showEntrySuccess?.amount || showEntrySuccess?.entryFee || 0} 
           type={showEntrySuccess?.type || 'entry'} 

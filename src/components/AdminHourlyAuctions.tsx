@@ -15,6 +15,8 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [serverTime, setServerTime] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('live');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [auctionToCancel, setAuctionToCancel] = useState<any>(null);
 
   const fetchHourlyAuctions = async () => {
     setIsLoading(true);
@@ -46,19 +48,19 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
     return () => clearInterval(interval);
   }, [adminUserId]);
 
-  const handleCancelAuction = async (auction: any) => {
-    if (!confirm(`Are you sure you want to CANCEL this auction (${auction.auctionName})? This will refund all participants and send notifications.`)) {
-      return;
-    }
+  const handleCancelAuction = async () => {
+    if (!auctionToCancel) return;
 
     try {
-      const response = await fetch(`${API_BASE}/admin/hourly-auctions/${auction.hourlyAuctionId}/cancel?user_id=${adminUserId}`, {
+      const response = await fetch(`${API_BASE}/admin/hourly-auctions/${auctionToCancel.hourlyAuctionId}/cancel?user_id=${adminUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       const data = await response.json();
       if (data.success) {
         toast.success('Auction cancelled and refunds initiated');
+        setShowCancelModal(false);
+        setAuctionToCancel(null);
         fetchHourlyAuctions();
       } else {
         toast.error(data.message || 'Failed to cancel auction');
@@ -249,15 +251,18 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
                       <ShieldAlert className="w-4 h-4" />
                       CANCELLED & REFUNDED
                     </div>
-                  ) : cancelAvailable ? (
-                    <button
-                      onClick={() => handleCancelAuction(auction)}
-                      className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 uppercase tracking-wider"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      Cancel Auction
-                    </button>
-                  ) : auction.Status === 'COMPLETED' ? (
+                    ) : cancelAvailable ? (
+                      <button
+                        onClick={() => {
+                          setAuctionToCancel(auction);
+                          setShowCancelModal(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 uppercase tracking-wider"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Cancel Auction
+                      </button>
+                    ) : auction.Status === 'COMPLETED' ? (
                     <div className="text-center text-[10px] text-green-600 font-black flex items-center justify-center gap-1 bg-green-50 py-2 rounded-lg border border-green-100">
                       <CheckCircle2 className="w-4 h-4" />
                       AUCTION COMPLETED
@@ -274,6 +279,68 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {showCancelModal && auctionToCancel && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border-2 border-red-100"
+            >
+              <div className="bg-red-50 p-6 flex flex-col items-center text-center">
+                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 ring-8 ring-red-50">
+                  <ShieldAlert className="w-10 h-10 text-red-600" />
+                </div>
+                <h3 className="text-2xl font-black text-red-900 mb-2">Cancel Auction?</h3>
+                <p className="text-red-700 font-medium leading-relaxed">
+                  Are you sure you want to cancel the <span className="font-black underline">"{auctionToCancel.auctionName}"</span> auction at <span className="font-black">{auctionToCancel.TimeSlot}</span>?
+                </p>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="bg-red-50/50 rounded-2xl p-4 border border-red-100 space-y-3">
+                  <div className="flex items-center gap-3 text-red-800">
+                    <CheckCircle2 className="w-5 h-5 text-red-500" />
+                    <span className="text-sm font-bold">All {auctionToCancel.participants?.length || 0} participants will be refunded</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-red-800">
+                    <CheckCircle2 className="w-5 h-5 text-red-500" />
+                    <span className="text-sm font-bold">Slot will be locked and marked as cancelled</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-red-800">
+                    <CheckCircle2 className="w-5 h-5 text-red-500" />
+                    <span className="text-sm font-bold">Push notifications will be sent to players</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setAuctionToCancel(null);
+                    }}
+                    className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all active:scale-95"
+                  >
+                    No, Keep It
+                  </button>
+                  <button
+                    onClick={handleCancelAuction}
+                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-red-200 active:scale-95"
+                  >
+                    Yes, Cancel
+                  </button>
+                </div>
+                
+                <p className="text-[10px] text-center text-red-400 font-bold uppercase tracking-widest">
+                  This action cannot be undone
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

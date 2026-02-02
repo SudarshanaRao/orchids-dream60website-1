@@ -34,9 +34,9 @@ export function AdminRefundManagement({ adminUserId }: AdminRefundManagementProp
     fetchRefunds();
   }, [adminUserId]);
 
-  const handleUpdateStatus = async (refundId: string, status: string) => {
+  const handleUpdateStatus = async (refundId: string, status: string, playerId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/admin/refunds/${refundId}?user_id=${adminUserId}`, {
+      const response = await fetch(`${API_BASE}/admin/refunds/${refundId}?user_id=${playerId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -191,10 +191,10 @@ export function AdminRefundManagement({ adminUserId }: AdminRefundManagementProp
                     </td>
                     <td className="py-4 px-4 text-right">
                       {refund.status === 'PENDING' && (
-                        <button 
-                          onClick={() => handleUpdateStatus(refund.id, 'COMPLETED')}
-                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                        >
+                          <button 
+                            onClick={() => handleUpdateStatus(refund.id, 'COMPLETED', refund.userId || refund.playerId)}
+                            className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+                          >
                           Mark Processed
                         </button>
                       )}
