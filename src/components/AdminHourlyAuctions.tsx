@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Trophy, IndianRupee, Users, Search, RefreshCw, XCircle, AlertCircle, ShieldAlert, CheckCircle2, PlayCircle } from 'lucide-react';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 import { toast } from 'sonner';

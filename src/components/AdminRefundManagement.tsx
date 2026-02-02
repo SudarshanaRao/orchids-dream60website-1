@@ -36,7 +36,7 @@ export function AdminRefundManagement({ adminUserId }: AdminRefundManagementProp
 
   const handleUpdateStatus = async (refundId: string, status: string, playerId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/admin/refunds/${refundId}?user_id=${playerId}`, {
+      const response = await fetch(`${API_BASE}/admin/refunds/${refundId}?user_id=${adminUserId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
