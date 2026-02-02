@@ -98,16 +98,6 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       transactionDetail: `${API_BASE_URL}/user/transactions`,
     },
 
-  
-    // Razorpay Payments
-    razorpay: {
-      createOrder: `${API_BASE_URL}/api/razorpay/hourly/create-order`,
-      verifyPayment: `${API_BASE_URL}/api/razorpay/hourly/verify-payment`,
-      prizeClaimCreateOrder: `${API_BASE_URL}/api/razorpay/prize-claim/create-order`,
-      prizeClaimVerifyPayment: `${API_BASE_URL}/api/razorpay/prize-claim/verify-payment`,
-      billingPortal: `${API_BASE_URL}/api/billing-portal`,
-    },
-
       // Airpay Payments
       airpay: {
         createOrder: `${API_BASE_URL}/api/airpay/create-order`,
