@@ -448,18 +448,16 @@ const App = () => {
               upiId: airpayData.upiId,
               bankName: airpayData.bankName,
               cardName: airpayData.cardName,
-              cardNumber: airpayData.cardNumber
-            } as any);
-            document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            window.history.pushState({}, '', '/');
-          } catch (e) {
-            console.error("Error parsing airpay cookie", e);
+                cardNumber: airpayData.cardNumber
+              } as any);
+              document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            } catch (e) {
+              console.error("Error parsing airpay cookie", e);
+            }
+          } else if (txnId) {
+            setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
           }
-        } else if (txnId) {
-          setShowEntryFailure(prev => prev ? { ...prev, transactionId: txnId } as any : { entryFee: 0, errorMessage: 'Payment failed', transactionId: txnId } as any);
-          window.history.pushState({}, '', '/');
         }
-      }
       else if (path === '/history' || path.startsWith('/history/')) {
         setCurrentPage('history');
         if (path === '/history') {

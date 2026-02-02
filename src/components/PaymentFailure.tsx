@@ -115,10 +115,10 @@ interface PaymentFailureProps {
               </div>
   
               <div className="grid grid-cols-1 gap-3">
-                <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-rose-600" />} />
-                <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-rose-600" />} />
-                <DetailRow label="Time" value={txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || new Date().toLocaleString()} icon={<Clock className="w-4 h-4 text-rose-600" />} />
-              </div>
+                  <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-4 h-4 text-rose-600" />} />
+                  <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-4 h-4 text-rose-600" />} />
+                  <DetailRow label="Time" value={txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || 'N/A'} icon={<Clock className="w-4 h-4 text-rose-600" />} />
+                </div>
             </div>
   
             <div className="mt-8 pt-6 border-t border-gray-100 space-y-4">

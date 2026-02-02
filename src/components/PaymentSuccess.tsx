@@ -80,7 +80,7 @@ export function PaymentSuccess({
     const upiId = txnData?.upiId || initialUpiId;
     const bankName = txnData?.bankName || initialBankName;
     const productName = initialProductName || txnData?.productName || (type === 'entry' ? 'Auction Entry' : 'Winner Claim');
-    const displayTime = txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || new Date().toLocaleString();
+    const displayTime = txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || 'N/A';
 
     const downloadReceipt = () => {
       const doc = new jsPDF();
