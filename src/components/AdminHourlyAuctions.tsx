@@ -117,13 +117,152 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
     all: auctions.length
   }), [auctions]);
 
+  const handleManualReset = async () => {
+    if (!confirm('Are you sure you want to trigger a manual midnight reset? This will create new auctions for today if they don\'t exist.')) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/scheduler/midnight-reset`, { method: 'POST' });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Reset triggered successfully');
+        fetchHourlyAuctions();
+      } else {
+        toast.error(data.message || 'Failed to trigger reset');
+      }
+    } catch (error) {
+      toast.error('Error triggering reset');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const AuctionGrid = ({ items }: { items: any[] }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.length === 0 ? (
+        <div className="col-span-full py-12 text-center bg-white rounded-xl border-2 border-dashed border-purple-200">
+          <AlertCircle className="w-12 h-12 text-purple-200 mx-auto mb-3" />
+          <p className="text-purple-600 font-medium">No auctions found in this category</p>
+        </div>
+      ) : items.map((auction, idx) => {
+        const cancelAvailable = canCancel(auction);
+        return (
+          <div key={idx} className={`bg-white rounded-xl shadow-md p-5 border-2 transition-all hover:shadow-lg ${
+            auction.Status === 'CANCELLED' ? 'border-red-200 bg-red-50/30' : 
+            auction.Status === 'LIVE' ? 'border-green-300 shadow-green-50 ring-2 ring-green-100 ring-offset-2' : 
+            auction.Status === 'COMPLETED' ? 'border-purple-100 opacity-90' :
+            'border-purple-100'
+          }`}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${
+                  auction.Status === 'CANCELLED' ? 'bg-red-100' : 
+                  auction.Status === 'LIVE' ? 'bg-green-100' :
+                  'bg-purple-100'
+                }`}>
+                  <Clock className={`w-5 h-5 ${
+                    auction.Status === 'CANCELLED' ? 'text-red-700' : 
+                    auction.Status === 'LIVE' ? 'text-green-700' :
+                    'text-purple-700'
+                  }`} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-purple-600">{auction.TimeSlot}</p>
+                  <h3 className="font-black text-purple-900 truncate max-w-[180px]" title={auction.auctionName}>
+                    {auction.auctionName}
+                  </h3>
+                </div>
+              </div>
+              <Badge className={`border uppercase text-[10px] font-black ${
+                auction.Status === 'LIVE' ? 'bg-green-100 text-green-700 border-green-200' :
+                auction.Status === 'CANCELLED' ? 'bg-red-100 text-red-700 border-red-200' :
+                auction.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                'bg-gray-100 text-gray-700 border-gray-200'
+              }`}>
+                {auction.Status}
+              </Badge>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                  <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Participants</span>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3 text-purple-700" />
+                    <span className="font-black text-purple-900">{auction.participants?.length || 0}</span>
+                  </div>
+                </div>
+                <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                  <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-3 h-3 text-purple-700" />
+                    <span className="font-black text-purple-900">{auction.currentRound || 1} / 4</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                <span className="text-[10px] text-amber-700 uppercase font-bold block mb-1">Prize Value</span>
+                <div className="flex items-center gap-1">
+                  <IndianRupee className="w-3 h-3 text-amber-700" />
+                  <span className="font-black text-amber-900">₹{auction.prizeValue?.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+              
+              <div className="pt-3 border-t border-purple-100">
+                {auction.Status === 'CANCELLED' ? (
+                  <div className="flex items-center gap-2 text-red-600 text-[10px] font-black justify-center bg-red-100/50 py-2 rounded-lg border border-red-200">
+                    <ShieldAlert className="w-4 h-4" />
+                    CANCELLED & REFUNDED
+                  </div>
+                  ) : cancelAvailable ? (
+                    <button
+                      onClick={() => {
+                        setAuctionToCancel(auction);
+                        setShowCancelModal(true);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 uppercase tracking-wider"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Cancel Auction
+                    </button>
+                  ) : auction.Status === 'COMPLETED' ? (
+                  <div className="text-center text-[10px] text-green-600 font-black flex items-center justify-center gap-1 bg-green-50 py-2 rounded-lg border border-green-100">
+                    <CheckCircle2 className="w-4 h-4" />
+                    AUCTION COMPLETED
+                  </div>
+                ) : (
+                  <div className="text-center text-[10px] text-gray-400 font-bold flex items-center justify-center gap-1 py-2">
+                    <AlertCircle className="w-3 h-3" />
+                    Cancellation window closed
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-purple-900">Today's Hourly Slots</h2>
-            <p className="text-xs text-purple-600">Manage and monitor daily auction operations</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-purple-900">Today's Hourly Slots</h2>
+              <p className="text-xs text-purple-600">Manage and monitor daily auction operations</p>
+            </div>
+            {auctions.length === 0 && !isLoading && (
+              <button
+                onClick={handleManualReset}
+                className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold border border-amber-200 hover:bg-amber-200 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Force Create Slots
+              </button>
+            )}
           </div>
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
@@ -146,139 +285,57 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
 
         <div className="mt-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-5 w-full bg-purple-50 p-1 rounded-xl border border-purple-100">
-              <TabsTrigger value="live" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
+            <TabsList className="grid grid-cols-5 w-full bg-purple-50 p-1 rounded-xl border border-purple-100 h-auto">
+              <TabsTrigger value="live" className="rounded-lg py-2.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
                 <PlayCircle className="w-4 h-4 mr-2 text-green-600" />
                 Live ({stats.live})
               </TabsTrigger>
-              <TabsTrigger value="upcoming" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
+              <TabsTrigger value="upcoming" className="rounded-lg py-2.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
                 <Clock className="w-4 h-4 mr-2 text-blue-600" />
                 Upcoming ({stats.upcoming})
               </TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
+              <TabsTrigger value="completed" className="rounded-lg py-2.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
                 <CheckCircle2 className="w-4 h-4 mr-2 text-purple-600" />
                 Done ({stats.completed})
               </TabsTrigger>
-              <TabsTrigger value="cancelled" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
+              <TabsTrigger value="cancelled" className="rounded-lg py-2.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
                 <XCircle className="w-4 h-4 mr-2 text-red-600" />
                 Cancelled ({stats.cancelled})
               </TabsTrigger>
-              <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
+              <TabsTrigger value="all" className="rounded-lg py-2.5 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-sm">
                 All ({stats.all})
               </TabsTrigger>
             </TabsList>
+
+            <div className="mt-6">
+              {isLoading && auctions.length === 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map(i => (
+                    <div key={i} className="bg-white rounded-xl h-48 animate-pulse border-2 border-purple-100" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <TabsContent value="live">
+                    <AuctionGrid items={filteredAuctions} />
+                  </TabsContent>
+                  <TabsContent value="upcoming">
+                    <AuctionGrid items={filteredAuctions} />
+                  </TabsContent>
+                  <TabsContent value="completed">
+                    <AuctionGrid items={filteredAuctions} />
+                  </TabsContent>
+                  <TabsContent value="cancelled">
+                    <AuctionGrid items={filteredAuctions} />
+                  </TabsContent>
+                  <TabsContent value="all">
+                    <AuctionGrid items={filteredAuctions} />
+                  </TabsContent>
+                </>
+              )}
+            </div>
           </Tabs>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading && auctions.length === 0 ? (
-          [1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="bg-white rounded-xl h-48 animate-pulse border-2 border-purple-100" />
-          ))
-        ) : filteredAuctions.length === 0 ? (
-          <div className="col-span-full py-12 text-center bg-white rounded-xl border-2 border-dashed border-purple-200">
-            <AlertCircle className="w-12 h-12 text-purple-200 mx-auto mb-3" />
-            <p className="text-purple-600 font-medium">No auctions found in this category</p>
-          </div>
-        ) : filteredAuctions.map((auction, idx) => {
-          const cancelAvailable = canCancel(auction);
-          return (
-            <div key={idx} className={`bg-white rounded-xl shadow-md p-5 border-2 transition-all hover:shadow-lg ${
-              auction.Status === 'CANCELLED' ? 'border-red-200 bg-red-50/30' : 
-              auction.Status === 'LIVE' ? 'border-green-300 shadow-green-50 ring-2 ring-green-100 ring-offset-2' : 
-              auction.Status === 'COMPLETED' ? 'border-purple-100 opacity-90' :
-              'border-purple-100'
-            }`}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    auction.Status === 'CANCELLED' ? 'bg-red-100' : 
-                    auction.Status === 'LIVE' ? 'bg-green-100' :
-                    'bg-purple-100'
-                  }`}>
-                    <Clock className={`w-5 h-5 ${
-                      auction.Status === 'CANCELLED' ? 'text-red-700' : 
-                      auction.Status === 'LIVE' ? 'text-green-700' :
-                      'text-purple-700'
-                    }`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-purple-600">{auction.TimeSlot}</p>
-                    <h3 className="font-black text-purple-900 truncate max-w-[180px]" title={auction.auctionName}>
-                      {auction.auctionName}
-                    </h3>
-                  </div>
-                </div>
-                <Badge className={`border uppercase text-[10px] font-black ${
-                  auction.Status === 'LIVE' ? 'bg-green-100 text-green-700 border-green-200' :
-                  auction.Status === 'CANCELLED' ? 'bg-red-100 text-red-700 border-red-200' :
-                  auction.Status === 'UPCOMING' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                  'bg-gray-100 text-gray-700 border-gray-200'
-                }`}>
-                  {auction.Status}
-                </Badge>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                    <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Participants</span>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3 text-purple-700" />
-                      <span className="font-black text-purple-900">{auction.participants?.length || 0}</span>
-                    </div>
-                  </div>
-                  <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                    <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-purple-700" />
-                      <span className="font-black text-purple-900">{auction.currentRound || 1} / 4</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-amber-50/50 p-2 rounded-lg border border-amber-100">
-                  <span className="text-[10px] text-amber-700 uppercase font-bold block mb-1">Prize Value</span>
-                  <div className="flex items-center gap-1">
-                    <IndianRupee className="w-3 h-3 text-amber-700" />
-                    <span className="font-black text-amber-900">₹{auction.prizeValue?.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-                
-                <div className="pt-3 border-t border-purple-100">
-                  {auction.Status === 'CANCELLED' ? (
-                    <div className="flex items-center gap-2 text-red-600 text-[10px] font-black justify-center bg-red-100/50 py-2 rounded-lg border border-red-200">
-                      <ShieldAlert className="w-4 h-4" />
-                      CANCELLED & REFUNDED
-                    </div>
-                    ) : cancelAvailable ? (
-                      <button
-                        onClick={() => {
-                          setAuctionToCancel(auction);
-                          setShowCancelModal(true);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg font-black text-xs transition-all shadow-md active:scale-95 uppercase tracking-wider"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Cancel Auction
-                      </button>
-                    ) : auction.Status === 'COMPLETED' ? (
-                    <div className="text-center text-[10px] text-green-600 font-black flex items-center justify-center gap-1 bg-green-50 py-2 rounded-lg border border-green-100">
-                      <CheckCircle2 className="w-4 h-4" />
-                      AUCTION COMPLETED
-                    </div>
-                  ) : (
-                    <div className="text-center text-[10px] text-gray-400 font-bold flex items-center justify-center gap-1 py-2">
-                      <AlertCircle className="w-3 h-3" />
-                      Cancellation window closed
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <AnimatePresence>

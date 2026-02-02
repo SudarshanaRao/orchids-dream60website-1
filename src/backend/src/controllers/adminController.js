@@ -957,7 +957,7 @@ const getRefunds = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
-    const refunds = await Refund.find().sort({ createdAt: -1 }).lean();
+    const refunds = await Refund.find().sort({ createdAt: -1 });
     return res.status(200).json({ success: true, data: refunds });
   } catch (err) {
     console.error('Get Refunds Error:', err);
@@ -971,8 +971,16 @@ const getRefunds = async (req, res) => {
 const updateRefundStatus = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    console.log(`[ADMIN-AUTH] Checking user_id: ${userId} for updateRefundStatus`);
+    
     const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    if (!adminUser) {
+      console.error(`[ADMIN-AUTH] User not found: ${userId}`);
+      return res.status(403).json({ success: false, message: 'Access denied. Admin user not found.' });
+    }
+    
+    if (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin) {
+      console.error(`[ADMIN-AUTH] User ${userId} is not an admin. Type: ${adminUser.userType}, Super: ${adminUser.isSuperAdmin}`);
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
