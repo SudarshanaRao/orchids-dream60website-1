@@ -541,7 +541,7 @@ function getFrontendUrl() {
   const origins = allowedOriginsRaw.split(',').map(o => o.trim()).filter(Boolean);
   
   let frontendUrl = 'http://localhost:3000';
-  if (process.env.VITE_ENVIRONMENT === 'production') {
+  if (process.env.NODE_ENV === 'production') {
     frontendUrl = 'https://dream60.com';
   } else if (origins.some(o => o.includes('test.dream60.com'))) {
     frontendUrl = 'https://test.dream60.com';
