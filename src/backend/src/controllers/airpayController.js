@@ -187,8 +187,6 @@ async function getAirpayRedirectData(reqBody) {
     
     // Determine the base URL for callbacks/redirects
     const getBaseUrl = () => {
-        if (process.env.API_BASE_URL) return process.env.API_BASE_URL;
-        
         // Fallback detection logic
         if (process.env.VITE_ENVIRONMENT === 'production' || process.env.NODE_ENV === 'production') {
             return 'https://prod-api.dream60.com';
