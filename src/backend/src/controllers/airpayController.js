@@ -185,16 +185,18 @@ async function getAirpayRedirectData(reqBody) {
     const customVarData = reqBody.userId || reqBody.customvar || '';
     const [userId, auctionId, paymentType] = customVarData.split(':');
     
-    // Determine the base URL for callbacks/redirects
-    const getBaseUrl = () => {
-        // Fallback detection logic
-        if (process.env.VITE_ENVIRONMENT === 'production' || process.env.NODE_ENV === 'production') {
-            return 'https://prod-api.dream60.com';
-        }
-        return 'https://dev-api.dream60.com';
-    };
+      // Determine the base URL for callbacks/redirects
+      const getBaseUrl = () => {
+          const envApiUrl = process.env.VITE_BACKEND_API_URL;
+          if (envApiUrl) return envApiUrl;
 
-    const baseUrl = getBaseUrl();
+          if (process.env.NODE_ENV === 'production') {
+              return 'https://prod-api.dream60.com';
+          }
+          return 'https://dev-api.dream60.com';
+      };
+
+      const baseUrl = getBaseUrl();
 
     if (userId) {
         try {
