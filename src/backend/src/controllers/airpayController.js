@@ -83,21 +83,21 @@ const syncParticipantToDailyAuction = async (hourlyAuction, participantData) => 
 
 // Helper functions matching documentation EXACTLY as provided in snippets
 function decrypt(responsedata, secretKey) {
-  let data = responsedata;
-  console.log('Decrypt function input', responsedata)
+  const data = responsedata || '';
+  console.log('Decrypt function input:', data.slice(0, 50) + '...');
   try {
-    const hash = crypto.createHash('sha256').update(data).digest();
-    const iv = hash.slice(0, 16);
-    console.log('iv', iv);
+    // Airpay prepends a 16-character IV to the encrypted response
+    const ivHex = data.slice(0, 16);
+    const iv = Buffer.from(ivHex, 'utf-8');
     const encryptedData = Buffer.from(data.slice(16), 'base64');
+
     const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey, 'utf-8'), iv);
     let decrypted = decipher.update(encryptedData, 'binary', 'utf8');
-    console.log(decrypted);
-    decrypted += decipher.final();
-    console.log('decrypted>>>>>>>>>')
+    decrypted += decipher.final('utf8');
+    console.log('Decryption successful');
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    console.error('Decryption error:', error.message);
     throw error; // Re-throw for proper handling
   }
 }
