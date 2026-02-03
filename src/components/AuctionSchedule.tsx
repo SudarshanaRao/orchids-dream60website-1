@@ -131,32 +131,34 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                 const timeStr = `${auctionHour.toString().padStart(2, '0')}:${auctionMinute?.toString().padStart(2, '0') || '00'}`;
 
               
-                let status = 'upcoming';
-                let winner = null;
-                let isPrizeClaimed = false;
-                
-                  if (currentAuctionData.Status === 'LIVE') {
-                    status = 'active';
-                  } else if (currentAuctionData.Status === 'COMPLETED') {
-                    status = 'completed';
-                    if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
-                      // Find actual claimant first (anyone with CLAIMED status or isPrizeClaimed true)
-                      const actualClaimant = currentAuctionData.topWinners.find((w: any) => 
-                        w.prizeClaimStatus === 'CLAIMED' || w.isPrizeClaimed === true
-                      );
-                      const rank1Winner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
-                      
-                      if (actualClaimant) {
-                        winner = actualClaimant.playerUsername;
-                        isPrizeClaimed = true;
-                      } else if (rank1Winner) {
-                        winner = rank1Winner.playerUsername;
-                        isPrizeClaimed = rank1Winner.isPrizeClaimed || false;
+                  let status = 'upcoming';
+                  let winner = null;
+                  let isPrizeClaimed = false;
+                  
+                    if (currentAuctionData.Status === 'LIVE') {
+                      status = 'active';
+                    } else if (currentAuctionData.Status === 'COMPLETED') {
+                      status = 'completed';
+                      if (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0) {
+                        // Find actual claimant first (anyone with CLAIMED status or isPrizeClaimed true)
+                        const actualClaimant = currentAuctionData.topWinners.find((w: any) => 
+                          w.prizeClaimStatus === 'CLAIMED' || w.isPrizeClaimed === true
+                        );
+                        const rank1Winner = currentAuctionData.topWinners.find((w: any) => w.rank === 1);
+                        
+                        if (actualClaimant) {
+                          winner = actualClaimant.playerUsername;
+                          isPrizeClaimed = true;
+                        } else if (rank1Winner) {
+                          winner = rank1Winner.playerUsername;
+                          isPrizeClaimed = rank1Winner.isPrizeClaimed || false;
+                        }
                       }
+                    } else if (currentAuctionData.Status === 'CANCELLED') {
+                      status = 'cancelled';
+                    } else if (currentAuctionData.Status === 'UPCOMING') {
+                      status = 'upcoming';
                     }
-                  } else if (currentAuctionData.Status === 'UPCOMING') {
-                    status = 'upcoming';
-                  }
                   
                   // If winners are announced, we can also get winner info even if status is not COMPLETED
                   const winnersAnnounced = currentAuctionData.winnersAnnounced || (currentAuctionData.topWinners && currentAuctionData.topWinners.length > 0);
@@ -267,7 +269,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
     if (activeFilter === 'all') return true;
     if (activeFilter === 'live') return auction.status === 'active';
     if (activeFilter === 'upcoming') return auction.status === 'upcoming';
-    if (activeFilter === 'completed') return auction.status === 'completed';
+    if (activeFilter === 'completed') return auction.status === 'completed' || auction.status === 'cancelled';
     return true;
   });
 
@@ -280,6 +282,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
     switch (status) {
       case 'completed': return 'bg-gradient-to-r from-purple-400 to-purple-500 text-white border-0';
       case 'active': return 'bg-gradient-to-r from-violet-500 to-fuchsia-600 text-white border-0 shadow-lg shadow-purple-500/50';
+      case 'cancelled': return 'bg-red-50 text-red-600 border border-red-200';
       case 'upcoming': return 'bg-gradient-to-r from-purple-300 to-purple-400 text-white border-0';
       default: return 'bg-purple-400 text-white';
     }
@@ -289,6 +292,7 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
     switch (status) {
       case 'completed': return 'Completed';
       case 'active': return 'Live Now';
+      case 'cancelled': return 'Cancelled';
       case 'upcoming': return 'Upcoming';
       default: return 'Unknown';
     }
