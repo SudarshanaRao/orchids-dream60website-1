@@ -1091,12 +1091,17 @@ interface CombinedUser {
                                           />
                                         </div>
                                       )}
-                                      <div className="text-left">
-                                        <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
-                                        <p className="text-lg font-bold text-purple-900">
-                                          ₹{config.prizeValue.toLocaleString()}
-                                        </p>
-                                      </div>
+                                    <div className="text-left">
+                                          <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
+                                          <p className="text-lg font-bold text-purple-900">
+                                            ₹{config.prizeValue.toLocaleString()}
+                                          </p>
+                                          <p className="text-xs text-purple-500 mt-1">
+                                            Entry: {config.EntryFee === 'RANDOM' 
+                                              ? `₹${config.minEntryFee || 0} - ₹${config.maxEntryFee || 0}` 
+                                              : `Box A: ₹${config.FeeSplits?.BoxA || 0} / Box B: ₹${config.FeeSplits?.BoxB || 0}`}
+                                          </p>
+                                        </div>
                                       <button
                                         onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
                                         className="p-2 hover:bg-red-100 rounded-lg transition-colors"

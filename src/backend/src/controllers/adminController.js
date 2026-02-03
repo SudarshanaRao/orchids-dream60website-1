@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const MasterAuction = require('../models/masterAuction');
+const Product = require('../models/Product');
 const PushSubscription = require('../models/PushSubscription');
 const DailyAuction = require('../models/DailyAuction');
 const HourlyAuction = require('../models/HourlyAuction');
@@ -28,6 +29,51 @@ function generateRandomFeeSplits(minEntryFee, maxEntryFee) {
   const BoxB = totalFee - BoxA;
   return { BoxA, BoxB };
 }
+
+const getConfigFeeSplits = (config) => {
+  if (config.FeeSplits && (typeof config.FeeSplits.BoxA === 'number' || typeof config.FeeSplits.BoxB === 'number')) {
+    return { BoxA: config.FeeSplits.BoxA ?? 0, BoxB: config.FeeSplits.BoxB ?? 0 };
+  }
+  if (typeof config.BoxA === 'number' || typeof config.BoxB === 'number') {
+    return { BoxA: config.BoxA ?? 0, BoxB: config.BoxB ?? 0 };
+  }
+  return { BoxA: null, BoxB: null };
+};
+
+const syncProductsFromConfig = async (configs, userId) => {
+  if (!Array.isArray(configs) || configs.length === 0) return;
+
+  const operations = configs
+    .filter(config => config?.auctionName)
+    .map(config => {
+      const name = String(config.auctionName).trim();
+      const nameKey = name.toLowerCase();
+      const feeSplits = getConfigFeeSplits(config);
+
+      return Product.updateOne(
+        { nameKey },
+        {
+          $set: {
+            name,
+            prizeValue: Number(config.prizeValue || 0),
+            imageUrl: config.imageUrl || null,
+            productDescription: config.productDescription || {},
+            entryFeeType: config.EntryFee || 'RANDOM',
+            minEntryFee: config.minEntryFee ?? null,
+            maxEntryFee: config.maxEntryFee ?? null,
+            feeSplits,
+            roundCount: config.roundCount || 4,
+            isActive: true,
+          },
+          $setOnInsert: { createdBy: userId },
+          $inc: { usageCount: 1 },
+        },
+        { upsert: true }
+      );
+    });
+
+  await Promise.all(operations);
+};
 
 /**
  * Admin Login
@@ -392,6 +438,8 @@ const createMasterAuctionAdmin = async (req, res) => {
       createdBy: userId,
     });
 
+    await syncProductsFromConfig(processedConfig, userId);
+
     return res.status(201).json({ success: true, message: 'Master auction created successfully', data: newMasterAuction });
   } catch (err) {
     console.error('Create Master Auction Error:', err);
@@ -473,6 +521,7 @@ const updateMasterAuctionAdmin = async (req, res) => {
     }
 
     await masterAuction.save();
+    await syncProductsFromConfig(masterAuction.dailyAuctionConfig, userId);
     return res.status(200).json({ success: true, message: 'Master auction updated successfully', data: masterAuction });
   } catch (err) {
     console.error('Update Master Auction Error:', err);

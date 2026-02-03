@@ -55,6 +55,15 @@ const {
   getSmsStatus,
 } = require('../controllers/adminSmsController');
 
+const {
+  getProducts,
+  searchProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  incrementUsage,
+} = require('../controllers/productController');
+
 /**
  * @swagger
  * tags:
@@ -1461,5 +1470,13 @@ router.get('/sms/rest/reports', getSmsReports);
  *         description: Status retrieved successfully
  */
 router.get('/sms/rest/status/:messageId', getSmsStatus);
+
+// ============ Product Management Routes ============
+router.get('/products', getProducts);
+router.post('/products', createProduct);
+router.get('/products/search', searchProducts);
+router.put('/products/:product_id', updateProduct);
+router.delete('/products/:product_id', deleteProduct);
+router.post('/products/:product_id/usage', incrementUsage);
 
 module.exports = router;

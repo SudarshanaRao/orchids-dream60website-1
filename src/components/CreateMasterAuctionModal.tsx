@@ -38,6 +38,19 @@ interface MasterAuction {
   dailyAuctionConfig: DailyAuctionConfigItem[];
 }
 
+interface ProductSuggestion {
+  product_id: string;
+  name: string;
+  prizeValue: number;
+  imageUrl?: string;
+  productDescription?: Record<string, string>;
+  entryFeeType?: 'RANDOM' | 'MANUAL';
+  minEntryFee?: number | null;
+  maxEntryFee?: number | null;
+  feeSplits?: { BoxA: number | null; BoxB: number | null };
+  roundCount?: number;
+}
+
 interface CreateMasterAuctionModalProps {
   adminUserId: string;
   editingAuction: MasterAuction | null;
@@ -57,6 +70,8 @@ export function CreateMasterAuctionModal({
     editingAuction?.dailyAuctionConfig || []
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [productSuggestions, setProductSuggestions] = useState<Record<number, ProductSuggestion[]>>({});
+  const [isSuggestionsLoading, setIsSuggestionsLoading] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (!editingAuction && auctionConfigs.length === 0) {
@@ -150,6 +165,53 @@ export function CreateMasterAuctionModal({
     return Object.entries(description)
       .map(([key, value]) => `${key}\t${value}`)
       .join('\n');
+  };
+
+  const applyProductSuggestion = (index: number, product: ProductSuggestion) => {
+    const updated = [...auctionConfigs];
+    updated[index] = {
+      ...updated[index],
+      auctionName: product.name,
+      prizeValue: product.prizeValue || updated[index].prizeValue,
+      imageUrl: product.imageUrl || '',
+      productDescription: product.productDescription || {},
+      EntryFee: product.entryFeeType || updated[index].EntryFee,
+      minEntryFee: product.minEntryFee ?? updated[index].minEntryFee,
+      maxEntryFee: product.maxEntryFee ?? updated[index].maxEntryFee,
+      FeeSplits: product.feeSplits
+        ? { BoxA: product.feeSplits.BoxA || 0, BoxB: product.feeSplits.BoxB || 0 }
+        : updated[index].FeeSplits,
+      roundCount: product.roundCount || updated[index].roundCount,
+    };
+    setAuctionConfigs(updated);
+  };
+
+  const fetchProductSuggestions = async (index: number, query: string) => {
+    if (!query || query.trim().length < 2) {
+      setProductSuggestions(prev => ({ ...prev, [index]: [] }));
+      return;
+    }
+
+    setIsSuggestionsLoading(prev => ({ ...prev, [index]: true }));
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/admin/products/search?user_id=${adminUserId}&q=${encodeURIComponent(query.trim())}&limit=8`
+      );
+      const data = await response.json();
+      if (data.success) {
+        const uniqueByName = (data.data || []).reduce((acc: ProductSuggestion[], item: ProductSuggestion) => {
+          if (!acc.find(existing => existing.name.toLowerCase() === item.name.toLowerCase())) {
+            acc.push(item);
+          }
+          return acc;
+        }, []);
+        setProductSuggestions(prev => ({ ...prev, [index]: uniqueByName }));
+      }
+    } catch (error) {
+      console.error('Error fetching product suggestions:', error);
+    } finally {
+      setIsSuggestionsLoading(prev => ({ ...prev, [index]: false }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -303,13 +365,35 @@ export function CreateMasterAuctionModal({
                     <label className="block text-sm font-semibold text-purple-900 mb-2">
                       Auction Name
                     </label>
-                    <input
-                      type="text"
-                      value={config.auctionName}
-                      onChange={(e) => handleConfigChange(index, 'auctionName', e.target.value)}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
+                      <input
+                        type="text"
+                        list={`product-suggestions-${index}`}
+                        value={config.auctionName}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleConfigChange(index, 'auctionName', value);
+                          fetchProductSuggestions(index, value);
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value.trim().toLowerCase();
+                          const match = productSuggestions[index]?.find(
+                            (product) => product.name.toLowerCase() === value
+                          );
+                          if (match) {
+                            applyProductSuggestion(index, match);
+                          }
+                        }}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                      <datalist id={`product-suggestions-${index}`}>
+                        {(productSuggestions[index] || []).map((product) => (
+                          <option key={product.product_id} value={product.name} />
+                        ))}
+                      </datalist>
+                      <p className="text-xs text-purple-500 mt-1">
+                        {isSuggestionsLoading[index] ? 'Loading suggestions...' : 'Start typing to see saved products.'}
+                      </p>
                   </div>
 
                   <div>
