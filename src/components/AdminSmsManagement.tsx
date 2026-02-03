@@ -1083,55 +1083,7 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
       {activeTab === 'templates' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-purple-600" />
-              Create New SMS Template
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Template Name</label>
-                  <input
-                    type="text"
-                    value={newTemplateName}
-                    onChange={(e) => setNewTemplateName(e.target.value)}
-                    placeholder="e.g., NEW_YEAR_PROMO"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Template Message</label>
-                  <textarea
-                    value={newTemplateMessage}
-                    onChange={(e) => setNewTemplateMessage(e.target.value)}
-                    placeholder="Hi! Happy New Year from Dream60..."
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none"
-                  />
-                </div>
-                <button
-                  onClick={handleCreateTemplate}
-                  disabled={isCreatingTemplate || !newTemplateName || !newTemplateMessage}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-                >
-                  {isCreatingTemplate ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                  Create Template
-                </button>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <h4 className="text-sm font-semibold text-purple-800 mb-2">Best Practices</h4>
-                <ul className="text-xs text-purple-700 space-y-2 list-disc pl-4">
-                  <li>Keep messages under 160 characters to avoid multiple credits usage.</li>
-                  <li>Include your brand name (e.g., Dream60) for better recognition.</li>
-                  <li>Avoid using special characters that might affect encoding.</li>
-                  <li>Ensure the message is clear and includes a call-to-action if needed.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-4 bg-gray-50 border-b flex items-center justify-between">
                   <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-purple-600" />
