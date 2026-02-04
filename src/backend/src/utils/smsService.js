@@ -309,6 +309,28 @@ const SMS_TEMPLATES = {
     variables: ['name', 'amount'],
     templateId: '1207174662585501182'
   },
+  // Dream60 DLT Templates
+  ROUND_QUALIFICATION: {
+    id: 'round_qualification',
+    name: 'Round Qualification',
+    template: 'Congratulations {name}, You are qualified for Round {round}. Kindly place your bid now to continue in the auction. - Finpages Tech',
+    variables: ['name', 'round'],
+    templateId: '1207177002442331938'
+  },
+    PRIZE_CLAIMED_SUCCESS: {
+      id: 'prize_claimed_success',
+      name: 'Prize Claimed Success',
+      template: 'Congratulations {name}, Your prize in Dream60 has been successfully claimed. Amazon Gift Voucher of ₹ {amount}/- will be delivered to your registered email within 3 to 6 hours. - Finpages Tech',
+      variables: ['name', 'amount'],
+      templateId: '1207177002993329348'
+    },
+    NEXT_RANK_OPPORTUNITY: {
+      id: 'next_rank_opportunity',
+      name: 'Next Rank Opportunity',
+      template: 'Congratulations {name}, Previous ranked player did not claim the prize. Pay the final bid amount ₹ {amount}/- now to claim your prize. - Finpages Tech',
+      variables: ['name', 'amount'],
+      templateId: '1207177002702329283'
+    },
 };
 
 const formatTemplate = (templateId, variables = {}) => {

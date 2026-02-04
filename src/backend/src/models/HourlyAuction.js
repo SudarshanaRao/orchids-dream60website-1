@@ -59,6 +59,7 @@ const RoundDataSchema = new mongoose.Schema(
     totalParticipants: { type: Number, default: 0 },
     playersData: { type: [RoundPlayerAuctionSchema], default: [] },
     qualifiedPlayers: { type: [String], default: [] }, // Array of player IDs
+    qualificationSmsSent: { type: Boolean, default: false },
     status: { 
       type: String, 
       enum: ['PENDING', 'ACTIVE', 'COMPLETED'], 

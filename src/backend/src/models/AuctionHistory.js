@@ -1,6 +1,7 @@
 // src/models/AuctionHistory.js
 const mongoose = require('mongoose');
 const { sendPrizeClaimWinnerEmail, sendWaitingQueueEmail } = require('../utils/emailService');
+const { sendSms, formatTemplate } = require('../utils/smsService');
 const User = require('./user');
 const HourlyAuction = require('./HourlyAuction');
 const DailyAuction = require('./DailyAuction');
@@ -977,21 +978,35 @@ auctionHistorySchema.statics.advanceClaimQueue = async function(hourlyAuctionId,
     console.log(`✅ [PRIORITY_CLAIM] Updated ${updateNext.modifiedCount} record(s) for rank ${nextRank} winner in auction ${hourlyAuctionId}`);
 
     // ✅ Send email notification to next rank winner
-    try {
-      const user = await User.findOne({ user_id: nextRankWinner.userId });
-      if (user && user.email) {
-        console.log(`📧 [EMAIL] Sending prize claim notification to ${user.email} (Rank ${nextRank} now eligible)`);
-        await sendPrizeClaimWinnerEmail(user.email, {
-          username: nextRankWinner.username,
-          auctionName: nextRankWinner.auctionName || 'Auction',
-          prizeAmount: nextRankWinner.prizeAmountWon || 0,
-          claimDeadline: claimDeadline,
-          upiId: null // Not claimed yet
-        });
+      try {
+        const user = await User.findOne({ user_id: nextRankWinner.userId });
+        if (user && user.email) {
+          console.log(`📧 [EMAIL] Sending prize claim notification to ${user.email} (Rank ${nextRank} now eligible)`);
+          await sendPrizeClaimWinnerEmail(user.email, {
+            username: nextRankWinner.username,
+            auctionName: nextRankWinner.auctionName || 'Auction',
+            prizeAmount: nextRankWinner.prizeAmountWon || 0,
+            claimDeadline: claimDeadline,
+            upiId: null // Not claimed yet
+          });
+        }
+
+        if (user && user.mobile) {
+          const formatted = formatTemplate('NEXT_RANK_OPPORTUNITY', {
+            name: nextRankWinner.username || user.username || 'Participant',
+            amount: Math.round(nextRankWinner.lastRoundBidAmount || 0),
+          });
+
+          if (formatted.success) {
+            await sendSms(user.mobile, formatted.message, {
+              templateId: formatted.template.templateId,
+              senderId: 'FINPGS',
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error(`❌ [EMAIL] Error sending email to rank ${nextRank} winner:`, emailError.message);
       }
-    } catch (emailError) {
-      console.error(`❌ [EMAIL] Error sending email to rank ${nextRank} winner:`, emailError.message);
-    }
 
     await syncClaimStatusToAuctions(hourlyAuctionId);
 

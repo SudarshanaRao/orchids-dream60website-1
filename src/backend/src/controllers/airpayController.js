@@ -8,6 +8,7 @@ const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
 const { syncUserStats } = require('./userController');
 const { sendPrizeClaimedEmail } = require('../utils/emailService');
+const { sendSms, formatTemplate } = require('../utils/smsService');
 
 const AIRPAY_SECRET = process.env.AIRPAY_SECRET;
 const AIRPAY_MID = process.env.AIRPAY_MERCHANT_ID;
@@ -742,18 +743,32 @@ async function handlePrizeClaimSuccess(payment) {
 
       // Send Prize Claimed confirmation email
       const user = await User.findOne({ user_id: payment.userId });
-      if (user && user.email) {
-        await sendPrizeClaimedEmail(user.email, {
-          username: updatedEntry.username || user.username,
-          auctionName: updatedEntry.auctionName || payment.auctionName,
-          prizeAmount: updatedEntry.prizeAmountWon || 0,
-          claimDate: updatedEntry.claimedAt || new Date(),
-          transactionId: payment.airpayTransactionId,
-          rewardType: 'Cash Prize',
-        });
-      }
-      
-      console.log(`✅ [AIRPAY_PRIZE] Prize claim processed for ${updatedEntry.username}`);
+        if (user && user.email) {
+          await sendPrizeClaimedEmail(user.email, {
+            username: updatedEntry.username || user.username,
+            auctionName: updatedEntry.auctionName || payment.auctionName,
+            prizeAmount: updatedEntry.prizeAmountWon || 0,
+            claimDate: updatedEntry.claimedAt || new Date(),
+            transactionId: payment.airpayTransactionId,
+            rewardType: 'Cash Prize',
+          });
+        }
+
+        if (user && user.mobile) {
+          const formatted = formatTemplate('PRIZE_CLAIMED_SUCCESS', {
+            name: updatedEntry.username || user.username || 'Participant',
+            amount: Math.round(updatedEntry.prizeAmountWon || 0),
+          });
+
+          if (formatted.success) {
+            await sendSms(user.mobile, formatted.message, {
+              templateId: formatted.template.templateId,
+              senderId: 'FINPGS',
+            });
+          }
+        }
+        
+        console.log(`✅ [AIRPAY_PRIZE] Prize claim processed for ${updatedEntry.username}`);
     }
   } catch (error) {
     console.error('❌ [AIRPAY_PRIZE] Error handling prize claim success:', error);

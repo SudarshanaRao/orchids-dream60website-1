@@ -34,6 +34,44 @@ const getISTTime = () => {
   return istTime;
 };
 
+const sendRoundQualificationSms = async (auction, qualifiedPlayerIds, nextRound) => {
+  try {
+    if (!Array.isArray(qualifiedPlayerIds) || qualifiedPlayerIds.length === 0) return 0;
+
+    const users = await User.find({ user_id: { $in: qualifiedPlayerIds } })
+      .select('user_id username mobile')
+      .lean();
+
+    if (!users.length) return 0;
+
+    let sentCount = 0;
+
+    for (const user of users) {
+      if (!user.mobile) continue;
+
+      const formatted = formatTemplate('ROUND_QUALIFICATION', {
+        name: user.username || 'Participant',
+        round: nextRound,
+      });
+
+      if (!formatted.success) continue;
+
+      const result = await sendSms(user.mobile, formatted.message, {
+        templateId: formatted.template.templateId,
+        senderId: 'FINPGS',
+      });
+
+      if (result?.success) sentCount += 1;
+    }
+
+    console.log(`✅ [SMS] Round ${nextRound} qualification SMS sent to ${sentCount} participants for ${auction.hourlyAuctionId}`);
+    return sentCount;
+  } catch (error) {
+    console.error('❌ [SMS] Error sending round qualification SMS:', error.message);
+    return 0;
+  }
+};
+
 /**
  * ✅ Helper function to get IST date at start of day (00:00:00)
  * Used for comparing auction dates
@@ -1053,6 +1091,20 @@ const autoActivateAuctions = async () => {
                 local.rounds[i].playersData = rankedPlayers;
                 local.rounds[i].qualifiedPlayers = qualifiedPlayerIds;
                 local.rounds[i].totalParticipants = rankedPlayers.length;
+
+                const hasWinners = Array.isArray(local.winners) && local.winners.length > 0;
+                const shouldSendQualificationSms =
+                  rn < rc &&
+                  qualifiedPlayerIds.length > 0 &&
+                  !hasWinners &&
+                  !shouldCompleteAuction &&
+                  !local.rounds[i].qualificationSmsSent;
+
+                if (shouldSendQualificationSms) {
+                  await sendRoundQualificationSms(local, qualifiedPlayerIds, rn + 1);
+                  local.rounds[i].qualificationSmsSent = true;
+                  local.markModified('rounds');
+                }
                 
                 // Check if this is round 4 being completed
                 if (rn === 4) {

@@ -59,10 +59,22 @@ const getSendOptions = ({ ttl = 86400, urgency = 'high', topic } = {}) => ({
   },
 });
 
+const resolveAdminId = (req) => (
+  req.query.user_id ||
+  req.query.admin_id ||
+  req.query.admin_user_id ||
+  req.body.user_id ||
+  req.body.admin_id ||
+  req.body.adminId ||
+  req.body.admin_user_id ||
+  req.headers['x-user-id'] ||
+  req.headers['x-admin-id']
+);
+
 // Generate VAPID keys (run once and save to .env)
 const generateVAPIDKeys = async (req, res) => {
   try {
-    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const adminId = resolveAdminId(req);
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
@@ -228,7 +240,7 @@ const unsubscribe = async (req, res) => {
 const sendToUser = async (req, res) => {
   try {
     const { userId, title, body, ttl, urgency, topic, ...rest } = req.body;
-    const adminId = req.query.user_id || req.body.admin_id || req.headers['x-user-id'];
+    const adminId = resolveAdminId(req);
 
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
@@ -327,13 +339,23 @@ const sendToUser = async (req, res) => {
 const sendToAllParticipants = async (req, res) => {
   try {
     const { title, body, ttl, urgency, topic, ...rest } = req.body;
-    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    const adminId = resolveAdminId(req);
+
+    console.log('[PUSH] sendToAllParticipants - Admin ID sources:', {
+      query: req.query.user_id,
+      body_user_id: req.body.user_id,
+      body_adminId: req.body.adminId,
+      header: req.headers['x-user-id'],
+      resolved: adminId
+    });
 
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
     const adminUser = await User.findOne({ user_id: adminId });
+    console.log('[PUSH] Admin user lookup result:', adminUser ? { username: adminUser.username, userType: adminUser.userType, isSuperAdmin: adminUser.isSuperAdmin } : 'Not found');
+    
     if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
@@ -461,7 +483,7 @@ const sendToAllParticipants = async (req, res) => {
 const sendToSelectedUsers = async (req, res) => {
   try {
     const { userIds = [], subscriptionIds = [], title, body, ttl, urgency, topic, ...rest } = req.body;
-    const adminId = req.query.user_id || req.body.user_id || req.query.admin_id || req.body.adminId || req.headers['x-user-id'];
+    const adminId = resolveAdminId(req);
 
     if (!adminId) {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
