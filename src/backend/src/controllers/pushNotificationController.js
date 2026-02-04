@@ -472,7 +472,16 @@ const sendToSelectedUsers = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
+    if (!title || !body) {
+      return res.status(400).json({ success: false, message: 'Title and body are required' });
+    }
+
     const normalizedUserIds = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
+    const normalizedSubscriptionIds = Array.isArray(subscriptionIds) ? subscriptionIds.filter(Boolean) : [];
+
+    if (normalizedUserIds.length === 0 && normalizedSubscriptionIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one userId or subscriptionId is required' });
+    }
 
     const subscriptionQuery = { isActive: true };
 

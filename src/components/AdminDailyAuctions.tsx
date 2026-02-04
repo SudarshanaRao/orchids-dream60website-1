@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Trophy, IndianRupee, Users, Search, RefreshCw, Calendar } from 'lucide-react';
+import { Clock, Trophy, IndianRupee, Users, Search, RefreshCw, Calendar, X } from 'lucide-react';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 import { toast } from 'sonner';
 
@@ -7,11 +7,105 @@ interface AdminDailyAuctionsProps {
   adminUserId: string;
 }
 
+interface Participant {
+  user_id?: string;
+  userId?: string;
+  username?: string;
+  userCode?: string;
+  email?: string;
+  joinedAt?: string;
+}
+
+// Participants Modal Component
+const ParticipantsModal = ({ 
+  isOpen, 
+  onClose, 
+  participants, 
+  auctionName 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  participants: Participant[]; 
+  auctionName: string;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+        <div className="sticky top-0 bg-white border-b border-purple-200 p-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-purple-900">Participants</h2>
+            <p className="text-sm text-purple-600">{auctionName}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-purple-600" />
+          </button>
+        </div>
+        
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          {participants.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-purple-200 mx-auto mb-3" />
+              <p className="text-purple-600">No participants yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {participants.map((participant, index) => (
+                <div 
+                  key={participant.user_id || participant.userId || participant.userCode || index}
+                  className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center text-purple-700 font-bold text-sm">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-purple-900">
+                        {participant.username || participant.userCode || `User ${index + 1}`}
+                      </p>
+                      {participant.email && (
+                        <p className="text-xs text-purple-500">{participant.email}</p>
+                      )}
+                    </div>
+                  </div>
+                  {participant.joinedAt && (
+                    <span className="text-xs text-purple-500">
+                      {new Date(participant.joinedAt).toLocaleTimeString('en-IN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <div className="border-t border-purple-200 p-4 bg-purple-50">
+          <p className="text-center text-sm text-purple-700 font-semibold">
+            Total: {participants.length} participant{participants.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
   const [auctions, setAuctions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  
+  // Participants modal state
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedAuctionParticipants, setSelectedAuctionParticipants] = useState<Participant[]>([]);
+  const [selectedAuctionName, setSelectedAuctionName] = useState('');
 
   const fetchDailyAuctions = async (date: string) => {
     setIsLoading(true);
@@ -41,6 +135,12 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
     a.auctionName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.TimeSlot?.includes(searchTerm)
   );
+
+  const handleViewParticipants = (auction: any) => {
+    setSelectedAuctionParticipants(auction.participants || []);
+    setSelectedAuctionName(auction.auctionName || 'Auction');
+    setShowParticipantsModal(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -112,78 +212,82 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
                   {auction.Status}
                 </span>
               </div>
-                <div className="space-y-3">
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 flex items-center gap-1">
+                    <IndianRupee className="w-3.5 h-3.5" /> Prize Value
+                  </span>
+                  <span className="font-bold text-purple-900">₹{auction.prizeValue?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5" /> Total Rounds
+                  </span>
+                  <span className="font-semibold text-purple-700">{auction.roundCount || 4}</span>
+                </div>
+                {(auction.currentRound || auction.roundsCompleted) && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500 flex items-center gap-1">
-                      <IndianRupee className="w-3.5 h-3.5" /> Prize Value
+                      <Clock className="w-3.5 h-3.5" /> Rounds Completed
                     </span>
-                    <span className="font-bold text-purple-900">₹{auction.prizeValue?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <Trophy className="w-3.5 h-3.5" /> Total Rounds
+                    <span className="font-semibold text-purple-700">
+                      {auction.currentRound || auction.roundsCompleted}
                     </span>
-                    <span className="font-semibold text-purple-700">{auction.roundCount || 4}</span>
                   </div>
-                  {(auction.currentRound || auction.roundsCompleted) && (
+                )}
+                
+                {/* Clickable Participants Badge */}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-500 flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" /> Participants
+                  </span>
+                  <button
+                    onClick={() => handleViewParticipants(auction)}
+                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold text-xs hover:bg-purple-200 transition-colors cursor-pointer"
+                  >
+                    {auction.participants?.length || 0} View
+                  </button>
+                </div>
+
+                {(() => {
+                  const qualifiedCount = Array.isArray(auction.qualifiedPlayers)
+                    ? auction.qualifiedPlayers.length
+                    : Array.isArray(auction.qualifiedUsers)
+                    ? auction.qualifiedUsers.length
+                    : typeof auction.qualifiedCount === 'number'
+                    ? auction.qualifiedCount
+                    : null;
+                  return qualifiedCount !== null ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> Rounds Completed
+                        <Trophy className="w-3.5 h-3.5" /> Qualified
                       </span>
-                      <span className="font-semibold text-purple-700">
-                        {auction.currentRound || auction.roundsCompleted}
-                      </span>
+                      <span className="font-semibold text-purple-700">{qualifiedCount}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" /> Participants
-                    </span>
-                    <span className="font-semibold text-purple-700">{auction.participants?.length || 0}</span>
+                  ) : null;
+                })()}
+                <div className="pt-2 border-t border-purple-50 flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-purple-600">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Configured</span>
                   </div>
-                  {Array.isArray(auction.participants) && auction.participants.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {auction.participants.map((participant: any, index: number) => (
-                        <span
-                          key={`${participant.user_id || participant.userCode || participant.username || index}`}
-                          className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
-                        >
-                          {participant.username || participant.userCode || participant.user_id || `User ${index + 1}`}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {(() => {
-                    const qualifiedCount = Array.isArray(auction.qualifiedPlayers)
-                      ? auction.qualifiedPlayers.length
-                      : Array.isArray(auction.qualifiedUsers)
-                      ? auction.qualifiedUsers.length
-                      : typeof auction.qualifiedCount === 'number'
-                      ? auction.qualifiedCount
-                      : null;
-                    return qualifiedCount !== null ? (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 flex items-center gap-1">
-                          <Trophy className="w-3.5 h-3.5" /> Qualified
-                        </span>
-                        <span className="font-semibold text-purple-700">{qualifiedCount}</span>
-                      </div>
-                    ) : null;
-                  })()}
-                  <div className="pt-2 border-t border-purple-50 flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-xs text-purple-600">
-                      <Users className="w-3.5 h-3.5" />
-                      <span>Configured</span>
-                    </div>
-                    <div className="text-xs font-bold text-purple-900">
-                      {auction.EntryFee} Entry
-                    </div>
+                  <div className="text-xs font-bold text-purple-900">
+                    {auction.EntryFee} Entry
                   </div>
                 </div>
+              </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Participants Modal */}
+      <ParticipantsModal
+        isOpen={showParticipantsModal}
+        onClose={() => setShowParticipantsModal(false)}
+        participants={selectedAuctionParticipants}
+        auctionName={selectedAuctionName}
+      />
     </div>
   );
 }

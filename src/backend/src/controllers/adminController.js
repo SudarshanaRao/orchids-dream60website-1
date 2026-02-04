@@ -705,21 +705,23 @@ const getAnalyticsData = async (req, res) => {
       auctionDate: { $gte: start, $lt: end }
     }).lean();
 
-    // Aggregate Summary
-    const summary = {
-      totalAuctions: hourlyAuctions.length,
-      liveAuctions: hourlyAuctions.filter(a => a.Status === 'LIVE').length,
-      completedAuctions: hourlyAuctions.filter(a => a.Status === 'COMPLETED').length,
-      upcomingAuctions: hourlyAuctions.filter(a => a.Status === 'UPCOMING').length,
-      uniqueParticipants: new Set(history.map(h => h.userId)).size,
-      totalParticipations: history.length,
-      totalClaimed: history.filter(h => h.prizeClaimStatus === 'CLAIMED').length,
-      totalPending: history.filter(h => h.prizeClaimStatus === 'PENDING').length,
-      totalExpired: history.filter(h => h.prizeClaimStatus === 'EXPIRED').length,
-      totalEntryFees: history.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
-      totalPrizeValue: hourlyAuctions.reduce((sum, a) => sum + (a.prizeValue || 0), 0),
-      totalClaimedValue: history.filter(h => h.prizeClaimStatus === 'CLAIMED').reduce((sum, h) => sum + (h.prizeAmountWon || 0), 0),
-    };
+      // Aggregate Summary
+      // Only count prize claims where the winner actually paid (remainingFeesPaid = true)
+      const successfulClaims = history.filter(h => h.prizeClaimStatus === 'CLAIMED' && h.remainingFeesPaid === true);
+      const summary = {
+        totalAuctions: hourlyAuctions.length,
+        liveAuctions: hourlyAuctions.filter(a => a.Status === 'LIVE').length,
+        completedAuctions: hourlyAuctions.filter(a => a.Status === 'COMPLETED').length,
+        upcomingAuctions: hourlyAuctions.filter(a => a.Status === 'UPCOMING').length,
+        uniqueParticipants: new Set(history.map(h => h.userId)).size,
+        totalParticipations: history.length,
+        totalClaimed: successfulClaims.length,
+        totalPending: history.filter(h => h.prizeClaimStatus === 'PENDING').length,
+        totalExpired: history.filter(h => h.prizeClaimStatus === 'EXPIRED').length,
+        totalEntryFees: history.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
+        totalPrizeValue: hourlyAuctions.reduce((sum, a) => sum + (a.prizeValue || 0), 0),
+        totalClaimedValue: successfulClaims.reduce((sum, h) => sum + (h.prizeAmountWon || 0), 0),
+      };
 
     // Status Distribution
     const statusDistribution = {

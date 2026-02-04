@@ -357,4 +357,265 @@ router.all('/success', airpayController.handleAirpaySuccess);
  */
 router.all('/failure', airpayController.handleAirpayFailure);
 
+// ============================================================
+// AIRPAY REFUND API ENDPOINTS
+// ============================================================
+
+/**
+ * @swagger
+ * /api/airpay/refund:
+ *   post:
+ *     summary: Initiate refund for one or more transactions
+ *     description: |
+ *       Process partial or full refund for Airpay transactions.
+ *       Requires admin privileges. Supports batch refunds.
+ *     tags: [Airpay]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID for authorization
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - transactions
+ *             properties:
+ *               transactions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - ap_transactionid
+ *                     - amount
+ *                   properties:
+ *                     ap_transactionid:
+ *                       type: string
+ *                       description: Airpay transaction reference number
+ *                       example: "10265"
+ *                     amount:
+ *                       type: string
+ *                       description: Refund amount (can be partial)
+ *                       example: "100.00"
+ *           example:
+ *             transactions:
+ *               - ap_transactionid: "10265"
+ *                 amount: "100.00"
+ *               - ap_transactionid: "10264"
+ *                 amount: "10.00"
+ *     responses:
+ *       200:
+ *         description: Refund request processed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     transactions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           ap_transactionid:
+ *                             type: string
+ *                           amount:
+ *                             type: string
+ *                           success:
+ *                             type: string
+ *                             enum: ["true", "false"]
+ *                           message:
+ *                             type: string
+ *                           refund_id:
+ *                             type: string
+ *             example:
+ *               success: true
+ *               message: "success"
+ *               data:
+ *                 transactions:
+ *                   - ap_transactionid: 10265
+ *                     amount: "100.00"
+ *                     success: "false"
+ *                     message: "Refund can not be performed. Refund already initiated."
+ *                     refund_id: "12071"
+ *                   - ap_transactionid: "10264"
+ *                     success: "true"
+ *                     message: "Transaction accepted for refund"
+ *                     refund_id: "12076"
+ *       400:
+ *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied - admin privileges required
+ *       500:
+ *         description: Server error
+ */
+router.post('/refund', airpayController.processRefund);
+
+/**
+ * @swagger
+ * /api/airpay/refundable-payments:
+ *   get:
+ *     summary: Get list of payments eligible for refund
+ *     description: Returns paginated list of successful payments that can be refunded
+ *     tags: [Airpay]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID for authorization
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by orderId, userId, or airpayTransactionId
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           default: paid
+ *         description: Payment status filter
+ *     responses:
+ *       200:
+ *         description: List of refundable payments
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     payments:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AirpayPayment'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ */
+router.get('/refundable-payments', airpayController.getRefundablePayments);
+
+/**
+ * @swagger
+ * /api/airpay/refund-history:
+ *   get:
+ *     summary: Get refund history
+ *     description: Returns paginated list of all refund attempts
+ *     tags: [Airpay]
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID for authorization
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of refund attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     refunds:
+ *                       type: array
+ *                       items:
+ *                         allOf:
+ *                           - $ref: '#/components/schemas/AirpayPayment'
+ *                           - type: object
+ *                             properties:
+ *                               refundRequested:
+ *                                 type: boolean
+ *                               refundRequestedAt:
+ *                                 type: string
+ *                                 format: date-time
+ *                               refundAmount:
+ *                                 type: number
+ *                               refundStatus:
+ *                                 type: string
+ *                                 enum: [initiated, completed, failed]
+ *                               refundId:
+ *                                 type: string
+ *                               refundMessage:
+ *                                 type: string
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Access denied
+ */
+router.get('/refund-history', airpayController.getRefundHistory);
+
 module.exports = router;

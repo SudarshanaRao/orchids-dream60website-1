@@ -809,3 +809,341 @@ exports.getPaymentStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// ============================================================
+// AIRPAY REFUND API INTEGRATION
+// ============================================================
+
+const REFUND_URL = 'https://kraken.airpay.co.in/airpay/pay/v4/api/refund/';
+
+/**
+ * Generate private key for Airpay Refund API
+ * privatekey = sha256(secret + '@' + username + ':|:' + password)
+ */
+function generateRefundPrivateKey() {
+  const data = `${AIRPAY_SECRET}@${AIRPAY_USERNAME}:|:${AIRPAY_PASSWORD}`;
+  return crypto.createHash('sha256').update(data).digest('hex');
+}
+
+/**
+ * Calculate checksum for refund payload
+ */
+function calculateRefundChecksum(data) {
+  const sortedData = {};
+  Object.keys(data).sort().forEach(key => {
+    sortedData[key] = data[key];
+  });
+  
+  let checksumString = '';
+  for (const value of Object.values(sortedData)) {
+    checksumString += value;
+  }
+  checksumString += new Date().toISOString().split('T')[0];
+  return crypto.createHash('sha256').update(checksumString).digest('hex');
+}
+
+/**
+ * Get access token for Airpay Refund API
+ */
+async function getRefundAccessToken() {
+  const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
+  
+  const request = {
+    client_id: AIRPAY_CLIENT_ID,
+    client_secret: AIRPAY_CLIENT_SECRET,
+    grant_type: 'client_credentials',
+    merchant_id: AIRPAY_MID
+  };
+  
+  const encryptedData = encrypt(JSON.stringify(request), key);
+  const reqs = {
+    merchant_id: AIRPAY_MID,
+    encdata: encryptedData,
+    checksum: checksumcal(request)
+  };
+  
+  const accessTokenResponse = await sendPostData(TOKEN_URL, reqs);
+  if (!accessTokenResponse) throw new Error("Failed to get access token");
+  
+  let accesstoken;
+  try {
+    const parsedTokenResponse = JSON.parse(accessTokenResponse);
+    if (parsedTokenResponse.response) {
+      const decryptedTokenData = decrypt(parsedTokenResponse.response, key);
+      try {
+        const tokenObj = JSON.parse(decryptedTokenData);
+        accesstoken = (tokenObj.data && tokenObj.data.access_token) ? tokenObj.data.access_token : tokenObj.access_token;
+      } catch (e) {
+        const match = decryptedTokenData.match(/"access_token"\s*:\s*"([^"]+)"/);
+        if (match) accesstoken = match[1];
+      }
+    } else {
+      accesstoken = (parsedTokenResponse.data && parsedTokenResponse.data.access_token) ? parsedTokenResponse.data.access_token : parsedTokenResponse.access_token;
+    }
+  } catch (e) {
+    console.error('Error parsing token response:', e);
+    throw new Error('Failed to parse Airpay token response');
+  }
+  
+  if (!accesstoken) throw new Error('Could not retrieve access token from Airpay response');
+  return accesstoken;
+}
+
+/**
+ * Initiate refund for one or more transactions
+ * @param {Array} transactions - Array of { ap_transactionid, amount }
+ * @returns {Object} Refund response from Airpay
+ */
+async function initiateRefund(transactions) {
+  const accessToken = await getRefundAccessToken();
+  const key = crypto.createHash('md5').update(AIRPAY_USERNAME + "~:~" + AIRPAY_PASSWORD).digest('hex');
+  
+  // Prepare transactions JSON and base64 encode it
+  const transactionsJson = JSON.stringify(transactions);
+  const transactionsBase64 = Buffer.from(transactionsJson).toString('base64');
+  
+  const data = {
+    transactions: transactionsBase64
+  };
+  
+  const privatekey = generateRefundPrivateKey();
+  const encdata = encrypt(JSON.stringify(data), key);
+  const checksum = calculateRefundChecksum(data);
+  
+  const payload = {
+    merchant_id: AIRPAY_MID,
+    encdata: encdata,
+    checksum: checksum,
+    privatekey: privatekey
+  };
+  
+  const response = await fetch(`${REFUND_URL}?token=${accessToken}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams(payload)
+  });
+  
+  const responseText = await response.text();
+  console.log('Airpay Refund Raw Response:', responseText);
+  
+  try {
+    const parsedResponse = JSON.parse(responseText);
+    return parsedResponse;
+  } catch (e) {
+    console.error('Failed to parse refund response:', e);
+    throw new Error('Invalid response from Airpay refund API');
+  }
+}
+
+/**
+ * Process refund request from admin
+ */
+exports.processRefund = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+    
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+    
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+    
+    const { transactions } = req.body;
+    
+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'transactions array is required. Format: [{ ap_transactionid: "123", amount: "100.00" }]' 
+      });
+    }
+    
+    // Validate each transaction
+    for (const txn of transactions) {
+      if (!txn.ap_transactionid) {
+        return res.status(400).json({ success: false, message: 'Each transaction must have ap_transactionid' });
+      }
+      if (!txn.amount || isNaN(parseFloat(txn.amount))) {
+        return res.status(400).json({ success: false, message: 'Each transaction must have a valid amount' });
+      }
+    }
+    
+    // Format transactions for Airpay
+    const formattedTransactions = transactions.map(txn => ({
+      ap_transactionid: txn.ap_transactionid,
+      amount: parseFloat(txn.amount).toFixed(2)
+    }));
+    
+    console.log('Processing Airpay Refund:', formattedTransactions);
+    
+    const refundResponse = await initiateRefund(formattedTransactions);
+    
+    // Log refund attempt to DB for each transaction
+    for (const txn of formattedTransactions) {
+      const existingPayment = await AirpayPayment.findOne({ 
+        airpayTransactionId: txn.ap_transactionid 
+      });
+      
+      if (existingPayment) {
+        const refundResult = refundResponse.data?.transactions?.find(
+          t => String(t.ap_transactionid) === String(txn.ap_transactionid)
+        );
+        
+        existingPayment.refundRequested = true;
+        existingPayment.refundRequestedAt = new Date();
+        existingPayment.refundRequestedBy = adminId;
+        existingPayment.refundAmount = parseFloat(txn.amount);
+        existingPayment.refundStatus = refundResult?.success === 'true' ? 'initiated' : 'failed';
+        existingPayment.refundId = refundResult?.refund_id || null;
+        existingPayment.refundMessage = refundResult?.message || refundResponse.message || '';
+        existingPayment.refundResponse = refundResult || refundResponse;
+        
+        await existingPayment.save();
+      }
+    }
+    
+    res.status(200).json({
+      success: refundResponse.status === 'Success' || refundResponse.status_code === '200',
+      message: refundResponse.message || 'Refund request processed',
+      data: refundResponse.data || refundResponse
+    });
+  } catch (error) {
+    console.error('Airpay Refund Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to process refund',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Get refundable payments list for admin
+ */
+exports.getRefundablePayments = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+    
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+    
+    const { page = 1, limit = 20, search = '', status = 'paid' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const query = { 
+      status: status,
+      airpayTransactionId: { $exists: true, $ne: null, $ne: '' }
+    };
+    
+    // Search by orderId, userId, or airpayTransactionId
+    if (search) {
+      query.$or = [
+        { orderId: { $regex: search, $options: 'i' } },
+        { userId: { $regex: search, $options: 'i' } },
+        { airpayTransactionId: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const payments = await AirpayPayment.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    const total = await AirpayPayment.countDocuments(query);
+    
+    // Enrich with user details
+    const enrichedPayments = await Promise.all(payments.map(async (payment) => {
+      const user = await User.findOne({ user_id: payment.userId }).select('username email mobile userCode').lean();
+      return {
+        ...payment,
+        user: user || { username: 'Unknown', email: 'N/A' }
+      };
+    }));
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        payments: enrichedPayments,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching refundable payments:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * Get refund history for admin
+ */
+exports.getRefundHistory = async (req, res) => {
+  try {
+    const adminId = req.query.user_id || req.headers['x-user-id'];
+    
+    if (!adminId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+    
+    const adminUser = await User.findOne({ user_id: adminId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+    
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const query = { refundRequested: true };
+    
+    const refunds = await AirpayPayment.find(query)
+      .sort({ refundRequestedAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+    
+    const total = await AirpayPayment.countDocuments(query);
+    
+    // Enrich with user details
+    const enrichedRefunds = await Promise.all(refunds.map(async (payment) => {
+      const user = await User.findOne({ user_id: payment.userId }).select('username email mobile userCode').lean();
+      const refundedBy = payment.refundRequestedBy ? 
+        await User.findOne({ user_id: payment.refundRequestedBy }).select('username email').lean() : null;
+      return {
+        ...payment,
+        user: user || { username: 'Unknown', email: 'N/A' },
+        refundedByAdmin: refundedBy || { username: 'Unknown' }
+      };
+    }));
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        refunds: enrichedRefunds,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching refund history:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

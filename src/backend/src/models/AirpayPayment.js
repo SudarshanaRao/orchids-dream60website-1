@@ -55,6 +55,23 @@ const AirpayPaymentSchema = new mongoose.Schema(
     paidAt: Date,
     message: String,
     customVar: String,
+    
+    // Refund fields
+    refundRequested: {
+      type: Boolean,
+      default: false,
+    },
+    refundRequestedAt: Date,
+    refundRequestedBy: String, // Admin user_id who initiated refund
+    refundAmount: Number,
+    refundStatus: {
+      type: String,
+      enum: ['initiated', 'completed', 'failed', null],
+      default: null,
+    },
+    refundId: String, // Airpay refund reference number
+    refundMessage: String,
+    refundResponse: Object, // Full response from Airpay refund API
   },
   { timestamps: true }
 );
