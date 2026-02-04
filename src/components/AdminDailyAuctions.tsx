@@ -112,29 +112,74 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
                   {auction.Status}
                 </span>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 flex items-center gap-1">
-                    <IndianRupee className="w-3.5 h-3.5" /> Prize Value
-                  </span>
-                  <span className="font-bold text-purple-900">₹{auction.prizeValue?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 flex items-center gap-1">
-                    <Trophy className="w-3.5 h-3.5" /> Rounds
-                  </span>
-                  <span className="font-semibold text-purple-700">{auction.roundCount || 4} Rounds</span>
-                </div>
-                <div className="pt-2 border-t border-purple-50 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs text-purple-600">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Configured</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 flex items-center gap-1">
+                      <IndianRupee className="w-3.5 h-3.5" /> Prize Value
+                    </span>
+                    <span className="font-bold text-purple-900">₹{auction.prizeValue?.toLocaleString()}</span>
                   </div>
-                  <div className="text-xs font-bold text-purple-900">
-                    {auction.EntryFee} Entry
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 flex items-center gap-1">
+                      <Trophy className="w-3.5 h-3.5" /> Total Rounds
+                    </span>
+                    <span className="font-semibold text-purple-700">{auction.roundCount || 4}</span>
+                  </div>
+                  {(auction.currentRound || auction.roundsCompleted) && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> Rounds Completed
+                      </span>
+                      <span className="font-semibold text-purple-700">
+                        {auction.currentRound || auction.roundsCompleted}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500 flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5" /> Participants
+                    </span>
+                    <span className="font-semibold text-purple-700">{auction.participants?.length || 0}</span>
+                  </div>
+                  {Array.isArray(auction.participants) && auction.participants.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {auction.participants.map((participant: any, index: number) => (
+                        <span
+                          key={`${participant.user_id || participant.userCode || participant.username || index}`}
+                          className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
+                        >
+                          {participant.username || participant.userCode || participant.user_id || `User ${index + 1}`}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(() => {
+                    const qualifiedCount = Array.isArray(auction.qualifiedPlayers)
+                      ? auction.qualifiedPlayers.length
+                      : Array.isArray(auction.qualifiedUsers)
+                      ? auction.qualifiedUsers.length
+                      : typeof auction.qualifiedCount === 'number'
+                      ? auction.qualifiedCount
+                      : null;
+                    return qualifiedCount !== null ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500 flex items-center gap-1">
+                          <Trophy className="w-3.5 h-3.5" /> Qualified
+                        </span>
+                        <span className="font-semibold text-purple-700">{qualifiedCount}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  <div className="pt-2 border-t border-purple-50 flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs text-purple-600">
+                      <Users className="w-3.5 h-3.5" />
+                      <span>Configured</span>
+                    </div>
+                    <div className="text-xs font-bold text-purple-900">
+                      {auction.EntryFee} Entry
+                    </div>
                   </div>
                 </div>
-              </div>
             </div>
           ))
         )}

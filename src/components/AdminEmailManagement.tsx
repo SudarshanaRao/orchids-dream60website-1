@@ -692,19 +692,31 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
                 />
               </div>
 
-              {/* Body */}
-              <div>
-                <label className="block text-sm font-semibold text-purple-700 mb-2">
-                  Body (HTML Supported) *
-                </label>
-                <textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="Enter email body (HTML supported)..."
-                  rows={12}
-                  className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-mono text-sm"
-                />
-              </div>
+              {/* Body - hidden when template is selected */}
+                {!selectedTemplate && (
+                  <div>
+                    <label className="block text-sm font-semibold text-purple-700 mb-2">
+                      Body (HTML Supported) *
+                    </label>
+                    <textarea
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      placeholder="Enter email body (HTML supported)..."
+                      rows={12}
+                      className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-mono text-sm"
+                    />
+                  </div>
+                )}
+                {selectedTemplate && (
+                  <div className="p-4 bg-purple-50 rounded-xl border-2 border-purple-200">
+                    <p className="text-sm text-purple-700 font-semibold">
+                      Using template: {templates.find(t => t.template_id === selectedTemplate)?.name}
+                    </p>
+                    <p className="text-xs text-purple-500 mt-1">
+                      Template body will be used. Clear selection to compose custom email.
+                    </p>
+                  </div>
+                )}
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t-2 border-purple-200">

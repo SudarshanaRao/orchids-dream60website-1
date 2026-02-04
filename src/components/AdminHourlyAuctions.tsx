@@ -192,24 +192,58 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
                     <span className="font-black text-purple-900">{auction.participants?.length || 0}</span>
                   </div>
                 </div>
-                <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                  <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
-                  <div className="flex items-center gap-1">
-                    <Trophy className="w-3 h-3 text-purple-700" />
-                    <span className="font-black text-purple-900">{auction.currentRound || 1} / 4</span>
+                  <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                    <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
+                    <div className="flex items-center gap-1">
+                      <Trophy className="w-3 h-3 text-purple-700" />
+                      <span className="font-black text-purple-900">
+                        {auction.currentRound || 1} / {auction.totalRounds || auction.roundCount || 4}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-amber-50/50 p-2 rounded-lg border border-amber-100">
-                <span className="text-[10px] text-amber-700 uppercase font-bold block mb-1">Prize Value</span>
-                <div className="flex items-center gap-1">
-                  <IndianRupee className="w-3 h-3 text-amber-700" />
-                  <span className="font-black text-amber-900">₹{auction.prizeValue?.toLocaleString('en-IN')}</span>
+                {Array.isArray(auction.participants) && auction.participants.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {auction.participants.map((participant: any, index: number) => (
+                      <span
+                        key={`${participant.user_id || participant.userCode || participant.username || index}`}
+                        className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
+                      >
+                        {participant.username || participant.userCode || participant.user_id || `User ${index + 1}`}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {(() => {
+                  const qualifiedCount = Array.isArray(auction.qualifiedPlayers)
+                    ? auction.qualifiedPlayers.length
+                    : Array.isArray(auction.qualifiedUsers)
+                    ? auction.qualifiedUsers.length
+                    : typeof auction.qualifiedCount === 'number'
+                    ? auction.qualifiedCount
+                    : null;
+                  return qualifiedCount !== null ? (
+                    <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                      <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Qualified</span>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3 text-purple-700" />
+                        <span className="font-black text-purple-900">{qualifiedCount}</span>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
+                <div className="bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+                  <span className="text-[10px] text-amber-700 uppercase font-bold block mb-1">Prize Value</span>
+                  <div className="flex items-center gap-1">
+                    <IndianRupee className="w-3 h-3 text-amber-700" />
+                    <span className="font-black text-amber-900">₹{auction.prizeValue?.toLocaleString('en-IN')}</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="pt-3 border-t border-purple-100">
+                
+                <div className="pt-3 border-t border-purple-100">
                 {auction.Status === 'CANCELLED' ? (
                   <div className="flex items-center gap-2 text-red-600 text-[10px] font-black justify-center bg-red-100/50 py-2 rounded-lg border border-red-200">
                     <ShieldAlert className="w-4 h-4" />

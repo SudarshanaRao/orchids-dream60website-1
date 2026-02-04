@@ -152,6 +152,221 @@ interface CombinedUser {
   totalAmountWon?: number;
 }
 
+// Edit Single Slot Modal Component
+const EditSlotModal = ({ 
+  slot, 
+  onClose, 
+  onSave 
+}: { 
+  slot: DailyAuctionConfigItem; 
+  onClose: () => void; 
+  onSave: (slot: DailyAuctionConfigItem) => void;
+}) => {
+  const [formData, setFormData] = useState<DailyAuctionConfigItem>({ ...slot });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    await onSave(formData);
+    setIsSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-purple-200 p-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-purple-900">
+            Edit Slot #{slot.auctionNumber}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-purple-600" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Auction Name */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Auction Name
+            </label>
+            <input
+              type="text"
+              value={formData.auctionName}
+              onChange={(e) => setFormData({ ...formData, auctionName: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+              required
+            />
+          </div>
+
+          {/* Time Slot */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Time Slot
+            </label>
+            <input
+              type="time"
+              value={formData.TimeSlot}
+              onChange={(e) => setFormData({ ...formData, TimeSlot: e.target.value })}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+              required
+            />
+          </div>
+
+          {/* Prize Value */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Prize Value (₹)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formData.prizeValue}
+              onChange={(e) => setFormData({ ...formData, prizeValue: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+              required
+            />
+          </div>
+
+          {/* Entry Fee Type */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Entry Fee Type
+            </label>
+            <select
+              value={formData.EntryFee}
+              onChange={(e) => setFormData({ ...formData, EntryFee: e.target.value as 'RANDOM' | 'MANUAL' })}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+            >
+              <option value="RANDOM">Random</option>
+              <option value="MANUAL">Manual</option>
+            </select>
+          </div>
+
+          {/* Entry Fee Fields */}
+          {formData.EntryFee === 'RANDOM' ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-purple-900 mb-1">
+                  Min Entry Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.minEntryFee || ''}
+                  onChange={(e) => setFormData({ ...formData, minEntryFee: parseInt(e.target.value) || null })}
+                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-purple-900 mb-1">
+                  Max Entry Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.maxEntryFee || ''}
+                  onChange={(e) => setFormData({ ...formData, maxEntryFee: parseInt(e.target.value) || null })}
+                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-semibold text-purple-900 mb-1">
+                  Box A Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.FeeSplits?.BoxA || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    FeeSplits: { 
+                      BoxA: parseInt(e.target.value) || 0, 
+                      BoxB: formData.FeeSplits?.BoxB || 0 
+                    } 
+                  })}
+                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-purple-900 mb-1">
+                  Box B Fee (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.FeeSplits?.BoxB || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    FeeSplits: { 
+                      BoxA: formData.FeeSplits?.BoxA || 0, 
+                      BoxB: parseInt(e.target.value) || 0 
+                    } 
+                  })}
+                  className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Max Discount */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Max Discount (%)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={formData.maxDiscount}
+              onChange={(e) => setFormData({ ...formData, maxDiscount: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Image URL
+            </label>
+            <input
+              type="text"
+              value={formData.imageUrl || ''}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t border-purple-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border-2 border-purple-300 text-purple-700 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 
   export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
       const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
@@ -178,6 +393,12 @@ interface CombinedUser {
     const [expandedAuctions, setExpandedAuctions] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+    
+    // Single product slot editing
+    const [editingSlot, setEditingSlot] = useState<{
+      masterId: string;
+      slot: DailyAuctionConfigItem;
+    } | null>(null);
     
     const [usersPage, setUsersPage] = useState(1);
     const [usersLimit] = useState(20);
@@ -453,13 +674,43 @@ interface CombinedUser {
       setEditingAuction(null);
     };
 
-    // Edit a specific product within a master auction
+    // Edit a specific product within a master auction - opens separate slot modal
     const handleEditProductInAuction = (auction: MasterAuction, auctionNumber: number) => {
-      setEditingAuction({
-        ...auction,
-        editingProductIndex: auctionNumber
-      });
-      setShowCreateAuction(true);
+      const slot = auction.dailyAuctionConfig.find(cfg => cfg.auctionNumber === auctionNumber);
+      if (slot) {
+        setEditingSlot({
+          masterId: auction.master_id,
+          slot: { ...slot }
+        });
+      }
+    };
+
+    // Save single slot update
+    const handleSaveSlotUpdate = async (updatedSlot: DailyAuctionConfigItem) => {
+      if (!editingSlot) return;
+      
+      try {
+        const response = await fetch(
+          `${API_BASE}/admin/master-auctions/${editingSlot.masterId}/slots/${updatedSlot.auctionNumber}?user_id=${adminUser.user_id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedSlot),
+          }
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          toast.success('Auction slot updated successfully');
+          fetchMasterAuctions();
+          setEditingSlot(null);
+        } else {
+          toast.error(data.message || 'Failed to update slot');
+        }
+      } catch (error) {
+        console.error('Error updating slot:', error);
+        toast.error('Failed to update slot');
+      }
     };
 
   useEffect(() => {
@@ -1233,6 +1484,15 @@ interface CombinedUser {
             handleCloseAuctionModal();
             fetchMasterAuctions();
           }}
+        />
+      )}
+
+      {/* Edit Single Slot Modal */}
+      {editingSlot && (
+        <EditSlotModal
+          slot={editingSlot.slot}
+          onClose={() => setEditingSlot(null)}
+          onSave={handleSaveSlotUpdate}
         />
       )}
     </div>

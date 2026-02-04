@@ -455,30 +455,30 @@ export const AdminAnalyticsDashboard = forwardRef<{ refresh: () => Promise<void>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <IndianRupee className="w-6 h-6" />
-              <p className="text-purple-100">Total Entry Fees</p>
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl shadow-lg p-6 text-white">
+              <div className="flex items-center gap-3 mb-2">
+                <IndianRupee className="w-6 h-6" />
+                <p className="text-purple-100">Entry Fees Paid</p>
+              </div>
+              <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalEntryFees)}</p>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalEntryFees)}</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl shadow-lg p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <Trophy className="w-6 h-6" />
-              <p className="text-green-100">Total Prize Value</p>
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-xl shadow-lg p-6 text-white">
+              <div className="flex items-center gap-3 mb-2">
+                <Trophy className="w-6 h-6" />
+                <p className="text-green-100">Total Prize Value</p>
+              </div>
+              <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalPrizeValue)}</p>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalPrizeValue)}</p>
-          </div>
 
-          <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl shadow-lg p-6 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <CheckCircle className="w-6 h-6" />
-              <p className="text-amber-100">Total Claimed</p>
+            <div className="bg-gradient-to-br from-amber-600 to-amber-700 rounded-xl shadow-lg p-6 text-white">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircle className="w-6 h-6" />
+                <p className="text-amber-100">Prize Claim Amount Paid</p>
+              </div>
+              <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalClaimedValue)}</p>
             </div>
-            <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalClaimedValue)}</p>
           </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
