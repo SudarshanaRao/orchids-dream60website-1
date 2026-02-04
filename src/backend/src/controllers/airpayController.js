@@ -930,6 +930,35 @@ async function initiateRefund(transactions) {
   
   try {
     const parsedResponse = JSON.parse(responseText);
+    
+    // Decrypt the response if it contains encrypted data
+    if (parsedResponse.response) {
+      try {
+        const decryptedData = decrypt(parsedResponse.response, key);
+        console.log('Decrypted Refund Response:', decryptedData);
+        
+        // Try to parse the decrypted data as JSON
+        try {
+          const decryptedJson = JSON.parse(decryptedData);
+          return {
+            merchant_id: parsedResponse.merchant_id,
+            ...decryptedJson
+          };
+        } catch (jsonErr) {
+          // If not valid JSON, return raw decrypted string
+          return {
+            merchant_id: parsedResponse.merchant_id,
+            decrypted_response: decryptedData,
+            raw_response: parsedResponse.response
+          };
+        }
+      } catch (decryptErr) {
+        console.error('Failed to decrypt refund response:', decryptErr.message);
+        // Return parsed response as-is if decryption fails
+        return parsedResponse;
+      }
+    }
+    
     return parsedResponse;
   } catch (e) {
     console.error('Failed to parse refund response:', e);
@@ -982,6 +1011,15 @@ exports.processRefund = async (req, res) => {
     
     const refundResponse = await initiateRefund(formattedTransactions);
     
+    // Determine success from decrypted response
+    // Airpay returns status/status_code in decrypted response
+    const isSuccess = 
+      refundResponse.status === 'Success' || 
+      refundResponse.status === 'success' ||
+      refundResponse.status_code === '200' ||
+      refundResponse.status_code === 200 ||
+      (refundResponse.transactions && refundResponse.transactions.some(t => t.status === 'Success'));
+    
     // Log refund attempt to DB for each transaction
     for (const txn of formattedTransactions) {
       const existingPayment = await AirpayPayment.findOne({ 
@@ -989,7 +1027,10 @@ exports.processRefund = async (req, res) => {
       });
       
       if (existingPayment) {
-        const refundResult = refundResponse.data?.transactions?.find(
+        // Check transactions array from decrypted response
+        const refundResult = refundResponse.transactions?.find(
+          t => String(t.ap_transactionid) === String(txn.ap_transactionid)
+        ) || refundResponse.data?.transactions?.find(
           t => String(t.ap_transactionid) === String(txn.ap_transactionid)
         );
         
@@ -997,19 +1038,19 @@ exports.processRefund = async (req, res) => {
         existingPayment.refundRequestedAt = new Date();
         existingPayment.refundRequestedBy = adminId;
         existingPayment.refundAmount = parseFloat(txn.amount);
-        existingPayment.refundStatus = refundResult?.success === 'true' ? 'initiated' : 'failed';
-        existingPayment.refundId = refundResult?.refund_id || null;
+        existingPayment.refundStatus = (refundResult?.status === 'Success' || isSuccess) ? 'initiated' : 'pending';
+        existingPayment.refundId = refundResult?.refund_id || refundResponse.refund_id || null;
         existingPayment.refundMessage = refundResult?.message || refundResponse.message || '';
-        existingPayment.refundResponse = refundResult || refundResponse;
+        existingPayment.refundResponse = refundResponse;
         
         await existingPayment.save();
       }
     }
     
     res.status(200).json({
-      success: refundResponse.status === 'Success' || refundResponse.status_code === '200',
-      message: refundResponse.message || 'Refund request processed',
-      data: refundResponse.data || refundResponse
+      success: isSuccess,
+      message: refundResponse.message || (isSuccess ? 'Refund initiated successfully' : 'Refund request processed'),
+      data: refundResponse
     });
   } catch (error) {
     console.error('Airpay Refund Error:', error);

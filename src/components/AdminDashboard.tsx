@@ -123,6 +123,7 @@ interface DailyAuctionConfigItem {
     topBidAmountsPerRound: number;
   }>;
   imageUrl?: string;
+  productDescription?: Record<string, string>;
 }
 
 interface MasterAuction {
@@ -164,11 +165,22 @@ const EditSlotModal = ({
 }) => {
   const [formData, setFormData] = useState<DailyAuctionConfigItem>({ ...slot });
   const [isSaving, setIsSaving] = useState(false);
+  const [description, setDescription] = useState(
+    slot.productDescription?.main || ''
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    await onSave(formData);
+    // Include description in the save
+    const updatedData = {
+      ...formData,
+      productDescription: {
+        ...(formData.productDescription || {}),
+        main: description
+      }
+    };
+    await onSave(updatedData);
     setIsSaving(false);
   };
 
@@ -188,6 +200,22 @@ const EditSlotModal = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Image Preview */}
+          {formData.imageUrl && (
+            <div className="flex justify-center">
+              <div className="relative w-32 h-32 rounded-lg border-2 border-purple-200 overflow-hidden bg-gray-50">
+                <img
+                  src={formData.imageUrl}
+                  alt={formData.auctionName}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Auction Name */}
           <div>
             <label className="block text-sm font-semibold text-purple-900 mb-1">
@@ -199,6 +227,20 @@ const EditSlotModal = ({
               onChange={(e) => setFormData({ ...formData, auctionName: e.target.value })}
               className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
               required
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-semibold text-purple-900 mb-1">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter product description..."
+              rows={3}
+              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 resize-none"
             />
           </div>
 
