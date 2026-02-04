@@ -131,6 +131,7 @@ interface MasterAuction {
   isActive: boolean;
   createdAt: string;
   dailyAuctionConfig: DailyAuctionConfigItem[];
+  editingProductIndex?: number;
 }
 
 interface AdminDashboardProps {
@@ -448,9 +449,18 @@ interface CombinedUser {
   };
 
   const handleCloseAuctionModal = () => {
-    setShowCreateAuction(false);
-    setEditingAuction(null);
-  };
+      setShowCreateAuction(false);
+      setEditingAuction(null);
+    };
+
+    // Edit a specific product within a master auction
+    const handleEditProductInAuction = (auction: MasterAuction, auctionNumber: number) => {
+      setEditingAuction({
+        ...auction,
+        editingProductIndex: auctionNumber
+      });
+      setShowCreateAuction(true);
+    };
 
   useEffect(() => {
     const loadData = async () => {
@@ -983,48 +993,68 @@ interface CombinedUser {
                       </div>
                     </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleAuctionStatus(auction)}
-                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm transition-all ${
-                            auction.isActive
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-                          }`}
-                          title={`Click to make ${auction.isActive ? 'Inactive' : 'Active'}`}
-                        >
-                          {auction.isActive ? (
-                            <><Power className="w-4 h-4" /> Active</>
-                          ) : (
-                            <><Power className="w-4 h-4" /> Inactive</>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => toggleAuctionExpand(auction.master_id)}
-                          className="p-2 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-1 text-purple-700 font-semibold text-sm"
-                          title={expandedAuctions.has(auction.master_id) ? "Collapse" : "Expand to see products"}
-                        >
-                          {expandedAuctions.has(auction.master_id) ? (
-                            <><ChevronUp className="w-5 h-5" /> Hide Products</>
-                          ) : (
-                            <><ChevronDown className="w-5 h-5" /> View Products ({auction.dailyAuctionConfig?.length || 0})</>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleEditAuction(auction)}
-                          className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
-                          title="Edit auction"
-                        >
-                          <Edit className="w-5 h-5 text-purple-600" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAuction(auction.master_id)}
-                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Delete auction"
-                        >
-                          <Trash2 className="w-5 h-5 text-red-600" />
-                        </button>
-                      </div>
-                  </div>
+                          {/* Cumulative Totals */}
+                          {(() => {
+                            const totalEntryFees = auction.dailyAuctionConfig?.reduce((sum, cfg) => {
+                              if (cfg.EntryFee === 'RANDOM') {
+                                return sum + ((cfg.minEntryFee || 0) + (cfg.maxEntryFee || 0)) / 2;
+                              }
+                              return sum + ((cfg.FeeSplits?.BoxA || 0) + (cfg.FeeSplits?.BoxB || 0));
+                            }, 0) || 0;
+                            const totalPrizeWorth = auction.dailyAuctionConfig?.reduce((sum, cfg) => sum + (cfg.prizeValue || 0), 0) || 0;
+                            return (
+                              <div className="flex items-center gap-3 mr-2 text-xs">
+                                <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
+                                  Total Fees: ₹{totalEntryFees.toLocaleString()}
+                                </span>
+                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg font-semibold">
+                                  Total Worth: ₹{totalPrizeWorth.toLocaleString()}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                          <button
+                            onClick={() => handleToggleAuctionStatus(auction)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm transition-all ${
+                              auction.isActive
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                            }`}
+                            title={`Click to make ${auction.isActive ? 'Inactive' : 'Active'}`}
+                          >
+                            {auction.isActive ? (
+                              <><Power className="w-4 h-4" /> Active</>
+                            ) : (
+                              <><Power className="w-4 h-4" /> Inactive</>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => toggleAuctionExpand(auction.master_id)}
+                            className="p-2 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-1 text-purple-700 font-semibold text-sm"
+                            title={expandedAuctions.has(auction.master_id) ? "Collapse" : "Expand to see products"}
+                          >
+                            {expandedAuctions.has(auction.master_id) ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <><ChevronDown className="w-5 h-5" /> View Products ({auction.dailyAuctionConfig?.length || 0})</>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleEditAuction(auction)}
+                            className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+                            title="Edit auction"
+                          >
+                            <Edit className="w-5 h-5 text-purple-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAuction(auction.master_id)}
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            title="Delete auction"
+                          >
+                            <Trash2 className="w-5 h-5 text-red-600" />
+                          </button>
+                        </div>
+                    </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-3 border border-purple-300 shadow-sm">
@@ -1092,25 +1122,32 @@ interface CombinedUser {
                                         </div>
                                       )}
                                     <div className="text-left">
-                                          <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
-                                          <p className="text-lg font-bold text-purple-900">
-                                            ₹{config.prizeValue.toLocaleString()}
-                                          </p>
-                                            <p className="text-xs text-purple-500 mt-1">
-                                              Entry Fee: {config.EntryFee === 'RANDOM'
-                                                ? `₹${config.minEntryFee || 0} - ₹${config.maxEntryFee || 0}`
-                                                : `₹${((config.FeeSplits?.BoxA || 0) + (config.FeeSplits?.BoxB || 0)).toLocaleString()} (Box A + Box B)`}
+                                            <p className="text-xs text-purple-600 font-semibold mb-1">Prize Value</p>
+                                            <p className="text-lg font-bold text-purple-900">
+                                              ₹{config.prizeValue.toLocaleString()}
                                             </p>
+                                              <p className="text-xs text-purple-500 mt-1">
+                                                Entry Fee: {config.EntryFee === 'RANDOM'
+                                                  ? `₹${config.minEntryFee || 0} - ₹${config.maxEntryFee || 0}`
+                                                  : `₹${((config.FeeSplits?.BoxA || 0) + (config.FeeSplits?.BoxB || 0)).toLocaleString()}`}
+                                              </p>
 
-                                        </div>
-                                      <button
-                                        onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
-                                        className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                        title="Delete auction slot"
-                                      >
-                                        <Trash2 className="w-4 h-4 text-red-600" />
-                                      </button>
-                                    </div>
+                                          </div>
+                                        <button
+                                          onClick={() => handleEditProductInAuction(auction, config.auctionNumber)}
+                                          className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+                                          title="Edit this product"
+                                        >
+                                          <Edit className="w-4 h-4 text-purple-600" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}
+                                          className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                                          title="Delete auction slot"
+                                        >
+                                          <Trash2 className="w-4 h-4 text-red-600" />
+                                        </button>
+                                      </div>
                                 </div>
                               </div>
                             </div>

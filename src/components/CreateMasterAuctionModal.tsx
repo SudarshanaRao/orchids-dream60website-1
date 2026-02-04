@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Image as ImageIcon, Upload, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
@@ -36,6 +36,7 @@ interface MasterAuction {
   isActive: boolean;
   createdAt: string;
   dailyAuctionConfig: DailyAuctionConfigItem[];
+  editingProductIndex?: number;
 }
 
 interface ProductSuggestion {
@@ -72,6 +73,25 @@ export function CreateMasterAuctionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productSuggestions, setProductSuggestions] = useState<Record<number, ProductSuggestion[]>>({});
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState<Record<number, boolean>>({});
+  const productRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Scroll to specific product when editingProductIndex is set
+  useEffect(() => {
+    if (editingAuction?.editingProductIndex !== undefined) {
+      const targetIndex = auctionConfigs.findIndex(
+        cfg => cfg.auctionNumber === editingAuction.editingProductIndex
+      );
+      if (targetIndex !== -1) {
+        setTimeout(() => {
+          productRefs.current[targetIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          productRefs.current[targetIndex]?.classList.add('ring-2', 'ring-purple-500');
+          setTimeout(() => {
+            productRefs.current[targetIndex]?.classList.remove('ring-2', 'ring-purple-500');
+          }, 2000);
+        }, 300);
+      }
+    }
+  }, [editingAuction?.editingProductIndex]);
 
   useEffect(() => {
     if (!editingAuction && auctionConfigs.length === 0) {
@@ -307,7 +327,11 @@ export function CreateMasterAuctionModal({
             </div>
 
             {auctionConfigs.map((config, index) => (
-              <div key={index} className="border-2 border-purple-200 rounded-lg p-4 space-y-4">
+              <div 
+                key={index} 
+                ref={(el) => { productRefs.current[index] = el; }}
+                className="border-2 border-purple-200 rounded-lg p-4 space-y-4 transition-all duration-300"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-bold text-purple-900">Auction #{config.auctionNumber}</h4>
                   {auctionConfigs.length > 1 && (

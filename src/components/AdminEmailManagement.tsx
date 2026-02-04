@@ -704,9 +704,6 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
                   rows={12}
                   className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 font-mono text-sm"
                 />
-                <p className="text-xs text-purple-600 mt-2">
-                  💡 You can use HTML tags for formatting: &lt;h1&gt;, &lt;p&gt;, &lt;b&gt;, &lt;a&gt;, etc.
-                </p>
               </div>
 
               {/* Action Buttons */}
