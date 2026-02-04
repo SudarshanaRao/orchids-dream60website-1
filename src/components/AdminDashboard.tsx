@@ -1096,11 +1096,12 @@ interface CombinedUser {
                                           <p className="text-lg font-bold text-purple-900">
                                             ₹{config.prizeValue.toLocaleString()}
                                           </p>
-                                          <p className="text-xs text-purple-500 mt-1">
-                                            Entry: {config.EntryFee === 'RANDOM' 
-                                              ? `₹${config.minEntryFee || 0} - ₹${config.maxEntryFee || 0}` 
-                                              : `Box A: ₹${config.FeeSplits?.BoxA || 0} / Box B: ₹${config.FeeSplits?.BoxB || 0}`}
-                                          </p>
+                                            <p className="text-xs text-purple-500 mt-1">
+                                              Entry Fee: {config.EntryFee === 'RANDOM'
+                                                ? `₹${config.minEntryFee || 0} - ₹${config.maxEntryFee || 0}`
+                                                : `₹${((config.FeeSplits?.BoxA || 0) + (config.FeeSplits?.BoxB || 0)).toLocaleString()} (Box A + Box B)`}
+                                            </p>
+
                                         </div>
                                       <button
                                         onClick={() => handleDeleteAuctionSlot(auction.master_id, config.auctionNumber)}

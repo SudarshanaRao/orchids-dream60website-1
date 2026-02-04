@@ -41,6 +41,13 @@ interface EmailTemplate {
   isActive: boolean;
 }
 
+interface UserVariables {
+  userId: string;
+  username: string;
+  email: string;
+  variables: Record<string, string>;
+}
+
 interface AdminEmailManagementProps {
   adminUserId: string;
 }
@@ -59,8 +66,11 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateName, setTemplateName] = useState('');
   const [templateCategory, setTemplateCategory] = useState<EmailTemplate['category']>('CUSTOM');
-    const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
-    const [previewExistingTemplate, setPreviewExistingTemplate] = useState<EmailTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [previewExistingTemplate, setPreviewExistingTemplate] = useState<EmailTemplate | null>(null);
+  const [showVariablesModal, setShowVariablesModal] = useState(false);
+  const [templateVariables, setTemplateVariables] = useState<string[]>([]);
+  const [userVariables, setUserVariables] = useState<UserVariables[]>([]);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -109,6 +119,46 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     loadData();
   }, [adminUserId]);
 
+  const getSelectedUserList = () => users.filter((user) => selectedUsers.has(user.user_id));
+
+  const extractTemplateVariables = (templateSubject: string, templateBody: string) => {
+    const variables = new Set<string>();
+    const regex = /\{\{\s*([^}]+)\s*\}\}/g;
+    const combined = `${templateSubject} ${templateBody}`;
+    let match;
+    while ((match = regex.exec(combined)) !== null) {
+      const variable = match[1]?.trim();
+      if (variable) variables.add(variable);
+    }
+    return Array.from(variables);
+  };
+
+  const buildUserVariables = (variables: string[], selected: User[]) =>
+    selected.map((user) => {
+      const variableMap: Record<string, string> = {};
+      variables.forEach((variable) => {
+        if (variable.toLowerCase() === 'username') {
+          variableMap[variable] = user.username;
+          variableMap[variable.toLowerCase()] = user.username;
+        } else {
+          variableMap[variable] = '';
+        }
+      });
+
+      return {
+        userId: user.user_id,
+        username: user.username,
+        email: user.email,
+        variables: variableMap,
+      };
+    });
+
+  const replaceVariables = (template: string, variables: Record<string, string>) =>
+    template.replace(/\{\{\s*([^}]+)\s*\}\}/g, (_, rawKey) => {
+      const key = String(rawKey || '').trim();
+      return variables[key] ?? variables[key.toLowerCase()] ?? '';
+    });
+
   // Toggle user selection
   const toggleUser = (userId: string) => {
     const newSelected = new Set(selectedUsers);
@@ -148,6 +198,64 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     }
   };
 
+  const resetEmailForm = async () => {
+    setSelectedUsers(new Set());
+    setSubject('');
+    setBody('');
+    setSelectedTemplate('');
+    setTemplateVariables([]);
+    setUserVariables([]);
+    setShowVariablesModal(false);
+    await fetchTemplates();
+  };
+
+  const sendEmailsForUserVariables = async (usersWithVariables: UserVariables[]) => {
+    setIsSending(true);
+    try {
+      let totalSent = 0;
+      let totalFailed = 0;
+
+      for (const userEntry of usersWithVariables) {
+        const variables = {
+          ...userEntry.variables,
+          username: userEntry.username,
+        };
+
+        const finalSubject = replaceVariables(subject, variables);
+        const finalBody = replaceVariables(body, variables);
+
+        const response = await fetch(`${API_BASE_URL}/admin/emails/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: adminUserId,
+            recipients: [userEntry.userId],
+            subject: finalSubject,
+            body: finalBody,
+            templateId: selectedTemplate || undefined,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+          totalSent += 1;
+        } else {
+          totalFailed += 1;
+        }
+      }
+
+      toast.success(`Emails sent successfully! ${totalSent} sent, ${totalFailed} failed`);
+      await resetEmailForm();
+    } catch (error) {
+      console.error('Error sending emails:', error);
+      toast.error('Failed to send emails');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   // Send emails
   const handleSendEmails = async () => {
     if (selectedUsers.size === 0) {
@@ -157,6 +265,24 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
 
     if (!subject.trim() || !body.trim()) {
       toast.error('Please enter both subject and body');
+      return;
+    }
+
+    const selected = getSelectedUserList();
+    const variables = extractTemplateVariables(subject, body);
+    const variablesNeedingInput = variables.filter((variable) => variable.toLowerCase() !== 'username');
+
+    if (variables.length > 0) {
+      const userVariableData = buildUserVariables(variables, selected);
+
+      if (variablesNeedingInput.length > 0) {
+        setTemplateVariables(variablesNeedingInput);
+        setUserVariables(userVariableData);
+        setShowVariablesModal(true);
+        return;
+      }
+
+      await sendEmailsForUserVariables(userVariableData);
       return;
     }
 
@@ -189,20 +315,37 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
         `Emails sent successfully! ${data.data.totalSent} sent, ${data.data.totalFailed} failed`
       );
 
-      // Clear form
-      setSelectedUsers(new Set());
-      setSubject('');
-      setBody('');
-      setSelectedTemplate('');
-
-      // Refresh templates to update usage count
-      await fetchTemplates();
+      await resetEmailForm();
     } catch (error) {
       console.error('Error sending emails:', error);
       toast.error('Failed to send emails');
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleVariableChange = (userId: string, variable: string, value: string) => {
+    setUserVariables((prev) =>
+      prev.map((entry) =>
+        entry.userId === userId
+          ? { ...entry, variables: { ...entry.variables, [variable]: value } }
+          : entry
+      )
+    );
+  };
+
+  const handleSendEmailsWithVariables = async () => {
+    if (templateVariables.length > 0) {
+      const missing = userVariables.some((entry) =>
+        templateVariables.some((variable) => !entry.variables[variable]?.trim())
+      );
+      if (missing) {
+        toast.error('Please fill in all template variables before sending');
+        return;
+      }
+    }
+
+    await sendEmailsForUserVariables(userVariables);
   };
 
   // Save template
@@ -783,6 +926,90 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
                   className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
                 >
                   Close Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showVariablesModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div>
+                  <h3 className="text-xl font-bold text-purple-900">Fill Template Variables</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Username is filled automatically for each user.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowVariablesModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-700" />
+                </button>
+              </div>
+
+              <div className="px-6 pt-4">
+                {templateVariables.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {templateVariables.map((variable) => (
+                      <span
+                        key={variable}
+                        className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-mono"
+                      >
+                        {`{{${variable}}}`}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-auto p-6 space-y-4">
+                {userVariables.map((entry) => (
+                  <div key={entry.userId} className="border border-purple-200 rounded-xl p-4 bg-purple-50/40">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                      <div>
+                        <p className="font-semibold text-purple-900">{entry.username}</p>
+                        <p className="text-sm text-purple-600">{entry.email}</p>
+                      </div>
+                      <div className="text-xs text-purple-500">Username auto-filled</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {templateVariables.map((variable) => (
+                        <div key={`${entry.userId}-${variable}`}>
+                          <label className="block text-xs font-semibold text-purple-700 mb-1">
+                            {variable}
+                          </label>
+                          <input
+                            type="text"
+                            value={entry.variables[variable] || ''}
+                            onChange={(e) => handleVariableChange(entry.userId, variable, e.target.value)}
+                            className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowVariablesModal(false)}
+                  className="flex-1 px-4 py-3 border-2 border-purple-200 text-purple-700 rounded-xl font-semibold hover:bg-purple-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendEmailsWithVariables}
+                  disabled={isSending}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50"
+                >
+                  {isSending ? 'Sending...' : `Send to ${userVariables.length} user${userVariables.length !== 1 ? 's' : ''}`}
                 </button>
               </div>
             </div>
