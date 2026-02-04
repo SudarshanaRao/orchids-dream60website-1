@@ -66,7 +66,11 @@ const defaultDomains = [
   'https://www.dream60.com',
   'https://dream60.com',
   'https://test.dream60.com',
-  'https://dream60website-1.vercel.app'
+  'https://prod.dream60.com',
+  'https://dream60website-1.vercel.app',
+  // Airpay payment gateway domains (for callbacks/redirects)
+  'https://secure.airpay.co.in',
+  'https://payments.airpay.co.in',
 ];
 
 allowedOrigins = [...new Set([...allowedOrigins, ...defaultDomains])];
@@ -131,7 +135,7 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-user-id', 'x-admin-id', 'X-User-Id', 'X-Admin-Id'],
     preflightContinue: false,
     optionsSuccessStatus: 204
   })

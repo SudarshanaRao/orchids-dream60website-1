@@ -27,65 +27,7 @@ const startSession = async (req, res) => {
     const now = new Date();
     const todayStr = getDateStrIST(now);
 
-    let userActivity = await UserActivity.findOne({ userId });
-
-    if (!userActivity) {
-      userActivity = new UserActivity({
-        userId,
-        username,
-        dailyActivities: [],
-        lifetimeStats: {
-          totalSessions: 0,
-          totalActiveTime: 0,
-          totalPageViews: 0,
-          totalInteractions: 0,
-          firstSeen: now,
-          lastSeen: now,
-          favoritePages: {},
-          averageSessionDuration: 0,
-        },
-        currentSession: {
-          sessionId,
-          startTime: now,
-          lastHeartbeat: now,
-          currentPage: '/',
-          isActive: true,
-        },
-      });
-    } else {
-      if (userActivity.currentSession?.isActive && userActivity.currentSession?.sessionId) {
-        await endSessionInternal(userActivity);
-      }
-
-      userActivity.currentSession = {
-        sessionId,
-        startTime: now,
-        lastHeartbeat: now,
-        currentPage: '/',
-        isActive: true,
-      };
-      userActivity.lifetimeStats.lastSeen = now;
-    }
-
-    let todayActivity = userActivity.dailyActivities.find(d => d.dateStr === todayStr);
-    if (!todayActivity) {
-      todayActivity = {
-        date: new Date(todayStr + 'T00:00:00+05:30'),
-        dateStr: todayStr,
-        sessions: [],
-        totalSessions: 0,
-        totalActiveTime: 0,
-        totalPageViews: 0,
-        totalInteractions: 0,
-        firstActivity: now,
-        lastActivity: now,
-        pageStats: {},
-      };
-      userActivity.dailyActivities.push(todayActivity);
-    }
-
-    const todayIdx = userActivity.dailyActivities.findIndex(d => d.dateStr === todayStr);
-    userActivity.dailyActivities[todayIdx].sessions.push({
+    const newSession = {
       sessionId,
       startTime: now,
       isActive: true,
@@ -94,12 +36,101 @@ const startSession = async (req, res) => {
       interactions: [],
       totalPageViews: 0,
       totalInteractions: 0,
-    });
-    userActivity.dailyActivities[todayIdx].totalSessions += 1;
-    userActivity.dailyActivities[todayIdx].firstActivity = userActivity.dailyActivities[todayIdx].firstActivity || now;
-    userActivity.lifetimeStats.totalSessions += 1;
+    };
 
-    await userActivity.save();
+    // Try to update existing user with today's activity already present
+    let result = await UserActivity.updateOne(
+      { userId, 'dailyActivities.dateStr': todayStr },
+      {
+        $set: {
+          'currentSession.sessionId': sessionId,
+          'currentSession.startTime': now,
+          'currentSession.lastHeartbeat': now,
+          'currentSession.currentPage': '/',
+          'currentSession.isActive': true,
+          'lifetimeStats.lastSeen': now,
+        },
+        $push: {
+          'dailyActivities.$.sessions': newSession,
+        },
+        $inc: {
+          'dailyActivities.$.totalSessions': 1,
+          'lifetimeStats.totalSessions': 1,
+        },
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      // User exists but no today's activity, or user doesn't exist at all
+      // Try to add today's activity to existing user
+      result = await UserActivity.updateOne(
+        { userId },
+        {
+          $set: {
+            'currentSession.sessionId': sessionId,
+            'currentSession.startTime': now,
+            'currentSession.lastHeartbeat': now,
+            'currentSession.currentPage': '/',
+            'currentSession.isActive': true,
+            'lifetimeStats.lastSeen': now,
+          },
+          $push: {
+            dailyActivities: {
+              date: new Date(todayStr + 'T00:00:00+05:30'),
+              dateStr: todayStr,
+              sessions: [newSession],
+              totalSessions: 1,
+              totalActiveTime: 0,
+              totalPageViews: 0,
+              totalInteractions: 0,
+              firstActivity: now,
+              lastActivity: now,
+              pageStats: {},
+            },
+          },
+          $inc: {
+            'lifetimeStats.totalSessions': 1,
+          },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        // User doesn't exist, create new
+        await UserActivity.create({
+          userId,
+          username,
+          dailyActivities: [{
+            date: new Date(todayStr + 'T00:00:00+05:30'),
+            dateStr: todayStr,
+            sessions: [newSession],
+            totalSessions: 1,
+            totalActiveTime: 0,
+            totalPageViews: 0,
+            totalInteractions: 0,
+            firstActivity: now,
+            lastActivity: now,
+            pageStats: {},
+          }],
+          lifetimeStats: {
+            totalSessions: 1,
+            totalActiveTime: 0,
+            totalPageViews: 0,
+            totalInteractions: 0,
+            firstSeen: now,
+            lastSeen: now,
+            favoritePages: {},
+            averageSessionDuration: 0,
+          },
+          currentSession: {
+            sessionId,
+            startTime: now,
+            lastHeartbeat: now,
+            currentPage: '/',
+            isActive: true,
+          },
+        });
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -112,38 +143,58 @@ const startSession = async (req, res) => {
   }
 };
 
-const endSessionInternal = async (userActivity) => {
-  const session = userActivity.currentSession;
-  if (!session?.sessionId || !session?.isActive) return;
-
+const endSessionInternal = async (userId, sessionId) => {
+  // This function now uses atomic updates instead of document.save()
   const now = new Date();
-  const duration = Math.floor((now - new Date(session.startTime)) / 1000);
-  const todayStr = getDateStrIST(session.startTime);
-
-  const todayIdx = userActivity.dailyActivities.findIndex(d => d.dateStr === todayStr);
-  if (todayIdx >= 0) {
-    const sessionIdx = userActivity.dailyActivities[todayIdx].sessions.findIndex(
-      s => s.sessionId === session.sessionId
-    );
-    if (sessionIdx >= 0) {
-      userActivity.dailyActivities[todayIdx].sessions[sessionIdx].endTime = now;
-      userActivity.dailyActivities[todayIdx].sessions[sessionIdx].duration = duration;
-      userActivity.dailyActivities[todayIdx].sessions[sessionIdx].isActive = false;
-    }
-    userActivity.dailyActivities[todayIdx].totalActiveTime += duration;
-    userActivity.dailyActivities[todayIdx].lastActivity = now;
-  }
-
-  userActivity.lifetimeStats.totalActiveTime += duration;
-  userActivity.lifetimeStats.lastSeen = now;
   
-  const totalSessions = userActivity.lifetimeStats.totalSessions || 1;
-  userActivity.lifetimeStats.averageSessionDuration = Math.floor(
-    userActivity.lifetimeStats.totalActiveTime / totalSessions
+  // First, get the session info to calculate duration
+  const userActivity = await UserActivity.findOne(
+    { userId, 'currentSession.sessionId': sessionId },
+    { 'currentSession.startTime': 1, 'dailyActivities': 1, 'lifetimeStats.totalSessions': 1 }
+  ).lean();
+  
+  if (!userActivity || !userActivity.currentSession?.startTime) return;
+  
+  const startTime = new Date(userActivity.currentSession.startTime);
+  const duration = Math.floor((now - startTime) / 1000);
+  const todayStr = getDateStrIST(startTime);
+  
+  // Find the daily activity index and session index
+  const todayIdx = userActivity.dailyActivities?.findIndex(d => d.dateStr === todayStr);
+  if (todayIdx < 0) return;
+  
+  const sessionIdx = userActivity.dailyActivities[todayIdx]?.sessions?.findIndex(
+    s => s.sessionId === sessionId
   );
-
-  userActivity.currentSession.isActive = false;
-  userActivity.currentSession.lastHeartbeat = now;
+  
+  const totalSessions = userActivity.lifetimeStats?.totalSessions || 1;
+  const currentTotalActiveTime = userActivity.lifetimeStats?.totalActiveTime || 0;
+  const newTotalActiveTime = currentTotalActiveTime + duration;
+  const newAverageSessionDuration = Math.floor(newTotalActiveTime / totalSessions);
+  
+  // Build atomic update
+  const updateOps = {
+    $set: {
+      'currentSession.isActive': false,
+      'currentSession.lastHeartbeat': now,
+      'lifetimeStats.lastSeen': now,
+      'lifetimeStats.averageSessionDuration': newAverageSessionDuration,
+    },
+    $inc: {
+      'lifetimeStats.totalActiveTime': duration,
+    },
+  };
+  
+  // If we found the session in daily activities, update it too
+  if (sessionIdx >= 0) {
+    updateOps.$set[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.endTime`] = now;
+    updateOps.$set[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.duration`] = duration;
+    updateOps.$set[`dailyActivities.${todayIdx}.sessions.${sessionIdx}.isActive`] = false;
+    updateOps.$set[`dailyActivities.${todayIdx}.lastActivity`] = now;
+    updateOps.$inc[`dailyActivities.${todayIdx}.totalActiveTime`] = duration;
+  }
+  
+  await UserActivity.updateOne({ userId, 'currentSession.sessionId': sessionId }, updateOps);
 };
 
 const endSession = async (req, res) => {
@@ -154,17 +205,7 @@ const endSession = async (req, res) => {
       return res.status(400).json({ success: false, message: 'userId required' });
     }
 
-    const userActivity = await UserActivity.findOne({ userId });
-    if (!userActivity) {
-      return res.status(404).json({ success: false, message: 'User activity not found' });
-    }
-
-    if (sessionId && userActivity.currentSession?.sessionId !== sessionId) {
-      return res.status(400).json({ success: false, message: 'Session mismatch' });
-    }
-
-    await endSessionInternal(userActivity);
-    await userActivity.save();
+    await endSessionInternal(userId, sessionId);
 
     return res.status(200).json({ success: true, message: 'Session ended' });
   } catch (err) {

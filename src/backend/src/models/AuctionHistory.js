@@ -746,13 +746,14 @@ auctionHistorySchema.statics.getUserStats = async function(userId) {
 /**
  * Static method: Sync claim status from AuctionHistory to HourlyAuction and DailyAuction
  * Ensures that if anyone in the top 3 claims the prize, the root winner info is updated.
+ * Uses atomic updates to avoid VersionError conflicts.
  */
 auctionHistorySchema.statics.syncClaimStatus = async function(hourlyAuctionId, winnersSnapshot = null) {
   try {
-    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId });
+    const hourlyAuction = await HourlyAuction.findOne({ hourlyAuctionId }).lean();
     if (!hourlyAuction) return;
 
-    const historyWinners = winnersSnapshot || await this.find({ hourlyAuctionId, isWinner: true });
+    const historyWinners = winnersSnapshot || await this.find({ hourlyAuctionId, isWinner: true }).lean();
     if (!historyWinners || historyWinners.length === 0) return;
 
     const byRank = historyWinners.reduce((acc, w) => {
@@ -760,50 +761,50 @@ auctionHistorySchema.statics.syncClaimStatus = async function(hourlyAuctionId, w
       return acc;
     }, {});
 
+    // Build hourly auction update
     if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
       let actualClaimer = null;
+      const hourlyUpdateOps = { $set: {} };
 
-      hourlyAuction.winners = hourlyAuction.winners.map(w => {
+      hourlyAuction.winners.forEach((w, idx) => {
         const hist = byRank[w.rank];
         if (hist) {
-          w.prizeClaimStatus = hist.prizeClaimStatus;
-          w.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-          w.prizeClaimedAt = hist.claimedAt || null;
-          w.prizeClaimedBy = hist.claimedBy || hist.username || null;
-          w.claimNotes = hist.claimNotes || null;
+          hourlyUpdateOps.$set[`winners.${idx}.prizeClaimStatus`] = hist.prizeClaimStatus;
+          hourlyUpdateOps.$set[`winners.${idx}.isPrizeClaimed`] = hist.prizeClaimStatus === 'CLAIMED';
+          hourlyUpdateOps.$set[`winners.${idx}.prizeClaimedAt`] = hist.claimedAt || null;
+          hourlyUpdateOps.$set[`winners.${idx}.prizeClaimedBy`] = hist.claimedBy || hist.username || null;
+          hourlyUpdateOps.$set[`winners.${idx}.claimNotes`] = hist.claimNotes || null;
 
-          if (w.isPrizeClaimed) {
-            actualClaimer = w;
+          if (hist.prizeClaimStatus === 'CLAIMED') {
+            actualClaimer = { ...w, prizeClaimStatus: hist.prizeClaimStatus, claimedBy: hist.claimedBy || hist.username };
           }
         }
-        return w;
       });
 
-      // ✅ Update top-level winner info to reflect the person who actually CLAIMED
+      // Update top-level winner info to reflect the person who actually CLAIMED
       if (actualClaimer) {
-        hourlyAuction.winnerId = actualClaimer.playerId;
-        hourlyAuction.winnerUsername = actualClaimer.playerUsername;
-        hourlyAuction.winningBid = actualClaimer.finalAuctionAmount;
-        
-        // Populate NEW top-level fields
-        hourlyAuction.prizeClaimedBy = actualClaimer.playerUsername;
-        hourlyAuction.prizeClaimStatus = actualClaimer.prizeClaimStatus;
+        hourlyUpdateOps.$set['winnerId'] = actualClaimer.playerId;
+        hourlyUpdateOps.$set['winnerUsername'] = actualClaimer.playerUsername;
+        hourlyUpdateOps.$set['winningBid'] = actualClaimer.finalAuctionAmount;
+        hourlyUpdateOps.$set['prizeClaimedBy'] = actualClaimer.playerUsername;
+        hourlyUpdateOps.$set['prizeClaimStatus'] = actualClaimer.prizeClaimStatus;
         
         console.log(`🏆 [SYNC_CLAIM] Updated HourlyAuction root winner to actual claimer: ${actualClaimer.playerUsername} (Rank ${actualClaimer.rank})`);
       } else {
         // Fallback to rank 1's status if no one has claimed yet
         const rank1 = byRank[1];
         if (rank1) {
-          hourlyAuction.prizeClaimStatus = rank1.prizeClaimStatus;
+          hourlyUpdateOps.$set['prizeClaimStatus'] = rank1.prizeClaimStatus;
         }
       }
 
-      hourlyAuction.markModified('winners');
-      await hourlyAuction.save();
+      if (Object.keys(hourlyUpdateOps.$set).length > 0) {
+        await HourlyAuction.updateOne({ hourlyAuctionId }, hourlyUpdateOps);
+      }
     }
 
-    // Sync to DailyAuction
-    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId });
+    // Sync to DailyAuction using atomic update
+    const dailyAuction = await DailyAuction.findOne({ dailyAuctionId: hourlyAuction.dailyAuctionId }).lean();
     if (dailyAuction) {
       const configIndex = dailyAuction.dailyAuctionConfig.findIndex(
         c => c.TimeSlot === hourlyAuction.TimeSlot && c.auctionNumber === hourlyAuction.auctionNumber
@@ -812,31 +813,39 @@ auctionHistorySchema.statics.syncClaimStatus = async function(hourlyAuctionId, w
       if (configIndex !== -1) {
         const config = dailyAuction.dailyAuctionConfig[configIndex];
         
-        if (config.topWinners) {
-          config.topWinners = config.topWinners.map(tw => {
+        if (config.topWinners && config.topWinners.length > 0) {
+          const dailyUpdateOps = { $set: {} };
+          let claimStatusForConfig = config.prizeClaimStatus;
+          let claimedByForConfig = config.prizeClaimedBy;
+          
+          config.topWinners.forEach((tw, idx) => {
             const hist = byRank[tw.rank];
             if (hist) {
-              tw.prizeClaimStatus = hist.prizeClaimStatus;
-              tw.isPrizeClaimed = hist.prizeClaimStatus === 'CLAIMED';
-              tw.prizeClaimedAt = hist.claimedAt || null;
-              tw.prizeClaimedBy = hist.claimedBy || hist.username || null;
-              tw.claimNotes = hist.claimNotes || null;
+              dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.topWinners.${idx}.prizeClaimStatus`] = hist.prizeClaimStatus;
+              dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.topWinners.${idx}.isPrizeClaimed`] = hist.prizeClaimStatus === 'CLAIMED';
+              dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.topWinners.${idx}.prizeClaimedAt`] = hist.claimedAt || null;
+              dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.topWinners.${idx}.prizeClaimedBy`] = hist.claimedBy || hist.username || null;
+              dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.topWinners.${idx}.claimNotes`] = hist.claimNotes || null;
 
-              if (tw.isPrizeClaimed) {
-                config.prizeClaimedBy = tw.prizeClaimedBy;
-                config.prizeClaimStatus = tw.prizeClaimStatus;
+              if (hist.prizeClaimStatus === 'CLAIMED') {
+                claimStatusForConfig = hist.prizeClaimStatus;
+                claimedByForConfig = hist.claimedBy || hist.username || null;
               }
             }
-            return tw;
           });
           
-          // Fallback for top-level claim status
-          if (config.prizeClaimStatus !== 'CLAIMED' && byRank[1]) {
-            config.prizeClaimStatus = byRank[1].prizeClaimStatus;
+          // Update top-level claim status for the config
+          if (claimStatusForConfig === 'CLAIMED') {
+            dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.prizeClaimStatus`] = claimStatusForConfig;
+            dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.prizeClaimedBy`] = claimedByForConfig;
+          } else if (byRank[1]) {
+            // Fallback for top-level claim status
+            dailyUpdateOps.$set[`dailyAuctionConfig.${configIndex}.prizeClaimStatus`] = byRank[1].prizeClaimStatus;
           }
           
-          dailyAuction.markModified('dailyAuctionConfig');
-          await dailyAuction.save();
+          if (Object.keys(dailyUpdateOps.$set).length > 0) {
+            await DailyAuction.updateOne({ dailyAuctionId: hourlyAuction.dailyAuctionId }, dailyUpdateOps);
+          }
         }
       }
     }
