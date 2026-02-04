@@ -788,15 +788,22 @@ exports.getPaymentStatus = async (req, res) => {
       }
     }
 
-    res.status(200).json({
-      success: true,
-      status: payment.status, // 'created', 'paid', 'failed'
-      paymentType: payment.paymentType,
-      amount: payment.amount,
-      auctionId: payment.auctionId,
-      orderId: payment.orderId,
-      auctionData
-    });
+      const transactionDate = payment.transactionDate || payment.airpayResponse?.transaction_time || payment.airpayResponse?.date || null;
+      const paidAt = payment.paidAt ? payment.paidAt.toISOString() : null;
+      const createdAt = payment.createdAt ? payment.createdAt.toISOString() : null;
+
+      res.status(200).json({
+        success: true,
+        status: payment.status, // 'created', 'paid', 'failed'
+        paymentType: payment.paymentType,
+        amount: payment.amount,
+        auctionId: payment.auctionId,
+        orderId: payment.orderId,
+        transactionDate,
+        paidAt,
+        createdAt,
+        auctionData
+      });
   } catch (error) {
     console.error('Error fetching payment status:', error);
     res.status(500).json({ success: false, message: error.message });

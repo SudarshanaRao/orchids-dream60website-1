@@ -377,16 +377,17 @@ const App = () => {
                 sessionStorage.setItem(sessionKey, 'true');
                 
                 // For entry fee and claim, show success data
-                const successData = {
-                  amount: data.amount,
-                  type: data.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
-                  boxNumber: 0,
-                  auctionId: data.auctionId,
-                  transactionId: data.orderId,
-                  hourlyAuctionId: data.auctionId,
-                  productName: data.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
-                  timeSlot: data.auctionData?.timeSlot
-                };
+                  const successData = {
+                    amount: data.amount,
+                    type: data.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
+                    boxNumber: 0,
+                    auctionId: data.auctionId,
+                    transactionId: data.orderId,
+                    transactionTime: data.transactionDate || data.paidAt || data.createdAt,
+                    hourlyAuctionId: data.auctionId,
+                    productName: data.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
+                    timeSlot: data.auctionData?.timeSlot
+                  };
                 
                 setShowEntrySuccess(successData as any);
                 // ✅ CRITICAL: Do NOT show the secondary detail modal on the result page to avoid duplicates
@@ -401,21 +402,22 @@ const App = () => {
         if (cookieData) {
           try {
             const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
-            setShowEntrySuccess({
-              amount: Number(airpayData.amount),
-              type: airpayData.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
-              boxNumber: 0,
-              auctionId: airpayData.auctionId,
-              transactionId: airpayData.txnId || airpayData.orderId,
-              paymentMethod: airpayData.method,
-              upiId: airpayData.upiId,
-              bankName: airpayData.bankName,
-              cardName: airpayData.cardName,
-              cardNumber: airpayData.cardNumber,
-              productName: airpayData.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
-              timeSlot: 'Active',
-              hourlyAuctionId: airpayData.hourlyAuctionId
-            } as any);
+              setShowEntrySuccess({
+                amount: Number(airpayData.amount),
+                type: airpayData.paymentType === 'PRIZE_CLAIM' ? 'claim' : 'entry',
+                boxNumber: 0,
+                auctionId: airpayData.auctionId,
+                transactionId: airpayData.txnId || airpayData.orderId,
+                transactionTime: airpayData.transactionTime || airpayData.airpayResponse?.transaction_time || airpayData.transactionDate || airpayData.paidAt || airpayData.createdAt,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                cardNumber: airpayData.cardNumber,
+                productName: airpayData.paymentType === 'PRIZE_CLAIM' ? 'Winner Prize Claim' : 'Auction Entry Fee',
+                timeSlot: 'Active',
+                hourlyAuctionId: airpayData.hourlyAuctionId
+              } as any);
             document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
           } catch (e) {
             console.error("Error parsing airpay cookie", e);
@@ -439,17 +441,18 @@ const App = () => {
         if (cookieData) {
           try {
             const airpayData = JSON.parse(decodeURIComponent(cookieData.split('=')[1]));
-            setShowEntryFailure({
-              entryFee: Number(airpayData.amount),
-              errorMessage: airpayData.message || 'Payment failed',
-              auctionId: airpayData.auctionId,
-              transactionId: airpayData.txnId || airpayData.orderId,
-              paymentMethod: airpayData.method,
-              upiId: airpayData.upiId,
-              bankName: airpayData.bankName,
-              cardName: airpayData.cardName,
-                cardNumber: airpayData.cardNumber
-              } as any);
+              setShowEntryFailure({
+                entryFee: Number(airpayData.amount),
+                errorMessage: airpayData.message || 'Payment failed',
+                auctionId: airpayData.auctionId,
+                transactionId: airpayData.txnId || airpayData.orderId,
+                transactionTime: airpayData.transactionTime || airpayData.airpayResponse?.transaction_time || airpayData.transactionDate || airpayData.paidAt || airpayData.createdAt,
+                paymentMethod: airpayData.method,
+                upiId: airpayData.upiId,
+                bankName: airpayData.bankName,
+                cardName: airpayData.cardName,
+                  cardNumber: airpayData.cardNumber
+                } as any);
               document.cookie = "airpay_txn_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             } catch (e) {
               console.error("Error parsing airpay cookie", e);
@@ -1056,7 +1059,7 @@ const App = () => {
       case 'tester-feedback': return <TesterFeedback user={currentUser} onBack={handleBackToGame} />;
       case 'transactions': return currentUser ? <TransactionHistoryPage user={currentUser} onBack={handleBackToGame} /> : null;
       case 'prizeshowcase': return <PrizeShowcasePage onBack={handleBackToGame} onJoinAuction={() => { handleBackToGame(); setTimeout(() => document.getElementById('auction-grid')?.scrollIntoView({ behavior: 'smooth' }), 100); }} hourlyAuctionId={selectedPrizeShowcaseAuctionId} />;
-        case 'payment-success': return <PaymentSuccess 
+      case 'payment-success': return <PaymentSuccess 
           amount={showEntrySuccess?.amount || showEntrySuccess?.entryFee || 0} 
           type={showEntrySuccess?.type || 'entry'} 
           boxNumber={showEntrySuccess?.boxNumber || 0} 
@@ -1068,14 +1071,15 @@ const App = () => {
           paidBy={showEntrySuccess?.paidBy} 
           paymentMethod={showEntrySuccess?.paymentMethod} 
           transactionId={showEntrySuccess?.transactionId} 
+          transactionTime={showEntrySuccess?.transactionTime}
           upiId={showEntrySuccess?.upiId}
           bankName={showEntrySuccess?.bankName}
           cardName={showEntrySuccess?.cardName}
           cardNumber={showEntrySuccess?.cardNumber}
-          onBackToHome={handleEntrySuccess} 
-          onClose={handleCloseEntrySuccess} 
+          onBackToHome={handleBackToGame} 
+          onClose={handleCloseEntrySuccess}
         />;
-      case 'payment-failure': return <PaymentFailure amount={showEntryFailure?.entryFee || 0} errorMessage={showEntryFailure?.errorMessage || 'Payment failed'} auctionId={showEntryFailure?.auctionId} auctionNumber={showEntryFailure?.auctionNumber} productName={showEntryFailure?.productName} productWorth={showEntryFailure?.productWorth} timeSlot={showEntryFailure?.timeSlot} paidBy={showEntryFailure?.paidBy} paymentMethod={showEntryFailure?.paymentMethod} transactionId={showEntryFailure?.transactionId} onRetry={() => setShowEntryFailure(null)} onBackToHome={handleBackToGame} onClose={handleCloseEntryFailure} />;
+      case 'payment-failure': return <PaymentFailure amount={showEntryFailure?.entryFee || 0} errorMessage={showEntryFailure?.errorMessage || 'Payment failed'} auctionId={showEntryFailure?.auctionId} auctionNumber={showEntryFailure?.auctionNumber} productName={showEntryFailure?.productName} productWorth={showEntryFailure?.productWorth} timeSlot={showEntryFailure?.timeSlot} paidBy={showEntryFailure?.paidBy} paymentMethod={showEntryFailure?.paymentMethod} transactionId={showEntryFailure?.transactionId} transactionTime={showEntryFailure?.transactionTime} onRetry={() => setShowEntryFailure(null)} onBackToHome={handleBackToGame} onClose={handleCloseEntryFailure} />;
       case 'contact': return <Contact onBack={handleBackToGame} />;
       default: return (
         <div className="min-h-screen bg-background">

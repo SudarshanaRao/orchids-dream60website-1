@@ -5,37 +5,39 @@ import { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import { toast } from 'sonner';
 
-interface PaymentSuccessProps {
-  amount: number;
-  type: 'entry' | 'bid' | 'claim';
-  boxNumber?: number;
-  auctionId?: string;
-  auctionNumber?: string | number;
-  productName?: string;
-  productWorth?: number;
-  timeSlot?: string;
-  paidBy?: string;
-  paymentMethod?: string;
-  transactionId?: string;
-  upiId?: string;
-  bankName?: string;
-  cardName?: string;
-  cardNumber?: string;
-  onBackToHome: () => void;
-  onClose?: () => void;
-}
+  interface PaymentSuccessProps {
+    amount: number;
+    type: 'entry' | 'bid' | 'claim';
+    boxNumber?: number;
+    auctionId?: string;
+    auctionNumber?: string | number;
+    productName?: string;
+    productWorth?: number;
+    timeSlot?: string;
+    paidBy?: string;
+    paymentMethod?: string;
+    transactionId?: string;
+    transactionTime?: string;
+    upiId?: string;
+    bankName?: string;
+    cardName?: string;
+    cardNumber?: string;
+    onBackToHome: () => void;
+    onClose?: () => void;
+  }
 
 export function PaymentSuccess({ 
   amount: initialAmount, 
   type, 
   boxNumber, 
-  productName: initialProductName,
-  paymentMethod: initialPaymentMethod,
-  transactionId: initialTransactionId,
-  upiId: initialUpiId,
-  bankName: initialBankName,
-  onBackToHome,
-  onClose
+    productName: initialProductName,
+    paymentMethod: initialPaymentMethod,
+    transactionId: initialTransactionId,
+    transactionTime: initialTransactionTime,
+    upiId: initialUpiId,
+    bankName: initialBankName,
+    onBackToHome,
+    onClose
 }: PaymentSuccessProps) {
   const [countdown, setCountdown] = useState(5);
   const [txnData, setTxnSummary] = useState<any>(null);
@@ -80,7 +82,7 @@ export function PaymentSuccess({
     const upiId = txnData?.upiId || initialUpiId;
     const bankName = txnData?.bankName || initialBankName;
     const productName = initialProductName || txnData?.productName || (type === 'entry' ? 'Auction Entry' : 'Winner Claim');
-    const displayTime = txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || 'N/A';
+    const displayTime = txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || initialTransactionTime || 'N/A';
 
     const downloadReceipt = () => {
       const doc = new jsPDF();

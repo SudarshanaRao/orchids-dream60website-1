@@ -8,6 +8,7 @@ interface PaymentFailureProps {
   type?: 'entry' | 'bid' | 'claim';
   errorMessage?: string;
   transactionId?: string;
+  transactionTime?: string;
   onRetry: () => void;
   onBackToHome: () => void;
   onClose?: () => void;
@@ -16,11 +17,12 @@ interface PaymentFailureProps {
   export function PaymentFailure({ 
     amount, 
     type = 'entry',
-    errorMessage = 'Payment processing failed',
-    transactionId: initialTransactionId,
-    onRetry,
-    onBackToHome,
-    onClose
+  errorMessage = 'Payment processing failed',
+  transactionId: initialTransactionId,
+  transactionTime: initialTransactionTime,
+  onRetry,
+  onBackToHome,
+  onClose
   }: PaymentFailureProps) {
     const [countdown, setCountdown] = useState(10);
     const [txnData, setTxnSummary] = useState<any>(null);
@@ -114,11 +116,11 @@ interface PaymentFailureProps {
                 </div>
               </div>
   
-              <div className="grid grid-cols-1 gap-2 sm:gap-3">
-                  <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
-                  <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
-                  <DetailRow label="Time" value={txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || 'N/A'} icon={<Clock className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
-                </div>
+                <div className="grid grid-cols-1 gap-2 sm:gap-3">
+                    <DetailRow label="Transaction ID" value={transactionId || 'N/A'} icon={<Zap className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
+                    <DetailRow label="Purpose" value={type === 'entry' ? 'Auction Entry Fee' : 'Winner Prize Claim'} icon={<Target className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
+                    <DetailRow label="Date & Time" value={txnData?.airpayResponse?.transaction_time || txnData?.transactionTime || initialTransactionTime || 'N/A'} icon={<Clock className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />} />
+                  </div>
             </div>
   
             <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100 space-y-3 sm:space-y-4">
