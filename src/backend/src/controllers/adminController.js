@@ -529,10 +529,77 @@ const updateMasterAuctionAdmin = async (req, res) => {
   }
 };
 
-/**
- * Delete Master Auction Admin
- */
-const deleteMasterAuctionAdmin = async (req, res) => {
+  /**
+   * Update Daily Auction Slot (within master auction)
+   */
+  const updateDailyAuctionSlot = async (req, res) => {
+    try {
+      const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+      }
+
+      const adminUser = await User.findOne({ user_id: userId });
+      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+        return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+      }
+
+      const { master_id, auction_number } = req.params;
+      const auctionNumber = parseInt(auction_number, 10);
+
+      const masterAuction = await MasterAuction.findOne({ master_id });
+      if (!masterAuction) return res.status(404).json({ success: false, message: 'Master auction not found' });
+
+      const slotIndex = masterAuction.dailyAuctionConfig.findIndex(
+        slot => slot.auctionNumber === auctionNumber
+      );
+      if (slotIndex === -1) {
+        return res.status(404).json({ success: false, message: 'Auction slot not found' });
+      }
+
+      const normalizedSlot = { ...req.body, auctionNumber };
+
+      if (
+        normalizedSlot.EntryFee === 'RANDOM' &&
+        (!normalizedSlot.BoxA || !normalizedSlot.BoxB) &&
+        (!normalizedSlot.FeeSplits?.BoxA || !normalizedSlot.FeeSplits?.BoxB)
+      ) {
+        const { BoxA, BoxB } = generateRandomFeeSplits(
+          normalizedSlot.minEntryFee || 20,
+          normalizedSlot.maxEntryFee || 80
+        );
+        normalizedSlot.BoxA = BoxA;
+        normalizedSlot.BoxB = BoxB;
+        normalizedSlot.FeeSplits = { BoxA, BoxB };
+      }
+
+      const existingSlot = masterAuction.dailyAuctionConfig[slotIndex];
+      const mergedSlot = {
+        ...(existingSlot?.toObject ? existingSlot.toObject() : existingSlot),
+        ...normalizedSlot,
+      };
+
+      masterAuction.dailyAuctionConfig[slotIndex] = mergedSlot;
+      masterAuction.modifiedBy = userId;
+      masterAuction.markModified('dailyAuctionConfig');
+      await masterAuction.save();
+      await syncProductsFromConfig([mergedSlot], userId);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Auction slot updated successfully',
+        data: mergedSlot
+      });
+    } catch (err) {
+      console.error('Update Daily Auction Slot Error:', err);
+      return res.status(500).json({ success: false, message: 'Server error' });
+    }
+  };
+
+  /**
+   * Delete Master Auction Admin
+   */
+  const deleteMasterAuctionAdmin = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
     const adminUser = await User.findOne({ user_id: userId });
@@ -594,6 +661,7 @@ const getPushSubscriptionStats = async (req, res) => {
 
     const processedSubs = subscriptions.map(s => ({
       ...s,
+      subscriptionId: s._id?.toString(),
       username: userMap[s.userId]?.username || 'Unknown',
       email: userMap[s.userId]?.email || 'Unknown',
     }));
@@ -631,7 +699,9 @@ const deletePushSubscriptionAdmin = async (req, res) => {
     }
 
     const { subscriptionId } = req.params;
-    await PushSubscription.findOneAndDelete({ subscriptionId });
+    await PushSubscription.findOneAndDelete({
+      $or: [{ _id: subscriptionId }, { subscriptionId }]
+    });
     return res.status(200).json({ success: true, message: 'Subscription deleted' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -1066,6 +1136,7 @@ module.exports = {
   createMasterAuctionAdmin,
   getAllMasterAuctionsAdmin,
   updateMasterAuctionAdmin,
+  updateDailyAuctionSlot,
   deleteMasterAuctionAdmin,
   deleteDailyAuctionSlot,
   getPushSubscriptionStats,

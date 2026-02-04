@@ -165,23 +165,55 @@ const EditSlotModal = ({
 }) => {
   const [formData, setFormData] = useState<DailyAuctionConfigItem>({ ...slot });
   const [isSaving, setIsSaving] = useState(false);
-  const [description, setDescription] = useState(
-    slot.productDescription?.main || ''
-  );
+  const [descriptionRows, setDescriptionRows] = useState(() => {
+    const entries = Object.entries(slot.productDescription || {});
+    if (entries.length === 0) {
+      return [{ key: '', value: '' }];
+    }
+    return entries.map(([key, value]) => ({
+      key,
+      value: value ? String(value) : ''
+    }));
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    // Include description in the save
+
+    const productDescription = descriptionRows.reduce<Record<string, string>>((acc, row) => {
+      const key = row.key.trim();
+      if (!key) return acc;
+      acc[key] = row.value ?? '';
+      return acc;
+    }, {});
+
     const updatedData = {
       ...formData,
-      productDescription: {
-        ...(formData.productDescription || {}),
-        main: description
-      }
+      productDescription
     };
     await onSave(updatedData);
     setIsSaving(false);
+  };
+
+  const handleDescriptionChange = (index: number, field: 'key' | 'value', value: string) => {
+    setDescriptionRows((prev) =>
+      prev.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, [field]: value } : row
+      )
+    );
+  };
+
+  const handleAddDescriptionRow = () => {
+    setDescriptionRows((prev) => [...prev, { key: '', value: '' }]);
+  };
+
+  const handleRemoveDescriptionRow = (index: number) => {
+    setDescriptionRows((prev) => {
+      if (prev.length === 1) {
+        return [{ key: '', value: '' }];
+      }
+      return prev.filter((_, rowIndex) => rowIndex !== index);
+    });
   };
 
   return (
@@ -232,16 +264,48 @@ const EditSlotModal = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-purple-900 mb-1">
+            <label className="block text-sm font-semibold text-purple-900 mb-2">
               Description
             </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter product description..."
-              rows={3}
-              className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 resize-none"
-            />
+            <div className="space-y-2">
+              <div className="grid grid-cols-[1fr_1.5fr_auto] gap-2 text-xs font-semibold text-purple-700">
+                <span>Label</span>
+                <span>Value</span>
+                <span className="sr-only">Actions</span>
+              </div>
+              {descriptionRows.map((row, index) => (
+                <div key={`${row.key}-${index}`} className="grid grid-cols-[1fr_1.5fr_auto] gap-2">
+                  <input
+                    type="text"
+                    value={row.key}
+                    onChange={(e) => handleDescriptionChange(index, 'key', e.target.value)}
+                    placeholder="e.g., Color"
+                    className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                  />
+                  <input
+                    type="text"
+                    value={row.value}
+                    onChange={(e) => handleDescriptionChange(index, 'value', e.target.value)}
+                    placeholder="e.g., Red"
+                    className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDescriptionRow(index)}
+                    className="px-3 py-2 text-xs font-semibold text-red-600 border-2 border-red-200 rounded-lg hover:bg-red-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleAddDescriptionRow}
+                className="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-purple-700 border-2 border-purple-200 rounded-lg hover:bg-purple-50"
+              >
+                Add Row
+              </button>
+            </div>
           </div>
 
           {/* Time Slot */}

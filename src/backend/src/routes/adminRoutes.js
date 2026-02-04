@@ -2,19 +2,20 @@
 const express = require('express');
 const router = express.Router();
 const {
-  adminLogin,
-  sendAdminSignupOtp,
-  adminSignup,
-  getUserStatistics,
-  getAllUsersAdmin,
-  getAllMasterAuctionsWithConfig,
-  createMasterAuctionAdmin,
-  getAllMasterAuctionsAdmin,
-  updateMasterAuctionAdmin,
-  deleteMasterAuctionAdmin,
-  deleteDailyAuctionSlot,
-  getPushSubscriptionStats,
-  deletePushSubscriptionAdmin,
+    adminLogin,
+    sendAdminSignupOtp,
+    adminSignup,
+    getUserStatistics,
+    getAllUsersAdmin,
+    getAllMasterAuctionsWithConfig,
+    createMasterAuctionAdmin,
+    getAllMasterAuctionsAdmin,
+    updateMasterAuctionAdmin,
+    updateDailyAuctionSlot,
+    deleteMasterAuctionAdmin,
+    deleteDailyAuctionSlot,
+    getPushSubscriptionStats,
+    deletePushSubscriptionAdmin,
     getAnalyticsData,
     updateUserSuperAdminStatus,
     setSuperAdminByEmail,
@@ -575,6 +576,7 @@ router.get('/master-auctions/all-with-config', getAllMasterAuctionsWithConfig);
  */
 router.put('/master-auctions/:master_id', updateMasterAuctionAdmin);
 router.delete('/master-auctions/:master_id', deleteMasterAuctionAdmin);
+router.put('/master-auctions/:master_id/slots/:auction_number', updateDailyAuctionSlot);
 
 /**
  * @swagger

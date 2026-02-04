@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/api-config';
 
 interface SubscriptionUser {
-  subscriptionId: string;
+  subscriptionId?: string;
+  _id?: string;
+  endpoint?: string;
   userId: string;
   username: string;
   email: string;
@@ -69,6 +71,12 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
     const adminId = adminUserId || localStorage.getItem('admin_user_id');
 
+  const getSubscriptionKey = (user: SubscriptionUser) =>
+    user.subscriptionId || user._id || user.endpoint || '';
+
+  const allSubscriptionKeys = allSubscribedUsers
+    .map(getSubscriptionKey)
+    .filter(Boolean);
 
   useEffect(() => {
     fetchSubscriptionStats();
@@ -112,9 +120,22 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         const data = await response.json();
 
         if (data.success) {
-          setStats(data.data);
+          const normalizedPwa = (data.data.pwaUsers || []).map((user: SubscriptionUser) => ({
+            ...user,
+            subscriptionId: user.subscriptionId || user._id || ''
+          }));
+          const normalizedWeb = (data.data.webUsers || []).map((user: SubscriptionUser) => ({
+            ...user,
+            subscriptionId: user.subscriptionId || user._id || ''
+          }));
+
+          setStats({
+            ...data.data,
+            pwaUsers: normalizedPwa,
+            webUsers: normalizedWeb
+          });
           // Combine PWA and Web users into a single array
-          const allUsers = [...data.data.pwaUsers, ...data.data.webUsers];
+          const allUsers = [...normalizedPwa, ...normalizedWeb];
           setAllSubscribedUsers(allUsers);
         } else {
           toast.error(data.message || 'Failed to load subscription stats');
@@ -129,15 +150,16 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
 
   const handleSelectAll = () => {
-    if (selectedSubscriptions.size === allSubscribedUsers.length) {
+    if (selectedSubscriptions.size === allSubscriptionKeys.length) {
       setSelectedSubscriptions(new Set());
     } else {
-      const allIds = new Set(allSubscribedUsers.map(u => u.subscriptionId));
+      const allIds = new Set(allSubscriptionKeys);
       setSelectedSubscriptions(allIds);
     }
   };
 
   const handleToggleSubscription = (subscriptionId: string) => {
+    if (!subscriptionId) return;
     const next = new Set(selectedSubscriptions);
     if (next.has(subscriptionId)) {
       next.delete(subscriptionId);
@@ -158,8 +180,14 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       return;
     }
 
+    const resolvedAdminId = adminUserId || localStorage.getItem('admin_user_id');
+    if (!resolvedAdminId) {
+      toast.error('Admin session expired. Please login again.');
+      return;
+    }
+
       const selectedUserIds = allSubscribedUsers
-        .filter(u => selectedSubscriptions.has(u.subscriptionId))
+        .filter(u => selectedSubscriptions.has(getSubscriptionKey(u)))
         .map(u => u.userId)
         .filter(Boolean);
 
@@ -168,17 +196,19 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
 
       try {
         setIsSending(true);
-        const response = await fetch(API_ENDPOINTS.pushNotification.sendToSelected, {
+        const response = await fetch(`${API_ENDPOINTS.pushNotification.sendToSelected}?user_id=${resolvedAdminId}`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-user-id': resolvedAdminId
           },
           body: JSON.stringify({
             ...notificationData,
             ...richNotificationData,
             userIds: uniqueUserIds,
             subscriptionIds,
-            adminId
+            adminId: resolvedAdminId,
+            user_id: resolvedAdminId
           })
         });
 
@@ -232,16 +262,25 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
       return;
     }
 
+    const resolvedAdminId = adminUserId || localStorage.getItem('admin_user_id');
+    if (!resolvedAdminId) {
+      toast.error('Admin session expired. Please login again.');
+      return;
+    }
+
     try {
       setIsSending(true);
-      const response = await fetch(API_ENDPOINTS.pushNotification.sendToAll, {
+      const response = await fetch(`${API_ENDPOINTS.pushNotification.sendToAll}?user_id=${resolvedAdminId}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-user-id': resolvedAdminId
         },
         body: JSON.stringify({
           ...notificationData,
-          ...richNotificationData
+          ...richNotificationData,
+          adminId: resolvedAdminId,
+          user_id: resolvedAdminId
         })
       });
 
@@ -371,12 +410,12 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
               <input
                 type="checkbox"
                 id="selectAll"
-                checked={selectedSubscriptions.size === allSubscribedUsers.length && allSubscribedUsers.length > 0}
+                checked={selectedSubscriptions.size === allSubscriptionKeys.length && allSubscriptionKeys.length > 0}
                 onChange={handleSelectAll}
                 className="w-4 h-4 text-purple-700 rounded border-purple-300 focus:ring-purple-500"
               />
               <label htmlFor="selectAll" className="text-sm font-semibold text-purple-900 cursor-pointer">
-                Select All ({selectedSubscriptions.size}/{allSubscribedUsers.length})
+                Select All ({selectedSubscriptions.size}/{allSubscriptionKeys.length})
               </label>
             </div>
           </div>
@@ -419,27 +458,34 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {stats.pwaUsers.length === 0 ? (
                       <p className="text-sm text-green-600 text-center py-4">No PWA subscriptions yet</p>
-                    ) : (
-                      stats.pwaUsers.map((user) => {
-                        const isSelected = selectedSubscriptions.has(user.subscriptionId);
-                        return (
-                          <div 
-                            key={user.subscriptionId} 
-                            onClick={() => handleToggleSubscription(user.subscriptionId)}
-                            className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'border-green-500 bg-green-50 ring-2 ring-green-300' 
-                                : 'border-green-200 hover:bg-green-50'
-                            }`}
-                          >
+                      ) : (
+                        stats.pwaUsers.map((user) => {
+                          const subscriptionKey = getSubscriptionKey(user);
+                          const isSelected = selectedSubscriptions.has(subscriptionKey);
+                          return (
+                            <div 
+                              key={subscriptionKey} 
+                              onClick={() => handleToggleSubscription(subscriptionKey)}
+                              className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'border-green-500 bg-green-50 ring-2 ring-green-300' 
+                                  : 'border-green-200 hover:bg-green-50'
+                              }`}
+                            >
                             <div className="flex items-start gap-2">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSubscription(user.subscriptionId)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="mt-1 w-4 h-4 text-green-700 rounded border-green-300 focus:ring-green-500"
-                              />
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    // Prevent double-toggle from div onClick
+                                  }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleSubscription(subscriptionKey);
+                                    }}
+                                  className="mt-1 w-4 h-4 text-green-700 rounded border-green-300 focus:ring-green-500"
+                                />
                               <div className="flex-1">
                                 <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
                                 <p className="text-xs text-gray-600">{user.email}</p>
@@ -451,9 +497,9 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRemoveSubscription(user.subscriptionId);
+                                    handleRemoveSubscription(subscriptionKey);
                                 }}
-                                disabled={removingId === user.subscriptionId}
+                                disabled={removingId === subscriptionKey}
                                 className="ml-2 px-2 py-1 text-xs text-red-600 hover:text-red-700 border border-red-200 rounded-md flex items-center gap-1 disabled:opacity-50"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -477,27 +523,34 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {stats.webUsers.length === 0 ? (
                       <p className="text-sm text-blue-600 text-center py-4">No web subscriptions yet</p>
-                    ) : (
-                      stats.webUsers.map((user) => {
-                        const isSelected = selectedSubscriptions.has(user.subscriptionId);
-                        return (
-                          <div 
-                            key={user.subscriptionId} 
-                            onClick={() => handleToggleSubscription(user.subscriptionId)}
-                            className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
-                                : 'border-blue-200 hover:bg-blue-50'
-                            }`}
-                          >
+                      ) : (
+                        stats.webUsers.map((user) => {
+                          const subscriptionKey = getSubscriptionKey(user);
+                          const isSelected = selectedSubscriptions.has(subscriptionKey);
+                          return (
+                            <div 
+                              key={subscriptionKey} 
+                              onClick={() => handleToggleSubscription(subscriptionKey)}
+                              className={`bg-white rounded-lg p-3 border cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300' 
+                                  : 'border-blue-200 hover:bg-blue-50'
+                              }`}
+                            >
                             <div className="flex items-start gap-2">
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSubscription(user.subscriptionId)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="mt-1 w-4 h-4 text-blue-700 rounded border-blue-300 focus:ring-blue-500"
-                              />
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    // Prevent double-toggle from div onClick
+                                  }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleSubscription(subscriptionKey);
+                                    }}
+                                  className="mt-1 w-4 h-4 text-blue-700 rounded border-blue-300 focus:ring-blue-500"
+                                />
                               <div className="flex-1">
                                 <p className="font-semibold text-sm text-gray-900">{user.username || 'Unknown'}</p>
                                 <p className="text-xs text-gray-600">{user.email}</p>
@@ -509,9 +562,9 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRemoveSubscription(user.subscriptionId);
+                                    handleRemoveSubscription(subscriptionKey);
                                 }}
-                                disabled={removingId === user.subscriptionId}
+                                disabled={removingId === subscriptionKey}
                                 className="ml-2 px-2 py-1 text-xs text-red-600 hover:text-red-700 border border-red-200 rounded-md flex items-center gap-1 disabled:opacity-50"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
