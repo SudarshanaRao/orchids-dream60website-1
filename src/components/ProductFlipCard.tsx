@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info, X } from 'lucide-react';
 
 interface ProductImage {
   imageUrl: string;
@@ -21,6 +21,7 @@ interface ProductFlipCardProps {
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [showDisclaimer, setShowDisclaimer] = useState(false);
 
     useEffect(() => {
       const checkMobile = () => {
@@ -118,15 +119,31 @@ interface ProductFlipCardProps {
                 </div>
               </div>
 
-              {productImages.length > 1 && (
-                <div className="absolute top-3 right-3 z-10">
-                  <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
-                    <span className="text-xs text-white font-medium">
-                      {currentIndex + 1}/{productImages.length}
+                {productImages.length > 1 && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
+                      <span className="text-xs text-white font-medium">
+                        {currentIndex + 1}/{productImages.length}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Disclaimer Badge */}
+                <div className="absolute bottom-12 left-3 right-3 z-10">
+                  <div 
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/90 backdrop-blur-md rounded-lg cursor-pointer hover:bg-amber-600/90 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDisclaimer(true);
+                    }}
+                  >
+                    <Info className="w-3.5 h-3.5 text-white flex-shrink-0" />
+                    <span className="text-[10px] text-white font-medium leading-tight">
+                      Images are for representation only
                     </span>
                   </div>
                 </div>
-              )}
 
               <div className="w-full h-full flex items-center justify-center p-8">
                 <img
@@ -271,27 +288,103 @@ interface ProductFlipCardProps {
         </div>
       )}
 
-      <style>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-        .custom-scrollbar {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-    </div>
-  );
-}
+        <style>{`
+          .perspective-1000 {
+            perspective: 1000px;
+          }
+          .transform-style-3d {
+            transform-style: preserve-3d;
+          }
+          .backface-hidden {
+            backface-visibility: hidden;
+          }
+          .rotate-y-180 {
+            transform: rotateY(180deg);
+          }
+          .custom-scrollbar {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          .custom-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
+
+        {/* Disclaimer Modal */}
+        {showDisclaimer && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowDisclaimer(false)}
+          >
+            <div 
+              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-5 h-5 text-white" />
+                    <h3 className="text-lg font-bold text-white">Important Information</h3>
+                  </div>
+                  <button 
+                    onClick={() => setShowDisclaimer(false)}
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-5 space-y-4">
+                {/* Representation Disclaimer */}
+                <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-lg">🖼️</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-amber-800 mb-1">Images for Representation Only</h4>
+                    <p className="text-sm text-amber-700">
+                      Product images shown are for illustrative purposes only. Actual products may vary in appearance, color, or specifications.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Amazon Voucher Info - Highlighted */}
+                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-300 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <span className="text-xl">🎁</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-purple-800 mb-1.5 text-base">Prize: Amazon Gift Voucher</h4>
+                    <p className="text-sm text-purple-700 leading-relaxed">
+                      <strong>Winners receive an Amazon Gift Voucher</strong> worth the displayed prize value (₹{prizeValue.toLocaleString('en-IN')}), not the physical product shown.
+                    </p>
+                    <p className="text-xs text-purple-600 mt-2 italic">
+                      Use your voucher to purchase any item of your choice on Amazon.in
+                    </p>
+                  </div>
+                </div>
+
+                {/* Terms reminder */}
+                <p className="text-xs text-gray-500 text-center">
+                  By participating, you agree to our Terms & Conditions.
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="px-5 pb-5">
+                <button
+                  onClick={() => setShowDisclaimer(false)}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
