@@ -1119,10 +1119,8 @@ const App = () => {
                             {liveAuctionData?.winnersAnnounced ? (
                                 <button
                                   onClick={() => {
-                                    if (!currentAuction.userHasPaidEntry) return;
-                                    setSelectedLeaderboard(null);
-                                    setCurrentPage('leaderboard');
-                                    window.history.pushState({}, '', '/leaderboard');
+                                    if (!currentAuction.userHasPaidEntry || !liveAuctionData?.hourlyAuctionId) return;
+                                    handleNavigate('auction-leaderboard', { hourlyAuctionId: liveAuctionData.hourlyAuctionId });
                                   }}
                                   disabled={!currentAuction.userHasPaidEntry}
                                   className={`bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 text-left transition-all ${

@@ -1,5 +1,5 @@
 // src/controllers/contactController.js
-const { sendCustomEmail } = require('../utils/emailService');
+const { sendEmailWithTemplate } = require('../utils/emailService');
 
 /**
  * Send Contact Form Message
@@ -53,174 +53,38 @@ const sendContactMessage = async (req, res) => {
     console.log(`   Message: ${message}`);
     console.log(`   Timestamp: ${new Date().toISOString()}`);
 
-    // Create HTML email body
-    const emailBody = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-          }
-          .header {
-            background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-            padding: 30px;
-            text-align: center;
-            color: white;
-          }
-          .header h1 {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 600;
-          }
-          .header p {
-            margin: 10px 0 0;
-            opacity: 0.9;
-            font-size: 14px;
-          }
-          .content {
-            padding: 30px;
-          }
-          .ticket-badge {
-            background: #f0e6ff;
-            color: #6b3fa0;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 20px;
-          }
-          .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-          }
-          .info-table tr {
-            border-bottom: 1px solid #eee;
-          }
-          .info-table td {
-            padding: 12px 0;
-          }
-          .info-table td:first-child {
-            font-weight: 600;
-            color: #6b3fa0;
-            width: 120px;
-          }
-          .message-box {
-            background: #f9f9f9;
-            border-left: 4px solid #6b3fa0;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 0 8px 8px 0;
-          }
-          .message-box h3 {
-            margin: 0 0 10px;
-            color: #6b3fa0;
-            font-size: 14px;
-          }
-          .message-box p {
-            margin: 0;
-            white-space: pre-wrap;
-            color: #555;
-          }
-          .footer {
-            background: #f9f9f9;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-          }
-          .footer a {
-            color: #6b3fa0;
-            text-decoration: none;
-          }
-          .reply-btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #6b3fa0 0%, #9f7acb 100%);
-            color: white;
-            text-decoration: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            margin-top: 15px;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>📩 New Support Ticket</h1>
-            <p>Dream60 Contact Form Submission</p>
-          </div>
-          <div class="content">
-            <span class="ticket-badge">${categoryLabel}</span>
-            
-            <table class="info-table">
-              <tr>
-                <td>From:</td>
-                <td>${name}</td>
-              </tr>
-              <tr>
-                <td>Email:</td>
-                <td><a href="mailto:${email}" style="color: #6b3fa0;">${email}</a></td>
-              </tr>
-              <tr>
-                <td>Category:</td>
-                <td>${categoryLabel}</td>
-              </tr>
-              <tr>
-                <td>Subject:</td>
-                <td>${subject}</td>
-              </tr>
-              <tr>
-                <td>Date:</td>
-                <td>${new Date().toLocaleString('en-IN', { 
-                  dateStyle: 'full', 
-                  timeStyle: 'short',
-                  timeZone: 'Asia/Kolkata'
-                })}</td>
-              </tr>
-            </table>
-            
-            <div class="message-box">
-              <h3>Message:</h3>
-              <p>${message.replace(/\n/g, '<br>')}</p>
-            </div>
-            
-            <div style="text-align: center;">
-              <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject)}" class="reply-btn">
-                Reply to ${name}
-              </a>
-            </div>
-          </div>
-          <div class="footer">
-            <p>This ticket was submitted via the Dream60 Contact Form</p>
-            <p>© ${new Date().getFullYear()} Dream60. All rights reserved.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const ticketId = `D60-${Math.floor(10000 + Math.random() * 90000)}`;
+    const submittedAt = new Date().toLocaleString('en-IN', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+      timeZone: 'Asia/Kolkata'
+    });
 
-    // Try to send email
-    const emailSubject = `[Dream60 Support] ${categoryLabel}: ${subject}`;
-    const result = await sendCustomEmail(supportEmail, emailSubject, emailBody);
+    const result = await sendEmailWithTemplate(
+      supportEmail,
+      'Support Ticket',
+      {
+        name,
+        Name: name,
+        username: name,
+        Username: name,
+        email,
+        Email: email,
+        subject,
+        Subject: subject,
+        category: categoryLabel,
+        Category: categoryLabel,
+        message,
+        Message: message,
+        ticketId,
+        TicketId: ticketId,
+        topic: subject,
+        Topic: subject,
+        submittedAt,
+        SubmittedAt: submittedAt
+      },
+      { fromName: 'Dream60 Support' }
+    );
 
     if (result.success) {
       console.log(`✅ Contact form email sent successfully from ${email} to ${supportEmail}`);

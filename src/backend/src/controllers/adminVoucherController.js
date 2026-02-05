@@ -3,7 +3,7 @@ const AuctionHistory = require('../models/AuctionHistory');
 const User = require('../models/user');
 const Voucher = require('../models/Voucher');
 const woohooService = require('../utils/woohooService');
-const { sendEmail } = require('../utils/emailService');
+const { sendAmazonVoucherEmail } = require('../utils/emailService');
 
 const verifyAdmin = async (userId) => {
     if (!userId) return null;
@@ -169,9 +169,6 @@ const sendVoucher = async (req, res) => {
         }
 
         await voucher.save();
-
-        // 6. Send Email/Message (Optional, can be triggered separately or auto)
-        // For now, let's mark it as ready
         
         return res.status(200).json({
             success: true,
@@ -429,12 +426,25 @@ const resendVoucherEmail = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User or user email not found' });
         }
 
-        // Send email logic here (placeholder for now)
-        // const emailResult = await sendEmail(...);
+        // Get auction history for payment amount
+        const historyEntry = await AuctionHistory.findOne({ hourlyAuctionId: voucher.auctionId, userId: voucher.userId });
+
+        // Send Amazon Voucher Email
+        const emailResult = await sendAmazonVoucherEmail(user.email, {
+            username: user.username || 'Customer',
+            voucherAmount: voucher.amount,
+            giftCardCode: voucher.cardNumber,
+            paymentAmount: historyEntry?.lastRoundBidAmount || 0,
+            redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance'
+        });
+
+        if (!emailResult.success) {
+            return res.status(500).json({ success: false, message: 'Failed to send voucher email' });
+        }
 
         return res.status(200).json({
             success: true,
-            message: 'Voucher email resend triggered'
+            message: 'Voucher email resent successfully'
         });
     } catch (error) {
         console.error('Error resending voucher email:', error);

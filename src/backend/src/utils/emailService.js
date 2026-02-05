@@ -610,6 +610,7 @@ const buildEmailTemplate = ({ primaryClientUrl, title, status, bodyHtml, isWinne
  */
 const getTemplateByName = async (templateName) => {
   const cacheKey = templateName.toLowerCase();
+  const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   // Use cache if available (5 minute TTL)
   const cached = templateCache.get(cacheKey);
@@ -619,19 +620,35 @@ const getTemplateByName = async (templateName) => {
 
   try {
     let template = null;
+    const escapedName = escapeRegex(templateName);
+    const exactMatchQuery = {
+      $or: [
+        { name: { $regex: new RegExp(`^${escapedName}$`, 'i') } },
+        { slug: { $regex: new RegExp(`^${escapedName}$`, 'i') } }
+      ],
+      isActive: true
+    };
+
     // Special handling for OTP verification
     if (cacheKey === 'otp verification') {
       template = await EmailTemplate.findOne({ 
         $or: [
           { _id: '6970bbcb23cce053a4f63b55' },
-          { name: { $regex: new RegExp(`^${templateName}$`, 'i') } }
+          ...exactMatchQuery.$or
         ],
         isActive: true 
       }).lean();
     } else {
-      template = await EmailTemplate.findOne({ 
-        name: { $regex: new RegExp(`^${templateName}$`, 'i') }, 
-        isActive: true 
+      template = await EmailTemplate.findOne(exactMatchQuery).lean();
+    }
+
+    if (!template) {
+      template = await EmailTemplate.findOne({
+        $or: [
+          { name: { $regex: new RegExp(escapedName, 'i') } },
+          { slug: { $regex: new RegExp(escapedName, 'i') } }
+        ],
+        isActive: true
       }).lean();
     }
     
@@ -766,10 +783,11 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
     const { username, auctionName, prizeAmount, claimDeadline, paymentAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Prize Winner');
+    // DB template name: "Prize Winner (Rank #1)"
+    const template = await getTemplateByName('Prize Winner (Rank #1)');
 
     if (!template) {
-      console.warn('Template "Prize Winner" not found.');
+      console.warn('Template "Prize Winner (Rank #1)" not found.');
       return { success: false, message: 'Email template not found' };
     }
 
@@ -818,10 +836,11 @@ const sendWaitingQueueEmail = async (email, details) => {
     const { username, auctionName, rank, prizeAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Waiting Queue');
+    // DB template name: "Waiting Queue (Rank #2 & #3)"
+    const template = await getTemplateByName('Waiting Queue (Rank #2 & #3)');
 
     if (!template) {
-      console.warn('Template "Waiting Queue" not found.');
+      console.warn('Template "Waiting Queue (Rank #2 & #3)" not found.');
       return { success: false, message: 'Email template not found' };
     }
 
@@ -959,17 +978,19 @@ const sendPrizeClaimedEmail = async (email, details) => {
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return { success: false };
 
     const transporter = createTransporter();
-    const { username, auctionName, prizeAmount, claimDate, transactionId, rewardType } = details;
+    const { username, auctionName, prizeAmount, claimDate, transactionId, rewardType, paymentAmount } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     
-    const template = await getTemplateByName('Prize Claimed');
+    // DB template name: "Prize claim"
+    const template = await getTemplateByName('Prize claim');
 
     if (!template) {
-      console.warn('Template "Prize Claimed" not found.');
+      console.warn('Template "Prize claim" not found.');
       return { success: false, message: 'Email template not found' };
     }
 
     const formattedDate = new Date(claimDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    const formattedPayment = paymentAmount ? paymentAmount.toLocaleString('en-IN') : '0';
     const variables = { 
       username, Username: username, name: username, Name: username,
       auctionName, AuctionName: auctionName,
@@ -977,7 +998,8 @@ const sendPrizeClaimedEmail = async (email, details) => {
       PrizeAmount: prizeAmount.toLocaleString('en-IN'),
       claimDate: formattedDate, ClaimDate: formattedDate,
       transactionId: transactionId || 'N/A', TransactionId: transactionId || 'N/A',
-      rewardType: rewardType || 'Cash Prize', RewardType: rewardType || 'Cash Prize',
+      rewardType: rewardType || 'Amazon Voucher', RewardType: rewardType || 'Amazon Voucher',
+      paymentAmount: formattedPayment, PaymentAmount: formattedPayment,
       history_url: `${primaryClientUrl}/history`
     };
     const subject = replaceTemplateVariables(template.subject, variables);
@@ -1006,6 +1028,7 @@ const sendPrizeClaimedEmail = async (email, details) => {
 
 /**
  * Send Support Receipt Email
+ * DB template name: "Support Request Received"
  */
 const sendSupportReceiptEmail = async (email, details) => {
   try {
@@ -1018,10 +1041,11 @@ const sendSupportReceiptEmail = async (email, details) => {
     const displayName = username || 'Valued Player';
     const displayTopic = topic || 'General Inquiry';
     
-    const template = await getTemplateByName('Support Ticket');
+    // DB template name: "Support Request Received"
+    const template = await getTemplateByName('Support Request Received');
 
     if (!template) {
-      console.warn('Template "Support Ticket" not found.');
+      console.warn('Template "Support Request Received" not found.');
       return { success: false, message: 'Email template not found' };
     }
 
@@ -1082,9 +1106,63 @@ const sendCustomEmail = async (recipients, subject, body, attachments = []) => {
 };
 
 /**
+ * Send Amazon Voucher Email
+ * DB template name: "amazon voucher"
+ * Variables: {{username}}, {{voucherAmount}}, {{giftCardCode}}, {{paymentAmount}}, {{redeemLink}}
+ */
+const sendAmazonVoucherEmail = async (email, details) => {
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return { success: false };
+
+    const transporter = createTransporter();
+    const { username, voucherAmount, giftCardCode, paymentAmount, redeemLink } = details;
+    
+    const template = await getTemplateByName('amazon voucher');
+
+    if (!template) {
+      console.warn('Template "amazon voucher" not found.');
+      return { success: false, message: 'Email template not found' };
+    }
+
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      voucherAmount: voucherAmount ? voucherAmount.toLocaleString('en-IN') : '0',
+      VoucherAmount: voucherAmount ? voucherAmount.toLocaleString('en-IN') : '0',
+      giftCardCode: giftCardCode || 'N/A',
+      GiftCardCode: giftCardCode || 'N/A',
+      paymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '0',
+      PaymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '0',
+      redeemLink: redeemLink || 'https://www.amazon.in/gc/balance',
+      redeem_link: redeemLink || 'https://www.amazon.in/gc/balance'
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
+
+    const mailOptions = {
+      from: `"Dream60 Rewards" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: subject,
+      html: htmlBody,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL] Amazon voucher sent to ${email}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Amazon voucher email error:', error);
+    return { success: false };
+  }
+};
+
+/**
  * Send email using database template
  */
-  const sendEmailWithTemplate = async (email, templateName, variables = {}) => {
+  const sendEmailWithTemplate = async (email, templateName, variables = {}, options = {}) => {
     try {
       if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
         console.warn('⚠️ Email credentials not configured.');
@@ -1108,11 +1186,12 @@ const sendCustomEmail = async (recipients, subject, body, attachments = []) => {
       );
 
       const mailOptions = {
-        from: `"Dream60" <${process.env.EMAIL_USER}>`,
+        from: `"${options.fromName || 'Dream60'}" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: subject,
         html: body,
         text: body.replace(/<[^>]*>/g, ''),
+        attachments: options.attachments || [],
       };
 
       const info = await transporter.sendMail(mailOptions);
@@ -1134,6 +1213,7 @@ module.exports = {
   sendWinnersAnnouncementEmail,
   sendSupportReceiptEmail,
   sendCustomEmail,
+  sendAmazonVoucherEmail,
   sendEmailWithTemplate,
   getTemplateByName,
   replaceTemplateVariables,

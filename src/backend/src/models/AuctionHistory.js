@@ -1,6 +1,6 @@
 // src/models/AuctionHistory.js
 const mongoose = require('mongoose');
-const { sendPrizeClaimWinnerEmail, sendWaitingQueueEmail } = require('../utils/emailService');
+const { sendPrizeClaimWinnerEmail, sendWaitingQueueEmail, sendPrizeClaimedEmail } = require('../utils/emailService');
 const { sendSms, formatTemplate } = require('../utils/smsService');
 const User = require('./user');
 const HourlyAuction = require('./HourlyAuction');
@@ -569,23 +569,26 @@ auctionHistorySchema.statics.submitPrizeClaim = async function(userId, hourlyAuc
 
     console.log(`🎁 [AUCTION_HISTORY] Prize claimed by ${entry.username} (Rank ${entry.finalRank}) for auction ${hourlyAuctionId}`);
 
-    // ✅ Send confirmation email
-    try {
-      const user = await User.findOne({ user_id: userId });
-      if (user && user.email) {
-        console.log(`📧 [EMAIL] Sending prize claimed confirmation to ${user.email}`);
-        await sendPrizeClaimWinnerEmail(user.email, {
-          username: entry.username,
-          auctionName: entry.auctionName || 'Auction',
-          prizeAmount: entry.prizeAmountWon || 0,
-          claimDeadline: entry.claimDeadline,
-          upiId: upiId // Now claimed
-        });
-      }
-    } catch (emailError) {
-      console.error(`❌ [EMAIL] Error sending confirmation email:`, emailError.message);
-      // Don't fail the operation if email fails
-    }
+      // ✅ Send confirmation email
+        try {
+          const user = await User.findOne({ user_id: userId });
+          if (user && user.email) {
+            console.log(`📧 [EMAIL] Sending prize claimed confirmation to ${user.email}`);
+            await sendPrizeClaimedEmail(user.email, {
+              username: entry.username,
+              auctionName: entry.auctionName || 'Auction',
+              prizeAmount: entry.prizeAmountWon || 0,
+              claimDate: updated.claimedAt || now,
+              transactionId: paymentReference || 'N/A',
+              rewardType: 'Amazon Voucher',
+              paymentAmount: entry.lastRoundBidAmount || 0
+            });
+          }
+        } catch (emailError) {
+          console.error(`❌ [EMAIL] Error sending confirmation email:`, emailError.message);
+          // Don't fail the operation if email fails
+        }
+
 
     return updated;
   } catch (error) {
