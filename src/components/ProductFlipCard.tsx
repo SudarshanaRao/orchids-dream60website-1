@@ -130,19 +130,19 @@ interface ProductFlipCardProps {
                 )}
 
                 {/* Disclaimer Badge */}
-                <div className="absolute bottom-12 left-3 right-3 z-10">
-                  <div 
-                    className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/90 backdrop-blur-md rounded-lg cursor-pointer hover:bg-amber-600/90 transition-colors"
+                <div className="absolute bottom-10 left-2 right-2 z-10">
+                  <button 
+                    className="w-full flex items-center justify-center gap-1 px-2 py-1 bg-red-600/95 backdrop-blur-md rounded-md cursor-pointer hover:bg-red-700 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowDisclaimer(true);
                     }}
                   >
-                    <Info className="w-3.5 h-3.5 text-white flex-shrink-0" />
-                    <span className="text-[10px] text-white font-medium leading-tight">
-                      Images are for representation only
+                    <Info className="w-3 h-3 text-white flex-shrink-0" />
+                    <span className="text-[9px] text-white font-semibold">
+                      Images for representation only
                     </span>
-                  </div>
+                  </button>
                 </div>
 
               <div className="w-full h-full flex items-center justify-center p-8">
@@ -313,71 +313,66 @@ interface ProductFlipCardProps {
         {/* Disclaimer Modal */}
         {showDisclaimer && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowDisclaimer(false)}
           >
             <div 
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-4">
+              <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Info className="w-5 h-5 text-white" />
-                    <h3 className="text-lg font-bold text-white">Important Information</h3>
+                    <Info className="w-4 h-4 text-white" />
+                    <h3 className="text-base font-bold text-white">Important Notice</h3>
                   </div>
                   <button 
                     onClick={() => setShowDisclaimer(false)}
-                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                   >
-                    <X className="w-4 h-4 text-white" />
+                    <X className="w-3.5 h-3.5 text-white" />
                   </button>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-5 space-y-4">
-                {/* Representation Disclaimer */}
-                <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-xl border border-amber-200">
-                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg">🖼️</span>
+              <div className="p-4 space-y-3">
+                {/* Representation Disclaimer - Red */}
+                <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm">⚠️</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-amber-800 mb-1">Images for Representation Only</h4>
-                    <p className="text-sm text-amber-700">
-                      Product images shown are for illustrative purposes only. Actual products may vary in appearance, color, or specifications.
+                    <h4 className="font-semibold text-red-800 text-sm mb-0.5">Representation Only</h4>
+                    <p className="text-xs text-red-700 leading-relaxed">
+                      Images shown are for illustrative purposes. Actual products may vary.
                     </p>
                   </div>
                 </div>
 
                 {/* Amazon Voucher Info - Highlighted */}
-                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border-2 border-purple-300 shadow-sm">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                    <span className="text-xl">🎁</span>
+                <div className="flex items-start gap-2 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-400">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow">
+                    <span className="text-base">🎁</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-purple-800 mb-1.5 text-base">Prize: Amazon Gift Voucher</h4>
-                    <p className="text-sm text-purple-700 leading-relaxed">
-                      <strong>Winners receive an Amazon Gift Voucher</strong> worth the displayed prize value (₹{prizeValue.toLocaleString('en-IN')}), not the physical product shown.
+                    <h4 className="font-bold text-purple-800 text-sm mb-1">Prize: Amazon Voucher</h4>
+                    <p className="text-xs text-purple-700 leading-relaxed">
+                      <strong>Winners get Amazon Gift Voucher</strong> worth ₹{prizeValue.toLocaleString('en-IN')}, not the product shown.
                     </p>
-                    <p className="text-xs text-purple-600 mt-2 italic">
-                      Use your voucher to purchase any item of your choice on Amazon.in
+                    <p className="text-[10px] text-purple-600 mt-1 italic">
+                      Redeem on Amazon.in for any item
                     </p>
                   </div>
                 </div>
-
-                {/* Terms reminder */}
-                <p className="text-xs text-gray-500 text-center">
-                  By participating, you agree to our Terms & Conditions.
-                </p>
               </div>
 
               {/* Footer */}
-              <div className="px-5 pb-5">
+              <div className="px-4 pb-4">
                 <button
                   onClick={() => setShowDisclaimer(false)}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl"
+                  className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm"
                 >
                   Got it!
                 </button>

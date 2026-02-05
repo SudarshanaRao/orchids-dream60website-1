@@ -297,7 +297,15 @@ const App = () => {
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
     if (path === '/about') return 'about';
-    if (path === '/coming-soon') return 'coming-soon';
+    // If countdown completed, redirect /coming-soon to home
+    if (path === '/coming-soon') {
+      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+      if (hasCompletedCountdown) {
+        window.history.replaceState({}, '', '/');
+        return 'game';
+      }
+      return 'coming-soon';
+    }
     if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
@@ -348,8 +356,16 @@ const App = () => {
       else if (path === '/rules') setCurrentPage('rules');
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/about') setCurrentPage('about');
-      else if (path === '/coming-soon') setCurrentPage('coming-soon');
-      else if (path === '/careers') setCurrentPage('careers');
+        else if (path === '/coming-soon') {
+          // If countdown completed, redirect /coming-soon to home
+          if (hasCompletedCountdown) {
+            window.history.replaceState({}, '', '/');
+            setCurrentPage('game');
+          } else {
+            setCurrentPage('coming-soon');
+          }
+        }
+        else if (path === '/careers') setCurrentPage('careers');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
       else if (path === '/refund') setCurrentPage('refund');
