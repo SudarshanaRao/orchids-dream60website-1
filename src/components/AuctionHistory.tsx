@@ -45,47 +45,49 @@ interface BoxSlot {
 }
 
 // Extended auction interface with box details
-interface AuctionHistoryItem {
-  id: number;
-  date: Date;
-  prize: string;
-  prizeValue: number;
-  myBid: number;
-  winningBid: number;
-  status: 'won' | 'lost';
-  totalParticipants: number;
-  myRank: number;
-  auctionStartTime: string;
-  auctionEndTime: string;
-  boxes: BoxSlot[];
-  // Additional participation details
-  entryFeePaid?: number;
-  totalAmountBid?: number;
-  totalAmountSpent?: number;
-  roundsParticipated?: number;
-  totalBidsPlaced?: number;
-    // Prize claim fields (for all winners)
-    isWinner?: boolean;
-    finalRank?: number;
-    prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
-    claimDeadline?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-    claimedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-    claimUpiId?: string;
-    remainingProductFees?: number;
-    remainingFeesPaid?: boolean;
-    hourlyAuctionId?: string;
-    lastRoundBidAmount?: number;
-    prizeAmountWon?: number;
-    // Claimant information (who actually claimed the prize)
-    claimedBy?: string;
-    claimedByRank?: number;
-    claimNotes?: string;
-    // ✅ NEW: Priority claim system fields
-    claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
-    currentEligibleRank?: number; // Which rank can currently claim
-    winnersAnnouncedAt?: number; // When winners were declared (UTC ms)
-    transactionTime?: string; // ✅ NEW: Actual transaction time from Airpay
-  }
+  interface AuctionHistoryItem {
+    id: number;
+    date: Date;
+    prize: string;
+    prizeValue: number;
+    myBid: number;
+    winningBid: number;
+    status: 'won' | 'lost';
+    totalParticipants: number;
+    myRank: number;
+    auctionStartTime: string;
+    auctionEndTime: string;
+    boxes: BoxSlot[];
+    auctionStatus?: string;
+    // Additional participation details
+    entryFeePaid?: number;
+    totalAmountBid?: number;
+    totalAmountSpent?: number;
+    roundsParticipated?: number;
+    totalBidsPlaced?: number;
+      // Prize claim fields (for all winners)
+      isWinner?: boolean;
+      finalRank?: number;
+      prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
+      claimDeadline?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+      claimedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+      claimUpiId?: string;
+      remainingProductFees?: number;
+      remainingFeesPaid?: boolean;
+      hourlyAuctionId?: string;
+      lastRoundBidAmount?: number;
+      prizeAmountWon?: number;
+      // Claimant information (who actually claimed the prize)
+      claimedBy?: string;
+      claimedByRank?: number;
+      claimNotes?: string;
+      // ✅ NEW: Priority claim system fields
+      claimWindowStartedAt?: number; // ✅ CHANGED: Store as UTC timestamp (milliseconds)
+      currentEligibleRank?: number; // Which rank can currently claim
+      winnersAnnouncedAt?: number; // When winners were declared (UTC ms)
+      transactionTime?: string; // ✅ NEW: Actual transaction time from Airpay
+    }
+
 
 // Circular Progress Component
 const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, id = "win-rate-gradient" }: { percentage: number, size?: number, strokeWidth?: number, id?: string }) => {
@@ -1410,53 +1412,55 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
             });
           }
           
-          return {
-            id: auction.hourlyAuctionId,
-            hourlyAuctionId: auction.hourlyAuctionId,
-            date: new Date(auction.auctionDate),
-            prize: auction.auctionName,
-            prizeValue: auction.prizeValue,
-            myBid: auction.totalAmountSpent || 0,
-            winningBid: auction.totalAmountSpent || 0,
-            status: auction.isWinner ? 'won' : 'lost',
-            totalParticipants: auction.totalParticipants || 0,
-            myRank: auction.finalRank || 0,
-            auctionStartTime: auction.TimeSlot || '',
-            auctionEndTime: auction.completedAt 
-      ? new Date(new Date(auction.completedAt).getTime() - (5 * 60 + 30) * 60 * 1000)
-          .toLocaleTimeString('en-IN', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false,
-            timeZone: 'Asia/Kolkata'
-          })
-      : '',
-            boxes: [],
-            entryFeePaid: auction.entryFeePaid,
-            totalAmountBid: auction.totalAmountBid,
-            totalAmountSpent: auction.totalAmountSpent,
-            roundsParticipated: auction.roundsParticipated,
-            totalBidsPlaced: auction.totalBidsPlaced,
-            isWinner: auction.isWinner,
-            finalRank: auction.finalRank,
-            prizeClaimStatus: auction.prizeClaimStatus,
-            // ✅ CRITICAL FIX: Convert datetime strings to UTC timestamps immediately
-            claimDeadline: auction.claimDeadline ? Date.parse(auction.claimDeadline) : undefined,
-            claimedAt: auction.claimedAt ? Date.parse(auction.claimedAt) : undefined,
-            claimUpiId: auction.claimUpiId,
-            remainingProductFees: auction.remainingProductFees,
-            remainingFeesPaid: auction.remainingFeesPaid,
-            lastRoundBidAmount: auction.lastRoundBidAmount,
-            prizeAmountWon: auction.prizeAmountWon,
-            claimedBy: auction.claimedBy,
-            claimedByRank: auction.claimedByRank,
-            claimNotes: auction.claimNotes,
-            // ✅ NEW: Priority claim system fields - converted to UTC timestamps
-                claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
-                winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
-                currentEligibleRank: auction.currentEligibleRank,
-                transactionTime: auction.airpayResponse?.transaction_time, // ✅ NEW: Actual transaction time from Airpay
-              };
+        return {
+          id: auction.hourlyAuctionId,
+          hourlyAuctionId: auction.hourlyAuctionId,
+          date: new Date(auction.auctionDate),
+          prize: auction.auctionName,
+          prizeValue: auction.prizeValue,
+          myBid: auction.totalAmountSpent || 0,
+          winningBid: auction.totalAmountSpent || 0,
+          status: auction.isWinner ? 'won' : 'lost',
+          totalParticipants: auction.totalParticipants || 0,
+          myRank: auction.finalRank || 0,
+          auctionStartTime: auction.TimeSlot || '',
+          auctionEndTime: auction.completedAt 
+    ? new Date(new Date(auction.completedAt).getTime() - (5 * 60 + 30) * 60 * 1000)
+        .toLocaleTimeString('en-IN', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Asia/Kolkata'
+        })
+    : '',
+          boxes: [],
+          auctionStatus: auction.auctionStatus,
+          entryFeePaid: auction.entryFeePaid,
+          totalAmountBid: auction.totalAmountBid,
+          totalAmountSpent: auction.totalAmountSpent,
+          roundsParticipated: auction.roundsParticipated,
+          totalBidsPlaced: auction.totalBidsPlaced,
+          isWinner: auction.isWinner,
+          finalRank: auction.finalRank,
+          prizeClaimStatus: auction.prizeClaimStatus,
+          // ✅ CRITICAL FIX: Convert datetime strings to UTC timestamps immediately
+          claimDeadline: auction.claimDeadline ? Date.parse(auction.claimDeadline) : undefined,
+          claimedAt: auction.claimedAt ? Date.parse(auction.claimedAt) : undefined,
+          claimUpiId: auction.claimUpiId,
+          remainingProductFees: auction.remainingProductFees,
+          remainingFeesPaid: auction.remainingFeesPaid,
+          lastRoundBidAmount: auction.lastRoundBidAmount,
+          prizeAmountWon: auction.prizeAmountWon,
+          claimedBy: auction.claimedBy,
+          claimedByRank: auction.claimedByRank,
+          claimNotes: auction.claimNotes,
+          // ✅ NEW: Priority claim system fields - converted to UTC timestamps
+              claimWindowStartedAt: auction.claimWindowStartedAt ? Date.parse(auction.claimWindowStartedAt) : undefined,
+              winnersAnnouncedAt: auction.completedAt ? Date.parse(auction.completedAt) : undefined,
+              currentEligibleRank: auction.currentEligibleRank,
+              transactionTime: auction.airpayResponse?.transaction_time, // ✅ NEW: Actual transaction time from Airpay
+            };
+
 
 
         });
@@ -1642,34 +1646,10 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
         <h1 className="text-xl font-bold text-purple-800">Auction History</h1>
       </motion.div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-8 relative z-10">
-        {/* Important Rule Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-3 sm:mb-4 md:mb-6"
-        >
-          <Card className="relative overflow-hidden border-2 border-purple-300/60 bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-fuchsia-50/70 backdrop-blur-xl shadow-lg">
-                  
-            <CardContent className="p-2.5 sm:p-3 md:p-4">
-              <div className="flex items-start gap-2 sm:gap-3">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl flex items-center justify-center shrink-0">
-                  <Target className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-purple-900 text-[10px] sm:text-xs md:text-sm mb-0.5 sm:mb-1">How Dream60 Auctions Work</h3>
-                  <p className="text-[9px] sm:text-[10px] md:text-xs text-purple-700 leading-relaxed">
-                    Each auction has <span className="font-semibold">4 rounds (15 min each)</span>. Entry fee payment in <span className="font-semibold">Boxes 1 & 2</span> unlocks bidding in <span className="font-semibold">Boxes 3 & 4</span>. Winners must pay their final round bid amount within 15 minutes to claim their prize.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Main Content */}
+        <main className="container mx-auto px-3 sm:px-4 py-3 sm:py-6 md:py-8 relative z-10">
+          {/* Mobile: Premium Stats Card - Desktop: Full Stats */}
 
-        {/* Mobile: Premium Stats Card - Desktop: Full Stats */}
         <motion.div 
           className="mb-3 sm:mb-6 md:mb-8"
           initial={{ opacity: 0, y: 20 }}

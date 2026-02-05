@@ -44,38 +44,40 @@ interface RoundDetails {
   completedAt: string;
 }
 
-interface AuctionDetailsData {
-  id: number;
-  date: Date;
-  prize: string;
-  prizeValue: number;
-  status: 'won' | 'lost';
-  totalParticipants: number;
-  myRank: number;
-  auctionStartTime: string;
-  auctionEndTime: string;
-  entryFeePaid?: number;
-  totalAmountBid?: number;
-  totalAmountSpent?: number;
-  roundsParticipated?: number;
-  totalBidsPlaced?: number;
-  hourlyAuctionId?: string;
-  isWinner?: boolean;
-  finalRank?: number;
-  prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
-  claimDeadline?: number; // ✅ STORE as UTC timestamp (milliseconds)
-  claimedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
-  lastRoundBidAmount?: number;
-  prizeAmountWon?: number;
-  winnersAnnounced?: boolean;
-  claimedBy?: string;
-    claimUpiId?: string;
-    claimedByRank?: number;
-    // NEW: Priority claim fields
-    currentEligibleRank?: number; // Which rank (1, 2, or 3) can currently claim
-    claimWindowStartedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
-    winnersAnnouncedAt?: number; // ✅ When winners were declared (UTC ms)
-  }
+  interface AuctionDetailsData {
+    id: number;
+    date: Date;
+    prize: string;
+    prizeValue: number;
+    status: 'won' | 'lost';
+    totalParticipants: number;
+    myRank: number;
+    auctionStartTime: string;
+    auctionEndTime: string;
+    auctionStatus?: string;
+    entryFeePaid?: number;
+    totalAmountBid?: number;
+    totalAmountSpent?: number;
+    roundsParticipated?: number;
+    totalBidsPlaced?: number;
+    hourlyAuctionId?: string;
+    isWinner?: boolean;
+    finalRank?: number;
+    prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
+    claimDeadline?: number; // ✅ STORE as UTC timestamp (milliseconds)
+    claimedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
+    lastRoundBidAmount?: number;
+    prizeAmountWon?: number;
+    winnersAnnounced?: boolean;
+    claimedBy?: string;
+      claimUpiId?: string;
+      claimedByRank?: number;
+      // NEW: Priority claim fields
+      currentEligibleRank?: number; // Which rank (1, 2, or 3) can currently claim
+      claimWindowStartedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
+      winnersAnnouncedAt?: number; // ✅ When winners were declared (UTC ms)
+    }
+
 
 
   interface AuctionDetailsPageProps {
@@ -84,21 +86,23 @@ interface AuctionDetailsData {
     serverTime: any;
   }
 
-export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
-  const [auction, setAuction] = useState(initialAuction);
-  const [isLoading, setIsLoading] = useState(true);
-  const [detailedData, setDetailedData] = useState<any>(null);
-  const [timeLeft, setTimeLeft] = useState('');
-  const [showClaimForm, setShowClaimForm] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // NEW: Payment status state
-  const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
-  const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
-  
-    const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
-      round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
-    );
+  export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
+    const [auction, setAuction] = useState(initialAuction);
+    const [isLoading, setIsLoading] = useState(true);
+    const [detailedData, setDetailedData] = useState<any>(null);
+    const [timeLeft, setTimeLeft] = useState('');
+    const [showClaimForm, setShowClaimForm] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const isAuctionInProgress = auction.auctionStatus === 'IN_PROGRESS';
+    
+    // NEW: Payment status state
+    const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
+    const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
+    
+      const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
+        round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
+      );
+
       
     const { initiatePayment, loading: globalPaymentLoading, airpayData } = usePayment();
       
@@ -741,10 +745,29 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
           </motion.div>
         )}
 
-        {!isLoading && (
-          <>
-            {/* ✅ Winners Announced Banner */}
-            {auction.winnersAnnounced && (
+          {!isLoading && isAuctionInProgress && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-center py-10"
+            >
+              <Card className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-xl max-w-xl w-full">
+                <CardContent className="p-6 sm:p-8 text-center space-y-3">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-violet-700 rounded-2xl flex items-center justify-center mx-auto">
+                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-bold text-purple-900">Auction In Progress</h2>
+                  <p className="text-sm text-purple-700">Details will be available once the auction is completed.</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {!isLoading && !isAuctionInProgress && (
+            <>
+              {/* ✅ Winners Announced Banner */}
+              {auction.winnersAnnounced && (
+
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
