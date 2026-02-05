@@ -84,9 +84,21 @@ interface ProductFlipCardProps {
   };
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
-      <div 
-        className="relative w-full h-96 cursor-pointer perspective-1000"
+      <div className="relative w-full max-w-md mx-auto">
+        {/* Info button - top right corner */}
+        <button 
+          className="absolute -top-1 -right-1 z-30 w-6 h-6 flex items-center justify-center bg-red-600 hover:bg-red-700 rounded-full shadow-lg transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDisclaimer(true);
+          }}
+          aria-label="Important information about prize"
+        >
+          <Info className="w-3.5 h-3.5 text-white" />
+        </button>
+
+        <div 
+          className="relative w-full h-96 cursor-pointer perspective-1000"
         onClick={handleFlip}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -129,23 +141,7 @@ interface ProductFlipCardProps {
                   </div>
                 )}
 
-                {/* Disclaimer Badge */}
-                <div className="absolute bottom-10 left-2 right-2 z-10">
-                  <button 
-                    className="w-full flex items-center justify-center gap-1 px-2 py-1 bg-red-600/95 backdrop-blur-md rounded-md cursor-pointer hover:bg-red-700 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDisclaimer(true);
-                    }}
-                  >
-                    <Info className="w-3 h-3 text-white flex-shrink-0" />
-                    <span className="text-[9px] text-white font-semibold">
-                      Images for representation only
-                    </span>
-                  </button>
-                </div>
-
-              <div className="w-full h-full flex items-center justify-center p-8">
+                <div className="w-full h-full flex items-center justify-center p-8">
                 <img
                   src={currentImage.imageUrl}
                   alt={`${productName} - Image ${currentIndex + 1}`}
