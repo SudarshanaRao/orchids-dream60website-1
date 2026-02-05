@@ -8,7 +8,7 @@ interface ComingSoonProps {
 }
 
 // Configurable target date
-const TARGET_DATE = new Date('2026-02-05T11:15:00');
+const TARGET_DATE = new Date('2026-02-05T18:36:00');
 
 export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
