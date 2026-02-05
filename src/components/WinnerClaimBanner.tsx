@@ -428,11 +428,11 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
                       <span className="sm:hidden">...</span>
                     </>
                   ) : (
-                    <>
-                      <IndianRupee className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">PAY ₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'} & CLAIM</span>
-                      <span className="sm:hidden">₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'}</span>
-                    </>
+                      <>
+                        <IndianRupee className="w-3.5 h-3.5 hidden sm:inline-block" />
+                        <span className="hidden sm:inline">PAY ₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'} & CLAIM</span>
+                        <span className="sm:hidden">PAY {bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'}</span>
+                      </>
                   )}
                 </button>
               ) : (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Trophy, Calendar, TrendingUp, Award, Clock, Target, Sparkles, Crown, IndianRupee, Users, TrendingDown, Gift, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
@@ -1160,6 +1160,8 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
   const [history, setHistory] = useState<AuctionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const latestAuctionRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToLatest = useRef(false);
 
   const currentPage = parseInt(searchParams.get('page') || '1');
   const itemsPerPage = 10;
@@ -1203,6 +1205,17 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
     const totalPages = Math.ceil(
       (activeTab === 'all' ? allFilteredHistory.length : activeTab === 'won' ? wonAuctions.length : lostAuctions.length) / itemsPerPage
     );
+
+    useEffect(() => {
+      if (hasScrolledToLatest.current || currentHistory.length === 0) return;
+
+      const timer = window.setTimeout(() => {
+        latestAuctionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+
+      hasScrolledToLatest.current = true;
+      return () => window.clearTimeout(timer);
+    }, [currentHistory, activeTab]);
 
     const handlePageChange = (newPage: number) => {
       setSearchParams(prev => {
@@ -2142,21 +2155,22 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                       exit={{ opacity: 0 }}
                       className="space-y-3 sm:space-y-4"
                     >
-                      {currentHistory.length > 0 ? (
-                        currentHistory.map((item, idx) => (
-                          <AuctionCard 
-                            key={`all-${item.id}`} 
-                            auction={item} 
-                            index={idx} 
-                            tabPrefix="all"
-                            user={user}
-                            onViewDetails={onViewDetails}
-                            onClaimSuccess={() => fetchAuctionHistory(false)}
-                            userProfile={userProfile}
-                            serverTime={serverTime}
-                          />
-                        ))
-                      ) : (
+                        {currentHistory.length > 0 ? (
+                          currentHistory.map((item, idx) => (
+                            <div key={`all-${item.id}`} ref={idx === 0 ? latestAuctionRef : undefined}>
+                              <AuctionCard 
+                                auction={item} 
+                                index={idx} 
+                                tabPrefix="all"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory(false)}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            </div>
+                          ))
+                        ) : (
                         <div className="text-center py-10 sm:py-20 bg-purple-50/50 rounded-2xl border-2 border-dashed border-purple-200">
                           <Trophy className="w-10 h-10 sm:w-16 sm:h-16 text-purple-200 mx-auto mb-4" />
                           <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-2">No Auctions Found</h3>
@@ -2176,21 +2190,22 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                       exit={{ opacity: 0 }}
                       className="space-y-3 sm:space-y-4"
                     >
-                      {currentHistory.length > 0 ? (
-                        currentHistory.map((item, idx) => (
-                          <AuctionCard 
-                            key={`won-${item.id}`} 
-                            auction={item} 
-                            index={idx} 
-                            tabPrefix="won"
-                            user={user}
-                            onViewDetails={onViewDetails}
-                            onClaimSuccess={() => fetchAuctionHistory(false)}
-                            userProfile={userProfile}
-                            serverTime={serverTime}
-                          />
-                        ))
-                      ) : (
+                        {currentHistory.length > 0 ? (
+                          currentHistory.map((item, idx) => (
+                            <div key={`won-${item.id}`} ref={idx === 0 ? latestAuctionRef : undefined}>
+                              <AuctionCard 
+                                auction={item} 
+                                index={idx} 
+                                tabPrefix="won"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory(false)}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            </div>
+                          ))
+                        ) : (
                         <div className="text-center py-10 sm:py-20 bg-purple-50/50 rounded-2xl border-2 border-dashed border-purple-200">
                           <Crown className="w-10 h-10 sm:w-16 sm:h-16 text-purple-200 mx-auto mb-4" />
                           <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-2">No Wins Yet</h3>
@@ -2210,21 +2225,22 @@ export function AuctionHistory({ user, onBack, onViewDetails, serverTime }: Auct
                       exit={{ opacity: 0 }}
                       className="space-y-3 sm:space-y-4"
                     >
-                      {currentHistory.length > 0 ? (
-                        currentHistory.map((item, idx) => (
-                          <AuctionCard 
-                            key={`lost-${item.id}`} 
-                            auction={item} 
-                            index={idx} 
-                            tabPrefix="lost"
-                            user={user}
-                            onViewDetails={onViewDetails}
-                            onClaimSuccess={() => fetchAuctionHistory(false)}
-                            userProfile={userProfile}
-                            serverTime={serverTime}
-                          />
-                        ))
-                      ) : (
+                        {currentHistory.length > 0 ? (
+                          currentHistory.map((item, idx) => (
+                            <div key={`lost-${item.id}`} ref={idx === 0 ? latestAuctionRef : undefined}>
+                              <AuctionCard 
+                                auction={item} 
+                                index={idx} 
+                                tabPrefix="lost"
+                                user={user}
+                                onViewDetails={onViewDetails}
+                                onClaimSuccess={() => fetchAuctionHistory(false)}
+                                userProfile={userProfile}
+                                serverTime={serverTime}
+                              />
+                            </div>
+                          ))
+                        ) : (
                         <div className="text-center py-10 sm:py-20 bg-purple-50/50 rounded-2xl border-2 border-dashed border-purple-200">
                           <TrendingDown className="w-10 h-10 sm:w-16 sm:h-16 text-purple-200 mx-auto mb-4" />
                           <h3 className="text-lg sm:text-xl font-bold text-purple-900 mb-2">No Lost Auctions</h3>
