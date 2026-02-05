@@ -86,9 +86,9 @@ interface ProductFlipCardProps {
   return (
       <div className="relative w-full max-w-md mx-auto">
         {/* Info button - top right corner */}
-        <button 
-          className="absolute -top-1 -right-1 z-30 w-6 h-6 flex items-center justify-center bg-red-600 hover:bg-red-700 rounded-full shadow-lg transition-colors"
-          onClick={(e) => {
+<button 
+className="absolute top-2 right-2 z-30 w-6 h-6 flex items-center justify-center bg-red-600 hover:bg-red-700 rounded-full shadow-lg transition-colors"
+onClick={(e) => {
             e.stopPropagation();
             setShowDisclaimer(true);
           }}
@@ -132,7 +132,7 @@ interface ProductFlipCardProps {
               </div>
 
                 {productImages.length > 1 && (
-                  <div className="absolute top-3 right-3 z-10">
+                  <div className="absolute top-10 right-3 z-10">
                     <div className="px-2 py-1 bg-purple-600/90 backdrop-blur-md rounded-full">
                       <span className="text-xs text-white font-medium">
                         {currentIndex + 1}/{productImages.length}
@@ -173,7 +173,7 @@ interface ProductFlipCardProps {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent" />
                 
                 {productImages.length > 1 && (
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-10 right-3">
                     <div className="px-2 py-1 bg-white/20 backdrop-blur-md rounded-full">
                       <span className="text-xs text-white font-medium">
                         {currentIndex + 1}/{productImages.length}
