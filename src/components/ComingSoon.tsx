@@ -117,8 +117,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
       clearTimeout(redirectTimeoutRef.current);
     }
     redirectTimeoutRef.current = setTimeout(() => {
+      sessionStorage.setItem('countdown_completed', 'true');
       onComplete();
-    }, 2500);
+      if (window.location.pathname === '/coming-soon') {
+        window.location.replace('/');
+      }
+    }, 800);
 
     triggerConfetti();
   }, [isLaunching, experienceEnabled, onComplete, triggerConfetti]);
@@ -205,7 +209,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     <div className="h-[100dvh] w-full bg-[#020408] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-[#FFD700] selection:text-black overscroll-none">
         <audio
           ref={audioRef}
-          src="https://assets.mixkit.co/active_storage/sfx/1494/1494-preview.mp3"
+          src="https://assets.mixkit.co/active_storage/sfx/2233/2233-preview.mp3"
           preload="auto"
         />
 
