@@ -1092,31 +1092,34 @@ const autoActivateAuctions = async () => {
                 local.rounds[i].qualifiedPlayers = qualifiedPlayerIds;
                 local.rounds[i].totalParticipants = rankedPlayers.length;
 
-                const hasWinners = Array.isArray(local.winners) && local.winners.length > 0;
-                const shouldSendQualificationSms =
-                  rn < rc &&
-                  qualifiedPlayerIds.length > 0 &&
-                  !hasWinners &&
-                  !shouldCompleteAuction &&
-                  !local.rounds[i].qualificationSmsSent;
+                  const hasWinners = Array.isArray(local.winners) && local.winners.length > 0;
+                  const willAnnounceWinners = qualifiedPlayerIds.length > 0 && qualifiedPlayerIds.length <= 3;
 
-                if (shouldSendQualificationSms) {
-                  await sendRoundQualificationSms(local, qualifiedPlayerIds, rn + 1);
-                  local.rounds[i].qualificationSmsSent = true;
-                  local.markModified('rounds');
-                }
-                
-                // Check if this is round 4 being completed
-                if (rn === 4) {
-                  round4JustCompleted = true;
-                }
-                
-                // ✅ NEW: Check if qualified players <= 3 after round completion
-                if (qualifiedPlayerIds.length > 0 && qualifiedPlayerIds.length <= 3) {
-                  console.log(`     🎯 [EARLY-COMPLETE] Round ${rn} completed with ${qualifiedPlayerIds.length} qualified players (≤3) - Auction will be completed!`);
-                  shouldCompleteAuction = true;
-                  earlyCompletionRound = rn;
-                }
+                  if (willAnnounceWinners) {
+                    console.log(`     🎯 [EARLY-COMPLETE] Round ${rn} completed with ${qualifiedPlayerIds.length} qualified players (≤3) - Auction will be completed!`);
+                    shouldCompleteAuction = true;
+                    earlyCompletionRound = rn;
+                  }
+
+                  const shouldSendQualificationSms =
+                    rn < rc &&
+                    qualifiedPlayerIds.length > 0 &&
+                    !hasWinners &&
+                    !shouldCompleteAuction &&
+                    !local.winnersAnnounced &&
+                    !local.rounds[i].qualificationSmsSent;
+
+                  if (shouldSendQualificationSms) {
+                    await sendRoundQualificationSms(local, qualifiedPlayerIds, rn + 1);
+                    local.rounds[i].qualificationSmsSent = true;
+                    local.markModified('rounds');
+                  }
+                  
+                  // Check if this is round 4 being completed
+                  if (rn === 4) {
+                    round4JustCompleted = true;
+                  }
+
                 
                 // Update participants array - set isEliminated=true for non-qualified players
                 if (Array.isArray(local.participants)) {

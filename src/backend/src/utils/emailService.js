@@ -647,14 +647,20 @@ const getTemplateByName = async (templateName) => {
 
 /**
  * Replace template variables with actual values
+ * Supports both {{variable}} and [variable] formats (database templates use [Name] style)
  */
 const replaceTemplateVariables = (text, variables) => {
   if (!text || !variables) return text;
   
   let result = text;
   for (const [key, value] of Object.entries(variables)) {
-    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    result = result.replace(regex, value !== undefined && value !== null ? String(value) : '');
+    const val = value !== undefined && value !== null ? String(value) : '';
+    // Support {{variable}} format
+    const bracesRegex = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+    result = result.replace(bracesRegex, val);
+    // Support [variable] format (used in database templates)
+    const bracketsRegex = new RegExp(`\\[${key}\\]`, 'gi');
+    result = result.replace(bracketsRegex, val);
   }
   return result;
 };
@@ -670,37 +676,25 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
     }
 
     const transporter = createTransporter();
-    const primaryClientUrl = getPrimaryClientUrl();
-    
     const template = await getTemplateByName('OTP Verification');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { otp, reason, reason_lower: reason.toLowerCase() };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = `[Dream60] ${reason} Code: ${otp}`;
-      const bodyHtml = `
-        <h2 class="hero-title">${reason} Code</h2>
-        <p class="hero-text">Use the verification code below to complete your ${reason.toLowerCase()} process. This code will expire in 10 minutes.</p>
-        <div style="text-align: center; margin: 32px 0;">
-          <div class="otp-code">${otp}</div>
-          <p class="feature-sub">Security Team: Never share this code with anyone.</p>
-        </div>
-        <div class="alert-box alert-warning">
-          <div class="alert-title">Didn't request this?</div>
-          <div class="alert-desc">If you didn't attempt this action, please ignore this email or contact support if you suspect unauthorized access.</div>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Security Verification', status: reason, bodyHtml });
+
+    if (!template) {
+      console.warn('Template "OTP Verification" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      otp, OTP: otp,
+      reason, Reason: reason,
+      reason_lower: reason.toLowerCase()
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
@@ -728,45 +722,23 @@ const sendWelcomeEmail = async (email, username) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Welcome Email');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { username, dashboard_url: primaryClientUrl };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = 'Welcome to Dream60!';
-      const bodyHtml = `
-        <h2 class="hero-title">The Game is On, ${username}!</h2>
-        <p class="hero-text">Your Dream60 account is ready. You've just entered the most exciting auction platform where skill meets rewards.</p>
-        
-        <div class="info-grid">
-          <div class="info-cell">
-            <div class="info-label">Bid</div>
-            <div class="info-value">Unique Low</div>
-          </div>
-          <div class="info-cell">
-            <div class="info-label">Win</div>
-            <div class="info-value">Big Prizes</div>
-          </div>
-          <div class="info-cell">
-            <div class="info-label">Play</div>
-            <div class="info-value">24/7 Live</div>
-          </div>
-        </div>
 
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}" class="action-button">Go to Dashboard</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Welcome', status: 'Registration Success', bodyHtml });
+    if (!template) {
+      console.warn('Template "Welcome Email" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      dashboard_url: primaryClientUrl 
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60" <${process.env.EMAIL_USER}>`,
@@ -795,79 +767,30 @@ const sendPrizeClaimWinnerEmail = async (email, details) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Prize Winner');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username, 
-        auctionName, 
-        prizeAmount: prizeAmount.toLocaleString('en-IN'),
-        claimDeadline: new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-        paymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '',
-        claim_url: `${primaryClientUrl}/history`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = '🏆 Congratulations! You Won ₹' + prizeAmount.toLocaleString('en-IN');
-      const bodyHtml = `
-        <h2 class="hero-title">Victory is Yours, ${username}!</h2>
-        <p class="hero-text">You've secured the top spot in <strong>${auctionName}</strong>. Your strategic bidding has paid off!</p>
-        
-        <div class="feature-box">
-          <div class="feature-label">Grand Prize</div>
-          <div class="feature-value winner-amount">₹${prizeAmount.toLocaleString('en-IN')}</div>
-          <div class="feature-sub">Winner of ${auctionName}</div>
-        </div>
 
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th colspan="2">Auction Summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Auction Name</td>
-              <td>${auctionName}</td>
-            </tr>
-            <tr>
-              <td>Final Rank</td>
-              <td class="winner-highlight">#1 (Winner)</td>
-            </tr>
-            <tr>
-              <td>Prize Value</td>
-              <td class="winner-highlight">₹${prizeAmount.toLocaleString('en-IN')}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        ${paymentAmount ? `
-        <div class="alert-box alert-warning">
-          <div class="alert-title">Processing Fee Required</div>
-          <div class="alert-desc">To release your prize, a processing fee of <strong>₹${paymentAmount.toLocaleString('en-IN')}</strong> must be paid.</div>
-        </div>
-        ` : ''}
-
-        <div class="alert-box alert-success" style="text-align: center;">
-          <div class="alert-title">CLAIM DEADLINE</div>
-          <div class="alert-desc" style="font-size: 18px; font-weight: 800; color: #10b981;">
-            ${new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-          </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/history" class="action-button" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000000 !important;">Claim Your Prize Now</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Victory', status: 'Winner Announced', bodyHtml, isWinner: true });
+    if (!template) {
+      console.warn('Template "Prize Winner" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      auctionName, AuctionName: auctionName,
+      prizeAmount: prizeAmount.toLocaleString('en-IN'),
+      PrizeAmount: prizeAmount.toLocaleString('en-IN'),
+      claimDeadline: new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+      ClaimDeadline: new Date(claimDeadline).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+      paymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '',
+      PaymentAmount: paymentAmount ? paymentAmount.toLocaleString('en-IN') : '',
+      claim_url: `${primaryClientUrl}/history`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Rewards" <${process.env.EMAIL_USER}>`,
@@ -896,47 +819,27 @@ const sendWaitingQueueEmail = async (email, details) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Waiting Queue');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username, 
-        auctionName, 
-        rank,
-        prizeAmount: prizeAmount.toLocaleString('en-IN'),
-        status_url: `${primaryClientUrl}/history`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = 'Auction Update: You are Rank #' + rank;
-      const bodyHtml = `
-        <h2 class="hero-title">So Close! You're Next In Line.</h2>
-        <p class="hero-text">You've achieved an impressive <strong>Rank #${rank}</strong> in ${auctionName}. You are currently in the waiting queue.</p>
-        
-        <div class="feature-box">
-          <div class="feature-label">Your Rank</div>
-          <div class="feature-value">#${rank}</div>
-          <div class="feature-sub">Potential Prize: ₹${prizeAmount.toLocaleString('en-IN')}</div>
-        </div>
 
-        <div class="alert-box alert-success">
-          <div class="alert-title">Why am I in a queue?</div>
-          <div class="alert-desc">If the winner above you fails to claim their prize within the deadline, it will be automatically offered to you. Stay tuned!</div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/history" class="action-button">Check Live Status</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Queue Update', status: 'Waiting List', bodyHtml });
+    if (!template) {
+      console.warn('Template "Waiting Queue" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      auctionName, AuctionName: auctionName,
+      rank, Rank: rank,
+      prizeAmount: prizeAmount.toLocaleString('en-IN'),
+      PrizeAmount: prizeAmount.toLocaleString('en-IN'),
+      status_url: `${primaryClientUrl}/history`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Updates" <${process.env.EMAIL_USER}>`,
@@ -964,43 +867,23 @@ const sendPasswordChangeEmail = async (email, username) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Password Changed');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username, 
-        reset_url: `${primaryClientUrl}/forgot-password`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = 'Security Alert: Password Changed';
-      const bodyHtml = `
-        <h2 class="hero-title">Security Update</h2>
-        <p class="hero-text">Hi ${username}, the password for your Dream60 account has been successfully changed.</p>
-        
-        <div class="alert-box alert-success">
-          <div class="alert-title">Password Changed</div>
-          <div class="alert-desc">If this was you, you can safely ignore this email.</div>
-        </div>
 
-        <div class="alert-box alert-warning">
-          <div class="alert-title">Wasn't you?</div>
-          <div class="alert-desc">If you didn't change your password, please reset it immediately to secure your account.</div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/forgot-password" class="action-button">Reset Password</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Security', status: 'Account Update', bodyHtml });
+    if (!template) {
+      console.warn('Template "Password Changed" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      reset_url: `${primaryClientUrl}/forgot-password`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
@@ -1029,69 +912,29 @@ const sendWinnersAnnouncementEmail = async (email, details) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Auction Results');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username, 
-        auctionName, 
-        rank,
-        prizeAmount: prizeAmount.toLocaleString('en-IN'),
-        status: rank === 1 ? 'Winner' : rank <= 3 ? 'Waiting List' : 'Participation',
-        leaderboard_url: `${primaryClientUrl}/history`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = 'Auction Results: ' + auctionName;
-      const bodyHtml = `
-        <h2 class="hero-title">Results are out for ${auctionName}!</h2>
-        <p class="hero-text">The competition was fierce, and the results are finally in. Here is how you performed:</p>
-        
-        <div class="feature-box">
-          <div class="feature-label">Your Final Rank</div>
-          <div class="feature-value">Rank #${rank}</div>
-          <div class="feature-sub">Auction: ${auctionName}</div>
-        </div>
 
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th colspan="2">Auction Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Auction Name</td>
-              <td>${auctionName}</td>
-            </tr>
-            <tr>
-              <td>Your Rank</td>
-              <td class="${rank === 1 ? 'winner-highlight' : ''}">#${rank}</td>
-            </tr>
-            <tr>
-              <td>Status</td>
-              <td>${rank === 1 ? 'Winner' : rank <= 3 ? 'Waiting List' : 'Participation'}</td>
-            </tr>
-            <tr>
-              <td>Prize Pool</td>
-              <td>₹${prizeAmount.toLocaleString('en-IN')}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/history" class="action-button">View Full Leaderboard</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Results', status: 'Auction Closed', bodyHtml, isWinner: rank === 1 });
+    if (!template) {
+      console.warn('Template "Auction Results" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const status = rank === 1 ? 'Winner' : rank <= 3 ? 'Waiting List' : 'Participation';
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      auctionName, AuctionName: auctionName,
+      rank, Rank: rank,
+      prizeAmount: prizeAmount.toLocaleString('en-IN'),
+      PrizeAmount: prizeAmount.toLocaleString('en-IN'),
+      status, Status: status,
+      leaderboard_url: `${primaryClientUrl}/history`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Results" <${process.env.EMAIL_USER}>`,
@@ -1120,70 +963,30 @@ const sendPrizeClaimedEmail = async (email, details) => {
     const primaryClientUrl = getPrimaryClientUrl();
     
     const template = await getTemplateByName('Prize Claimed');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username, 
-        auctionName, 
-        prizeAmount: prizeAmount.toLocaleString('en-IN'),
-        claimDate: new Date(claimDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-        transactionId: transactionId || 'N/A',
-        rewardType: rewardType || 'Cash Prize',
-        history_url: `${primaryClientUrl}/history`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = `Congratulations! Your Prize Has Been Claimed - ${auctionName}`;
-      const bodyHtml = `
-        <h2 class="hero-title">🎉 Congratulations, ${username}!</h2>
-        <p class="hero-text">Your prize from <strong>${auctionName}</strong> has been successfully claimed and is being processed.</p>
-        
-        <div class="feature-box" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          <div class="feature-label" style="color: rgba(255,255,255,0.8);">Prize Amount</div>
-          <div class="feature-value">₹${prizeAmount.toLocaleString('en-IN')}</div>
-          <div class="feature-sub" style="color: rgba(255,255,255,0.8);">Claimed on ${new Date(claimDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-        </div>
 
-        <table class="data-table">
-          <tbody>
-            <tr>
-              <td>Auction</td>
-              <td>${auctionName}</td>
-            </tr>
-            <tr>
-              <td>Transaction ID</td>
-              <td style="color: #fbbf24; font-family: monospace;">${transactionId || 'N/A'}</td>
-            </tr>
-            <tr>
-              <td>Reward Type</td>
-              <td>${rewardType || 'Cash Prize'}</td>
-            </tr>
-            <tr>
-              <td>Status</td>
-              <td style="color: #10b981; font-weight: 700;">✓ Claimed</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="alert-box alert-warning">
-          <div class="alert-title">What's Next?</div>
-          <div class="alert-desc">Your reward will be delivered within 24-48 hours. You can track your reward status in your account history.</div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/history" class="action-button">View Reward Status</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Prize Claimed', status: 'Successfully Claimed', bodyHtml, isWinner: true });
+    if (!template) {
+      console.warn('Template "Prize Claimed" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const formattedDate = new Date(claimDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    const variables = { 
+      username, Username: username, name: username, Name: username,
+      auctionName, AuctionName: auctionName,
+      prizeAmount: prizeAmount.toLocaleString('en-IN'),
+      PrizeAmount: prizeAmount.toLocaleString('en-IN'),
+      claimDate: formattedDate, ClaimDate: formattedDate,
+      transactionId: transactionId || 'N/A', TransactionId: transactionId || 'N/A',
+      rewardType: rewardType || 'Cash Prize', RewardType: rewardType || 'Cash Prize',
+      history_url: `${primaryClientUrl}/history`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Rewards" <${process.env.EMAIL_USER}>`,
@@ -1212,45 +1015,29 @@ const sendSupportReceiptEmail = async (email, details) => {
     const { username, topic, ticketId } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     const generatedTicketId = ticketId || 'D60-' + Math.floor(Math.random() * 10000);
+    const displayName = username || 'Valued Player';
+    const displayTopic = topic || 'General Inquiry';
     
     const template = await getTemplateByName('Support Ticket');
-    
-    let subject, htmlBody;
-    
-    if (template) {
-      const variables = { 
-        username: username || 'Valued Player', 
-        topic: topic || 'General Inquiry',
-        ticketId: generatedTicketId,
-        support_url: `${primaryClientUrl}/support`
-      };
-      subject = replaceTemplateVariables(template.subject, variables);
-      htmlBody = replaceTemplateVariables(template.body, variables);
-      
-      await EmailTemplate.findOneAndUpdate(
-        { template_id: template.template_id },
-        { $inc: { usageCount: 1 } }
-      );
-    } else {
-      subject = 'Support Request Received [#' + generatedTicketId + ']';
-      const bodyHtml = `
-        <h2 class="hero-title">We've Received Your Request</h2>
-        <p class="hero-text">Hi ${username || 'Valued Player'}, thank you for reaching out. Our team is already looking into your inquiry.</p>
-        
-        <div class="feature-box">
-          <div class="feature-label">Ticket ID</div>
-          <div class="feature-value" style="font-size: 28px;">#${generatedTicketId}</div>
-          <div class="feature-sub">Topic: ${topic || 'General Inquiry'}</div>
-        </div>
 
-        <p class="hero-text" style="font-size: 14px; text-align: center;">We usually respond within 24 hours. You can track your ticket or add more details in the support center.</p>
-
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${primaryClientUrl}/support" class="action-button">Visit Support Center</a>
-        </div>
-      `;
-      htmlBody = buildEmailTemplate({ primaryClientUrl, title: 'Support', status: 'Ticket Created', bodyHtml });
+    if (!template) {
+      console.warn('Template "Support Ticket" not found.');
+      return { success: false, message: 'Email template not found' };
     }
+
+    const variables = { 
+      username: displayName, Username: displayName, name: displayName, Name: displayName,
+      topic: displayTopic, Topic: displayTopic,
+      ticketId: generatedTicketId, TicketId: generatedTicketId,
+      support_url: `${primaryClientUrl}/support`
+    };
+    const subject = replaceTemplateVariables(template.subject, variables);
+    const htmlBody = replaceTemplateVariables(template.body, variables);
+
+    await EmailTemplate.findOneAndUpdate(
+      { template_id: template.template_id },
+      { $inc: { usageCount: 1 } }
+    );
 
     const mailOptions = {
       from: `"Dream60 Support" <${process.env.EMAIL_USER}>`,
@@ -1297,49 +1084,45 @@ const sendCustomEmail = async (recipients, subject, body, attachments = []) => {
 /**
  * Send email using database template
  */
-const sendEmailWithTemplate = async (email, templateName, variables = {}, fallbackSubject = '', fallbackBody = '') => {
-  try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.warn('⚠️ Email credentials not configured.');
-      return { success: false, message: 'Email service not configured' };
-    }
+  const sendEmailWithTemplate = async (email, templateName, variables = {}) => {
+    try {
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        console.warn('⚠️ Email credentials not configured.');
+        return { success: false, message: 'Email service not configured' };
+      }
 
-    const transporter = createTransporter();
-    const primaryClientUrl = getPrimaryClientUrl();
-    
-    const template = await getTemplateByName(templateName);
-    
-    let subject, body;
-    
-    if (template) {
-      subject = replaceTemplateVariables(template.subject, variables);
-      body = replaceTemplateVariables(template.body, variables);
-      
+      const transporter = createTransporter();
+      const template = await getTemplateByName(templateName);
+
+      if (!template) {
+        console.warn(`Template "${templateName}" not found.`);
+        return { success: false, message: 'Email template not found' };
+      }
+
+      const subject = replaceTemplateVariables(template.subject, variables);
+      const body = replaceTemplateVariables(template.body, variables);
+
       await EmailTemplate.findOneAndUpdate(
         { template_id: template.template_id },
         { $inc: { usageCount: 1 } }
       );
-    } else {
-      console.warn(`Template "${templateName}" not found, using fallback.`);
-      subject = fallbackSubject;
-      body = fallbackBody;
+
+      const mailOptions = {
+        from: `"Dream60" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: subject,
+        html: body,
+        text: body.replace(/<[^>]*>/g, ''),
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      return { success: true, messageId: info.messageId, usedTemplate: true };
+    } catch (error) {
+      console.error(`❌ Email with template "${templateName}" error:`, error);
+      return { success: false, message: error.message };
     }
+  };
 
-    const mailOptions = {
-      from: `"Dream60" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: subject,
-      html: body,
-      text: body.replace(/<[^>]*>/g, ''),
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    return { success: true, messageId: info.messageId, usedTemplate: !!template };
-  } catch (error) {
-    console.error(`❌ Email with template "${templateName}" error:`, error);
-    return { success: false, message: error.message };
-  }
-};
 
 module.exports = {
   sendOtpEmail,

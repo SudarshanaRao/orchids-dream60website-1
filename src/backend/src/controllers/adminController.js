@@ -10,7 +10,7 @@ const Refund = require('../models/Refund');
 const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
 const bcrypt = require('bcryptjs');
-const { sendOtpEmail, sendEmailWithTemplate, buildEmailTemplate, getPrimaryClientUrl } = require('../utils/emailService');
+const { sendOtpEmail, sendEmailWithTemplate } = require('../utils/emailService');
 const { sendSms, SMS_TEMPLATES } = require('../utils/smsService');
 
 const ADMIN_APPROVAL_EMAIL = 'dream60.official@gmail.com';
@@ -1013,26 +1013,17 @@ const cancelHourlyAuction = async (req, res) => {
           templateId: '1207176916920661369'
         });
 
-        // Send Email
-        const primaryClientUrl = getPrimaryClientUrl();
-        const emailHtml = buildEmailTemplate({
-          primaryClientUrl,
-          title: 'Auction Cancelled',
-          status: 'REFUND INITIATED',
-          bodyHtml: `
-            <h2 class="hero-title">Auction Cancelled</h2>
-            <p class="hero-text">Dear ${participant.playerUsername},</p>
-            <p class="hero-text">We regret to inform you that the auction <strong>${hourlyAuction.auctionName}</strong> for the <strong>${hourlyAuction.TimeSlot}</strong> time slot has been cancelled.</p>
-            <p class="hero-text">A refund for your entry fee has been initiated and will be credited to your original payment source shortly.</p>
-            <div class="alert-box alert-success">
-              <div class="alert-title">Refund Status</div>
-              <div class="alert-desc">The refund process is now pending and will be completed soon.</div>
-            </div>
-            <p class="hero-text">Thank you for your patience and understanding.</p>
-          `
-        });
+        // Send Email (template-driven)
+        const emailVariables = {
+          name: participant.playerUsername,
+          Name: participant.playerUsername,
+          auctionName: hourlyAuction.auctionName,
+          AuctionName: hourlyAuction.auctionName,
+          timeSlot: hourlyAuction.TimeSlot,
+          TimeSlot: hourlyAuction.TimeSlot
+        };
 
-        await sendEmailWithTemplate(user.email, 'Auction Cancelled', {}, `Auction Cancelled: ${hourlyAuction.auctionName}`, emailHtml);
+        await sendEmailWithTemplate(user.email, 'Auction Cancelled', emailVariables);
 
         // Update AuctionHistory
         await AuctionHistory.findOneAndUpdate(
