@@ -8,7 +8,7 @@ interface ComingSoonProps {
 }
 
 // Configurable target date
-const TARGET_DATE = new Date('2026-02-05T10:35:00');
+const TARGET_DATE = new Date('2026-01-31T22:27:00');
 
 export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
@@ -18,6 +18,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<any>(null);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const calculateTimeLeft = useCallback(() => {
     const now = new Date();
@@ -65,15 +66,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     }
   };
 
-  const triggerBlast = useCallback(() => {
-    if (isLaunching) return;
-    setIsLaunching(true);
-
-    if (audioRef.current && experienceEnabled) {
-      audioRef.current.volume = 0.8;
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-    }
-
+  const triggerConfetti = useCallback(() => {
     const duration = 5 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 1000 };
@@ -109,12 +102,32 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
       origin: { y: 0.6 },
       colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
     });
-  }, [isLaunching, experienceEnabled]);
+  }, []);
+
+  const triggerBlast = useCallback(() => {
+    if (isLaunching) return;
+    setIsLaunching(true);
+
+    if (audioRef.current && experienceEnabled) {
+      audioRef.current.volume = 0.8;
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+    }
+
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+    }
+    redirectTimeoutRef.current = setTimeout(() => {
+      onComplete();
+    }, 2500);
+
+    triggerConfetti();
+  }, [isLaunching, experienceEnabled, onComplete, triggerConfetti]);
 
   useEffect(() => {
     const tick = () => {
       const remaining = calculateTimeLeft();
       if (remaining.expired) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
         triggerBlast();
         return;
       }
@@ -123,7 +136,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
       timeoutRef.current = setTimeout(tick, 1000 - (now % 1000));
     };
     tick();
-    return () => clearTimeout(timeoutRef.current);
+    return () => {
+      clearTimeout(timeoutRef.current);
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
   }, [calculateTimeLeft, triggerBlast]);
 
   const RollingDigit = ({ value, isLastTen }: { value: number; isLastTen?: boolean }) => {
@@ -185,11 +203,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
 
   return (
     <div className="h-[100dvh] w-full bg-[#020408] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-[#FFD700] selection:text-black overscroll-none">
-      <audio
-        ref={audioRef}
-        src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"
-        preload="auto"
-      />
+        <audio
+          ref={audioRef}
+          src="https://assets.mixkit.co/active_storage/sfx/1494/1494-preview.mp3"
+          preload="auto"
+        />
+
 
       {/* Cinematic Background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -345,15 +364,6 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
                 </h2>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onComplete}
-                className="px-8 py-4 bg-gradient-to-r from-[#FFD700] to-[#FFB800] text-black font-black text-lg sm:text-xl md:text-2xl rounded-xl shadow-xl flex items-center justify-center gap-2 mx-auto group"
-              >
-                <span>ENTER DREAM60</span>
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>

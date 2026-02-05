@@ -380,9 +380,11 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
               <p className="text-purple-600 text-sm">Check back later for more auctions!</p>
             </div>
           ) : (
-            sortedAuctions.map((auction, index) => {
-              const participantCount = auction.totalParticipants ?? 0;
-              return (
+              sortedAuctions.map((auction, index) => {
+                const participantCount = auction.totalParticipants ?? 0;
+                const isParticipant = !!auction.hasUserJoined;
+                return (
+
                   <motion.div
                     key={`${auction.hour}-${auction.minute}`}
                     initial={{ opacity: 0, x: -20 }}
@@ -447,16 +449,22 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
 
                           <div className="ml-auto sm:ml-0">
                             {auction.status === 'completed' && auction.hourlyAuctionId && (
-                            <Button
-                              onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                              size="sm"
-                              variant="ghost"
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-bold px-2 whitespace-nowrap"
-                            >
-                              <BarChart2 className="w-3.5 h-3.5 mr-1" />
-                              Leaderboard
-                            </Button>
-                          )}
+                              <Button
+                                onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                                size="sm"
+                                variant="ghost"
+                                disabled={!isParticipant}
+                                className={`h-8 text-xs font-bold px-2 whitespace-nowrap ${
+                                  isParticipant
+                                    ? 'text-purple-600 hover:text-purple-700 hover:bg-purple-50'
+                                    : 'text-gray-400 cursor-not-allowed hover:bg-transparent'
+                                }`}
+                              >
+                                <BarChart2 className="w-3.5 h-3.5 mr-1" />
+                                Leaderboard
+                              </Button>
+                            )}
+
                           {auction.status === 'active' && (() => {
                             const currentMinute = serverTime?.minute ?? new Date().getMinutes();
                             const isFirst15Mins = currentMinute < 15;
@@ -469,18 +477,24 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                             else if (currentMinute >= 15) currentRound = 2;
                             
                             // Check if winners are already announced (e.g. auction finished early)
-                            if (auction.winnersAnnounced && auction.hourlyAuctionId) {
-                              return (
-                                <Button
-                                  onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
-                                  size="sm"
-                                  className="bg-purple-600 hover:bg-purple-700 text-white h-8 text-xs font-bold px-4 whitespace-nowrap"
-                                >
-                                  <Trophy className="w-3.5 h-3.5 mr-1" />
-                                  Leaderboard
-                                </Button>
-                              );
-                            }
+                              if (auction.winnersAnnounced && auction.hourlyAuctionId) {
+                                return (
+                                  <Button
+                                    onClick={() => onNavigate?.('auction-leaderboard', { hourlyAuctionId: auction.hourlyAuctionId })}
+                                    size="sm"
+                                    disabled={!isParticipant}
+                                    className={`h-8 text-xs font-bold px-4 whitespace-nowrap ${
+                                      isParticipant
+                                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    <Trophy className="w-3.5 h-3.5 mr-1" />
+                                    Leaderboard
+                                  </Button>
+                                );
+                              }
+
 
                             // Check if user has bid in current round
                             const hasBidInCurrentRound = auction.userRoundBids?.[currentRound] || false;
