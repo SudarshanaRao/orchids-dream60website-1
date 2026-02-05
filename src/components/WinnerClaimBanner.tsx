@@ -381,73 +381,79 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
   if (!config) return null;
 
     return (
-      <>
-      <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
-        <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
-          
-          {/* Marquee Container */}
-        <div className="flex-1 overflow-hidden h-full flex items-center relative group">
-          <div className="flex items-center gap-4 whitespace-nowrap animate-marquee px-4">
-            {/* Repeated text for seamless loop - using 8 copies for absolute continuity */}
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="flex items-center gap-6 mr-12 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
-                    {config.icon}
+        <>
+        <div className="sticky top-[60px] sm:top-[76px] z-[45] w-full overflow-hidden shadow-2xl border-b border-white/20">
+          <div className={`relative h-12 flex items-center bg-gradient-to-r ${config.gradient}`}>
+            
+            {/* Marquee Container - Scrolling Text */}
+            <div className="flex-1 overflow-hidden h-full flex items-center relative group">
+              <div className="flex items-center gap-4 whitespace-nowrap animate-marquee px-4">
+                {/* Repeated text for seamless loop - using 8 copies for absolute continuity */}
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-6 mr-12 shrink-0">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
+                        {config.icon}
+                      </div>
+                      <span className="text-sm sm:text-[15px] font-black text-white tracking-tight uppercase italic drop-shadow-sm">
+                        {config.message}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
+                      <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
+                      <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
+                        {bannerData.timerLabel || config.timerLabel}: {timeLeft}
+                      </span>
+                    </div>
+                    
+                    <div className="h-4 w-[2px] bg-white/30 rounded-full" />
                   </div>
-                  <span className="text-sm sm:text-[15px] font-black text-white tracking-tight uppercase italic drop-shadow-sm">
-                    {config.message}
-                  </span>
-                </div>
-                
-                  <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/20 backdrop-blur-md shadow-inner">
-                    <Timer className="w-4 h-4 text-yellow-400 animate-pulse" />
-                    <span className="text-xs font-extrabold text-white tabular-nums tracking-wider">
-                      {bannerData.timerLabel || config.timerLabel}: {timeLeft}
-                    </span>
-                  </div>
-
-                {bannerType === 'WIN' ? (
-                  <button
-                    onClick={handleClaimNow}
-                    disabled={isProcessingClaim || paymentLoading}
-                    className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isProcessingClaim || paymentLoading ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>PROCESSING...</span>
-                      </>
-                    ) : (
-                      <>
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        <span>PAY ₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'} & CLAIM</span>
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onNavigate(config.navigateTo)}
-                    className="flex items-center gap-1.5 px-5 py-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20"
-                  >
-                    {config.buttonText}
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                
-                <div className="h-4 w-[2px] bg-white/30 rounded-full" />
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        <button
-          onClick={handleClose}
-          className="relative z-10 px-4 h-full flex items-center bg-black/10 hover:bg-black/20 transition-colors border-l border-white/10"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
-      </div>
+            {/* Fixed Action Button on Right */}
+            <div className="relative z-10 flex items-center gap-1 px-2 sm:px-3 h-full bg-gradient-to-l from-black/30 to-transparent">
+              {bannerType === 'WIN' ? (
+                <button
+                  onClick={handleClaimNow}
+                  disabled={isProcessingClaim || paymentLoading}
+                  className="flex items-center gap-1.5 px-3 sm:px-5 py-1.5 rounded-xl text-[9px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {isProcessingClaim || paymentLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span className="hidden sm:inline">PROCESSING...</span>
+                      <span className="sm:hidden">...</span>
+                    </>
+                  ) : (
+                    <>
+                      <IndianRupee className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">PAY ₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'} & CLAIM</span>
+                      <span className="sm:hidden">₹{bannerData.lastRoundBidAmount?.toLocaleString('en-IN') || '0'}</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => onNavigate(config.navigateTo)}
+                  className="flex items-center gap-1.5 px-3 sm:px-5 py-1.5 rounded-xl text-[9px] sm:text-xs font-black uppercase bg-white text-gray-900 transition-all hover:scale-105 active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.15)] hover:shadow-white/20 whitespace-nowrap"
+                >
+                  <span className="hidden sm:inline">{config.buttonText}</span>
+                  <span className="sm:hidden">VIEW</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <button
+                onClick={handleClose}
+                className="p-1.5 hover:bg-black/20 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </button>
+            </div>
+        </div>
 
       <style>{`
         @keyframes marquee {
