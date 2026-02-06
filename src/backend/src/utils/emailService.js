@@ -523,12 +523,13 @@ let transporterInstance = null;
 let templateCache = new Map();
 
 // Create reusable transporter with pooling for better performance
-const createTransporter = () => {
-  if (!transporterInstance) {
-    transporterInstance = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: false,
+  const createTransporter = () => {
+    if (!transporterInstance) {
+      const port = parseInt(process.env.EMAIL_PORT || '465');
+      transporterInstance = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.zoho.in',
+        port,
+        secure: port === 465,
       pool: true, // Enable connection pooling
       maxConnections: 10, // Increased for better throughput
       maxMessages: Infinity,
