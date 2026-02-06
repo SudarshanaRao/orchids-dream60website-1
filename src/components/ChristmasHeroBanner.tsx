@@ -10,12 +10,22 @@ interface ChristmasHeroBannerProps {
 }
 
 export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsLargeScreen(window.innerWidth >= 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   return (
     <section className="relative w-full h-[35vh] lg:h-[75vh] overflow-hidden bg-[#050a14]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Main Video Background */}
         <video
+          key={isLargeScreen ? 'large' : 'small'}
           autoPlay
           loop
           muted
@@ -23,7 +33,7 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
           className="w-full h-full object-cover object-center"
         >
           <source 
-            src="/launch_video.mp4" 
+            src={isLargeScreen ? "/large_screens_launch_video.mp4" : "/launch_video.mp4"} 
             type="video/mp4" 
           />
         </video>

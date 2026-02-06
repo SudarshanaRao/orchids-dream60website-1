@@ -20,14 +20,21 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   const timeoutRef = useRef<any>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // If countdown already completed or timer already expired, redirect immediately
+  const soundPlayedRef = useRef(false);
+
+  // If countdown already completed or timer already expired, trigger blast then go home
   useEffect(() => {
     const alreadyCompleted = localStorage.getItem('countdown_completed') === 'true';
     const timerExpired = TARGET_DATE.getTime() - Date.now() <= 0;
     if (alreadyCompleted || timerExpired) {
       localStorage.setItem('countdown_completed', 'true');
       sessionStorage.setItem('countdown_completed', 'true');
-      window.location.replace('https://dream60.com');
+      // Show blast animation briefly then redirect to home
+      setIsLaunching(true);
+      triggerConfetti();
+      redirectTimeoutRef.current = setTimeout(() => {
+        onComplete();
+      }, 3000);
     }
   }, []);
 
@@ -119,7 +126,8 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     if (isLaunching) return;
     setIsLaunching(true);
 
-    if (audioRef.current && experienceEnabled) {
+    // Play launch sound on blast if not already playing
+    if (audioRef.current) {
       audioRef.current.volume = 0.8;
       audioRef.current.play().catch(e => console.log('Audio play failed:', e));
     }
@@ -128,12 +136,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     localStorage.setItem('countdown_completed', 'true');
     sessionStorage.setItem('countdown_completed', 'true');
 
-    // Auto-redirect to dream60.com after 5 seconds
+    // Auto-redirect to home page after 5 seconds
     if (redirectTimeoutRef.current) {
       clearTimeout(redirectTimeoutRef.current);
     }
     redirectTimeoutRef.current = setTimeout(() => {
-      window.location.replace('https://dream60.com');
+      onComplete();
     }, 5000);
 
     triggerConfetti();
@@ -146,6 +154,12 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
         triggerBlast();
         return;
+      }
+      // Play launch sound when 5 seconds left
+      if (remaining.totalSeconds <= 5 && !soundPlayedRef.current && audioRef.current) {
+        soundPlayedRef.current = true;
+        audioRef.current.volume = 0.8;
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
       }
       setTimeLeft(remaining);
       const now = Date.now();
@@ -221,7 +235,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     <div className="h-[100dvh] w-full bg-[#020408] flex flex-col items-center justify-center px-4 relative overflow-hidden selection:bg-[#FFD700] selection:text-black overscroll-none">
         <audio
           ref={audioRef}
-          src="https://assets.mixkit.co/active_storage/sfx/2233/2233-preview.mp3"
+          src="/launch_Sound.wav"
           preload="auto"
         />
 
@@ -381,17 +395,17 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
                 </div>
 
                 <div className="space-y-4">
-                  <motion.a
-                    href="https://dream60.com"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#FFD700] to-[#FF9933] text-black font-black text-sm sm:text-base uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(255,215,0,0.3)] hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] transition-shadow"
-                  >
-                    Enter Dream60
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.a>
-                  <p className="text-slate-500 text-xs animate-pulse">Redirecting automatically in 5 seconds...</p>
-                </div>
+                    <motion.button
+                      onClick={() => onComplete()}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#FFD700] to-[#FF9933] text-black font-black text-sm sm:text-base uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(255,215,0,0.3)] hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] transition-shadow"
+                    >
+                      Enter Dream60
+                      <ArrowRight className="w-5 h-5" />
+                    </motion.button>
+                    <p className="text-slate-500 text-xs animate-pulse">Redirecting automatically in 5 seconds...</p>
+                  </div>
                 
               </motion.div>
           )}
