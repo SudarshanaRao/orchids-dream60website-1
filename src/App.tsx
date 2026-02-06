@@ -58,6 +58,27 @@ import { useActivityTracker } from './hooks/useActivityTracker';
 // ✅ Create QueryClient instance
 const queryClient = new QueryClient();
 
+// ✅ Cache version - increment to invalidate all user localStorage caches on deploy
+const CACHE_VERSION = 'v3';
+const CACHE_VERSION_KEY = 'dream60_cache_version';
+
+// Clear stale caches if version changed
+(() => {
+  const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
+  if (storedVersion !== CACHE_VERSION) {
+    // Preserve only essential session keys
+    const preserveKeys = ['user_id', 'username', 'email', 'admin_user_id', 'admin_email', 'admin_username', 'admin_userType', 'admin_isSuperAdmin', 'countdown_completed', 'push-permission-asked', 'push-subscribed', 'push-user-id'];
+    const preserved: Record<string, string> = {};
+    preserveKeys.forEach(key => {
+      const val = localStorage.getItem(key);
+      if (val) preserved[key] = val;
+    });
+    localStorage.clear();
+    Object.entries(preserved).forEach(([k, v]) => localStorage.setItem(k, v));
+    localStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION);
+  }
+})();
+
 // ✅ unified types
 import type {
   Auction,
@@ -535,10 +556,10 @@ const App = () => {
       id: userId,
       username: localStorage.getItem("username") || '',
       email: localStorage.getItem("email") || '',
-      totalWins: parseInt(localStorage.getItem("totalWins") || "0"),
-      totalLosses: parseInt(localStorage.getItem("totalLosses") || "0"),
-      totalAmountSpent: parseFloat(localStorage.getItem("totalAmountSpent") || "0"),
-      totalAmountWon: parseFloat(localStorage.getItem("totalAmountWon") || "0")
+      totalWins: 0,
+      totalLosses: 0,
+      totalAmountSpent: 0,
+      totalAmountWon: 0
     };
   });
 
@@ -574,13 +595,9 @@ const App = () => {
       const contentType = response.headers.get("content-type");
       if (!response.ok || !contentType || !contentType.includes("application/json")) return;
       const result = await response.json();
-      if (result.success && result.user) {
-        const mappedUser = mapUserData(result.user);
-        localStorage.setItem("totalWins", (mappedUser.totalWins ?? 0).toString());
-        localStorage.setItem("totalLosses", (mappedUser.totalLosses ?? 0).toString());
-        localStorage.setItem("totalAmountSpent", (mappedUser.totalAmountSpent ?? 0).toString());
-        localStorage.setItem("totalAmountWon", (mappedUser.totalAmountWon ?? 0).toString());
-        setCurrentUser(mappedUser);
+        if (result.success && result.user) {
+          const mappedUser = mapUserData(result.user);
+          setCurrentUser(mappedUser);
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -840,7 +857,7 @@ const App = () => {
         }
         const userId = localStorage.getItem("user_id");
         if (!userId) return;
-        setCurrentUser(mapUserData({ user_id: userId, username: localStorage.getItem("username") || '', email: localStorage.getItem("email") || '', totalWins: parseInt(localStorage.getItem("totalWins") || "0"), totalLosses: parseInt(localStorage.getItem("totalLosses") || "0"), totalAmountSpent: parseFloat(localStorage.getItem("totalAmountSpent") || "0"), totalAmountWon: parseFloat(localStorage.getItem("totalAmountWon") || "0") }));
+          setCurrentUser(mapUserData({ user_id: userId, username: localStorage.getItem("username") || '', email: localStorage.getItem("email") || '', totalWins: 0, totalLosses: 0, totalAmountSpent: 0, totalAmountWon: 0 }));
       } catch (error) { console.error("Session restore error:", error); }
     };
     checkExistingSession();
