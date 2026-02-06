@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   MessageSquare, 
   Send, 
@@ -27,6 +27,8 @@ import {
     Calendar,
     BarChart3,
     Tag,
+    Eye,
+    X,
   } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -114,6 +116,54 @@ interface SmsReport {
   SubmittedDate: string;
 }
 
+interface StarVariable {
+  position: number;
+  index: number;
+  label: string;
+  isUsername: boolean;
+  value: string;
+}
+
+function extractStarVariables(template: string): StarVariable[] {
+  const variables: StarVariable[] = [];
+  let position = 0;
+  let dearFound = false;
+
+  const regex = /\*/g;
+  let match;
+  while ((match = regex.exec(template)) !== null) {
+    position++;
+    const beforeStar = template.substring(0, match.index).toLowerCase();
+    const isAfterDear = !dearFound && beforeStar.trimEnd().endsWith('dear');
+
+    variables.push({
+      position,
+      index: match.index,
+      label: isAfterDear ? 'Username (auto-filled)' : `Variable ${position}`,
+      isUsername: isAfterDear,
+      value: '',
+    });
+
+    if (isAfterDear) dearFound = true;
+  }
+
+  return variables;
+}
+
+function renderSmsWithVariables(template: string, variables: StarVariable[], username: string): string {
+  let result = '';
+  let lastIndex = 0;
+  const sorted = [...variables].sort((a, b) => a.index - b.index);
+
+  for (const v of sorted) {
+    result += template.substring(lastIndex, v.index);
+    result += v.isUsername ? username : v.value;
+    lastIndex = v.index + 1; // skip the *
+  }
+  result += template.substring(lastIndex);
+  return result;
+}
+
 export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [activeTab, setActiveTab] = useState<'compose' | 'templates' | 'reports' | 'senderids'>('compose');
   const [templates, setTemplates] = useState<SmsTemplate[]>([]);
@@ -152,6 +202,10 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [isSending, setIsSending] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
+
+  const [showStarVariablesModal, setShowStarVariablesModal] = useState(false);
+  const [starVariables, setStarVariables] = useState<StarVariable[]>([]);
+  const [pendingSendType, setPendingSendType] = useState<'selected' | 'bulk' | null>(null);
 
   const [reportsPage, setReportsPage] = useState(1);
   const [reportsLimit] = useState(20);
@@ -434,47 +488,123 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     return customMessage;
   };
 
-  const handleSendSms = async () => {
-    if (selectedUsers.size === 0) {
-      toast.error('Please select at least one user');
-      return;
+  const getRawTemplateMessage = (): string => {
+    if (selectedTemplate && selectedTemplate.startsWith('rest_')) {
+      const templateId = selectedTemplate.replace('rest_', '');
+      const template = restTemplates.find(t => String(t.TemplateId) === templateId);
+      return template?.Message || '';
     }
+    if (selectedTemplate && selectedTemplate !== 'CUSTOM') {
+      const template = templates.find(t => t.key === selectedTemplate);
+      return template?.template || '';
+    }
+    return customMessage;
+  };
 
-    const message = getPreviewMessage();
-    if (!message || message.trim().length === 0) {
+  const checkStarsAndSend = (sendType: 'selected' | 'bulk') => {
+    const rawMessage = getRawTemplateMessage();
+    if (!rawMessage || rawMessage.trim().length === 0) {
       toast.error('Please enter a message or select a template');
       return;
     }
 
+    if (sendType === 'selected' && selectedUsers.size === 0) {
+      toast.error('Please select at least one user');
+      return;
+    }
+
+    const vars = extractStarVariables(rawMessage);
+    const nonUsernameVars = vars.filter(v => !v.isUsername);
+
+    if (nonUsernameVars.length > 0) {
+      setStarVariables(vars.map(v => ({ ...v, value: '' })));
+      setPendingSendType(sendType);
+      setShowStarVariablesModal(true);
+      return;
+    }
+
+    // No non-username stars, or no stars at all — send directly
+    if (sendType === 'selected') {
+      executeSendSms(rawMessage, vars);
+    } else {
+      executeSendBulk(rawMessage, vars);
+    }
+  };
+
+  const handleSendSms = () => checkStarsAndSend('selected');
+
+  const handleSendBulk = () => checkStarsAndSend('bulk');
+
+  const handleConfirmStarVariables = () => {
+    const missing = starVariables.filter(v => !v.isUsername && !v.value.trim());
+    if (missing.length > 0) {
+      toast.error('Please fill in all variables before sending');
+      return;
+    }
+    const rawMessage = getRawTemplateMessage();
+    setShowStarVariablesModal(false);
+    if (pendingSendType === 'selected') {
+      executeSendSms(rawMessage, starVariables);
+    } else {
+      executeSendBulk(rawMessage, starVariables);
+    }
+    setPendingSendType(null);
+  };
+
+  const executeSendSms = async (rawMessage: string, vars: StarVariable[]) => {
     setIsSending(true);
     try {
       const selectedUsersList = users.filter(u => selectedUsers.has(u.user_id));
-      const mobileNumbers = selectedUsersList.map(u => u.mobile).filter(Boolean);
-      
-        console.log('Sending SMS to:', mobileNumbers, 'with message:', message);
+      const hasStars = vars.length > 0;
 
+      if (hasStars) {
+        // Send personalized messages per user
+        let totalSent = 0;
+        let totalFailed = 0;
+        for (const user of selectedUsersList) {
+          if (!user.mobile) continue;
+          const personalizedMessage = renderSmsWithVariables(rawMessage, vars, user.username);
+          try {
+            const response = await fetch(`${API_BASE}/admin/sms/send?user_id=${adminUserId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mobileNumbers: [user.mobile],
+                senderId: selectedSenderId || undefined,
+                message: personalizedMessage,
+              }),
+            });
+            const data = await response.json();
+            if (data.success) totalSent++; else totalFailed++;
+          } catch {
+            totalFailed++;
+          }
+        }
+        toast.success(`SMS sent: ${totalSent} delivered, ${totalFailed} failed`);
+      } else {
+        const mobileNumbers = selectedUsersList.map(u => u.mobile).filter(Boolean);
         const response = await fetch(`${API_BASE}/admin/sms/send?user_id=${adminUserId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             mobileNumbers,
             senderId: selectedSenderId || undefined,
-            message: message,
+            message: rawMessage,
             templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
             templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
           }),
         });
-
-
-      const data = await response.json();
-      if (data.success) {
-        toast.success(`SMS sent to ${mobileNumbers.length} recipients`);
-        setSelectedUsers(new Set());
-        setSelectAll(false);
-        loadBalance();
-      } else {
-        toast.error(data.message || 'Failed to send SMS');
+        const data = await response.json();
+        if (data.success) {
+          toast.success(`SMS sent to ${mobileNumbers.length} recipients`);
+        } else {
+          toast.error(data.message || 'Failed to send SMS');
+        }
       }
+
+      setSelectedUsers(new Set());
+      setSelectAll(false);
+      loadBalance();
     } catch (error) {
       console.error('Error sending SMS:', error);
       toast.error('Failed to send SMS');
@@ -483,17 +613,16 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     }
   };
 
-  const handleSendBulk = async () => {
-    const message = getPreviewMessage();
-    if (!message || message.trim().length === 0) {
-      toast.error('Please enter a message or select a template');
-      return;
-    }
-
+  const executeSendBulk = async (rawMessage: string, vars: StarVariable[]) => {
     if (!['all', 'active_players', 'winners', 'never_played'].includes(selectedFilter)) {
       toast.error('Bulk send is only available for general filters');
       return;
     }
+
+    // For bulk with star variables, we fill non-username vars but username can't be personalized via bulk API
+    const finalMessage = vars.length > 0
+      ? renderSmsWithVariables(rawMessage, vars, '*')
+      : undefined;
 
     setIsSending(true);
     try {
@@ -503,9 +632,9 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
         body: JSON.stringify({
           filter: selectedFilter,
           senderId: selectedSenderId || undefined,
-          message: selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined,
-          templateKey: selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
-          templateVariables: selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
+          message: finalMessage || (selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined),
+          templateKey: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
+          templateVariables: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
         }),
       });
 
@@ -1265,6 +1394,130 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* Star Variables Modal for SMS */}
+      {showStarVariablesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Fill Template Variables</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Replace the <code className="bg-gray-100 px-1 rounded">*</code> placeholders in the template.
+                  {starVariables.some(v => v.isUsername) && (
+                    <span className="text-purple-600"> The first star after "Dear" will be auto-replaced with each user's name.</span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => { setShowStarVariablesModal(false); setPendingSendType(null); }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-700" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto p-6 space-y-4">
+              {/* Raw template display */}
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Template</p>
+                <p className="text-sm text-gray-800 font-mono whitespace-pre-wrap">{getRawTemplateMessage()}</p>
+              </div>
+
+              {/* Variable inputs */}
+              <div className="space-y-3">
+                {starVariables.map((v, idx) => (
+                  <div key={idx}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+                          * position {v.position}
+                        </span>
+                        {v.label}
+                      </span>
+                    </label>
+                    {v.isUsername ? (
+                      <div className="w-full px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                        Auto-filled with each user's username
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={v.value}
+                        onChange={(e) => {
+                          setStarVariables(prev =>
+                            prev.map((sv, i) => i === idx ? { ...sv, value: e.target.value } : sv)
+                          );
+                        }}
+                        placeholder={`Enter value for ${v.label}...`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Live Preview */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border-b border-green-200">
+                  <Eye className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-semibold text-green-700">
+                    Preview {(() => {
+                      if (pendingSendType === 'selected') {
+                        const firstUser = users.find(u => selectedUsers.has(u.user_id));
+                        return firstUser ? `(for ${firstUser.username})` : '';
+                      }
+                      return '(username shown as *)';
+                    })()}
+                  </span>
+                </div>
+                <div className="p-4 bg-white">
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+                    {(() => {
+                      const raw = getRawTemplateMessage();
+                      const previewUsername = pendingSendType === 'selected'
+                        ? (users.find(u => selectedUsers.has(u.user_id))?.username || 'User')
+                        : '*';
+                      return renderSmsWithVariables(raw, starVariables, previewUsername);
+                    })()}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {renderSmsWithVariables(getRawTemplateMessage(), starVariables, 
+                      pendingSendType === 'selected' ? (users.find(u => selectedUsers.has(u.user_id))?.username || 'User') : '*'
+                    ).length} characters
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setShowStarVariablesModal(false); setPendingSendType(null); }}
+                className="flex-1 px-4 py-3 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmStarVariables}
+                disabled={isSending}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isSending ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {pendingSendType === 'selected'
+                  ? `Send to ${selectedUsers.size} user${selectedUsers.size !== 1 ? 's' : ''}`
+                  : `Bulk Send to ${FILTER_OPTIONS.find(f => f.value === selectedFilter)?.label || 'All'}`
+                }
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

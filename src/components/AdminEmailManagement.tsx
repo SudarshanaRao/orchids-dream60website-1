@@ -71,6 +71,10 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const [showVariablesModal, setShowVariablesModal] = useState(false);
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
   const [userVariables, setUserVariables] = useState<UserVariables[]>([]);
+  const [showModeSelectionModal, setShowModeSelectionModal] = useState(false);
+  const [variableInputMode, setVariableInputMode] = useState<'one-time' | 'per-user' | null>(null);
+  const [sharedVariables, setSharedVariables] = useState<Record<string, string>>({});
+  const [showPreview, setShowPreview] = useState(false);
 
   // Fetch users
   const fetchUsers = async () => {
@@ -206,6 +210,10 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     setTemplateVariables([]);
     setUserVariables([]);
     setShowVariablesModal(false);
+    setShowModeSelectionModal(false);
+    setVariableInputMode(null);
+    setSharedVariables({});
+    setShowPreview(false);
     await fetchTemplates();
   };
 
@@ -278,6 +286,15 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
       if (variablesNeedingInput.length > 0) {
         setTemplateVariables(variablesNeedingInput);
         setUserVariables(userVariableData);
+
+        // If multiple users, show mode selection first
+        if (selected.length > 1) {
+          setShowModeSelectionModal(true);
+          return;
+        }
+
+        // Single user: go straight to per-user input
+        setVariableInputMode('per-user');
         setShowVariablesModal(true);
         return;
       }
@@ -322,6 +339,41 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleModeSelected = (mode: 'one-time' | 'per-user') => {
+    setVariableInputMode(mode);
+    setShowModeSelectionModal(false);
+    if (mode === 'one-time') {
+      setSharedVariables({});
+    }
+    setShowVariablesModal(true);
+  };
+
+  const applySharedVariablesToAll = () => {
+    const missing = templateVariables.some((v) => !sharedVariables[v]?.trim());
+    if (missing) {
+      toast.error('Please fill in all variables before applying');
+      return;
+    }
+    setUserVariables((prev) =>
+      prev.map((entry) => ({
+        ...entry,
+        variables: {
+          ...entry.variables,
+          ...sharedVariables,
+        },
+      }))
+    );
+    setShowPreview(true);
+  };
+
+  const getEmailPreview = (entry: UserVariables) => {
+    const variables = { ...entry.variables, username: entry.username };
+    return {
+      subject: replaceVariables(subject, variables),
+      body: replaceVariables(body, variables),
+    };
   };
 
   const handleVariableChange = (userId: string, variable: string, value: string) => {
@@ -941,18 +993,74 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
           </div>
         )}
 
+        {showModeSelectionModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-purple-900">How do you want to fill variables?</h3>
+                <button
+                  onClick={() => setShowModeSelectionModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-700" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                You are sending to <strong>{userVariables.length} users</strong> with {templateVariables.length} variable{templateVariables.length !== 1 ? 's' : ''} to fill.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleModeSelected('one-time')}
+                  className="w-full p-4 border-2 border-purple-200 rounded-xl text-left hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200">
+                      <Users className="w-5 h-5 text-purple-700" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-purple-900">Same values for all users</p>
+                      <p className="text-sm text-gray-600">Enter variables once and apply to all {userVariables.length} recipients</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleModeSelected('per-user')}
+                  className="w-full p-4 border-2 border-purple-200 rounded-xl text-left hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200">
+                      <FileText className="w-5 h-5 text-blue-700" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-blue-900">Different values per user</p>
+                      <p className="text-sm text-gray-600">Fill a spreadsheet table with values for each user</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showVariablesModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
-                  <h3 className="text-xl font-bold text-purple-900">Fill Template Variables</h3>
+                  <h3 className="text-xl font-bold text-purple-900">
+                    {variableInputMode === 'one-time' ? 'Fill Variables (Same for All)' : 'Fill Template Variables'}
+                  </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Username is filled automatically for each user.
+                    {variableInputMode === 'one-time'
+                      ? `These values will be applied to all ${userVariables.length} users. Username is auto-filled per user.`
+                      : 'Username is filled automatically for each user.'}
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowVariablesModal(false)}
+                  onClick={() => { setShowVariablesModal(false); setShowPreview(false); }}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-700" />
@@ -975,43 +1083,167 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
               </div>
 
               <div className="flex-1 overflow-auto p-6 space-y-4">
-                {userVariables.map((entry) => (
-                  <div key={entry.userId} className="border border-purple-200 rounded-xl p-4 bg-purple-50/40">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                      <div>
-                        <p className="font-semibold text-purple-900">{entry.username}</p>
-                        <p className="text-sm text-purple-600">{entry.email}</p>
-                      </div>
-                      <div className="text-xs text-purple-500">Username auto-filled</div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* ONE-TIME MODE: Single form */}
+                {variableInputMode === 'one-time' && !showPreview && (
+                  <div className="border border-purple-200 rounded-xl p-6 bg-purple-50/40">
+                    <h4 className="font-semibold text-purple-900 mb-4">Enter values (applied to all {userVariables.length} users)</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {templateVariables.map((variable) => (
-                        <div key={`${entry.userId}-${variable}`}>
-                          <label className="block text-xs font-semibold text-purple-700 mb-1">
+                        <div key={variable}>
+                          <label className="block text-sm font-semibold text-purple-700 mb-1">
                             {variable}
                           </label>
                           <input
                             type="text"
-                            value={entry.variables[variable] || ''}
-                            onChange={(e) => handleVariableChange(entry.userId, variable, e.target.value)}
+                            value={sharedVariables[variable] || ''}
+                            onChange={(e) => setSharedVariables((prev) => ({ ...prev, [variable]: e.target.value }))}
+                            placeholder={`Enter ${variable}...`}
                             className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
                           />
                         </div>
                       ))}
                     </div>
+                    <button
+                      type="button"
+                      onClick={applySharedVariablesToAll}
+                      className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Apply & Preview
+                    </button>
                   </div>
-                ))}
+                )}
+
+                {/* PER-USER MODE: Spreadsheet table */}
+                {variableInputMode === 'per-user' && !showPreview && (
+                  <div className="overflow-x-auto">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-purple-900">Fill values for each user</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (userVariables.length > 0) {
+                            const firstVars = userVariables[0].variables;
+                            setUserVariables((prev) =>
+                              prev.map((entry, idx) =>
+                                idx === 0 ? entry : {
+                                  ...entry,
+                                  variables: {
+                                    ...entry.variables,
+                                    ...Object.fromEntries(
+                                      templateVariables.map((v) => [v, firstVars[v] || ''])
+                                    ),
+                                  },
+                                }
+                              )
+                            );
+                            toast.success('First row values copied to all users');
+                          }
+                        }}
+                        className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-semibold"
+                      >
+                        Copy first row to all
+                      </button>
+                    </div>
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-purple-50">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-purple-700 uppercase border border-purple-200 sticky left-0 bg-purple-50 z-10">
+                            Username
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-purple-700 uppercase border border-purple-200">
+                            Email
+                          </th>
+                          {templateVariables.map((variable) => (
+                            <th key={variable} className="px-4 py-3 text-left text-xs font-semibold text-purple-700 uppercase border border-purple-200 min-w-[180px]">
+                              {variable}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userVariables.map((entry, idx) => (
+                          <tr key={entry.userId} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
+                            <td className="px-4 py-2 border border-purple-200 font-medium text-purple-900 text-sm sticky left-0 bg-inherit z-10">
+                              {entry.username}
+                            </td>
+                            <td className="px-4 py-2 border border-purple-200 text-sm text-purple-600">
+                              {entry.email}
+                            </td>
+                            {templateVariables.map((variable) => (
+                              <td key={`${entry.userId}-${variable}`} className="px-2 py-1 border border-purple-200">
+                                <input
+                                  type="text"
+                                  value={entry.variables[variable] || ''}
+                                  onChange={(e) => handleVariableChange(entry.userId, variable, e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-purple-200 rounded focus:outline-none focus:border-purple-500 text-sm"
+                                  placeholder={`${variable}...`}
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* PREVIEW SECTION */}
+                {showPreview && userVariables.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+                      <Eye className="w-5 h-5" />
+                      <span className="font-semibold">Preview - First recipient: {userVariables[0].username}</span>
+                    </div>
+                    {(() => {
+                      const preview = getEmailPreview(userVariables[0]);
+                      return (
+                        <div className="border border-gray-200 rounded-xl overflow-hidden">
+                          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                            <p className="text-sm text-gray-500">Subject:</p>
+                            <p className="font-semibold text-gray-900">{preview.subject}</p>
+                          </div>
+                          <div className="p-4 bg-white">
+                            <p className="text-sm text-gray-500 mb-2">Body:</p>
+                            <div
+                              className="prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: preview.body }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowVariablesModal(false)}
+                  onClick={() => { setShowVariablesModal(false); setShowPreview(false); }}
                   className="flex-1 px-4 py-3 border-2 border-purple-200 text-purple-700 rounded-xl font-semibold hover:bg-purple-50 transition-colors"
                 >
                   Cancel
                 </button>
+                {variableInputMode === 'per-user' && !showPreview && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(true)}
+                    className="flex-1 px-4 py-3 border-2 border-green-500 text-green-700 rounded-xl font-semibold hover:bg-green-50 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </button>
+                )}
+                {showPreview && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(false)}
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    Back to Edit
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleSendEmailsWithVariables}
