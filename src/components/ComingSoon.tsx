@@ -8,7 +8,7 @@ interface ComingSoonProps {
 }
 
 // Configurable target date
-const TARGET_DATE = new Date('2026-02-06T10:45:00');
+const TARGET_DATE = new Date('2026-02-06T12:35:00');
 
 export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
@@ -17,26 +17,90 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [experienceEnabled, setExperienceEnabled] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timeoutRef = useRef<any>(null);
+  const tickTimeoutRef = useRef<any>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const soundPlayedRef = useRef(false);
+  const blastTriggeredRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
 
-  // If countdown already completed or timer already expired, trigger blast then go home
+  // Keep onComplete ref current
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  const triggerConfetti = useCallback(() => {
+    const duration = 5 * 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 1000 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: any = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 100 * (timeLeft / duration);
+      
+      confetti({ 
+        ...defaults, 
+        particleCount, 
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
+        colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
+      });
+      confetti({ 
+        ...defaults, 
+        particleCount, 
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+        colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
+      });
+    }, 200);
+
+    confetti({
+      particleCount: 250,
+      spread: 120,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
+    });
+  }, []);
+
+  // Single function to trigger the blast + redirect - uses ref to avoid dependency issues
+  const triggerBlast = useCallback(() => {
+    if (blastTriggeredRef.current) return;
+    blastTriggeredRef.current = true;
+    setIsLaunching(true);
+
+    // Play launch sound on blast
+    if (audioRef.current) {
+      audioRef.current.volume = 0.8;
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+    }
+
+    // Mark as completed in both storages
+    localStorage.setItem('countdown_completed', 'true');
+    sessionStorage.setItem('countdown_completed', 'true');
+
+    // Trigger confetti
+    triggerConfetti();
+
+    // Auto-redirect to home page after 5 seconds
+    redirectTimeoutRef.current = setTimeout(() => {
+      onCompleteRef.current();
+    }, 5000);
+  }, [triggerConfetti]);
+
+  // On mount: if already completed or expired, blast then redirect
   useEffect(() => {
     const alreadyCompleted = localStorage.getItem('countdown_completed') === 'true';
     const timerExpired = TARGET_DATE.getTime() - Date.now() <= 0;
     if (alreadyCompleted || timerExpired) {
       localStorage.setItem('countdown_completed', 'true');
       sessionStorage.setItem('countdown_completed', 'true');
-      // Show blast animation briefly then redirect to home
-      setIsLaunching(true);
-      triggerConfetti();
-      redirectTimeoutRef.current = setTimeout(() => {
-        onComplete();
-      }, 3000);
+      triggerBlast();
     }
-  }, []);
+  }, [triggerBlast]);
 
   const calculateTimeLeft = useCallback(() => {
     const now = new Date();
@@ -84,69 +148,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
     }
   };
 
-  const triggerConfetti = useCallback(() => {
-    const duration = 5 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 45, spread: 360, ticks: 100, zIndex: 1000 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: any = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 100 * (timeLeft / duration);
-      
-      confetti({ 
-        ...defaults, 
-        particleCount, 
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-        colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
-      });
-      confetti({ 
-        ...defaults, 
-        particleCount, 
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-        colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
-      });
-    }, 200);
-
-    confetti({
-      particleCount: 250,
-      spread: 120,
-      origin: { y: 0.6 },
-      colors: ['#FFD700', '#FF9933', '#007FFF', '#FFFFFF']
-    });
-  }, []);
-
-  const triggerBlast = useCallback(() => {
-    if (isLaunching) return;
-    setIsLaunching(true);
-
-    // Play launch sound on blast if not already playing
-    if (audioRef.current) {
-      audioRef.current.volume = 0.8;
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-    }
-
-    // Mark as completed in both storages
-    localStorage.setItem('countdown_completed', 'true');
-    sessionStorage.setItem('countdown_completed', 'true');
-
-    // Auto-redirect to home page after 5 seconds
-    if (redirectTimeoutRef.current) {
-      clearTimeout(redirectTimeoutRef.current);
-    }
-    redirectTimeoutRef.current = setTimeout(() => {
-      onComplete();
-    }, 5000);
-
-    triggerConfetti();
-  }, [isLaunching, experienceEnabled, triggerConfetti]);
-
+  // Tick effect - only clears its own timeout, NOT the redirect timeout
   useEffect(() => {
     const tick = () => {
       const remaining = calculateTimeLeft();
@@ -163,16 +165,23 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
       }
       setTimeLeft(remaining);
       const now = Date.now();
-      timeoutRef.current = setTimeout(tick, 1000 - (now % 1000));
+      tickTimeoutRef.current = setTimeout(tick, 1000 - (now % 1000));
     };
     tick();
     return () => {
-      clearTimeout(timeoutRef.current);
+      clearTimeout(tickTimeoutRef.current);
+      // NOTE: Do NOT clear redirectTimeoutRef here - that's managed separately
+    };
+  }, [calculateTimeLeft, triggerBlast]);
+
+  // Cleanup redirect timeout on unmount only
+  useEffect(() => {
+    return () => {
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, [calculateTimeLeft, triggerBlast]);
+  }, []);
 
   const RollingDigit = ({ value, isLastTen }: { value: number; isLastTen?: boolean }) => {
     const displayValue = value.toString().padStart(2, '0');
@@ -294,18 +303,19 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
           <img src="/logo.svg" alt="Dream60" className="h-8 sm:h-12 md:h-16 w-auto filter drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]" />
         </motion.div>
 
-        {/* Hero Section */}
-        <div className="space-y-3 sm:space-y-4 md:space-y-6">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[#FF9933] font-black uppercase tracking-[0.2em] text-[8px] sm:text-[9px] md:text-[10px]"
-          >
-            <Sparkles className="w-3 h-3 text-[#FFD700]" />
-            <span>Premium Live Auctions</span>
-            <Sparkles className="w-3 h-3 text-[#FFD700]" />
-          </motion.div>
+        {/* Hero Section - hidden when launching */}
+        {!isLaunching && (
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[#FF9933] font-black uppercase tracking-[0.2em] text-[8px] sm:text-[9px] md:text-[10px]"
+            >
+              <Sparkles className="w-3 h-3 text-[#FFD700]" />
+              <span>Premium Live Auctions</span>
+              <Sparkles className="w-3 h-3 text-[#FFD700]" />
+            </motion.div>
 
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
@@ -325,9 +335,10 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
               transition={{ delay: 0.4 }}
               className="text-xs sm:text-base md:text-lg text-slate-400 font-medium max-w-2xl mx-auto leading-snug px-4"
             >
-              India’s Most Exciting Live Auction Experience Begins In…
+              India's Most Exciting Live Auction Experience Begins In…
             </motion.p>
-        </div>
+          </div>
+        )}
 
         {/* Countdown Area */}
         <AnimatePresence mode="wait">
@@ -396,7 +407,7 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
 
                 <div className="space-y-4">
                     <motion.button
-                      onClick={() => onComplete()}
+                      onClick={() => onCompleteRef.current()}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#FFD700] to-[#FF9933] text-black font-black text-sm sm:text-base uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(255,215,0,0.3)] hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] transition-shadow"
