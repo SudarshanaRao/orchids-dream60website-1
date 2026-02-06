@@ -10,7 +10,9 @@ interface AdminDailyAuctionsProps {
 interface Participant {
   user_id?: string;
   userId?: string;
+  playerId?: string;
   username?: string;
+  playerUsername?: string;
   userCode?: string;
   email?: string;
   joinedAt?: string;
@@ -56,7 +58,7 @@ const ParticipantsModal = ({
             <div className="space-y-2">
               {participants.map((participant, index) => (
                 <div 
-                  key={participant.user_id || participant.userId || participant.userCode || index}
+                    key={participant.user_id || participant.userId || participant.playerId || participant.userCode || index}
                   className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100"
                 >
                   <div className="flex items-center gap-3">
@@ -64,9 +66,9 @@ const ParticipantsModal = ({
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-semibold text-purple-900">
-                        {participant.username || participant.userCode || `User ${index + 1}`}
-                      </p>
+                        <p className="font-semibold text-purple-900">
+                          {participant.username || participant.playerUsername || participant.userCode || `User ${index + 1}`}
+                        </p>
                       {participant.email && (
                         <p className="text-xs text-purple-500">{participant.email}</p>
                       )}
