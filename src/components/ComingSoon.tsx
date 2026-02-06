@@ -8,7 +8,7 @@ interface ComingSoonProps {
 }
 
 // Configurable target date
-const TARGET_DATE = new Date('2026-02-05T18:36:00');
+const TARGET_DATE = new Date('2026-02-06T10:45:00');
 
 export function ComingSoon({ onComplete }: ComingSoonProps) {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 });
@@ -19,6 +19,17 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<any>(null);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // If countdown already completed or timer already expired, redirect immediately
+  useEffect(() => {
+    const alreadyCompleted = localStorage.getItem('countdown_completed') === 'true';
+    const timerExpired = TARGET_DATE.getTime() - Date.now() <= 0;
+    if (alreadyCompleted || timerExpired) {
+      localStorage.setItem('countdown_completed', 'true');
+      sessionStorage.setItem('countdown_completed', 'true');
+      window.location.replace('https://dream60.com');
+    }
+  }, []);
 
   const calculateTimeLeft = useCallback(() => {
     const now = new Date();
@@ -113,19 +124,20 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
       audioRef.current.play().catch(e => console.log('Audio play failed:', e));
     }
 
+    // Mark as completed in both storages
+    localStorage.setItem('countdown_completed', 'true');
+    sessionStorage.setItem('countdown_completed', 'true');
+
+    // Auto-redirect to dream60.com after 5 seconds
     if (redirectTimeoutRef.current) {
       clearTimeout(redirectTimeoutRef.current);
     }
     redirectTimeoutRef.current = setTimeout(() => {
-      sessionStorage.setItem('countdown_completed', 'true');
-      onComplete();
-      if (window.location.pathname === '/coming-soon') {
-        window.location.replace('/');
-      }
-    }, 800);
+      window.location.replace('https://dream60.com');
+    }, 5000);
 
     triggerConfetti();
-  }, [isLaunching, experienceEnabled, onComplete, triggerConfetti]);
+  }, [isLaunching, experienceEnabled, triggerConfetti]);
 
   useEffect(() => {
     const tick = () => {
@@ -349,26 +361,39 @@ export function ComingSoon({ onComplete }: ComingSoonProps) {
               )}
             </motion.div>
           ) : (
-            <motion.div
-              key="live"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="space-y-6 sm:space-y-10"
-            >
-              <div className="space-y-2">
-                <motion.div
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="inline-block px-4 py-1 bg-[#FFD700] text-black font-black text-[10px] uppercase tracking-widest rounded-full"
-                >
-                  Live Now
-                </motion.div>
-                <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter">
-                  Dream60 is <span className="text-[#FFD700] italic">LIVE!</span>
-                </h2>
-              </div>
-              
-            </motion.div>
+              <motion.div
+                key="live"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="space-y-6 sm:space-y-10"
+              >
+                <div className="space-y-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="inline-block px-4 py-1 bg-[#FFD700] text-black font-black text-[10px] uppercase tracking-widest rounded-full"
+                  >
+                    Live Now
+                  </motion.div>
+                  <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter">
+                    Dream60 is <span className="text-[#FFD700] italic">LIVE!</span>
+                  </h2>
+                </div>
+
+                <div className="space-y-4">
+                  <motion.a
+                    href="https://dream60.com"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-[#FFD700] to-[#FF9933] text-black font-black text-sm sm:text-base uppercase tracking-widest rounded-full shadow-[0_0_30px_rgba(255,215,0,0.3)] hover:shadow-[0_0_50px_rgba(255,215,0,0.5)] transition-shadow"
+                  >
+                    Enter Dream60
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.a>
+                  <p className="text-slate-500 text-xs animate-pulse">Redirecting automatically in 5 seconds...</p>
+                </div>
+                
+              </motion.div>
           )}
         </AnimatePresence>
 

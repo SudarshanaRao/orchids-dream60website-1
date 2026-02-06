@@ -11,7 +11,7 @@ interface ChristmasHeroBannerProps {
 
 export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
   return (
-    <section className="relative w-full h-[60vh] lg:h-[85vh] overflow-hidden bg-[#050a14]">
+    <section className="relative w-full h-[35vh] lg:h-[75vh] overflow-hidden bg-[#050a14]">
       {/* Background Cinematic Container */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Main Video Background */}

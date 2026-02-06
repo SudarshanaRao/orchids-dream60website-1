@@ -278,8 +278,8 @@ const App = () => {
     // If it's already past today's 11:58 PM, the target is tomorrow's 11:58 PM
     if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
     
-    // Check if we've already completed the countdown in this session
-    const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+    // Check if we've already completed the countdown
+    const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
 
     if (path === '/' && now < launchDate && !hasCompletedCountdown) {
       window.history.replaceState({}, '', '/coming-soon');
@@ -299,7 +299,7 @@ const App = () => {
     if (path === '/about') return 'about';
     // If countdown completed, redirect /coming-soon to home
     if (path === '/coming-soon') {
-      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
       if (hasCompletedCountdown) {
         window.history.replaceState({}, '', '/');
         return 'game';
@@ -338,7 +338,7 @@ const App = () => {
       launchDate.setHours(23, 58, 0, 0);
       if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
 
-      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true';
+      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
 
       if (path === '/' && now < launchDate && !hasCompletedCountdown) {
         window.history.replaceState({}, '', '/coming-soon');
