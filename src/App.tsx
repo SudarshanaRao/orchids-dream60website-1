@@ -818,9 +818,11 @@ const App = () => {
         const response = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
         if (!response.ok) return;
         const result = await response.json();
-        if (result.success && result.data) {
-          const activeAuctions = (result.data.auctions || []).filter((a: any) => a.status !== 'CANCELLED');
-          setDailyStats({ totalAuctions: activeAuctions.length || 6, totalPrizeValue: activeAuctions.reduce((sum: number, a: any) => sum + (a.prizeValue || 0), 0) || 350000 });
+          if (result.success && result.data) {
+            const auctionConfig = result.data.dailyAuctionConfig || [];
+            const activeAuctions = auctionConfig.filter((a: any) => a.Status !== 'CANCELLED');
+            const totalPrize = activeAuctions.reduce((sum: number, a: any) => sum + (a.prizeValue || 0), 0);
+            setDailyStats({ totalAuctions: activeAuctions.length || 6, totalPrizeValue: totalPrize || 350000 });
         }
       } catch (error) { console.error('Error fetching daily stats:', error); }
     };

@@ -56,7 +56,7 @@ export function AuctionScheduleInfo() {
                 <div className="bg-purple-100/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-300/60 mb-4 relative z-10">
                   <p className="text-sm text-purple-700 flex items-start gap-2">
                     <IndianRupee className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-                      <span><span className="font-bold">One Payment:</span> Entry fee will company decided based on product worth. Pay single entry fee split across Box 1 & 2. Opens exactly at <span className="font-bold">:{formatHour(currentHour)}:00</span> when the auction hour begins.</span>
+                      <span><span className="font-bold">One Payment:</span> Entry fee will company decided based on product worth. Pay single entry fee split across Box 1 & 2. Opens exactly at <span className="font-bold">{formatHour(currentHour)}:00</span> when the auction hour begins.</span>
 
                   </p>
                 </div>
