@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Trophy, IndianRupee, Users, Search, RefreshCw, XCircle, AlertCircle, ShieldAlert, CheckCircle2, PlayCircle } from 'lucide-react';
+import { Clock, Trophy, IndianRupee, Users, Search, RefreshCw, XCircle, AlertCircle, ShieldAlert, CheckCircle2, PlayCircle, X } from 'lucide-react';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -18,6 +18,9 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
   const [activeTab, setActiveTab] = useState('live');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [auctionToCancel, setAuctionToCancel] = useState<any>(null);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedAuctionParticipants, setSelectedAuctionParticipants] = useState<any[]>([]);
+  const [selectedAuctionName, setSelectedAuctionName] = useState('');
 
   const fetchHourlyAuctions = async () => {
     setIsLoading(true);
@@ -184,37 +187,32 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
             </div>
             
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                  <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Participants</span>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3 h-3 text-purple-700" />
-                    <span className="font-black text-purple-900">{auction.participants?.length || 0}</span>
-                  </div>
-                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
-                    <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-purple-700" />
-                      <span className="font-black text-purple-900">
-                        {auction.currentRound || 1} / {auction.totalRounds || auction.roundCount || 4}
-                      </span>
+                    <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Participants</span>
+                    <button
+                      onClick={() => {
+                        setSelectedAuctionParticipants(auction.participants || []);
+                        setSelectedAuctionName(auction.auctionName || `Auction ${auction.TimeSlot}`);
+                        setShowParticipantsModal(true);
+                      }}
+                      className="flex items-center gap-1 hover:bg-purple-100 rounded px-1 -ml-1 transition-colors"
+                    >
+                      <Users className="w-3 h-3 text-purple-700" />
+                      <span className="font-black text-purple-900">{auction.participants?.length || 0}</span>
+                      <span className="text-[9px] text-purple-500 font-bold ml-1">View</span>
+                    </button>
+                  </div>
+                    <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                      <span className="text-[10px] text-purple-600 uppercase font-bold block mb-1">Current Round</span>
+                      <div className="flex items-center gap-1">
+                        <Trophy className="w-3 h-3 text-purple-700" />
+                        <span className="font-black text-purple-900">
+                          {auction.currentRound || 1} / {auction.totalRounds || auction.roundCount || 4}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                {Array.isArray(auction.participants) && auction.participants.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {auction.participants.map((participant: any, index: number) => (
-                      <span
-                        key={`${participant.user_id || participant.userCode || participant.username || index}`}
-                        className="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full"
-                      >
-                        {participant.username || participant.userCode || participant.user_id || `User ${index + 1}`}
-                      </span>
-                    ))}
-                  </div>
-                )}
 
                 {(() => {
                   const qualifiedCount = Array.isArray(auction.qualifiedPlayers)
@@ -432,8 +430,74 @@ export function AdminHourlyAuctions({ adminUserId }: AdminHourlyAuctionsProps) {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
-    </div>
+        </AnimatePresence>
+
+        {/* Participants Modal */}
+        {showParticipantsModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+              <div className="sticky top-0 bg-white border-b border-purple-200 p-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-purple-900">Participants</h2>
+                  <p className="text-sm text-purple-600">{selectedAuctionName}</p>
+                </div>
+                <button
+                  onClick={() => setShowParticipantsModal(false)}
+                  className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-purple-600" />
+                </button>
+              </div>
+              
+              <div className="p-4 overflow-y-auto max-h-[60vh]">
+                {selectedAuctionParticipants.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-purple-200 mx-auto mb-3" />
+                    <p className="text-purple-600">No participants yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedAuctionParticipants.map((participant: any, index: number) => (
+                      <div 
+                        key={participant.user_id || participant.userId || participant.userCode || index}
+                        className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center text-purple-700 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-purple-900">
+                              {participant.username || participant.userCode || `User ${index + 1}`}
+                            </p>
+                            {participant.email && (
+                              <p className="text-xs text-purple-500">{participant.email}</p>
+                            )}
+                          </div>
+                        </div>
+                        {participant.joinedAt && (
+                          <span className="text-xs text-purple-500">
+                            {new Date(participant.joinedAt).toLocaleTimeString('en-IN', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="border-t border-purple-200 p-4 bg-purple-50">
+                <p className="text-center text-sm text-purple-700 font-semibold">
+                  Total: {selectedAuctionParticipants.length} participant{selectedAuctionParticipants.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
   );
 }
 
