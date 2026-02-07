@@ -6,6 +6,7 @@ const RazorpayPayment = require('../models/RazorpayPayment');
 const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const DailyAuction = require('../models/DailyAuction');
+const { getUserVoucherTransactions } = require('../controllers/adminVoucherController');
 
 /**
  * @swagger
@@ -855,5 +856,8 @@ router.get('/transactions/:id', async (req, res) => {
     });
   }
 });
+
+// User voucher transactions endpoint (returns masked data)
+router.get('/voucher-transactions', getUserVoucherTransactions);
 
 module.exports = router;

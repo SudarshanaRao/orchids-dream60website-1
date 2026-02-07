@@ -9,6 +9,7 @@ const {
   updateEmailTemplate,
     deleteEmailTemplate,
     getPublicEmailTemplates,
+    sendManualVoucherEmail,
   } = require('../controllers/emailController');
 
 
@@ -619,5 +620,8 @@ router.post('/templates', createEmailTemplate);
 router.get('/templates/:template_id', getEmailTemplateById);
 router.put('/templates/:template_id', updateEmailTemplate);
 router.delete('/templates/:template_id', deleteEmailTemplate);
+
+// Manual voucher email: sends email + stores voucher details in DB
+router.post('/send-voucher', sendManualVoucherEmail);
 
 module.exports = router;

@@ -59,12 +59,14 @@ interface TransactionItem {
 
 interface VoucherTransaction {
   _id: string;
+  transactionId?: string;
   recipientEmail?: string;
   recipientEmailMasked?: string;
   cardNumberMasked?: string;
   cardPinMasked?: string;
   amount: number;
   status: string;
+  source?: string;
   auctionName?: string;
   woohooOrderId?: string;
   sentAt?: string;
@@ -1025,10 +1027,13 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                                         </span>
                                         <Gift className="w-5 h-5" />
                                       </div>
-                                      <div>
-                                        <div className="text-sm font-bold text-amber-900">Amazon Voucher</div>
-                                        <div className="text-[11px] text-amber-600">₹{voucher.amount?.toLocaleString('en-IN') || 0}</div>
-                                      </div>
+                                    <div>
+                                          <div className="text-sm font-bold text-amber-900">Amazon Voucher</div>
+                                          <div className="text-[11px] text-amber-600">₹{voucher.amount?.toLocaleString('en-IN') || 0}</div>
+                                          {voucher.transactionId && (
+                                            <div className="text-[10px] font-mono text-amber-500 mt-0.5">{voucher.transactionId}</div>
+                                          )}
+                                        </div>
                                     </div>
                                     <Badge className={`w-fit border ${
                                       voucher.status === 'complete' || voucher.status === 'sent'
@@ -1091,11 +1096,17 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                                     )}
 
                                     {/* Meta info */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-amber-700">
-                                      <div className="flex items-center gap-1">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{formatDateTime(voucher.sentAt || voucher.createdAt)}</span>
-                                      </div>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-amber-700">
+                                        {voucher.transactionId && (
+                                          <div className="flex items-center gap-1 col-span-1 sm:col-span-2">
+                                            <Receipt className="w-3.5 h-3.5" />
+                                            <span className="font-mono font-semibold">{voucher.transactionId}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="w-3.5 h-3.5" />
+                                          <span>{formatDateTime(voucher.sentAt || voucher.createdAt)}</span>
+                                        </div>
                                       {voucher.auctionName && (
                                         <div className="flex items-center gap-1">
                                           <Target className="w-3.5 h-3.5" />

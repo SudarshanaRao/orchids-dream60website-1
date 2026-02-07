@@ -40,21 +40,31 @@ interface IssuedVoucher {
   userId: string;
   userName: string;
   userEmail: string;
+  userMobile?: string;
   auctionId: string;
   woohooOrderId: string;
+  transactionId?: string;
   amount: number;
   status: string;
   cardNumber?: string;
   cardPin?: string;
   expiry?: string;
+  sentToUser?: boolean;
+  sentAt?: string;
   createdAt: string;
   emailDetails?: {
     recipientEmail?: string;
+    recipientEmailMasked?: string;
     emailSubject?: string;
     emailSentAt?: string;
     emailStatus?: string;
     cardNumberMasked?: string;
     cardPinMasked?: string;
+    giftCardCode?: string;
+    giftCardCodeMasked?: string;
+    redeemLink?: string;
+    voucherAmount?: number;
+    totalEmailsSent?: number;
   };
 }
 
@@ -84,6 +94,13 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     show: false,
     winner: null
   });
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState<string | null>(null);
+  const [selectedSku, setSelectedSku] = useState<string>('AMAZON_GC');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [woohooCategories, setWoohooCategories] = useState<any[]>([]);
+  const [woohooProducts, setWoohooProducts] = useState<any[]>([]);
+  const [isFetchingProducts, setIsFetchingProducts] = useState(false);
 
     const fetchEligibleWinners = async () => {
       try {
@@ -148,9 +165,48 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     setIsLoading(false);
   };
 
+  // Fetch Woohoo categories
+  const fetchWoohooCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/vouchers/woohoo-categories?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        setWoohooCategories(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo categories:', error);
+    }
+  };
+
+  // Fetch Woohoo products by category
+  const fetchWoohooProducts = async (categoryId: string) => {
+    if (!categoryId) return;
+    setIsFetchingProducts(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/vouchers/woohoo-products/${categoryId}?user_id=${adminUserId}`);
+      const data = await response.json();
+      if (data.success) {
+        setWoohooProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching Woohoo products:', error);
+    } finally {
+      setIsFetchingProducts(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    fetchWoohooCategories();
   }, [adminUserId]);
+
+  useEffect(() => {
+    if (selectedCategoryId) {
+      fetchWoohooProducts(selectedCategoryId);
+    } else {
+      setWoohooProducts([]);
+    }
+  }, [selectedCategoryId]);
 
   const handleSendVoucher = async (winner: EligibleWinner) => {
     if (!selectedSku) {
@@ -194,6 +250,48 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
       toast.error('An error occurred while sending the voucher');
     } finally {
       setIsSending(null);
+    }
+  };
+
+  const handleResendEmail = async (voucherId: string) => {
+    setIsResending(voucherId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/vouchers/${voucherId}/resend-email?user_id=${adminUserId}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Voucher email resent successfully');
+        await fetchIssuedVouchers();
+      } else {
+        toast.error(data.message || 'Failed to resend email');
+      }
+    } catch (error) {
+      console.error('Error resending email:', error);
+      toast.error('Failed to resend voucher email');
+    } finally {
+      setIsResending(null);
+    }
+  };
+
+  const handleSyncVoucher = async (voucherId: string) => {
+    setIsSyncing(voucherId);
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/vouchers/${voucherId}/sync?user_id=${adminUserId}`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success('Voucher status synced');
+        await fetchIssuedVouchers();
+      } else {
+        toast.error(data.message || 'Failed to sync voucher');
+      }
+    } catch (error) {
+      console.error('Error syncing voucher:', error);
+      toast.error('Failed to sync voucher status');
+    } finally {
+      setIsSyncing(null);
     }
   };
 
@@ -446,18 +544,19 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
               <thead>
                 <tr className="border-b border-purple-200">
                   <th className="text-left py-3 px-4 text-purple-700">Recipient</th>
-                  <th className="text-left py-3 px-4 text-purple-700">Order ID</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Transaction / Order</th>
                   <th className="text-left py-3 px-4 text-purple-700">Amount</th>
                   <th className="text-left py-3 px-4 text-purple-700">Status</th>
                   <th className="text-left py-3 px-4 text-purple-700">Card Details (Masked)</th>
                   <th className="text-left py-3 px-4 text-purple-700">Email Delivery</th>
                   <th className="text-left py-3 px-4 text-purple-700">Date</th>
+                  <th className="text-center py-3 px-4 text-purple-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredIssued.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-purple-500">
+                    <td colSpan={8} className="py-8 text-center text-purple-500">
                       No vouchers issued yet
                     </td>
                   </tr>
@@ -468,7 +567,12 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         <div className="font-semibold text-purple-900">{voucher.userName}</div>
                         <div className="text-xs text-purple-600">{voucher.userEmail}</div>
                       </td>
-                      <td className="py-3 px-4 font-mono text-xs">{voucher.woohooOrderId}</td>
+                      <td className="py-3 px-4">
+                        {voucher.transactionId && (
+                          <div className="font-mono text-xs font-semibold text-purple-900">{voucher.transactionId}</div>
+                        )}
+                        <div className="font-mono text-[10px] text-purple-500">{voucher.woohooOrderId}</div>
+                      </td>
                       <td className="py-3 px-4 font-bold">₹{voucher.amount.toLocaleString()}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${
@@ -536,6 +640,38 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                           minute: '2-digit',
                           hour12: true
                         })}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex flex-col gap-1.5 items-center">
+                          {voucher.status === 'complete' && (
+                            <button
+                              onClick={() => handleResendEmail(voucher._id)}
+                              disabled={isResending === voucher._id}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all text-[10px] font-semibold disabled:opacity-50"
+                            >
+                              {isResending === voucher._id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Send className="w-3 h-3" />
+                              )}
+                              Resend Email
+                            </button>
+                          )}
+                          {voucher.status === 'processing' && (
+                            <button
+                              onClick={() => handleSyncVoucher(voucher._id)}
+                              disabled={isSyncing === voucher._id}
+                              className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all text-[10px] font-semibold disabled:opacity-50"
+                            >
+                              {isSyncing === voucher._id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-3 h-3" />
+                              )}
+                              Sync Status
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

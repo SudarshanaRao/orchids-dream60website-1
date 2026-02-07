@@ -186,7 +186,7 @@ const sendVoucher = async (req, res) => {
 };
 
 /**
- * Get all issued vouchers
+ * Get all issued vouchers (with masked email details for admin)
  */
 const getIssuedVouchers = async (req, res) => {
     try {
@@ -196,15 +196,36 @@ const getIssuedVouchers = async (req, res) => {
 
         const vouchers = await Voucher.find().sort({ createdAt: -1 }).lean();
         
-        // Enrich with user info
+        // Enrich with user info and masked email details
         const enrichedVouchers = [];
         for (const voucher of vouchers) {
             const user = await User.findOne({ user_id: voucher.userId }).select('username email mobile');
+            
+            // Get the latest email history entry
+            const latestEmail = voucher.emailHistory && voucher.emailHistory.length > 0
+                ? voucher.emailHistory[voucher.emailHistory.length - 1]
+                : null;
+
             enrichedVouchers.push({
                 ...voucher,
                 userName: user?.username,
                 userEmail: user?.email,
-                userMobile: user?.mobile
+                userMobile: user?.mobile,
+                transactionId: voucher.transactionId,
+                emailDetails: {
+                    recipientEmail: latestEmail?.sentTo || user?.email || null,
+                    recipientEmailMasked: maskEmail(latestEmail?.sentTo || user?.email),
+                    emailSubject: latestEmail?.emailSubject || null,
+                    emailSentAt: latestEmail?.sentAt || voucher.sentAt || null,
+                    emailStatus: latestEmail?.status || (voucher.sentToUser ? 'sent' : null),
+                    cardNumberMasked: maskCardNumber(voucher.cardNumber),
+                    cardPinMasked: maskPin(voucher.cardPin),
+                    giftCardCode: latestEmail?.giftCardCode || voucher.cardNumber || null,
+                    giftCardCodeMasked: maskCardNumber(latestEmail?.giftCardCode || voucher.cardNumber),
+                    redeemLink: latestEmail?.redeemLink || voucher.activationUrl || null,
+                    voucherAmount: voucher.amount,
+                    totalEmailsSent: voucher.emailHistory?.length || 0
+                }
             });
         }
 
@@ -405,6 +426,33 @@ const getWoohooOrderCards = async (req, res) => {
     }
 };
 
+// Masking helpers for admin view
+const maskCardNumber = (cardNumber) => {
+    if (!cardNumber) return null;
+    const str = String(cardNumber);
+    if (str.length <= 4) return '*'.repeat(str.length);
+    return '*'.repeat(str.length - 4) + str.slice(-4);
+};
+
+const maskPin = (pin) => {
+    if (!pin) return null;
+    const str = String(pin);
+    if (str.length <= 2) return '*'.repeat(str.length);
+    return '*'.repeat(str.length - 2) + str.slice(-2);
+};
+
+const maskEmail = (email) => {
+    if (!email) return null;
+    const [local, domain] = email.split('@');
+    if (!domain) return maskCardNumber(email);
+    const maskedLocal = local.length <= 2 ? local : local[0] + '*'.repeat(local.length - 2) + local[local.length - 1];
+    const domParts = domain.split('.');
+    const maskedDomain = domParts[0].length <= 2
+        ? domParts[0]
+        : domParts[0][0] + '*'.repeat(domParts[0].length - 2) + domParts[0][domParts[0].length - 1];
+    return `${maskedLocal}@${maskedDomain}.${domParts.slice(1).join('.')}`;
+};
+
 /**
  * Resend Voucher Email
  */
@@ -429,37 +477,46 @@ const resendVoucherEmail = async (req, res) => {
         // Get auction history for payment amount
         const historyEntry = await AuctionHistory.findOne({ hourlyAuctionId: voucher.auctionId, userId: voucher.userId });
 
-    // Send Amazon Voucher Email
-      const emailResult = await sendAmazonVoucherEmail(user.email, {
-          username: user.username || 'Customer',
-          voucherAmount: voucher.amount,
-          giftCardCode: voucher.cardNumber,
-          paymentAmount: historyEntry?.lastRoundBidAmount || 0,
-          redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance'
-      });
+        const emailSubject = `Your Amazon Gift Card Worth Rs.${voucher.amount} from Dream60`;
+        const redeemLink = voucher.activationUrl || 'https://www.amazon.in/gc/balance';
 
-      // Store email details in voucher record
-      const emailRecord = {
-          sentTo: user.email,
-          sentAt: new Date(),
-          voucherAmount: voucher.amount,
-          giftCardCode: voucher.cardNumber,
-          redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance',
-          status: emailResult.success ? 'sent' : 'failed'
-      };
-      
-      await Voucher.findByIdAndUpdate(voucherId, {
-          $set: { sentToUser: emailResult.success, sentAt: new Date() },
-          $push: { emailHistory: emailRecord }
-      });
+        // Send Amazon Voucher Email
+        const emailResult = await sendAmazonVoucherEmail(user.email, {
+            username: user.username || 'Customer',
+            voucherAmount: voucher.amount,
+            giftCardCode: voucher.cardNumber,
+            paymentAmount: historyEntry?.lastRoundBidAmount || 0,
+            redeemLink: redeemLink
+        });
 
-      if (!emailResult.success) {
-          return res.status(500).json({ success: false, message: 'Failed to send voucher email' });
-      }
+        // Store full email details in voucher record
+        const emailRecord = {
+            sentTo: user.email,
+            sentAt: new Date(),
+            voucherAmount: voucher.amount,
+            giftCardCode: voucher.cardNumber,
+            redeemLink: redeemLink,
+            emailSubject: emailSubject,
+            status: emailResult.success ? 'sent' : 'failed'
+        };
+        
+        await Voucher.findByIdAndUpdate(voucherId, {
+            $set: { sentToUser: emailResult.success, sentAt: new Date() },
+            $push: { emailHistory: emailRecord }
+        });
+
+        if (!emailResult.success) {
+            return res.status(500).json({ success: false, message: 'Failed to send voucher email' });
+        }
 
         return res.status(200).json({
             success: true,
-            message: 'Voucher email resent successfully'
+            message: 'Voucher email resent successfully',
+            data: {
+                transactionId: voucher.transactionId,
+                emailSentTo: maskEmail(user.email),
+                cardNumberMasked: maskCardNumber(voucher.cardNumber)
+            }
         });
     } catch (error) {
         console.error('Error resending voucher email:', error);
@@ -508,6 +565,71 @@ const syncVoucherStatus = async (req, res) => {
     }
 };
 
+/**
+ * Get voucher transactions for a specific user (for user-facing transaction history)
+ * Returns masked card details
+ */
+const getUserVoucherTransactions = async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'userId is required' });
+        }
+
+        const vouchers = await Voucher.find({ userId }).sort({ createdAt: -1 }).lean();
+
+        // Get auction details for each voucher
+        const auctionIds = [...new Set(vouchers.map(v => v.auctionId).filter(Boolean))];
+        const auctionMap = {};
+        if (auctionIds.length > 0) {
+            const AuctionHistory = require('../models/AuctionHistory');
+            const histories = await AuctionHistory.find({
+                hourlyAuctionId: { $in: auctionIds },
+                userId
+            }).select('hourlyAuctionId auctionName').lean();
+            histories.forEach(h => {
+                auctionMap[h.hourlyAuctionId] = h.auctionName;
+            });
+        }
+
+        const maskedVouchers = vouchers.map(v => {
+            const latestEmail = v.emailHistory && v.emailHistory.length > 0
+                ? v.emailHistory[v.emailHistory.length - 1]
+                : null;
+
+            return {
+                _id: v._id,
+                transactionId: v.transactionId,
+                amount: v.amount,
+                status: v.status,
+                source: v.source || 'woohoo',
+                auctionName: auctionMap[v.auctionId] || null,
+                woohooOrderId: v.woohooOrderId,
+                cardNumberMasked: maskCardNumber(v.cardNumber),
+                cardPinMasked: maskPin(v.cardPin),
+                expiryDate: v.expiry,
+                recipientEmailMasked: maskEmail(latestEmail?.sentTo),
+                emailSentAt: latestEmail?.sentAt || v.sentAt,
+                emailStatus: latestEmail?.status || (v.sentToUser ? 'sent' : null),
+                emailSubject: latestEmail?.emailSubject || null,
+                sentAt: v.sentAt,
+                createdAt: v.createdAt
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: maskedVouchers
+        });
+    } catch (error) {
+        console.error('Error fetching user voucher transactions:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to fetch voucher transactions'
+        });
+    }
+};
+
 module.exports = {
     getEligibleWinners,
     sendVoucher,
@@ -520,6 +642,7 @@ module.exports = {
     getWoohooOrderStatus,
     getWoohooOrderCards,
     resendVoucherEmail,
-    syncVoucherStatus
+    syncVoucherStatus,
+    getUserVoucherTransactions
 };
 

@@ -1,5 +1,6 @@
 // src/backend/src/models/Voucher.js
 const mongoose = require('mongoose');
+const { randomUUID } = require('crypto');
 
 const VoucherSchema = new mongoose.Schema(
     {
@@ -9,22 +10,30 @@ const VoucherSchema = new mongoose.Schema(
             index: true
         },
         claimId: {
-            type: String, // ID of the prize claim
-            required: true,
+            type: String, // ID of the prize claim (optional for manual vouchers)
             index: true
         },
         auctionId: {
+            type: String
+        },
+        transactionId: {
             type: String,
-            required: true
+            unique: true,
+            sparse: true,
+            index: true
+        },
+        source: {
+            type: String,
+            enum: ['woohoo', 'manual'],
+            default: 'woohoo'
         },
         woohooOrderId: {
             type: String,
-            required: true,
-            unique: true
+            unique: true,
+            sparse: true
         },
         sku: {
-            type: String,
-            required: true
+            type: String
         },
         amount: {
             type: Number,
@@ -51,10 +60,22 @@ const VoucherSchema = new mongoose.Schema(
             voucherAmount: Number,
             giftCardCode: String,
             redeemLink: String,
+            emailSubject: String,
+            emailBody: String,
             status: { type: String, enum: ['sent', 'failed'], default: 'sent' }
         }]
     },
     { timestamps: true }
 );
+
+// Auto-generate transactionId before save
+VoucherSchema.pre('save', function (next) {
+    if (!this.transactionId) {
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const random = randomUUID().split('-')[0].toUpperCase();
+        this.transactionId = `D60-AV-${timestamp}-${random}`;
+    }
+    next();
+});
 
 module.exports = mongoose.model('Voucher', VoucherSchema);

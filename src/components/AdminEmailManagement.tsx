@@ -75,6 +75,12 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
   const [variableInputMode, setVariableInputMode] = useState<'one-time' | 'per-user' | null>(null);
   const [sharedVariables, setSharedVariables] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const [isVoucherEmail, setIsVoucherEmail] = useState(false);
+  const [voucherAmount, setVoucherAmount] = useState('');
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [giftCardPin, setGiftCardPin] = useState('');
+  const [redeemLink, setRedeemLink] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
 
   // Fetch users
   const fetchUsers = async () => {
@@ -214,6 +220,12 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
     setVariableInputMode(null);
     setSharedVariables({});
     setShowPreview(false);
+    setIsVoucherEmail(false);
+    setVoucherAmount('');
+    setGiftCardCode('');
+    setGiftCardPin('');
+    setRedeemLink('');
+    setExpiryDate('');
     await fetchTemplates();
   };
 
@@ -276,6 +288,72 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
       return;
     }
 
+    // Voucher email flow: one user at a time, store in DB
+    if (isVoucherEmail) {
+      if (!voucherAmount || !giftCardCode) {
+        toast.error('Please enter voucher amount and gift card code');
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        let totalSent = 0;
+        let totalFailed = 0;
+
+        for (const recipientUserId of Array.from(selectedUsers)) {
+          const recipientUser = users.find(u => u.user_id === recipientUserId);
+          const variables: Record<string, string> = {
+            username: recipientUser?.username || 'Customer',
+            voucherAmount: voucherAmount,
+            giftCardCode: giftCardCode,
+            giftCardPin: giftCardPin || '',
+            redeemLink: redeemLink || '',
+          };
+
+          const finalSubject = replaceVariables(subject, variables);
+          const finalBody = replaceVariables(body, variables);
+
+          const response = await fetch(`${API_BASE_URL}/admin/emails/send-voucher`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: adminUserId,
+              recipientUserId,
+              recipientEmail: recipientUser?.email,
+              subject: finalSubject,
+              body: finalBody,
+              voucherAmount: Number(voucherAmount),
+              giftCardCode,
+              giftCardPin: giftCardPin || undefined,
+              redeemLink: redeemLink || undefined,
+              expiryDate: expiryDate || undefined,
+            }),
+          });
+
+          const data = await response.json();
+          if (response.ok && data.success) {
+            totalSent += 1;
+            if (data.data?.transactionId) {
+              toast.success(`Voucher sent to ${recipientUser?.username || 'user'} | TX: ${data.data.transactionId}`);
+            }
+          } else {
+            totalFailed += 1;
+            toast.error(`Failed for ${recipientUser?.username}: ${data.message || 'Unknown error'}`);
+          }
+        }
+
+        toast.success(`Voucher emails done: ${totalSent} sent, ${totalFailed} failed`);
+        await resetEmailForm();
+      } catch (error) {
+        console.error('Error sending voucher emails:', error);
+        toast.error('Failed to send voucher emails');
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    // Normal email flow (non-voucher)
     const selected = getSelectedUserList();
     const variables = extractTemplateVariables(subject, body);
     const variablesNeedingInput = variables.filter((variable) => variable.toLowerCase() !== 'username');
@@ -730,6 +808,94 @@ export const AdminEmailManagement = ({ adminUserId }: AdminEmailManagementProps)
             </h3>
 
             <div className="space-y-4">
+              {/* Amazon Voucher Toggle */}
+              <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-amber-200 bg-amber-50/60">
+                <label className="flex items-center gap-2 cursor-pointer flex-1">
+                  <input
+                    type="checkbox"
+                    checked={isVoucherEmail}
+                    onChange={(e) => setIsVoucherEmail(e.target.checked)}
+                    className="w-5 h-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-sm font-semibold text-amber-900">Send as Amazon Voucher Email</span>
+                </label>
+                {isVoucherEmail && (
+                  <span className="text-xs px-2 py-1 bg-amber-200 text-amber-800 rounded-full font-semibold">
+                    Voucher data will be stored in DB
+                  </span>
+                )}
+              </div>
+
+              {/* Voucher Fields (shown when toggle is on) */}
+              {isVoucherEmail && (
+                <div className="p-4 rounded-xl border-2 border-amber-200 bg-amber-50/40 space-y-3">
+                  <div className="text-sm font-bold text-amber-900 mb-2">Amazon Voucher Details</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-700 mb-1">
+                        Voucher Amount (INR) *
+                      </label>
+                      <input
+                        type="number"
+                        value={voucherAmount}
+                        onChange={(e) => setVoucherAmount(e.target.value)}
+                        placeholder="e.g. 5000"
+                        className="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-700 mb-1">
+                        Gift Card Code *
+                      </label>
+                      <input
+                        type="text"
+                        value={giftCardCode}
+                        onChange={(e) => setGiftCardCode(e.target.value)}
+                        placeholder="e.g. XXXX-XXXX-XXXX-XXXX"
+                        className="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-500 text-sm font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-700 mb-1">
+                        Gift Card PIN (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={giftCardPin}
+                        onChange={(e) => setGiftCardPin(e.target.value)}
+                        placeholder="e.g. 1234"
+                        className="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-500 text-sm font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-700 mb-1">
+                        Redeem Link (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={redeemLink}
+                        onChange={(e) => setRedeemLink(e.target.value)}
+                        placeholder="https://www.amazon.in/gc/balance"
+                        className="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-amber-700 mb-1">
+                        Expiry Date (optional)
+                      </label>
+                      <input
+                        type="date"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                        className="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:outline-none focus:border-amber-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Use <code className="bg-amber-200/80 px-1 rounded">{'{{voucherAmount}}'}</code>, <code className="bg-amber-200/80 px-1 rounded">{'{{giftCardCode}}'}</code>, <code className="bg-amber-200/80 px-1 rounded">{'{{giftCardPin}}'}</code>, <code className="bg-amber-200/80 px-1 rounded">{'{{redeemLink}}'}</code> in subject/body to auto-replace.
+                  </p>
+                </div>
+              )}
               {/* Subject */}
               <div>
                 <label className="block text-sm font-semibold text-purple-700 mb-2">

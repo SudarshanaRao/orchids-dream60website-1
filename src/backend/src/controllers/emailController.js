@@ -1,6 +1,7 @@
 // src/controllers/emailController.js
 const User = require('../models/user');
 const EmailTemplate = require('../models/EmailTemplate');
+const Voucher = require('../models/Voucher');
 const { sendCustomEmail } = require('../utils/emailService');
 
 /**
@@ -406,6 +407,89 @@ const deleteEmailTemplate = async (req, res) => {
     }
   };
 
+/**
+ * Send Manual Amazon Voucher Email
+ * Stores voucher details in DB and sends email to user
+ */
+const sendManualVoucherEmail = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
+    }
+
+    const adminUser = await User.findOne({ user_id: userId });
+    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
+
+    const { recipientUserId, recipientEmail, subject, body, voucherAmount, giftCardCode, giftCardPin, redeemLink, expiryDate } = req.body;
+
+    if (!recipientUserId || !subject || !body || !voucherAmount || !giftCardCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'recipientUserId, subject, body, voucherAmount, and giftCardCode are required',
+      });
+    }
+
+    // Get recipient user
+    const recipientUser = await User.findOne({ user_id: recipientUserId });
+    if (!recipientUser) {
+      return res.status(404).json({ success: false, message: 'Recipient user not found' });
+    }
+
+    const targetEmail = recipientEmail || recipientUser.email;
+    if (!targetEmail) {
+      return res.status(400).json({ success: false, message: 'Recipient has no email address' });
+    }
+
+    // Send the email
+    const emailResult = await sendCustomEmail(targetEmail, subject, body);
+
+    // Create voucher record in DB
+    const voucher = new Voucher({
+      userId: recipientUserId,
+      source: 'manual',
+      amount: Number(voucherAmount),
+      status: 'complete',
+      cardNumber: giftCardCode,
+      cardPin: giftCardPin || null,
+      expiry: expiryDate ? new Date(expiryDate) : null,
+      activationUrl: redeemLink || null,
+      sentToUser: emailResult.success,
+      sentAt: emailResult.success ? new Date() : null,
+      emailHistory: [{
+        sentTo: targetEmail,
+        sentAt: new Date(),
+        voucherAmount: Number(voucherAmount),
+        giftCardCode: giftCardCode,
+        redeemLink: redeemLink || null,
+        emailSubject: subject,
+        emailBody: body,
+        status: emailResult.success ? 'sent' : 'failed',
+      }],
+    });
+
+    await voucher.save();
+
+    return res.status(200).json({
+      success: true,
+      message: emailResult.success
+        ? 'Voucher email sent and stored successfully'
+        : 'Voucher stored but email failed to send',
+      data: {
+        transactionId: voucher.transactionId,
+        voucherId: voucher._id,
+        emailSent: emailResult.success,
+      },
+    });
+  } catch (err) {
+    console.error('Send Manual Voucher Email Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
   module.exports = {
     sendEmailToUsers,
     createEmailTemplate,
@@ -414,5 +498,6 @@ const deleteEmailTemplate = async (req, res) => {
     updateEmailTemplate,
     deleteEmailTemplate,
     getPublicEmailTemplates,
+    sendManualVoucherEmail,
   };
 
