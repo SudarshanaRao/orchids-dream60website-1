@@ -74,6 +74,7 @@ interface AuctionScheduleProps {
   user?: {
     id?: string;
     username?: string;
+    userType?: string;
   } | null;
   onNavigate?: (page: string, data?: any) => void;
   serverTime?: { timestamp: number; minute: number; hour: number } | null;
@@ -84,7 +85,7 @@ type TabFilter = 'all' | 'live' | 'upcoming' | 'completed';
 export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionScheduleProps) {
   const now = getCurrentIST();
   const currentHour = now.getHours();
-  const isAdmin = !!localStorage.getItem('admin_user_id');
+  const isAdmin = !!localStorage.getItem('admin_user_id') || user?.userType === 'ADMIN';
   const [activeFilter, setActiveFilter] = useState<TabFilter>('upcoming');
   const [scheduleData, setScheduleData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

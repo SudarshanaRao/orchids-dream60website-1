@@ -48,6 +48,14 @@ interface IssuedVoucher {
   cardPin?: string;
   expiry?: string;
   createdAt: string;
+  emailDetails?: {
+    recipientEmail?: string;
+    emailSubject?: string;
+    emailSentAt?: string;
+    emailStatus?: string;
+    cardNumberMasked?: string;
+    cardPinMasked?: string;
+  };
 }
 
 interface WoohooTransaction {
@@ -441,14 +449,15 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                   <th className="text-left py-3 px-4 text-purple-700">Order ID</th>
                   <th className="text-left py-3 px-4 text-purple-700">Amount</th>
                   <th className="text-left py-3 px-4 text-purple-700">Status</th>
-                  <th className="text-left py-3 px-4 text-purple-700">Details</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Card Details (Masked)</th>
+                  <th className="text-left py-3 px-4 text-purple-700">Email Delivery</th>
                   <th className="text-left py-3 px-4 text-purple-700">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredIssued.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-purple-500">
+                    <td colSpan={7} className="py-8 text-center text-purple-500">
                       No vouchers issued yet
                     </td>
                   </tr>
@@ -471,14 +480,51 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         </span>
                       </td>
                       <td className="py-3 px-4 text-xs">
-                        {voucher.cardNumber && (
+                        {voucher.emailDetails?.cardNumberMasked ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono bg-purple-50 px-1.5 py-0.5 rounded text-purple-800">Card: {voucher.emailDetails.cardNumberMasked}</span>
+                            {voucher.emailDetails.cardPinMasked && (
+                              <span className="font-mono bg-amber-50 px-1.5 py-0.5 rounded text-amber-800">PIN: {voucher.emailDetails.cardPinMasked}</span>
+                            )}
+                          </div>
+                        ) : voucher.cardNumber ? (
                           <div className="flex flex-col gap-1">
                             <span className="font-mono bg-purple-50 px-1 rounded">Card: {voucher.cardNumber}</span>
                             <span className="font-mono bg-amber-50 px-1 rounded">PIN: {voucher.cardPin}</span>
                           </div>
+                        ) : (
+                          <span className="text-purple-400 italic">--</span>
                         )}
-                        {!voucher.cardNumber && voucher.status === 'complete' && 'Email Sent'}
-                        {!voucher.cardNumber && voucher.status !== 'complete' && 'Processing...'}
+                      </td>
+                      <td className="py-3 px-4 text-xs">
+                        {voucher.emailDetails ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-purple-700">
+                              To: <span className="font-mono font-semibold">{voucher.emailDetails.recipientEmail || voucher.userEmail}</span>
+                            </span>
+                            {voucher.emailDetails.emailSubject && (
+                              <span className="text-purple-500 text-[10px] truncate max-w-[180px] block">{voucher.emailDetails.emailSubject}</span>
+                            )}
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                              voucher.emailDetails.emailStatus === 'sent' ? 'text-green-700' : 'text-amber-600'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${voucher.emailDetails.emailStatus === 'sent' ? 'bg-green-500' : 'bg-amber-500'}`}></span>
+                              {voucher.emailDetails.emailStatus === 'sent' ? 'Email Sent' : (voucher.emailDetails.emailStatus || 'Pending')}
+                            </span>
+                            {voucher.emailDetails.emailSentAt && (
+                              <span className="text-purple-400 text-[10px]">
+                                {new Date(voucher.emailDetails.emailSentAt).toLocaleString('en-IN', {
+                                  timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric',
+                                  hour: '2-digit', minute: '2-digit', hour12: true
+                                })}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-purple-400 italic">
+                            {voucher.status === 'complete' ? 'Email Sent' : 'No email data'}
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-xs text-purple-600">
                         {new Date(voucher.createdAt).toLocaleString('en-IN', {

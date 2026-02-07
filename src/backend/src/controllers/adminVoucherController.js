@@ -429,18 +429,33 @@ const resendVoucherEmail = async (req, res) => {
         // Get auction history for payment amount
         const historyEntry = await AuctionHistory.findOne({ hourlyAuctionId: voucher.auctionId, userId: voucher.userId });
 
-        // Send Amazon Voucher Email
-        const emailResult = await sendAmazonVoucherEmail(user.email, {
-            username: user.username || 'Customer',
-            voucherAmount: voucher.amount,
-            giftCardCode: voucher.cardNumber,
-            paymentAmount: historyEntry?.lastRoundBidAmount || 0,
-            redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance'
-        });
+    // Send Amazon Voucher Email
+      const emailResult = await sendAmazonVoucherEmail(user.email, {
+          username: user.username || 'Customer',
+          voucherAmount: voucher.amount,
+          giftCardCode: voucher.cardNumber,
+          paymentAmount: historyEntry?.lastRoundBidAmount || 0,
+          redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance'
+      });
 
-        if (!emailResult.success) {
-            return res.status(500).json({ success: false, message: 'Failed to send voucher email' });
-        }
+      // Store email details in voucher record
+      const emailRecord = {
+          sentTo: user.email,
+          sentAt: new Date(),
+          voucherAmount: voucher.amount,
+          giftCardCode: voucher.cardNumber,
+          redeemLink: voucher.activationUrl || 'https://www.amazon.in/gc/balance',
+          status: emailResult.success ? 'sent' : 'failed'
+      };
+      
+      await Voucher.findByIdAndUpdate(voucherId, {
+          $set: { sentToUser: emailResult.success, sentAt: new Date() },
+          $push: { emailHistory: emailRecord }
+      });
+
+      if (!emailResult.success) {
+          return res.status(500).json({ success: false, message: 'Failed to send voucher email' });
+      }
 
         return res.status(200).json({
             success: true,

@@ -57,6 +57,24 @@ interface TransactionItem {
     paymentDetails?: Record<string, any> | null;
   }
 
+interface VoucherTransaction {
+  _id: string;
+  recipientEmail?: string;
+  recipientEmailMasked?: string;
+  cardNumberMasked?: string;
+  cardPinMasked?: string;
+  amount: number;
+  status: string;
+  auctionName?: string;
+  woohooOrderId?: string;
+  sentAt?: string;
+  createdAt?: string;
+  expiryDate?: string;
+  emailSubject?: string;
+  emailSentAt?: string;
+  emailStatus?: string;
+}
+
 
 export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,6 +84,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     prizeClaims: TransactionItem[];
     vouchers: TransactionItem[];
   }>({ entryFees: [], prizeClaims: [], vouchers: [] });
+  const [voucherDetails, setVoucherDetails] = useState<VoucherTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionItem | null>(null);
@@ -122,10 +141,28 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
     });
   };
 
-  const paymentTypeLabel = (type?: string) => {
-    if (type === 'PRIZE_CLAIM') return 'Prize Claim';
-    if (type === 'ENTRY_FEE') return 'Entry Fee';
-    return type || 'Payment';
+    const paymentTypeLabel = (type?: string) => {
+      if (type === 'PRIZE_CLAIM') return 'Prize Claim';
+      if (type === 'ENTRY_FEE') return 'Entry Fee';
+      return type || 'Payment';
+    };
+
+  const maskValue = (value?: string, visibleChars = 4): string => {
+    if (!value) return '****';
+    if (value.length <= visibleChars) return '*'.repeat(value.length);
+    return '*'.repeat(value.length - visibleChars) + value.slice(-visibleChars);
+  };
+
+  const maskEmail = (email?: string): string => {
+    if (!email) return '****@****.***';
+    const [local, domain] = email.split('@');
+    if (!domain) return maskValue(email);
+    const maskedLocal = local.length <= 2 ? local : local[0] + '*'.repeat(local.length - 2) + local[local.length - 1];
+    const domParts = domain.split('.');
+    const maskedDomain = domParts[0].length <= 2 
+      ? domParts[0] 
+      : domParts[0][0] + '*'.repeat(domParts[0].length - 2) + domParts[0][domParts[0].length - 1];
+    return `${maskedLocal}@${maskedDomain}.${domParts.slice(1).join('.')}`;
   };
 
   const statusBadgeClass = (status?: string) => {
@@ -165,7 +202,10 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
 
     try {
       const queryString = buildQueryString({ userId: user.id });
-      const response = await fetch(`${API_ENDPOINTS.user.transactions}${queryString}`);
+      const [response, voucherResponse] = await Promise.all([
+        fetch(`${API_ENDPOINTS.user.transactions}${queryString}`),
+        fetch(`${API_ENDPOINTS.user.voucherTransactions}${queryString}`).catch(() => null),
+      ]);
 
       if (!response.ok) {
         throw new Error('Failed to fetch transactions');
@@ -179,6 +219,13 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
         prizeClaims: data.prizeClaims || [],
         vouchers: data.voucherTransactions || [],
       });
+
+      if (voucherResponse && voucherResponse.ok) {
+        const voucherResult = await voucherResponse.json();
+        if (voucherResult.success && voucherResult.data) {
+          setVoucherDetails(voucherResult.data);
+        }
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast.error('Failed to load transactions');
@@ -847,7 +894,7 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                       <span>Voucher Worth</span>
                     </div>
                     <div className="text-2xl font-bold text-emerald-800">₹{stats.voucherWorth.toLocaleString('en-IN')}</div>
-                    <div className="text-[11px] text-emerald-700">{stats.prizeCount} vouchers</div>
+                      <div className="text-[11px] text-emerald-700">{stats.voucherCount} vouchers</div>
                   </CardContent>
                 </Card>
                 <Card className={`border-2 ${stats.netValue >= 0 ? 'border-emerald-200/70 bg-emerald-50/60' : 'border-red-200/70 bg-red-50/60'} shadow-sm`}>
@@ -951,9 +998,125 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                     {renderTransactionList(transactions.prizeClaims, 'No prize claim payments yet')}
                   </TabsContent>
                     <TabsContent value="voucher" className="mt-0">
-                      <div className="text-center py-6 sm:py-8 bg-slate-50 border border-slate-200 rounded-xl text-slate-700">
-                        Amazon voucher transactions are coming soon.
-                      </div>
+                      {isLoading ? (
+                        <LoadingProfile />
+                      ) : voucherDetails.length === 0 ? (
+                        <div className="text-center py-6 sm:py-8 bg-amber-50/60 border border-amber-200 rounded-xl">
+                          <Gift className="w-10 h-10 text-amber-400 mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-amber-800">No Amazon vouchers received yet</p>
+                          <p className="text-xs text-amber-600 mt-1">Vouchers will appear here once distributed to you.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-2 sm:space-y-3">
+                            {voucherDetails
+                              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                              .map((voucher, idx) => (
+                              <Card
+                                key={voucher._id || idx}
+                                className="relative overflow-hidden border-2 border-amber-200/60 bg-white/80 backdrop-blur-xl shadow-sm"
+                              >
+                                <CardContent className="p-3 sm:p-4">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold relative">
+                                        <span className="absolute -top-2 -left-2 w-5 h-5 bg-amber-900 text-white text-[10px] rounded-full flex items-center justify-center font-bold border border-white shadow-sm z-20">
+                                          {(currentPage - 1) * itemsPerPage + idx + 1}
+                                        </span>
+                                        <Gift className="w-5 h-5" />
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-bold text-amber-900">Amazon Voucher</div>
+                                        <div className="text-[11px] text-amber-600">₹{voucher.amount?.toLocaleString('en-IN') || 0}</div>
+                                      </div>
+                                    </div>
+                                    <Badge className={`w-fit border ${
+                                      voucher.status === 'complete' || voucher.status === 'sent'
+                                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                        : voucher.status === 'failed'
+                                        ? 'bg-red-100 text-red-800 border-red-200'
+                                        : 'bg-amber-100 text-amber-800 border-amber-200'
+                                    }`}>
+                                      {voucher.status === 'complete' ? 'Delivered' : (voucher.status || 'Processing')}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="mt-3 space-y-2">
+                                    {/* Masked Card Details */}
+                                    {(voucher.cardNumberMasked) && (
+                                      <div className="bg-amber-50/80 border border-amber-200/60 rounded-lg p-2.5 space-y-1.5">
+                                        <div className="text-[10px] uppercase tracking-wider font-bold text-amber-700">Voucher Details</div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                          <div className="flex items-center gap-1.5 text-xs">
+                                            <CreditCard className="w-3.5 h-3.5 text-amber-600" />
+                                            <span className="text-amber-700">Card:</span>
+                                            <span className="font-mono font-semibold text-amber-900">{voucher.cardNumberMasked}</span>
+                                          </div>
+                                          {voucher.cardPinMasked && (
+                                            <div className="flex items-center gap-1.5 text-xs">
+                                              <span className="text-amber-700">PIN:</span>
+                                              <span className="font-mono font-semibold text-amber-900">{voucher.cardPinMasked}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        {voucher.expiryDate && (
+                                          <div className="text-[11px] text-amber-600">
+                                            Expires: {new Date(voucher.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Email Delivery Info */}
+                                    {(voucher.recipientEmail || voucher.recipientEmailMasked || voucher.emailSentAt) && (
+                                      <div className="bg-purple-50/80 border border-purple-200/60 rounded-lg p-2.5 space-y-1">
+                                        <div className="text-[10px] uppercase tracking-wider font-bold text-purple-700">Email Delivery</div>
+                                        <div className="flex items-center gap-1.5 text-xs">
+                                          <span className="text-purple-600">Sent to:</span>
+                                          <span className="font-mono font-semibold text-purple-900">
+                                            {voucher.recipientEmailMasked || maskEmail(voucher.recipientEmail)}
+                                          </span>
+                                        </div>
+                                        {voucher.emailSentAt && (
+                                          <div className="text-[11px] text-purple-600">
+                                            Sent: {formatDateTime(voucher.emailSentAt)}
+                                          </div>
+                                        )}
+                                        {voucher.emailStatus && (
+                                          <div className="text-[11px]">
+                                            Status: <span className={`font-semibold ${voucher.emailStatus === 'sent' ? 'text-emerald-700' : 'text-amber-700'}`}>{voucher.emailStatus}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Meta info */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] sm:text-xs text-amber-700">
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>{formatDateTime(voucher.sentAt || voucher.createdAt)}</span>
+                                      </div>
+                                      {voucher.auctionName && (
+                                        <div className="flex items-center gap-1">
+                                          <Target className="w-3.5 h-3.5" />
+                                          <span className="truncate">{voucher.auctionName}</span>
+                                        </div>
+                                      )}
+                                      {voucher.woohooOrderId && (
+                                        <div className="flex items-center gap-1 col-span-1 sm:col-span-2">
+                                          <Sparkles className="w-3.5 h-3.5" />
+                                          <span className="truncate font-mono">Order: {maskValue(voucher.woohooOrderId, 6)}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                          <Pagination totalItems={voucherDetails.length} />
+                        </>
+                      )}
                     </TabsContent>
                   </Tabs>
                 </CardContent>

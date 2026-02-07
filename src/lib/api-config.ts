@@ -94,9 +94,10 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       updateDetails: `${API_BASE_URL}/auth/updateUserDetails`,
       updatePreferences: `${API_BASE_URL}/auth/me/preferences`,
       delete: `${API_BASE_URL}/user/delete`,
-      transactions: `${API_BASE_URL}/user/transactions`,
-      transactionDetail: `${API_BASE_URL}/user/transactions`,
-    },
+    transactions: `${API_BASE_URL}/user/transactions`,
+    transactionDetail: `${API_BASE_URL}/user/transactions`,
+    voucherTransactions: `${API_BASE_URL}/user/voucher-transactions`,
+  },
 
       // Airpay Payments
       airpay: {

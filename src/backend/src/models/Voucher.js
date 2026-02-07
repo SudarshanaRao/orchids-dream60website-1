@@ -44,7 +44,15 @@ const VoucherSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        sentAt: Date
+        sentAt: Date,
+        emailHistory: [{
+            sentTo: String,
+            sentAt: { type: Date, default: Date.now },
+            voucherAmount: Number,
+            giftCardCode: String,
+            redeemLink: String,
+            status: { type: String, enum: ['sent', 'failed'], default: 'sent' }
+        }]
     },
     { timestamps: true }
 );

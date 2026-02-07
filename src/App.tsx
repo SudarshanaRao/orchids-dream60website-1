@@ -1135,18 +1135,19 @@ const App = () => {
                         <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
                           <div className="flex items-center gap-3"><Clock className="w-6 h-6 sm:w-8 sm:h-8" /><div><div className="text-sm opacity-90">Current Auction</div><div className="text-xl sm:text-2xl font-bold">{displayTime}</div></div></div>
                           <div className="flex items-center gap-3">
-                            {liveAuctionData?.winnersAnnounced ? (
-                                <button
-                                  onClick={() => {
-                                    if (!currentAuction.userHasPaidEntry || !liveAuctionData?.hourlyAuctionId) return;
-                                    handleNavigate('auction-leaderboard', { hourlyAuctionId: liveAuctionData.hourlyAuctionId });
-                                  }}
-                                  disabled={!currentAuction.userHasPaidEntry}
-                                  className={`bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 text-left transition-all ${
-                                    currentAuction.userHasPaidEntry
-                                      ? 'hover:bg-white/30 cursor-pointer'
-                                      : 'opacity-60 cursor-not-allowed'
-                                  }`}
+              {liveAuctionData?.winnersAnnounced ? (
+                                  <button
+                                    onClick={() => {
+                                      const canAccess = currentAuction.userHasPaidEntry || currentUser?.userType === 'ADMIN';
+                                      if (!canAccess || !liveAuctionData?.hourlyAuctionId) return;
+                                      handleNavigate('auction-leaderboard', { hourlyAuctionId: liveAuctionData.hourlyAuctionId });
+                                    }}
+                                    disabled={!currentAuction.userHasPaidEntry && currentUser?.userType !== 'ADMIN'}
+                                    className={`bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 text-left transition-all ${
+                                      currentAuction.userHasPaidEntry || currentUser?.userType === 'ADMIN'
+                                        ? 'hover:bg-white/30 cursor-pointer'
+                                        : 'opacity-60 cursor-not-allowed'
+                                    }`}
                                 >
                                   <div className="text-xs opacity-90">Status</div>
                                   <div className="text-lg sm:text-xl font-bold">Winners Announced</div>

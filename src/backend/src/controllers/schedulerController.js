@@ -2161,15 +2161,22 @@ const getAuctionLeaderboard = async (req, res) => {
       });
     }
     
-    // Check if user participated in this auction
+    // Check if user participated in this auction (admins can bypass)
     const userParticipated = auction.participants?.some(p => p.playerId === userId);
     
     if (!userParticipated) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied. Only participants can view the leaderboard.',
-        isParticipant: false,
-      });
+      // Check if user is an admin
+      const User = require('../models/user');
+      const requestingUser = await User.findOne({ user_id: userId }).select('userType isSuperAdmin').lean();
+      const isAdmin = requestingUser?.userType === 'ADMIN' || requestingUser?.isSuperAdmin;
+      
+      if (!isAdmin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Only participants can view the leaderboard.',
+          isParticipant: false,
+        });
+      }
     }
     
     // Build leaderboard data for each round
