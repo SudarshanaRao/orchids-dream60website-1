@@ -295,11 +295,24 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
     }
   };
 
-  const filteredEligible = eligibleWinners.filter(w => 
-    w.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.auctionName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEligible = eligibleWinners
+    .filter(w => 
+      w.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.auctionName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      const dateA = a.claimedAt ? new Date(a.claimedAt).getTime() : 0;
+      const dateB = b.claimedAt ? new Date(b.claimedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+
+  const isExpired24hrs = (claimedAt?: string) => {
+    if (!claimedAt) return false;
+    const claimedTime = new Date(claimedAt).getTime();
+    const now = Date.now();
+    return (now - claimedTime) > 24 * 60 * 60 * 1000;
+  };
 
   const filteredIssued = issuedVouchers.filter(v => 
     v.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -518,18 +531,26 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                           </div>
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => handleSendVoucher(winner)}
-                            disabled={isSending === winner._id}
-                            className="flex items-center gap-2 mx-auto px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-all disabled:opacity-50"
-                          >
-                            {isSending === winner._id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Send className="w-4 h-4" />
-                            )}
-                            Send Voucher
-                          </button>
+                          {isExpired24hrs(winner.claimedAt) ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-xs font-semibold">
+                                Expired (24hrs passed)
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleSendVoucher(winner)}
+                              disabled={isSending === winner._id}
+                              className="flex items-center gap-2 mx-auto px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition-all disabled:opacity-50"
+                            >
+                              {isSending === winner._id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Send className="w-4 h-4" />
+                              )}
+                              Send Voucher
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
