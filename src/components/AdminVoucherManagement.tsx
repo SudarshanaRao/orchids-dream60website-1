@@ -14,6 +14,8 @@ import {
   History,
   Wallet,
   X,
+  Mail,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
@@ -101,6 +103,21 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const [woohooCategories, setWoohooCategories] = useState<any[]>([]);
   const [woohooProducts, setWoohooProducts] = useState<any[]>([]);
   const [isFetchingProducts, setIsFetchingProducts] = useState(false);
+
+  // Manual voucher modal state
+  const [showVoucherChoiceModal, setShowVoucherChoiceModal] = useState<{show: boolean, winner: EligibleWinner | null}>({
+    show: false,
+    winner: null
+  });
+  const [showManualVoucherModal, setShowManualVoucherModal] = useState(false);
+  const [manualVoucherWinner, setManualVoucherWinner] = useState<EligibleWinner | null>(null);
+  const [manualVoucherForm, setManualVoucherForm] = useState({
+    voucherAmount: '',
+    GiftCardCode: '',
+    paymentAmount: '',
+    redeem_link: '',
+  });
+  const [isSendingManual, setIsSendingManual] = useState(false);
 
     const fetchEligibleWinners = async () => {
       try {
@@ -209,12 +226,112 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   }, [selectedCategoryId]);
 
   const handleSendVoucher = async (winner: EligibleWinner) => {
+    setShowVoucherChoiceModal({ show: true, winner });
+  };
+
+  const handleChooseAuto = () => {
+    const winner = showVoucherChoiceModal.winner;
+    if (!winner) return;
     if (!selectedSku) {
       toast.error('Please select a voucher SKU first');
       return;
     }
-    
+    setShowVoucherChoiceModal({ show: false, winner: null });
     setShowConfirmModal({ show: true, winner });
+  };
+
+  const handleChooseManual = () => {
+    const winner = showVoucherChoiceModal.winner;
+    if (!winner) return;
+    setShowVoucherChoiceModal({ show: false, winner: null });
+    setManualVoucherWinner(winner);
+    setManualVoucherForm({
+      voucherAmount: String(winner.prizeAmountWon),
+      GiftCardCode: '',
+      paymentAmount: '',
+      redeem_link: '',
+    });
+    setShowManualVoucherModal(true);
+  };
+
+  const handleSendManualVoucher = async () => {
+    if (!manualVoucherWinner) return;
+    const { voucherAmount, GiftCardCode, paymentAmount, redeem_link } = manualVoucherForm;
+    
+    if (!voucherAmount || !GiftCardCode || !paymentAmount || !redeem_link) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    setIsSendingManual(true);
+    try {
+      // Fetch Amazon voucher email template from database
+      const templatesRes = await fetch(`${API_BASE_URL}/admin/emails/templates?user_id=${adminUserId}&limit=100`);
+      const templatesData = await templatesRes.json();
+      
+      if (!templatesData.success) {
+        toast.error('Failed to fetch email templates');
+        return;
+      }
+      
+      const amazonTemplate = templatesData.data?.find((t: any) => 
+        t.name?.toLowerCase().includes('amazon') && t.name?.toLowerCase().includes('voucher')
+      );
+      
+      if (!amazonTemplate) {
+        toast.error('Amazon Voucher email template not found in database. Please create one in Email Management first.');
+        return;
+      }
+
+      // Replace variables in template
+      const variables: Record<string, string> = {
+        Username: manualVoucherWinner.userName,
+        username: manualVoucherWinner.userName,
+        Email: manualVoucherWinner.userEmail,
+        email: manualVoucherWinner.userEmail,
+        voucherAmount,
+        GiftCardCode,
+        paymentAmount,
+        redeem_link,
+      };
+
+      let finalSubject = amazonTemplate.subject || '';
+      let finalBody = amazonTemplate.body || '';
+      
+      for (const [key, value] of Object.entries(variables)) {
+        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'gi');
+        finalSubject = finalSubject.replace(regex, value);
+        finalBody = finalBody.replace(regex, value);
+      }
+
+      // Send email to the winner
+      const response = await fetch(`${API_BASE_URL}/admin/emails/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: adminUserId,
+          recipients: [manualVoucherWinner.userId],
+          subject: finalSubject,
+          body: finalBody,
+          templateId: amazonTemplate.template_id || amazonTemplate._id,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success(`Voucher email sent successfully to ${manualVoucherWinner.userName}`);
+        setShowManualVoucherModal(false);
+        setManualVoucherWinner(null);
+        await loadData();
+      } else {
+        toast.error(data.message || 'Failed to send voucher email');
+      }
+    } catch (error) {
+      console.error('Error sending manual voucher:', error);
+      toast.error('An error occurred while sending the voucher email');
+    } finally {
+      setIsSendingManual(false);
+    }
   };
 
     const confirmSendVoucher = async () => {
@@ -515,20 +632,17 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-xs font-medium text-purple-900">
-                            {winner.claimedAt ? (() => {
-                              const date = new Date(winner.claimedAt);
-                              const adjustedDate = new Date(date.getTime() - (330 * 60 * 1000));
-                              return adjustedDate.toLocaleString('en-IN', {
-                                timeZone: 'UTC',
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                              });
-                            })() : '---'}
+                            {winner.claimedAt ? new Date(winner.claimedAt).toLocaleString('en-IN', {
+                              timeZone: 'Asia/Kolkata',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            }) : '---'}
                           </div>
+                          <div className="text-[10px] text-purple-400 mt-0.5">IST (GMT+5:30)</div>
                         </td>
                         <td className="py-3 px-4 text-center">
                           {isExpired24hrs(winner.claimedAt) ? (
@@ -789,6 +903,149 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                 >
                   <Send className="w-4 h-4" />
                   Confirm & Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Voucher Choice Modal (Auto vs Manual) */}
+      {showVoucherChoiceModal.show && showVoucherChoiceModal.winner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="bg-purple-100 p-3 rounded-xl">
+                  <Send className="w-6 h-6 text-purple-700" />
+                </div>
+                <button
+                  onClick={() => setShowVoucherChoiceModal({ show: false, winner: null })}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Send Voucher</h3>
+              <p className="text-gray-600 mb-1">
+                Sending <span className="font-bold text-purple-700">₹{showVoucherChoiceModal.winner.prizeAmountWon.toLocaleString()}</span> voucher to <span className="font-bold text-gray-900">{showVoucherChoiceModal.winner.userName}</span>
+              </p>
+              <p className="text-sm text-gray-500 mb-6">Choose how you want to send the voucher:</p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleChooseAuto}
+                  className="w-full px-4 py-4 bg-purple-50 border-2 border-purple-200 rounded-xl hover:border-purple-500 hover:bg-purple-100 transition-all text-left flex items-center gap-3"
+                >
+                  <div className="p-2 bg-purple-200 rounded-lg">
+                    <Zap className="w-5 h-5 text-purple-700" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-purple-900">Auto (Woohoo)</div>
+                    <div className="text-xs text-purple-600">Send via Woohoo API automatically</div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleChooseManual}
+                  className="w-full px-4 py-4 bg-blue-50 border-2 border-blue-200 rounded-xl hover:border-blue-500 hover:bg-blue-100 transition-all text-left flex items-center gap-3"
+                >
+                  <div className="p-2 bg-blue-200 rounded-lg">
+                    <Mail className="w-5 h-5 text-blue-700" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-blue-900">Manual (Email Template)</div>
+                    <div className="text-xs text-blue-600">Fill in voucher details and send via email</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Voucher Form Modal */}
+      {showManualVoucherModal && manualVoucherWinner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <Mail className="w-6 h-6 text-blue-700" />
+                </div>
+                <button
+                  onClick={() => { setShowManualVoucherModal(false); setManualVoucherWinner(null); }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-1">Manual Voucher Email</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Sending to <span className="font-semibold text-gray-700">{manualVoucherWinner.userName}</span> ({manualVoucherWinner.userEmail})
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Voucher Amount (₹)</label>
+                  <input
+                    type="text"
+                    value={manualVoucherForm.voucherAmount}
+                    onChange={(e) => setManualVoucherForm(prev => ({ ...prev, voucherAmount: e.target.value }))}
+                    className="w-full mt-1 p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g. 500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Gift Card Code</label>
+                  <input
+                    type="text"
+                    value={manualVoucherForm.GiftCardCode}
+                    onChange={(e) => setManualVoucherForm(prev => ({ ...prev, GiftCardCode: e.target.value }))}
+                    className="w-full mt-1 p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g. XXXX-XXXX-XXXX"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Payment Amount (₹)</label>
+                  <input
+                    type="text"
+                    value={manualVoucherForm.paymentAmount}
+                    onChange={(e) => setManualVoucherForm(prev => ({ ...prev, paymentAmount: e.target.value }))}
+                    className="w-full mt-1 p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g. 500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Redeem Link</label>
+                  <input
+                    type="text"
+                    value={manualVoucherForm.redeem_link}
+                    onChange={(e) => setManualVoucherForm(prev => ({ ...prev, redeem_link: e.target.value }))}
+                    className="w-full mt-1 p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g. https://www.amazon.in/gc/redeem"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => { setShowManualVoucherModal(false); setManualVoucherWinner(null); }}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendManualVoucher}
+                  disabled={isSendingManual}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSendingManual ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Send Voucher Email
                 </button>
               </div>
             </div>
