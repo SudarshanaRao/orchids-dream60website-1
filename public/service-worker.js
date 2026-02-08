@@ -1,9 +1,9 @@
-const VERSION = '1.0.3';
+const VERSION = '1.0.4';
 const CACHE_NAME = `dream60-v${VERSION}`;
 const STATIC_CACHE = `dream60-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
 const IMAGE_CACHE = `dream60-images-v${VERSION}`;
-const API_CACHE = `dream60-api-v${VERSION}`;
+// API_CACHE removed - API responses must never be cached to prevent stale data
 
 const STATIC_ASSETS = [
   '/',
@@ -38,8 +38,10 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames
             .filter((name) => {
-              return name.startsWith('dream60-') && 
-                     ![STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE, API_CACHE].includes(name);
+              // Delete all old versioned caches AND any API caches (API must never be cached)
+              return (name.startsWith('dream60-') && 
+                     ![STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE].includes(name)) ||
+                     name.includes('-api-');
             })
             .map((name) => {
               console.log('[SW] Deleting old cache:', name);
@@ -54,6 +56,13 @@ self.addEventListener('activate', (event) => {
 const isApiRequest = (url) => {
   return url.includes('/api/') || 
          url.includes('dev-api.dream60.com') ||
+         url.includes('prod-api.dream60.com') ||
+         url.includes('dream60.com/api') ||
+         url.includes('dream60.com/scheduler') ||
+         url.includes('/scheduler/') ||
+         url.includes('/admin/') ||
+         url.includes('/auth/') ||
+         url.includes('/user/') ||
          url.includes('supabase.co');
 };
 
@@ -150,17 +159,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isApiRequest(request.url)) {
+    // NEVER cache API responses - always fetch fresh data from network
     event.respondWith(
-      networkFirst(request, API_CACHE, 5000)
-        .catch(() => {
-          return new Response(
-            JSON.stringify({ error: 'Offline', message: 'Please check your connection' }),
-            { 
-              status: 503,
-              headers: { 'Content-Type': 'application/json' }
-            }
-          );
-        })
+      fetch(request).catch(() => {
+        return new Response(
+          JSON.stringify({ error: 'Offline', message: 'Please check your connection' }),
+          { 
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      })
     );
     return;
   }

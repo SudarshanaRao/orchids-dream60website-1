@@ -216,7 +216,7 @@ interface PrizeShowcaseProps {
 
         const fetchLiveAuction = async () => {
           try {
-            const res = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+            const res = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
             const json = await res.json().catch(() => ({ success: false }));
             if (!isMounted) return;
 

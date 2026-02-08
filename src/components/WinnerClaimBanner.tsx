@@ -68,7 +68,7 @@ export function WinnerClaimBanner({ userId, onNavigate, serverTime }: WinnerClai
 
     try {
       // ✅ Use limit=5 for faster API response
-      const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}&limit=5`);
+        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}?userId=${effectiveUserId}&limit=5`, { cache: 'no-store' });
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {

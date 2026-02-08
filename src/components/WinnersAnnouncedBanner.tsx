@@ -55,7 +55,7 @@ export function WinnersAnnouncedBanner({
   useEffect(() => {
     const fetchRecentWinners = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
         if (!response.ok) return;
 
         const result = await response.json();
@@ -75,7 +75,7 @@ export function WinnersAnnouncedBanner({
             }
           }
         } else {
-          const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
+            const dailyResponse = await fetch(API_ENDPOINTS.scheduler.dailyAuction, { cache: 'no-store' });
           if (dailyResponse.ok) {
             const dailyResult = await dailyResponse.json();
             if (dailyResult.success && dailyResult.data && dailyResult.data.auctions) {

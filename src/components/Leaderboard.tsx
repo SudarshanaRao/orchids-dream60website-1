@@ -66,7 +66,7 @@ interface LeaderboardEntry {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
 
-    // Fetch leaderboard data
+    // Fetch leaderboard data (always fresh, no cache)
     useEffect(() => {
       const fetchLeaderboardData = async () => {
         setIsLoading(true);
@@ -76,36 +76,36 @@ interface LeaderboardEntry {
           let url = API_ENDPOINTS.scheduler.liveAuction;
           
           if (hourlyAuctionId) {
-            url = `${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${hourlyAuctionId}`;
-            const response = await fetch(url);
-            const result = await response.json();
-            
-            if (result.success && result.data) {
-              const entries: LeaderboardEntry[] = result.data.map((player: any) => ({
-                username: player.playerUsername || player.username || 'Unknown Player',
-                bid: player.auctionPlacedAmount || player.bid || 0,
-                timestamp: new Date(player.auctionPlacedTime || player.timestamp || Date.now()),
-                rank: player.rank || null,
-                userId: player.userId || player.playerId,
-                isWinner: player.isWinner || (player.rank && player.rank <= 3),
-                prizeClaimStatus: player.prizeClaimStatus,
-                finalRank: player.rank,
-                currentEligibleRank: result.currentEligibleRank,
-                claimWindowStartedAt: result.claimWindowStartedAt,
-                winnersAnnouncedAt: result.winnersAnnouncedAt,
-                claimDeadline: player.claimDeadline,
-                hourlyAuctionId: hourlyAuctionId,
-                lastRoundBidAmount: player.auctionPlacedAmount || player.bid,
-              }));
+              url = `${API_ENDPOINTS.scheduler.leaderboard}?hourlyAuctionId=${hourlyAuctionId}`;
+              const response = await fetch(url, { cache: 'no-store' });
+              const result = await response.json();
+              
+              if (result.success && result.data) {
+                const entries: LeaderboardEntry[] = result.data.map((player: any) => ({
+                  username: player.playerUsername || player.username || 'Unknown Player',
+                  bid: player.auctionPlacedAmount || player.bid || 0,
+                  timestamp: new Date(player.auctionPlacedTime || player.timestamp || Date.now()),
+                  rank: player.rank || null,
+                  userId: player.userId || player.playerId,
+                  isWinner: player.isWinner || (player.rank && player.rank <= 3),
+                  prizeClaimStatus: player.prizeClaimStatus,
+                  finalRank: player.rank,
+                  currentEligibleRank: result.currentEligibleRank,
+                  claimWindowStartedAt: result.claimWindowStartedAt,
+                  winnersAnnouncedAt: result.winnersAnnouncedAt,
+                  claimDeadline: player.claimDeadline,
+                  hourlyAuctionId: hourlyAuctionId,
+                  lastRoundBidAmount: player.auctionPlacedAmount || player.bid,
+                }));
 
-              setLeaderboard(entries.sort((a, b) => (a.rank || 999) - (b.rank || 999)));
-              setIsLoading(false);
-              return;
+                setLeaderboard(entries.sort((a, b) => (a.rank || 999) - (b.rank || 999)));
+                setIsLoading(false);
+                return;
+              }
             }
-          }
 
           // Fallback to live auction if no hourlyAuctionId or leaderboard fetch failed
-          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
           const result = await response.json();
           
           if (result.success && result.data) {
@@ -248,8 +248,8 @@ interface LeaderboardEntry {
           toast.success('Prize claimed successfully!');
           setIsProcessing(false);
           
-          // Refresh leaderboard data
-          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+            // Refresh leaderboard data
+            const response = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
           if (response.ok) {
             const result = await response.json();
             if (result.success && result.data) {

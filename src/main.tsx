@@ -16,6 +16,28 @@ let pendingWorker: ServiceWorker | null = null;
 // Register service worker with update detection
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
+    // Clear any stale API caches on every app load
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          if (name.includes('-api-') || name === 'dream60-v2') {
+            caches.delete(name);
+            console.log('[Cache] Cleared stale cache:', name);
+          }
+        });
+      });
+    }
+
+    // Unregister old sw.js if present
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        if (reg.active && reg.active.scriptURL.includes('sw.js') && !reg.active.scriptURL.includes('service-worker.js')) {
+          reg.unregister();
+          console.log('[SW] Unregistered old sw.js');
+        }
+      }
+    });
+
     navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         console.log('✅ [SW] Service Worker registered:', registration);

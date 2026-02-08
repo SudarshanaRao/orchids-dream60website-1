@@ -803,7 +803,7 @@ const App = () => {
   const fetchLiveAuction = useCallback(async (showLoading = false) => {
     if (showLoading) setIsLoadingLiveAuction(true);
     try {
-      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
+      const response = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
       if (!response.ok) { setLiveAuctionData(null); return; }
       const result = await response.json();
       if (result.success && result.data) {
@@ -832,11 +832,11 @@ const App = () => {
   useEffect(() => {
     const fetchDailyStats = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.scheduler.dailyAuction);
-        if (!response.ok) return;
-        const result = await response.json();
-          if (result.success && result.data) {
-            const auctionConfig = result.data.dailyAuctionConfig || [];
+        const response = await fetch(API_ENDPOINTS.scheduler.dailyAuction, { cache: 'no-store' });
+          if (!response.ok) return;
+          const result = await response.json();
+            if (result.success && result.data) {
+              const auctionConfig = result.data.dailyAuctionConfig || [];
             const activeAuctions = auctionConfig.filter((a: any) => a.Status !== 'CANCELLED');
             const totalPrize = activeAuctions.reduce((sum: number, a: any) => sum + (a.prizeValue || 0), 0);
             setDailyStats({ totalAuctions: activeAuctions.length || 6, totalPrizeValue: totalPrize || 350000 });
@@ -882,13 +882,13 @@ const App = () => {
       if (justLoggedIn) setJustLoggedIn(false);
       if (showLoading && !hasInitiallyLoaded.current) setIsLoadingLiveAuction(true);
       try {
-        const response = await fetch(API_ENDPOINTS.scheduler.liveAuction);
-        if (!response.ok) return;
-        const result = await response.json();
-        if (result.success && result.data?.hourlyAuctionId) {
-          setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
-          setLiveAuctionData(result.data);
-          const liveAuction = result.data;
+          const response = await fetch(API_ENDPOINTS.scheduler.liveAuction, { cache: 'no-store' });
+          if (!response.ok) return;
+          const result = await response.json();
+          if (result.success && result.data?.hourlyAuctionId) {
+            setCurrentHourlyAuctionId(result.data.hourlyAuctionId);
+            setLiveAuctionData(result.data);
+            const liveAuction = result.data;
           const userBidsMap: any = {};
           const userQualificationMap: any = {};
           let userHasPaid = false;
