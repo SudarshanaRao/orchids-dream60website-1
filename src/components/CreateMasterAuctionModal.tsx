@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Image as ImageIcon, Upload, Plus, Trash2 } from 'lucide-react';
+import { X, Image as ImageIcon, Upload, Plus, Trash2, Search, Package, IndianRupee } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -73,7 +73,10 @@ export function CreateMasterAuctionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [productSuggestions, setProductSuggestions] = useState<Record<number, ProductSuggestion[]>>({});
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState<Record<number, boolean>>({});
+  const [openSuggestionIndex, setOpenSuggestionIndex] = useState<number | null>(null);
   const productRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const suggestionRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const debounceTimers = useRef<Record<number, NodeJS.Timeout>>({});
 
   // Scroll to specific product when editingProductIndex is set
   useEffect(() => {
@@ -92,6 +95,20 @@ export function CreateMasterAuctionModal({
       }
     }
   }, [editingAuction?.editingProductIndex]);
+
+  // Close suggestion dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (openSuggestionIndex !== null) {
+        const ref = suggestionRefs.current[openSuggestionIndex];
+        if (ref && !ref.contains(e.target as Node)) {
+          setOpenSuggestionIndex(null);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openSuggestionIndex]);
 
   useEffect(() => {
     if (!editingAuction && auctionConfigs.length === 0) {
@@ -209,29 +226,40 @@ export function CreateMasterAuctionModal({
   const fetchProductSuggestions = async (index: number, query: string) => {
     if (!query || query.trim().length < 2) {
       setProductSuggestions(prev => ({ ...prev, [index]: [] }));
+      setOpenSuggestionIndex(null);
       return;
     }
 
-    setIsSuggestionsLoading(prev => ({ ...prev, [index]: true }));
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/admin/products/search?user_id=${adminUserId}&q=${encodeURIComponent(query.trim())}&limit=8`
-      );
-      const data = await response.json();
-      if (data.success) {
-        const uniqueByName = (data.data || []).reduce((acc: ProductSuggestion[], item: ProductSuggestion) => {
-          if (!acc.find(existing => existing.name.toLowerCase() === item.name.toLowerCase())) {
-            acc.push(item);
-          }
-          return acc;
-        }, []);
-        setProductSuggestions(prev => ({ ...prev, [index]: uniqueByName }));
-      }
-    } catch (error) {
-      console.error('Error fetching product suggestions:', error);
-    } finally {
-      setIsSuggestionsLoading(prev => ({ ...prev, [index]: false }));
+    // Debounce: clear existing timer for this index
+    if (debounceTimers.current[index]) {
+      clearTimeout(debounceTimers.current[index]);
     }
+
+    debounceTimers.current[index] = setTimeout(async () => {
+      setIsSuggestionsLoading(prev => ({ ...prev, [index]: true }));
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/admin/products/search?user_id=${adminUserId}&q=${encodeURIComponent(query.trim())}&limit=8`
+        );
+        const data = await response.json();
+        if (data.success) {
+          const uniqueByName = (data.data || []).reduce((acc: ProductSuggestion[], item: ProductSuggestion) => {
+            if (!acc.find(existing => existing.name.toLowerCase() === item.name.toLowerCase())) {
+              acc.push(item);
+            }
+            return acc;
+          }, []);
+          setProductSuggestions(prev => ({ ...prev, [index]: uniqueByName }));
+          if (uniqueByName.length > 0) {
+            setOpenSuggestionIndex(index);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product suggestions:', error);
+      } finally {
+        setIsSuggestionsLoading(prev => ({ ...prev, [index]: false }));
+      }
+    }, 300);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -385,40 +413,119 @@ export function CreateMasterAuctionModal({
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Auction Name
-                    </label>
-                      <input
-                        type="text"
-                        list={`product-suggestions-${index}`}
-                        value={config.auctionName}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          handleConfigChange(index, 'auctionName', value);
-                          fetchProductSuggestions(index, value);
-                        }}
-                        onBlur={(e) => {
-                          const value = e.target.value.trim().toLowerCase();
-                          const match = productSuggestions[index]?.find(
-                            (product) => product.name.toLowerCase() === value
-                          );
-                          if (match) {
-                            applyProductSuggestion(index, match);
-                          }
-                        }}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                        required
-                      />
-                      <datalist id={`product-suggestions-${index}`}>
-                        {(productSuggestions[index] || []).map((product) => (
-                          <option key={product.product_id} value={product.name} />
-                        ))}
-                      </datalist>
-                      <p className="text-xs text-purple-500 mt-1">
-                        {isSuggestionsLoading[index] ? 'Loading suggestions...' : 'Start typing to see saved products.'}
-                      </p>
-                  </div>
+                    <div className="relative" ref={(el) => { suggestionRefs.current[index] = el; }}>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        <Search className="w-3.5 h-3.5 inline-block mr-1" />
+                        Auction Name
+                      </label>
+                        <input
+                          type="text"
+                          value={config.auctionName}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            handleConfigChange(index, 'auctionName', value);
+                            fetchProductSuggestions(index, value);
+                          }}
+                          onFocus={() => {
+                            if ((productSuggestions[index] || []).length > 0) {
+                              setOpenSuggestionIndex(index);
+                            }
+                          }}
+                          className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                          placeholder="Type product name to search..."
+                          required
+                        />
+                        <p className="text-xs text-purple-500 mt-1">
+                          {isSuggestionsLoading[index] ? 'Searching products...' : 'Type 2+ characters to search saved products.'}
+                        </p>
+
+                        {/* Rich Product Suggestions Dropdown */}
+                        {openSuggestionIndex === index && (productSuggestions[index] || []).length > 0 && (
+                          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border-2 border-purple-300 rounded-xl shadow-2xl max-h-[360px] overflow-y-auto">
+                            <div className="sticky top-0 bg-purple-50 px-3 py-2 border-b border-purple-200">
+                              <p className="text-xs font-semibold text-purple-700">
+                                <Package className="w-3 h-3 inline-block mr-1" />
+                                {productSuggestions[index].length} product{productSuggestions[index].length !== 1 ? 's' : ''} found — click to use
+                              </p>
+                            </div>
+                            {productSuggestions[index].map((product) => (
+                              <button
+                                key={product.product_id}
+                                type="button"
+                                onClick={() => {
+                                  applyProductSuggestion(index, product);
+                                  setOpenSuggestionIndex(null);
+                                  setProductSuggestions(prev => ({ ...prev, [index]: [] }));
+                                  toast.success(`Applied product: ${product.name}`);
+                                }}
+                                className="w-full text-left px-3 py-3 hover:bg-purple-50 border-b border-purple-100 last:border-b-0 transition-colors group"
+                              >
+                                <div className="flex gap-3">
+                                  {/* Product Image */}
+                                  <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-purple-100 border border-purple-200">
+                                    {product.imageUrl ? (
+                                      <img
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                        }}
+                                      />
+                                    ) : null}
+                                    <div className={`w-full h-full flex items-center justify-center ${product.imageUrl ? 'hidden' : ''}`}>
+                                      <Package className="w-6 h-6 text-purple-300" />
+                                    </div>
+                                  </div>
+
+                                  {/* Product Details */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-sm text-purple-900 truncate group-hover:text-purple-700">
+                                      {product.name}
+                                    </p>
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                      <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded">
+                                        <IndianRupee className="w-3 h-3 mr-0.5" />
+                                        {product.prizeValue?.toLocaleString() || '—'}
+                                      </span>
+                                      {product.entryFeeType && (
+                                        <span className="text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                                          Fee: {product.entryFeeType === 'RANDOM'
+                                            ? `₹${product.minEntryFee ?? '?'}–₹${product.maxEntryFee ?? '?'}`
+                                            : `Box A: ₹${product.feeSplits?.BoxA ?? '?'} / Box B: ₹${product.feeSplits?.BoxB ?? '?'}`
+                                          }
+                                        </span>
+                                      )}
+                                      {product.roundCount && (
+                                        <span className="text-xs text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+                                          {product.roundCount} rounds
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Description preview */}
+                                    {product.productDescription && Object.keys(product.productDescription).length > 0 && (
+                                      <div className="mt-1.5 flex flex-wrap gap-1">
+                                        {Object.entries(product.productDescription).slice(0, 3).map(([key, value]) => (
+                                          <span key={key} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                            {key}: {String(value).length > 20 ? String(value).substring(0, 20) + '...' : value}
+                                          </span>
+                                        ))}
+                                        {Object.keys(product.productDescription).length > 3 && (
+                                          <span className="text-[10px] text-gray-400 px-1">
+                                            +{Object.keys(product.productDescription).length - 3} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-purple-900 mb-2">
