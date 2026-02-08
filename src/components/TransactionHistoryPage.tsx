@@ -20,13 +20,15 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
-import { API_ENDPOINTS, buildQueryString } from '@/lib/api-config';
+import { API_ENDPOINTS, API_BASE_URL, buildQueryString } from '@/lib/api-config';
 import { SupportCenterHeader } from './SupportCenterHeader';
 import { LoadingProfile } from './LoadingProfile';
 
@@ -97,6 +99,14 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
   
   const DETAIL_STORAGE_KEY = 'd60_last_transaction_detail';
 
+  // OTP reveal state
+  const [revealModal, setRevealModal] = useState<{ show: boolean; voucherId: string | null }>({ show: false, voucherId: null });
+  const [revealOtp, setRevealOtp] = useState('');
+  const [isRevealSending, setIsRevealSending] = useState(false);
+  const [isRevealVerifying, setIsRevealVerifying] = useState(false);
+  const [revealOtpSent, setRevealOtpSent] = useState(false);
+  const [revealedCards, setRevealedCards] = useState<Record<string, { cardNumber: string; cardPin?: string; activationUrl?: string; expiry?: string }>>({});
+
   const allTransactions = useMemo(
     () => [
       ...(transactions.entryFees || []),
@@ -165,6 +175,60 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
       ? domParts[0] 
       : domParts[0][0] + '*'.repeat(domParts[0].length - 2) + domParts[0][domParts[0].length - 1];
     return `${maskedLocal}@${maskedDomain}.${domParts.slice(1).join('.')}`;
+  };
+
+  // OTP Reveal handlers
+  const handleRevealClick = (voucherId: string) => {
+    setRevealModal({ show: true, voucherId });
+    setRevealOtp('');
+    setRevealOtpSent(false);
+  };
+
+  const handleSendRevealOtp = async () => {
+    if (!revealModal.voucherId) return;
+    setIsRevealSending(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/voucher/${revealModal.voucherId}/send-reveal-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRevealOtpSent(true);
+        toast.success(`OTP sent to ****${data.data?.mobile || ''}`);
+      } else {
+        toast.error(data.message || 'Failed to send OTP');
+      }
+    } catch {
+      toast.error('Failed to send OTP');
+    } finally {
+      setIsRevealSending(false);
+    }
+  };
+
+  const handleVerifyRevealOtp = async () => {
+    if (!revealModal.voucherId || !revealOtp) return;
+    setIsRevealVerifying(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/user/voucher/${revealModal.voucherId}/verify-reveal-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, otp: revealOtp }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRevealedCards(prev => ({ ...prev, [revealModal.voucherId!]: data.data }));
+        setRevealModal({ show: false, voucherId: null });
+        toast.success('Voucher code revealed!');
+      } else {
+        toast.error(data.message || 'Invalid OTP');
+      }
+    } catch {
+      toast.error('Failed to verify OTP');
+    } finally {
+      setIsRevealVerifying(false);
+    }
   };
 
   const statusBadgeClass = (status?: string) => {
@@ -1047,23 +1111,48 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                                   </div>
 
                                   <div className="mt-3 space-y-2">
-                                    {/* Masked Card Details */}
+                                    {/* Voucher Details with Reveal */}
                                     {(voucher.cardNumberMasked) && (
                                       <div className="bg-amber-50/80 border border-amber-200/60 rounded-lg p-2.5 space-y-1.5">
-                                        <div className="text-[10px] uppercase tracking-wider font-bold text-amber-700">Voucher Details</div>
+                                        <div className="flex items-center justify-between">
+                                          <div className="text-[10px] uppercase tracking-wider font-bold text-amber-700">Voucher Details</div>
+                                          {voucher.status === 'complete' && !revealedCards[voucher._id] && (
+                                            <button
+                                              onClick={() => handleRevealClick(voucher._id)}
+                                              className="flex items-center gap-1 text-[10px] font-semibold text-purple-700 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-full transition-colors"
+                                            >
+                                              <Eye className="w-3 h-3" />
+                                              Reveal Code
+                                            </button>
+                                          )}
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                           <div className="flex items-center gap-1.5 text-xs">
                                             <CreditCard className="w-3.5 h-3.5 text-amber-600" />
                                             <span className="text-amber-700">Card:</span>
-                                            <span className="font-mono font-semibold text-amber-900">{voucher.cardNumberMasked}</span>
+                                            <span className="font-mono font-semibold text-amber-900">
+                                              {revealedCards[voucher._id]?.cardNumber || voucher.cardNumberMasked}
+                                            </span>
                                           </div>
-                                          {voucher.cardPinMasked && (
+                                          {(revealedCards[voucher._id]?.cardPin || voucher.cardPinMasked) && (
                                             <div className="flex items-center gap-1.5 text-xs">
                                               <span className="text-amber-700">PIN:</span>
-                                              <span className="font-mono font-semibold text-amber-900">{voucher.cardPinMasked}</span>
+                                              <span className="font-mono font-semibold text-amber-900">
+                                                {revealedCards[voucher._id]?.cardPin || voucher.cardPinMasked}
+                                              </span>
                                             </div>
                                           )}
                                         </div>
+                                        {(revealedCards[voucher._id]?.activationUrl) && (
+                                          <a
+                                            href={revealedCards[voucher._id].activationUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block text-[11px] text-purple-700 underline hover:text-purple-900 mt-1"
+                                          >
+                                            Redeem Voucher
+                                          </a>
+                                        )}
                                         {voucher.expiryDate && (
                                           <div className="text-[11px] text-amber-600">
                                             Expires: {new Date(voucher.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -1128,12 +1217,81 @@ export function TransactionHistoryPage({ user, onBack }: TransactionHistoryPageP
                           <Pagination totalItems={voucherDetails.length} />
                         </>
                       )}
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </motion.div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </motion.div>
+          </div>
+
+        {/* OTP Reveal Modal */}
+        {revealModal.show && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-3">
+                  <Eye className="w-6 h-6 text-purple-700" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Reveal Voucher Code</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {revealOtpSent
+                    ? 'Enter the OTP sent to your registered mobile'
+                    : 'We will send an OTP to your registered mobile number'}
+                </p>
+              </div>
+
+              {!revealOtpSent ? (
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={handleSendRevealOtp}
+                  disabled={isRevealSending}
+                >
+                  {isRevealSending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending OTP...</>
+                  ) : (
+                    'Send OTP'
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={revealOtp}
+                    onChange={(e) => setRevealOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter 6-digit OTP"
+                    className="w-full text-center text-2xl font-mono tracking-[0.5em] border-2 border-purple-200 rounded-xl p-3 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none"
+                  />
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    onClick={handleVerifyRevealOtp}
+                    disabled={isRevealVerifying || revealOtp.length !== 6}
+                  >
+                    {isRevealVerifying ? (
+                      <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Verifying...</>
+                    ) : (
+                      'Verify & Reveal'
+                    )}
+                  </Button>
+                  <button
+                    onClick={handleSendRevealOtp}
+                    disabled={isRevealSending}
+                    className="w-full text-sm text-purple-600 hover:text-purple-800 font-medium"
+                  >
+                    {isRevealSending ? 'Sending...' : 'Resend OTP'}
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={() => setRevealModal({ show: false, voucherId: null })}
+                className="w-full text-sm text-gray-500 hover:text-gray-700 font-medium pt-1"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         </div>
-      </div>
-    );
-  }
+      );
+    }

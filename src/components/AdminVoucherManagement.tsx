@@ -265,70 +265,31 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
 
     setIsSendingManual(true);
     try {
-      // Fetch Amazon voucher email template from database
-      const templatesRes = await fetch(`${API_BASE_URL}/admin/emails/templates?user_id=${adminUserId}&limit=100`);
-      const templatesData = await templatesRes.json();
-      
-      if (!templatesData.success) {
-        toast.error('Failed to fetch email templates');
-        return;
-      }
-      
-      const amazonTemplate = templatesData.data?.find((t: any) => 
-        t.name?.toLowerCase().includes('amazon') && t.name?.toLowerCase().includes('voucher')
-      );
-      
-      if (!amazonTemplate) {
-        toast.error('Amazon Voucher email template not found in database. Please create one in Email Management first.');
-        return;
-      }
-
-      // Replace variables in template
-      const variables: Record<string, string> = {
-        Username: manualVoucherWinner.userName,
-        username: manualVoucherWinner.userName,
-        Email: manualVoucherWinner.userEmail,
-        email: manualVoucherWinner.userEmail,
-        voucherAmount,
-        GiftCardCode,
-        paymentAmount,
-        redeem_link,
-      };
-
-      let finalSubject = amazonTemplate.subject || '';
-      let finalBody = amazonTemplate.body || '';
-      
-      for (const [key, value] of Object.entries(variables)) {
-        const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'gi');
-        finalSubject = finalSubject.replace(regex, value);
-        finalBody = finalBody.replace(regex, value);
-      }
-
-      // Send email to the winner
-      const response = await fetch(`${API_BASE_URL}/admin/emails/send`, {
+      // 1. Call backend API to create voucher record and send email
+      const response = await fetch(`${API_BASE_URL}/admin/vouchers/send-manual?user_id=${adminUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: adminUserId,
-          recipients: [manualVoucherWinner.userId],
-          subject: finalSubject,
-          body: finalBody,
-          templateId: amazonTemplate.template_id || amazonTemplate._id,
+          claimId: manualVoucherWinner._id,
+          voucherAmount,
+          giftCardCode: GiftCardCode,
+          paymentAmount,
+          redeemLink: redeem_link,
         }),
       });
 
       const data = await response.json();
       if (response.ok && data.success) {
-        toast.success(`Voucher email sent successfully to ${manualVoucherWinner.userName}`);
+        toast.success(`Manual voucher created and sent to ${manualVoucherWinner.userName}`);
         setShowManualVoucherModal(false);
         setManualVoucherWinner(null);
         await loadData();
       } else {
-        toast.error(data.message || 'Failed to send voucher email');
+        toast.error(data.message || 'Failed to create manual voucher');
       }
     } catch (error) {
       console.error('Error sending manual voucher:', error);
-      toast.error('An error occurred while sending the voucher email');
+      toast.error('An error occurred while sending the manual voucher');
     } finally {
       setIsSendingManual(false);
     }

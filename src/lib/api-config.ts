@@ -97,6 +97,8 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
     transactions: `${API_BASE_URL}/user/transactions`,
     transactionDetail: `${API_BASE_URL}/user/transactions`,
     voucherTransactions: `${API_BASE_URL}/user/voucher-transactions`,
+    voucherSendRevealOtp: (voucherId: string) => `${API_BASE_URL}/user/voucher/${voucherId}/send-reveal-otp`,
+    voucherVerifyRevealOtp: (voucherId: string) => `${API_BASE_URL}/user/voucher/${voucherId}/verify-reveal-otp`,
   },
 
       // Airpay Payments
@@ -124,6 +126,7 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       pushSubscriptions: `${API_BASE_URL}/admin/push-subscriptions`,
       sendSignupOtp: `${API_BASE_URL}/admin/send-signup-otp`,
       signup: `${API_BASE_URL}/admin/signup`,
+      sendManualVoucher: `${API_BASE_URL}/admin/vouchers/send-manual`,
     },
 
     supportChat: {

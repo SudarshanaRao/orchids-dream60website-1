@@ -630,9 +630,114 @@ const getUserVoucherTransactions = async (req, res) => {
     }
 };
 
+/**
+ * Send voucher manually (not via Woohoo)
+ * Creates voucher record in DB and optionally sends email
+ */
+const sendManualVoucher = async (req, res) => {
+    try {
+        const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+        const admin = await verifyAdmin(adminId);
+        if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
+
+        const { claimId, voucherAmount, giftCardCode, paymentAmount, redeemLink } = req.body;
+
+        if (!claimId || !voucherAmount || !giftCardCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: claimId, voucherAmount, giftCardCode'
+            });
+        }
+
+        // 1. Verify eligibility
+        const historyEntry = await AuctionHistory.findById(claimId);
+        if (!historyEntry) {
+            return res.status(404).json({ success: false, message: 'Winner entry not found' });
+        }
+
+        if (historyEntry.prizeClaimStatus !== 'CLAIMED' || !historyEntry.remainingFeesPaid) {
+            return res.status(400).json({ success: false, message: 'User has not completed the claim process or payment' });
+        }
+
+        // 2. Check if already issued
+        const existingVoucher = await Voucher.findOne({ claimId });
+        if (existingVoucher) {
+            return res.status(400).json({ success: false, message: 'Voucher already issued for this claim' });
+        }
+
+        // 3. Get user details
+        const user = await User.findOne({ user_id: historyEntry.userId });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // 4. Create Voucher document
+        const voucher = new Voucher({
+            userId: user.user_id,
+            claimId: claimId,
+            auctionId: historyEntry.hourlyAuctionId,
+            source: 'manual',
+            amount: parseFloat(voucherAmount),
+            cardNumber: giftCardCode,
+            activationUrl: redeemLink || 'https://www.amazon.in/gc/redeem',
+            status: 'complete',
+            sentToUser: true,
+            sentAt: new Date()
+        });
+
+        await voucher.save();
+
+        // 5. Send email notification (optional)
+        if (user.email) {
+            try {
+                await sendAmazonVoucherEmail(user.email, {
+                    username: user.username || 'Customer',
+                    voucherAmount: voucherAmount,
+                    giftCardCode: giftCardCode,
+                    paymentAmount: paymentAmount || historyEntry.lastRoundBidAmount || 0,
+                    redeemLink: redeemLink || 'https://www.amazon.in/gc/redeem'
+                });
+
+                voucher.emailHistory = [{
+                    sentTo: user.email,
+                    sentAt: new Date(),
+                    voucherAmount: voucherAmount,
+                    giftCardCode: giftCardCode,
+                    redeemLink: redeemLink,
+                    emailSubject: `Your Amazon Gift Card Worth Rs.${voucherAmount} from Dream60`,
+                    status: 'sent'
+                }];
+                await voucher.save();
+            } catch (emailError) {
+                console.error('Email send failed:', emailError);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Manual voucher created and sent successfully',
+            data: {
+                transactionId: voucher.transactionId,
+                amount: voucher.amount,
+                status: voucher.status,
+                userName: user.username,
+                userEmail: user.email
+            }
+        });
+    } catch (error) {
+        console.error('Error sending manual voucher:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating manual voucher',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getEligibleWinners,
     sendVoucher,
+    sendManualVoucher,
     getIssuedVouchers,
     getWoohooBalance,
     getWoohooTransactions,

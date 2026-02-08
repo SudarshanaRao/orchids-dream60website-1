@@ -63,7 +63,23 @@ const VoucherSchema = new mongoose.Schema(
             emailSubject: String,
             emailBody: String,
             status: { type: String, enum: ['sent', 'failed'], default: 'sent' }
-        }]
+        }],
+        revealCount: {
+            type: Number,
+            default: 0
+        },
+        lastRevealDate: {
+            type: Date
+        },
+        revealHistory: [{
+            revealedAt: { type: Date, default: Date.now },
+            ipAddress: String,
+            userAgent: String
+        }],
+        dailyRevealLimit: {
+            type: Number,
+            default: 3
+        }
     },
     { timestamps: true }
 );

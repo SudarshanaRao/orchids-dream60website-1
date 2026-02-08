@@ -28,6 +28,7 @@ const {
 const {
   getEligibleWinners,
   sendVoucher,
+  sendManualVoucher,
   getIssuedVouchers,
   getWoohooBalance,
   getWoohooTransactions,
@@ -844,6 +845,88 @@ router.patch('/refunds/:refundId', updateRefundStatus);
 // Voucher Management Routes
 router.get('/vouchers/eligible-winners', getEligibleWinners);
 router.post('/vouchers/send', sendVoucher);
+
+/**
+ * @swagger
+ * /admin/vouchers/send-manual:
+ *   post:
+ *     summary: SEND MANUAL VOUCHER
+ *     description: Create and send a voucher manually (without Woohoo API). Saves to Vouchers collection and sends email notification.
+ *     tags: [Voucher Management]
+ *     parameters:
+ *       - name: user_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin user ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - claimId
+ *               - voucherAmount
+ *               - giftCardCode
+ *             properties:
+ *               claimId:
+ *                 type: string
+ *                 description: The prize claim ID from AuctionHistory
+ *               voucherAmount:
+ *                 type: string
+ *                 description: Voucher amount in INR
+ *                 example: "5000"
+ *               giftCardCode:
+ *                 type: string
+ *                 description: The gift card code
+ *                 example: "ABCD-EFGH-IJKL"
+ *               paymentAmount:
+ *                 type: string
+ *                 description: Payment amount made by the user
+ *                 example: "100"
+ *               redeemLink:
+ *                 type: string
+ *                 description: Redemption link for the voucher
+ *                 example: "https://www.amazon.in/gc/redeem"
+ *     responses:
+ *       200:
+ *         description: Manual voucher created and sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Manual voucher created and sent successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     transactionId:
+ *                       type: string
+ *                     amount:
+ *                       type: number
+ *                     status:
+ *                       type: string
+ *                     userName:
+ *                       type: string
+ *                     userEmail:
+ *                       type: string
+ *       400:
+ *         description: Missing fields or already issued
+ *       403:
+ *         description: Admin access required
+ *       404:
+ *         description: Winner or user not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/vouchers/send-manual', sendManualVoucher);
 router.get('/vouchers/issued', getIssuedVouchers);
 router.get('/vouchers/woohoo-balance', getWoohooBalance);
 router.get('/vouchers/woohoo-transactions', getWoohooTransactions);

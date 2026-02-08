@@ -7,6 +7,7 @@ const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuction = require('../models/HourlyAuction');
 const DailyAuction = require('../models/DailyAuction');
 const { getUserVoucherTransactions } = require('../controllers/adminVoucherController');
+const { sendVoucherRevealOtp, verifyVoucherRevealOtp } = require('../controllers/voucherOtpController');
 
 /**
  * @swagger
@@ -859,5 +860,135 @@ router.get('/transactions/:id', async (req, res) => {
 
 // User voucher transactions endpoint (returns masked data)
 router.get('/voucher-transactions', getUserVoucherTransactions);
+
+/**
+ * @swagger
+ * /user/voucher/{voucherId}/send-reveal-otp:
+ *   post:
+ *     summary: SEND OTP FOR VOUCHER CODE REVEAL
+ *     description: Send an OTP to the user's registered mobile to reveal the full voucher code. Limited to 3 reveals per day.
+ *     tags: [User History]
+ *     parameters:
+ *       - name: voucherId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Voucher ID from database
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: User ID requesting the reveal
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "OTP sent successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     mobile:
+ *                       type: string
+ *                       description: Last 4 digits of mobile
+ *       400:
+ *         description: Missing fields or voucher not complete
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Voucher or user not found
+ *       429:
+ *         description: Daily reveal limit reached
+ *       500:
+ *         description: Server error
+ */
+router.post('/voucher/:voucherId/send-reveal-otp', sendVoucherRevealOtp);
+
+/**
+ * @swagger
+ * /user/voucher/{voucherId}/verify-reveal-otp:
+ *   post:
+ *     summary: VERIFY OTP AND REVEAL VOUCHER CODE
+ *     description: Verify the OTP and return the full voucher card number, PIN, and activation URL.
+ *     tags: [User History]
+ *     parameters:
+ *       - name: voucherId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Voucher ID from database
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - otp
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: User ID requesting the reveal
+ *               otp:
+ *                 type: string
+ *                 description: 6-digit OTP received via SMS
+ *     responses:
+ *       200:
+ *         description: Voucher code revealed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Voucher code revealed successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     cardNumber:
+ *                       type: string
+ *                     cardPin:
+ *                       type: string
+ *                     activationUrl:
+ *                       type: string
+ *                     expiry:
+ *                       type: string
+ *                       format: date-time
+ *                     revealsRemaining:
+ *                       type: number
+ *       400:
+ *         description: Invalid or expired OTP
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Voucher or user not found
+ *       429:
+ *         description: Daily reveal limit reached
+ *       500:
+ *         description: Server error
+ */
+router.post('/voucher/:voucherId/verify-reveal-otp', verifyVoucherRevealOtp);
 
 module.exports = router;
