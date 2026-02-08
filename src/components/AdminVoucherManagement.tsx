@@ -427,8 +427,10 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
   const isExpired24hrs = (claimedAt?: string) => {
     if (!claimedAt) return false;
     const claimedTime = new Date(claimedAt).getTime();
-    const now = Date.now();
-    return (now - claimedTime) > 24 * 60 * 60 * 1000;
+    // claimedAt is stored as IST-in-UTC (backend getISTTime() adds 5.5hrs to UTC then stores as UTC)
+    // So we need to compare with current IST-in-UTC to get accurate elapsed time
+    const nowIST = Date.now() + (5.5 * 60 * 60 * 1000);
+    return (nowIST - claimedTime) > 24 * 60 * 60 * 1000;
   };
 
   const filteredIssued = issuedVouchers.filter(v => 
@@ -632,15 +634,16 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-xs font-medium text-purple-900">
-                            {winner.claimedAt ? new Date(winner.claimedAt).toLocaleString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true
-                            }) : '---'}
+                          {winner.claimedAt ? new Date(winner.claimedAt).toLocaleString('en-IN', {
+                                timeZone: 'UTC',
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true
+                              }) : '---'}
                           </div>
                           <div className="text-[10px] text-purple-400 mt-0.5">IST (GMT+5:30)</div>
                         </td>
