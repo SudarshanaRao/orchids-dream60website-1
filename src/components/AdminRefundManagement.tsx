@@ -433,19 +433,23 @@ export function AdminRefundManagement({ adminUserId }: AdminRefundManagementProp
                           {new Date(payment.paidAt || payment.createdAt).toLocaleDateString('en-IN')}
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right">
-                        {payment.refundRequested ? (
-                          <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">
-                            Refund Requested
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => openRefundModal(payment)}
-                            className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
-                          >
-                            Refund
-                          </button>
-                        )}
+                        <td className="py-4 px-4 text-right">
+                          {payment.refundRequested ? (
+                            <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-lg text-xs font-bold">
+                              Refund Requested
+                            </span>
+                          ) : payment.paymentType === 'PRIZE_CLAIM' && payment.paidAt && (Date.now() - new Date(payment.paidAt).getTime() > 3 * 60 * 60 * 1000) ? (
+                            <span className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-bold">
+                              Expired (3hrs passed)
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => openRefundModal(payment)}
+                              className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
+                            >
+                              Refund
+                            </button>
+                          )}
                       </td>
                     </tr>
                   ))
