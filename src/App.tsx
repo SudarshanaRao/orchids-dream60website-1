@@ -38,6 +38,7 @@ import { TesterFeedback } from './components/TesterFeedback';
 import { TransactionHistoryPage } from './components/TransactionHistoryPage';
 import { PrizeShowcasePage } from './components/PrizeShowcasePage';
 import { AdminSignup } from './components/AdminSignup';
+import { AdminReauth } from './components/AdminReauth';
 import { TutorialOverlay, TutorialStep } from './components/TutorialOverlay';
 import { WinnerClaimBanner } from './components/WinnerClaimBanner';
 import { WinnersAnnouncedBanner } from './components/WinnersAnnouncedBanner';
@@ -309,7 +310,12 @@ const App = () => {
 
     if (path === '/d60-ctrl-x9k7') {
       const adminUserId = localStorage.getItem('admin_user_id');
-      return adminUserId ? 'admin-dashboard' : 'admin-login';
+      const adminType = localStorage.getItem('admin_adminType') || '';
+      const tabWasActive = sessionStorage.getItem('admin_tab_active');
+      if (!adminUserId) return 'admin-login';
+      // For ADMIN role: tab was closed (no sessionStorage) = full login required
+      if (adminType === 'ADMIN' && !tabWasActive) return 'admin-login';
+      return 'admin-dashboard';
     }
     if (path === '/d60-ctrl-x9k7/signup') return 'admin-signup';
     if (path === '/login') return 'login';
@@ -369,7 +375,15 @@ const App = () => {
 
       if (path === '/d60-ctrl-x9k7') {
         const adminUserId = localStorage.getItem('admin_user_id');
-        setCurrentPage(adminUserId ? 'admin-dashboard' : 'admin-login');
+        const adminType = localStorage.getItem('admin_adminType') || '';
+        const tabWasActive = sessionStorage.getItem('admin_tab_active');
+        if (!adminUserId) {
+          setCurrentPage('admin-login');
+        } else if (adminType === 'ADMIN' && !tabWasActive) {
+          setCurrentPage('admin-login');
+        } else {
+          setCurrentPage('admin-dashboard');
+        }
       } else if (path === '/d60-ctrl-x9k7/signup') setCurrentPage('admin-signup');
       else if (path === '/login') setCurrentPage('login');
       else if (path === '/signup') setCurrentPage('signup');
@@ -1059,14 +1073,49 @@ const App = () => {
     finally { setIsPlacingBid(false); }
   };
 
-  const handleAdminLogin = (admin: any) => { setAdminUser(admin); setCurrentPage('admin-dashboard'); };
-  const handleAdminLogout = () => { localStorage.removeItem('admin_user_id'); localStorage.removeItem('admin_email'); localStorage.removeItem('admin_username'); localStorage.removeItem('admin_adminType'); localStorage.removeItem('admin_login_time'); setAdminUser(null); setCurrentPage('game'); window.history.pushState({}, '', '/'); };
+    const handleAdminLogin = (admin: any) => {
+      setAdminUser(admin);
+      setCurrentPage('admin-dashboard');
+      // Mark session as active for tab-close detection
+      sessionStorage.setItem('admin_tab_active', 'true');
+      localStorage.setItem('admin_session_start', String(Date.now()));
+      localStorage.setItem('admin_session_active', 'true');
+    };
+    const handleAdminLogout = () => {
+      localStorage.removeItem('admin_user_id');
+      localStorage.removeItem('admin_email');
+      localStorage.removeItem('admin_username');
+      localStorage.removeItem('admin_adminType');
+      localStorage.removeItem('admin_login_time');
+      localStorage.removeItem('admin_session_start');
+      localStorage.removeItem('admin_session_active');
+      sessionStorage.removeItem('admin_tab_active');
+      setAdminUser(null);
+      setCurrentPage('game');
+      window.history.pushState({}, '', '/');
+    };
+    const handleAdminSessionTimeout = () => {
+      // On timeout: keep admin data in localStorage but show access code prompt
+      // Don't clear admin credentials - just redirect to access-code-only login
+      localStorage.removeItem('admin_session_start');
+      localStorage.removeItem('admin_session_active');
+      setCurrentPage('admin-reauth');
+    };
+    // Admin re-authentication after session timeout (access code only)
+    const handleAdminReauth = (admin: any) => {
+      setAdminUser(admin);
+      setCurrentPage('admin-dashboard');
+      sessionStorage.setItem('admin_tab_active', 'true');
+      localStorage.setItem('admin_session_start', String(Date.now()));
+      localStorage.setItem('admin_session_active', 'true');
+    };
 
   const renderContent = () => {
     switch (currentPage) {
       case 'admin-login': return <AdminLogin onLogin={handleAdminLogin} onSignupClick={() => { setCurrentPage('admin-signup'); window.history.pushState({}, '', '/d60-ctrl-x9k7/signup'); }} onBack={handleBackToGame} />;
       case 'admin-signup': return <AdminSignup onSignupSuccess={() => { setCurrentPage('admin-login'); window.history.pushState({}, '', '/d60-ctrl-x9k7'); }} onBack={() => { setCurrentPage('admin-login'); window.history.pushState({}, '', '/d60-ctrl-x9k7'); }} />;
-      case 'admin-dashboard': return adminUser ? <AdminDashboard adminUser={adminUser} onLogout={handleAdminLogout} /> : <AdminLogin onLogin={handleAdminLogin} onSignupClick={() => {}} onBack={handleBackToGame} />;
+      case 'admin-dashboard': return adminUser ? <AdminDashboard adminUser={adminUser} onLogout={handleAdminLogout} onSessionTimeout={handleAdminSessionTimeout} /> : <AdminLogin onLogin={handleAdminLogin} onSignupClick={() => {}} onBack={handleBackToGame} />;
+      case 'admin-reauth': return adminUser ? <AdminReauth adminUser={adminUser} onReauth={handleAdminReauth} onFullLogin={() => { handleAdminLogout(); setCurrentPage('admin-login'); window.history.pushState({}, '', '/d60-ctrl-x9k7'); }} /> : <AdminLogin onLogin={handleAdminLogin} onSignupClick={() => {}} onBack={handleBackToGame} />;
       case 'leaderboard':
         if (selectedLeaderboard?.hourlyAuctionId) return <AuctionLeaderboard hourlyAuctionId={selectedLeaderboard.hourlyAuctionId} userId={currentUser?.id} onBack={handleBackToGame} />;
         return <Leaderboard roundNumber={selectedLeaderboard?.roundNumber} onBack={handleBackToGame} />;

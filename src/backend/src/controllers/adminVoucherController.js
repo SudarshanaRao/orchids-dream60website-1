@@ -650,6 +650,14 @@ const sendManualVoucher = async (req, res) => {
             });
         }
 
+        const parsedAmount = parseFloat(voucherAmount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid voucher amount'
+            });
+        }
+
         // 1. Verify eligibility
         const historyEntry = await AuctionHistory.findById(claimId);
         if (!historyEntry) {
@@ -676,9 +684,9 @@ const sendManualVoucher = async (req, res) => {
         const voucher = new Voucher({
             userId: user.user_id,
             claimId: claimId,
-            auctionId: historyEntry.hourlyAuctionId,
+            auctionId: historyEntry.hourlyAuctionId || '',
             source: 'manual',
-            amount: parseFloat(voucherAmount),
+            amount: parsedAmount,
             cardNumber: giftCardCode,
             activationUrl: redeemLink || 'https://www.amazon.in/gc/redeem',
             status: 'complete',
@@ -727,9 +735,14 @@ const sendManualVoucher = async (req, res) => {
         });
     } catch (error) {
         console.error('Error sending manual voucher:', error);
+        const errorMessage = error.code === 11000
+            ? 'Duplicate voucher entry - a voucher may already exist for this claim'
+            : error.name === 'ValidationError'
+                ? `Validation error: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}`
+                : 'Error creating manual voucher';
         return res.status(500).json({
             success: false,
-            message: 'Error creating manual voucher',
+            message: errorMessage,
             error: error.message
         });
     }

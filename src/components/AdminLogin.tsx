@@ -33,15 +33,17 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
   const handlePinInput = (
     index: number,
     value: string,
-    pins: string[],
     setPins: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.RefObject<HTMLInputElement | null>[]
   ) => {
     if (!/^\d*$/.test(value)) return;
-    const newPins = [...pins];
-    newPins[index] = value.slice(-1);
-    setPins(newPins);
-    if (value && index < 3) {
+    const digit = value.slice(-1);
+    setPins(prev => {
+      const updated = [...prev];
+      updated[index] = digit;
+      return updated;
+    });
+    if (digit && index < 3) {
       setTimeout(() => refs[index + 1]?.current?.focus(), 0);
     }
   };
@@ -50,7 +52,6 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     index: number,
     e: React.KeyboardEvent,
     pins: string[],
-    setPins: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.RefObject<HTMLInputElement | null>[]
   ) => {
     if (e.key === 'Backspace' && !pins[index] && index > 0) {
@@ -311,8 +312,8 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
           inputMode="numeric"
           maxLength={1}
           value={digit}
-          onChange={(e) => handlePinInput(i, e.target.value, pins, setPins, refs)}
-          onKeyDown={(e) => handlePinKeyDown(i, e, pins, setPins, refs)}
+          onChange={(e) => handlePinInput(i, e.target.value, setPins, refs)}
+          onKeyDown={(e) => handlePinKeyDown(i, e, pins, refs)}
           autoFocus={autoFocus && i === 0}
           className="w-14 h-14 text-center text-2xl font-bold bg-slate-900/50 border-2 border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-white transition-colors"
         />

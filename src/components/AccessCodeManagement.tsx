@@ -49,15 +49,17 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
   const handlePinInput = (
     index: number,
     value: string,
-    pins: string[],
     setPins: React.Dispatch<React.SetStateAction<string[]>>,
     refs: React.RefObject<HTMLInputElement | null>[]
   ) => {
     if (!/^\d*$/.test(value)) return;
-    const updated = [...pins];
-    updated[index] = value.slice(-1);
-    setPins(updated);
-    if (value && index < 3) setTimeout(() => refs[index + 1]?.current?.focus(), 0);
+    const digit = value.slice(-1);
+    setPins(prev => {
+      const updated = [...prev];
+      updated[index] = digit;
+      return updated;
+    });
+    if (digit && index < 3) setTimeout(() => refs[index + 1]?.current?.focus(), 0);
   };
 
   const handlePinKeyDown = (
@@ -99,7 +101,7 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
           inputMode="numeric"
           maxLength={1}
           value={digit}
-          onChange={(e) => handlePinInput(i, e.target.value, pins, setPins, refs)}
+          onChange={(e) => handlePinInput(i, e.target.value, setPins, refs)}
           onKeyDown={(e) => handlePinKeyDown(i, e, pins, refs)}
           autoFocus={autoFocus && i === 0}
           className="w-12 h-12 text-center text-xl font-bold bg-purple-50 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 text-purple-900 transition-colors"

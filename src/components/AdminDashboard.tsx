@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Users,
   TrendingUp,
@@ -32,6 +32,7 @@ import {
       AlertCircle,
       Key,
       MessageSquare,
+      Timer,
     } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ import { AdminDailyAuctions } from './AdminDailyAuctions';
 import { AdminHourlyAuctions } from './AdminHourlyAuctions';
 import { AdminRefundManagement } from './AdminRefundManagement';
 import { AccessCodeManagement } from './AccessCodeManagement';
+import { useAdminSessionTimeout } from '../hooks/useAdminSessionTimeout';
 
 
 interface AdminUser {
@@ -137,6 +139,7 @@ interface MasterAuction {
 interface AdminDashboardProps {
   adminUser: AdminUser;
   onLogout: () => void;
+  onSessionTimeout?: () => void;
 }
 interface CombinedUser {
   user_id: string;
@@ -473,9 +476,18 @@ const EditSlotModal = ({
 };
 
 
-  export const AdminDashboard = ({ adminUser, onLogout }: AdminDashboardProps) => {
+  export const AdminDashboard = ({ adminUser, onLogout, onSessionTimeout }: AdminDashboardProps) => {
       const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
       type TabType = typeof validTabs[number];
+
+    const handleSessionTimeout = useCallback(() => {
+      if (onSessionTimeout) onSessionTimeout();
+    }, [onSessionTimeout]);
+
+    const { remainingMs, isSubjectToTimeout, formatTime } = useAdminSessionTimeout({
+      adminType: adminUser.adminType,
+      onSessionTimeout: handleSessionTimeout,
+    });
     
     const getInitialTab = (): TabType => {
       const hash = window.location.hash.replace('#', '');
@@ -868,9 +880,25 @@ const EditSlotModal = ({
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      {/* Header */}
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
+        {/* Session Timer Banner for ADMIN role */}
+        {isSubjectToTimeout && (
+          <div className={`sticky top-0 z-50 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium ${
+            remainingMs <= 5 * 60 * 1000
+              ? 'bg-red-600 text-white'
+              : remainingMs <= 10 * 60 * 1000
+                ? 'bg-amber-500 text-white'
+                : 'bg-purple-700 text-white'
+          }`}>
+            <Timer className="w-4 h-4" />
+            <span>Session expires in {formatTime(remainingMs)}</span>
+            {remainingMs <= 5 * 60 * 1000 && (
+              <span className="ml-2 text-xs opacity-90">(You will need to re-enter your access code)</span>
+            )}
+          </div>
+        )}
+        {/* Header */}
       <header className="bg-white border-b-2 border-purple-200 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
