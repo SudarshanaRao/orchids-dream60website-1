@@ -94,7 +94,7 @@ const adminLogin = async (req, res) => {
         { mobile: identifier },
       ],
       isActive: true,
-    });
+    }).select('+personalAccessCode');
 
     if (!adminUser) {
       return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
@@ -114,6 +114,7 @@ const adminLogin = async (req, res) => {
         username: adminUser.username,
         email: adminUser.email,
         adminType: adminUser.adminType,
+        hasAccessCode: !!adminUser.personalAccessCode,
       },
     });
   } catch (err) {
@@ -1101,6 +1102,181 @@ const updateRefundStatus = async (req, res) => {
   }
 };
 
+/**
+ * Verify Admin Access Code
+ */
+const verifyAccessCode = async (req, res) => {
+  try {
+    const { admin_id, accessCode } = req.body;
+    if (!admin_id || !accessCode) {
+      return res.status(400).json({ success: false, message: 'Admin ID and access code are required' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    if (!adminUser.personalAccessCode) {
+      return res.status(400).json({ success: false, message: 'No access code set. Please set one first.' });
+    }
+
+    const isValid = await adminUser.compareAccessCode(accessCode);
+    if (!isValid) {
+      return res.status(401).json({ success: false, message: 'Invalid access code' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Access code verified' });
+  } catch (err) {
+    console.error('Verify Access Code Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Set or Update Admin Access Code
+ */
+const setAccessCode = async (req, res) => {
+  try {
+    const { admin_id, newAccessCode, currentAccessCode } = req.body;
+    if (!admin_id || !newAccessCode) {
+      return res.status(400).json({ success: false, message: 'Admin ID and new access code are required' });
+    }
+
+    if (!/^\d{6}$/.test(newAccessCode)) {
+      return res.status(400).json({ success: false, message: 'Access code must be exactly 6 digits' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    // If admin already has an access code, verify the current one
+    if (adminUser.personalAccessCode && currentAccessCode) {
+      const isValid = await adminUser.compareAccessCode(currentAccessCode);
+      if (!isValid) {
+        return res.status(401).json({ success: false, message: 'Current access code is incorrect' });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedCode = await bcrypt.hash(newAccessCode, salt);
+
+    adminUser.personalAccessCode = hashedCode;
+    adminUser.accessCodeCreatedAt = new Date();
+    await adminUser.save();
+
+    return res.status(200).json({ success: true, message: 'Access code updated successfully' });
+  } catch (err) {
+    console.error('Set Access Code Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Send OTP for Access Code Reset
+ */
+const sendAccessCodeResetOtp = async (req, res) => {
+  try {
+    const { admin_id } = req.body;
+    if (!admin_id) {
+      return res.status(400).json({ success: false, message: 'Admin ID is required' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true });
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    const otp = generateOtp();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    adminUser.accessCodeResetOtp = otp;
+    adminUser.accessCodeResetOtpExpiry = otpExpiry;
+    await adminUser.save();
+
+    // Send OTP to admin's email
+    await sendOtpEmail(adminUser.email, otp, 'Access Code Reset');
+
+    return res.status(200).json({ success: true, message: 'OTP sent to your registered email' });
+  } catch (err) {
+    console.error('Send Access Code Reset OTP Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Reset Access Code with OTP
+ */
+const resetAccessCodeWithOtp = async (req, res) => {
+  try {
+    const { admin_id, otp, newAccessCode } = req.body;
+    if (!admin_id || !otp || !newAccessCode) {
+      return res.status(400).json({ success: false, message: 'Admin ID, OTP, and new access code are required' });
+    }
+
+    if (!/^\d{6}$/.test(newAccessCode)) {
+      return res.status(400).json({ success: false, message: 'Access code must be exactly 6 digits' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+accessCodeResetOtp +accessCodeResetOtpExpiry');
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    if (!adminUser.accessCodeResetOtp || adminUser.accessCodeResetOtp !== otp) {
+      return res.status(401).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (adminUser.accessCodeResetOtpExpiry && adminUser.accessCodeResetOtpExpiry < new Date()) {
+      return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedCode = await bcrypt.hash(newAccessCode, salt);
+
+    adminUser.personalAccessCode = hashedCode;
+    adminUser.accessCodeCreatedAt = new Date();
+    adminUser.accessCodeResetOtp = undefined;
+    adminUser.accessCodeResetOtpExpiry = undefined;
+    await adminUser.save();
+
+    return res.status(200).json({ success: true, message: 'Access code reset successfully' });
+  } catch (err) {
+    console.error('Reset Access Code Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Get Access Code Status
+ */
+const getAccessCodeStatus = async (req, res) => {
+  try {
+    const admin_id = req.query.admin_id;
+    if (!admin_id) {
+      return res.status(400).json({ success: false, message: 'Admin ID is required' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        hasAccessCode: !!adminUser.personalAccessCode,
+        accessCodeCreatedAt: adminUser.accessCodeCreatedAt || null,
+      },
+    });
+  } catch (err) {
+    console.error('Get Access Code Status Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   sendAdminSignupOtp,
@@ -1122,4 +1298,9 @@ module.exports = {
   cancelHourlyAuction,
   getRefunds,
   updateRefundStatus,
+  verifyAccessCode,
+  setAccessCode,
+  sendAccessCodeResetOtp,
+  resetAccessCodeWithOtp,
+  getAccessCodeStatus,
 };

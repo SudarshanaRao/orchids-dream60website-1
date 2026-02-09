@@ -127,6 +127,11 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       sendSignupOtp: `${API_BASE_URL}/admin/send-signup-otp`,
       signup: `${API_BASE_URL}/admin/signup`,
       sendManualVoucher: `${API_BASE_URL}/admin/vouchers/send-manual`,
+      verifyAccessCode: `${API_BASE_URL}/admin/verify-access-code`,
+      setAccessCode: `${API_BASE_URL}/admin/set-access-code`,
+      sendAccessCodeOtp: `${API_BASE_URL}/admin/send-access-code-otp`,
+      resetAccessCode: `${API_BASE_URL}/admin/reset-access-code`,
+      accessCodeStatus: `${API_BASE_URL}/admin/access-code-status`,
     },
 
     supportChat: {

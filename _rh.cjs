@@ -1,0 +1,1 @@
+var fs=require('fs');var f=process.argv[2];var s=parseInt(process.argv[3]||'1',10);var e=parseInt(process.argv[4]||'100',10);var c=fs.readFileSync(f,'utf8');var l=c.split('\n');for(var i=s-1;i<Math.min(e,l.length);i++){console.log((i+1)+': '+l[i]);}

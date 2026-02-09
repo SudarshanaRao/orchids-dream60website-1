@@ -22,6 +22,11 @@ const {
     cancelHourlyAuction,
     getRefunds,
     updateRefundStatus,
+    verifyAccessCode,
+    setAccessCode,
+    sendAccessCodeResetOtp,
+    resetAccessCodeWithOtp,
+    getAccessCodeStatus,
   } = require('../controllers/adminController');
 
 
@@ -1563,5 +1568,12 @@ router.get('/products/search', searchProducts);
 router.put('/products/:product_id', updateProduct);
 router.delete('/products/:product_id', deleteProduct);
 router.post('/products/:product_id/usage', incrementUsage);
+
+// ============ Access Code Management Routes ============
+router.post('/verify-access-code', verifyAccessCode);
+router.post('/set-access-code', setAccessCode);
+router.post('/send-access-code-otp', sendAccessCodeResetOtp);
+router.post('/reset-access-code', resetAccessCodeWithOtp);
+router.get('/access-code-status', getAccessCodeStatus);
 
 module.exports = router;

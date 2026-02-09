@@ -1,0 +1,1 @@
+var fs=require('fs');var c=fs.readFileSync('src/components/AdminDashboard.tsx','utf8');var l=c.split('\n');for(var i=0;i<l.length;i++){if(l[i].indexOf('onLogout')>-1||l[i].indexOf('handleLogout')>-1||l[i].indexOf('export const')>-1||l[i].indexOf('RefreshCw')>-1||l[i].indexOf('Refresh')>-1){console.log((i+1)+': '+l[i]);}}

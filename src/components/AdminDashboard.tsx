@@ -30,7 +30,7 @@ import {
       ToggleLeft,
       ToggleRight,
       AlertCircle,
-      Timer,
+      Key,
       MessageSquare,
     } from 'lucide-react';
 
@@ -46,6 +46,7 @@ import { AdminEmailManagement } from './AdminEmailManagement';
 import { AdminDailyAuctions } from './AdminDailyAuctions';
 import { AdminHourlyAuctions } from './AdminHourlyAuctions';
 import { AdminRefundManagement } from './AdminRefundManagement';
+import { AccessCodeManagement } from './AccessCodeManagement';
 
 
 interface AdminUser {
@@ -515,44 +516,7 @@ const EditSlotModal = ({
     const isSuperAdmin = adminUser.adminType === 'SUPER_ADMIN' || adminUser.adminType === 'DEVELOPER';
     const isDeveloper = adminUser.adminType === 'DEVELOPER';
 
-    // 15-minute session timeout for ADMIN type only
-    const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
-    const isSessionLimited = adminUser.adminType === 'ADMIN';
-    const [sessionTimeLeft, setSessionTimeLeft] = useState<number>(() => {
-      if (!isSessionLimited) return 0;
-      const loginTime = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
-      if (!loginTime) return SESSION_TIMEOUT_MS;
-      const elapsed = Date.now() - loginTime;
-      return Math.max(0, SESSION_TIMEOUT_MS - elapsed);
-    });
-
-    useEffect(() => {
-      if (!isSessionLimited) return;
-      const loginTime = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
-      if (!loginTime) {
-        localStorage.setItem('admin_login_time', String(Date.now()));
-      }
-
-      const interval = setInterval(() => {
-        const lt = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
-        const remaining = Math.max(0, SESSION_TIMEOUT_MS - (Date.now() - lt));
-        setSessionTimeLeft(remaining);
-        if (remaining <= 0) {
-          clearInterval(interval);
-          toast.error('Session expired. Please login again.');
-          handleLogout();
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }, [isSessionLimited]);
-
-    const formatSessionTime = (ms: number) => {
-      const totalSeconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    };
+    const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
 
   const fetchUsers = async () => {
     setIsUsersLoading(true);
@@ -922,19 +886,15 @@ const EditSlotModal = ({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {isSessionLimited && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                  sessionTimeLeft < 60000 
-                    ? 'bg-red-50 border-red-300 text-red-700' 
-                    : sessionTimeLeft < 300000 
-                      ? 'bg-amber-50 border-amber-300 text-amber-700'
-                      : 'bg-purple-50 border-purple-200 text-purple-700'
-                }`}>
-                  <Timer className="w-4 h-4" />
-                  <span className="text-sm font-mono font-bold">{formatSessionTime(sessionTimeLeft)}</span>
-                </div>
-              )}
-              <button
+                <button
+                  onClick={() => setShowAccessCodeModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 text-purple-700 transition-colors"
+                  title="Manage Access Code"
+                >
+                  <Key className="w-4 h-4" />
+                  <span className="hidden sm:inline text-sm font-medium">Access Code</span>
+                </button>
+                <button
                 onClick={handleRefresh}
                 disabled={isLoading}
                 className="flex items-center gap-2 px-4 py-2 text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
@@ -1652,6 +1612,14 @@ const EditSlotModal = ({
           slot={editingSlot.slot}
           onClose={() => setEditingSlot(null)}
           onSave={handleSaveSlotUpdate}
+        />
+      )}
+
+      {/* Access Code Management Modal */}
+      {showAccessCodeModal && (
+        <AccessCodeManagement
+          adminId={adminUser.admin_id}
+          onClose={() => setShowAccessCodeModal(false)}
         />
       )}
     </div>

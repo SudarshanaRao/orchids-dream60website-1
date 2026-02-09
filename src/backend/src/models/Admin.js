@@ -51,6 +51,21 @@ const adminSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    personalAccessCode: {
+      type: String,
+      select: false,
+    },
+    accessCodeCreatedAt: {
+      type: Date,
+    },
+    accessCodeResetOtp: {
+      type: String,
+      select: false,
+    },
+    accessCodeResetOtpExpiry: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );
@@ -80,6 +95,11 @@ adminSchema.pre('save', async function (next) {
 adminSchema.methods.comparePassword = async function (enteredPassword) {
   if (!this.password || !enteredPassword) return false;
   return bcrypt.compare(String(enteredPassword), this.password);
+};
+
+adminSchema.methods.compareAccessCode = async function (enteredCode) {
+  if (!this.personalAccessCode || !enteredCode) return false;
+  return bcrypt.compare(String(enteredCode), this.personalAccessCode);
 };
 
 adminSchema.methods.publicProfile = function () {
