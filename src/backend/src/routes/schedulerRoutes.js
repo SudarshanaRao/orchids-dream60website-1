@@ -21,6 +21,7 @@ const {
   forceCompleteAuction,
   getFirstUpcomingProduct,
   syncMasterToAuctions,
+  getDailyAuctionByDate,
 } = require('../controllers/schedulerController');
 
 /**
@@ -322,6 +323,48 @@ router.get('/status', getSchedulerStatus);
  *         description: Internal server error
  */
 router.get('/daily-auction', getDailyAuction);
+
+/**
+ * @swagger
+ * /scheduler/daily-auction-by-date:
+ *   get:
+ *     summary: Get daily auction by a specific date
+ *     description: |
+ *       Returns the daily auction for a given date. Pass the date as a query parameter in YYYY-MM-DD format.
+ *       
+ *       **Example:** `/scheduler/daily-auction-by-date?date=2026-02-09`
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2026-02-09"
+ *         description: Date in YYYY-MM-DD format
+ *     responses:
+ *       200:
+ *         description: Daily auction retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   description: Complete daily auction document for the given date
+ *       400:
+ *         description: Missing or invalid date parameter
+ *       404:
+ *         description: No daily auction found for the given date
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/daily-auction-by-date', getDailyAuctionByDate);
 
 /**
  * @swagger

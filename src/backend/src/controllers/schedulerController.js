@@ -2730,6 +2730,65 @@ const syncMasterToAuctions = async (req, res) => {
   }
 };
 
+/**
+ * Get daily auction by a specific date
+ * GET /scheduler/daily-auction-by-date?date=2026-02-09
+ */
+const getDailyAuctionByDate = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date query parameter is required (format: YYYY-MM-DD)',
+      });
+    }
+
+    // Parse the date string
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid date format. Use YYYY-MM-DD (e.g., 2026-02-09)',
+      });
+    }
+
+    // Create start and end of the day for the given date
+    const startOfDay = new Date(parsedDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(parsedDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const dailyAuction = await DailyAuction.findOne({
+      auctionDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    }).sort({ createdAt: -1 });
+
+    if (!dailyAuction) {
+      return res.status(404).json({
+        success: false,
+        message: `No daily auction found for date: ${date}`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: dailyAuction,
+    });
+  } catch (error) {
+    console.error('Error in getDailyAuctionByDate:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -2739,6 +2798,7 @@ module.exports = {
   manualTriggerMidnightReset,
   manualTriggerHourlyAuctions,
   getDailyAuction,
+  getDailyAuctionByDate,
   getHourlyAuctions,
   updateHourlyAuctionStatus,
   getLiveHourlyAuction,
