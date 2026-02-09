@@ -67,7 +67,7 @@ const CACHE_VERSION_KEY = 'dream60_cache_version';
   const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
   if (storedVersion !== CACHE_VERSION) {
     // Preserve only essential session keys
-    const preserveKeys = ['user_id', 'username', 'email', 'admin_user_id', 'admin_email', 'admin_username', 'admin_userType', 'admin_isSuperAdmin', 'countdown_completed', 'push-permission-asked', 'push-subscribed', 'push-user-id'];
+    const preserveKeys = ['user_id', 'username', 'email', 'admin_user_id', 'admin_email', 'admin_username', 'admin_adminType', 'admin_login_time', 'countdown_completed', 'push-permission-asked', 'push-subscribed', 'push-user-id'];
     const preserved: Record<string, string> = {};
     preserveKeys.forEach(key => {
       const val = localStorage.getItem(key);
@@ -608,12 +608,10 @@ const App = () => {
     const adminUserId = localStorage.getItem('admin_user_id');
     if (!adminUserId) return null;
     return {
-      user_id: adminUserId,
+      admin_id: adminUserId,
       username: localStorage.getItem("admin_username") || 'admin',
       email: localStorage.getItem("admin_email") || '',
-      userType: 'ADMIN',
-      userCode: '#ADMIN',
-      isSuperAdmin: localStorage.getItem("admin_isSuperAdmin") === 'true'
+      adminType: localStorage.getItem("admin_adminType") || 'ADMIN',
     };
   });
   const [selectedAuctionDetails, setSelectedAuctionDetails] = useState<any | null>(null);
@@ -849,10 +847,10 @@ const App = () => {
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
-        const adminUserId = localStorage.getItem("admin_user_id");
-        if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
-          setAdminUser({ user_id: adminUserId, username: localStorage.getItem("admin_username") || 'admin', email: localStorage.getItem("admin_email") || '', userType: 'ADMIN', userCode: '#ADMIN', isSuperAdmin: localStorage.getItem("admin_isSuperAdmin") === 'true' });
-          if (currentPage === 'admin-login') setCurrentPage("admin-dashboard");
+          const adminUserId = localStorage.getItem("admin_user_id");
+          if (adminUserId && (currentPage === 'admin-login' || currentPage === 'admin-dashboard')) {
+            setAdminUser({ admin_id: adminUserId, username: localStorage.getItem("admin_username") || 'admin', email: localStorage.getItem("admin_email") || '', adminType: localStorage.getItem("admin_adminType") || 'ADMIN' });
+            if (currentPage === 'admin-login') setCurrentPage("admin-dashboard");
           return;
         }
         const userId = localStorage.getItem("user_id");
@@ -1062,7 +1060,7 @@ const App = () => {
   };
 
   const handleAdminLogin = (admin: any) => { setAdminUser(admin); setCurrentPage('admin-dashboard'); };
-  const handleAdminLogout = () => { localStorage.clear(); setAdminUser(null); setCurrentPage('game'); window.history.pushState({}, '', '/'); };
+  const handleAdminLogout = () => { localStorage.removeItem('admin_user_id'); localStorage.removeItem('admin_email'); localStorage.removeItem('admin_username'); localStorage.removeItem('admin_adminType'); localStorage.removeItem('admin_login_time'); setAdminUser(null); setCurrentPage('game'); window.history.pushState({}, '', '/'); };
 
   const renderContent = () => {
     switch (currentPage) {

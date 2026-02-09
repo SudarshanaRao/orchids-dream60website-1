@@ -55,11 +55,11 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
         return;
       }
 
-      localStorage.setItem('admin_user_id', data.admin.user_id);
+      localStorage.setItem('admin_user_id', data.admin.admin_id);
       localStorage.setItem('admin_email', data.admin.email);
       localStorage.setItem('admin_username', data.admin.username);
-      localStorage.setItem('admin_userType', data.admin.userType);
-      localStorage.setItem('admin_isSuperAdmin', String(data.admin.isSuperAdmin || false));
+      localStorage.setItem('admin_adminType', data.admin.adminType);
+      localStorage.setItem('admin_login_time', String(Date.now()));
       
       toast.success('Login successful');
       onLogin(data.admin);

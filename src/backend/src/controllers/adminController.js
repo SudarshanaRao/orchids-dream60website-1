@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 const MasterAuction = require('../models/masterAuction');
 const Product = require('../models/Product');
 const PushSubscription = require('../models/PushSubscription');
@@ -13,7 +14,7 @@ const bcrypt = require('bcryptjs');
 const { sendOtpEmail, sendEmailWithTemplate } = require('../utils/emailService');
 const { sendSms, SMS_TEMPLATES } = require('../utils/smsService');
 
-const ADMIN_APPROVAL_EMAIL = 'dream60.official@gmail.com';
+const ADMIN_APPROVAL_EMAIL = 'info@dream60.com';
 
 const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -76,7 +77,7 @@ const syncProductsFromConfig = async (configs, userId) => {
 };
 
 /**
- * Admin Login
+ * Admin Login - Uses separate Admin collection
  */
 const adminLogin = async (req, res) => {
   try {
@@ -86,31 +87,20 @@ const adminLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Identifier and password are required' });
     }
 
-    const adminUser = await User.findOne({
+    const adminUser = await Admin.findOne({
       $or: [
-        { username: identifier },
-        { email: identifier },
+        { username: identifier.toLowerCase() },
+        { email: identifier.toLowerCase() },
         { mobile: identifier },
       ],
-      userType: 'ADMIN',
-      isDeleted: { $ne: true },
+      isActive: true,
     });
 
     if (!adminUser) {
       return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
     }
 
-    let isPasswordValid = false;
-    if (adminUser.password === password) {
-      isPasswordValid = true;
-    } else if (adminUser.password && adminUser.password.startsWith('$2')) {
-      try {
-        isPasswordValid = await bcrypt.compare(password, adminUser.password);
-      } catch (bcryptErr) {
-        console.error('Bcrypt compare error:', bcryptErr);
-        isPasswordValid = false;
-      }
-    }
+    const isPasswordValid = await adminUser.comparePassword(password);
 
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
@@ -120,12 +110,10 @@ const adminLogin = async (req, res) => {
       success: true,
       message: 'Admin login successful',
       admin: {
-        user_id: adminUser.user_id,
+        admin_id: adminUser.admin_id,
         username: adminUser.username,
         email: adminUser.email,
-        userType: adminUser.userType,
-        userCode: adminUser.userCode,
-        isSuperAdmin: adminUser.isSuperAdmin || false,
+        adminType: adminUser.adminType,
       },
     });
   } catch (err) {
@@ -135,36 +123,36 @@ const adminLogin = async (req, res) => {
 };
 
 /**
- * Send Admin Signup OTP
+ * Send Admin Signup OTP - Sends OTP to info@dream60.com for admin approval
  */
 const sendAdminSignupOtp = async (req, res) => {
   try {
-    const { email, username, mobile } = req.body;
+    const { email, username, mobile, adminType } = req.body;
 
     if (!email || !username || !mobile) {
       return res.status(400).json({ success: false, message: 'Email, username, and mobile are required' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }, { mobile }],
-      isDeleted: { $ne: true }
+    // Check if admin already exists in Admin collection
+    const existingAdmin = await Admin.findOne({
+      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }, { mobile }],
     });
 
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'User with this email/username/mobile already exists' });
+    if (existingAdmin) {
+      return res.status(400).json({ success: false, message: 'Admin with this email/username/mobile already exists' });
     }
 
     const otp = generateOtp();
     await OTP.findOneAndUpdate(
-      { identifier: email.toLowerCase() },
+      { identifier: email.toLowerCase(), type: 'email' },
       { otp, createdAt: new Date() },
       { upsert: true, new: true }
     );
 
-    await sendOtpEmail(email, otp);
+    // Send OTP to info@dream60.com (admin approval email), NOT to the applicant
+    await sendOtpEmail(ADMIN_APPROVAL_EMAIL, otp, `Admin Signup Approval for ${username} (${email}) - Type: ${adminType || 'ADMIN'}`);
 
-    return res.status(200).json({ success: true, message: 'OTP sent to email for admin signup' });
+    return res.status(200).json({ success: true, message: 'OTP sent to admin approval email' });
   } catch (err) {
     console.error('Send Admin Signup OTP Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -172,11 +160,11 @@ const sendAdminSignupOtp = async (req, res) => {
 };
 
 /**
- * Admin Signup
+ * Admin Signup - Creates admin in separate Admin collection
  */
 const adminSignup = async (req, res) => {
   try {
-    const { email, username, mobile, password, otp } = req.body;
+    const { email, username, mobile, password, otp, adminType } = req.body;
 
     if (!email || !username || !mobile || !password || !otp) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -188,16 +176,17 @@ const adminSignup = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Validate adminType
+    const validTypes = ['ADMIN', 'SUPER_ADMIN', 'DEVELOPER'];
+    const resolvedAdminType = validTypes.includes(adminType) ? adminType : 'ADMIN';
 
-    const newAdmin = await User.create({
+    const newAdmin = await Admin.create({
       username,
       email: email.toLowerCase(),
       mobile,
-      password: hashedPassword,
-      userType: 'ADMIN',
-      isVerified: true,
+      password,
+      adminType: resolvedAdminType,
+      isActive: true,
     });
 
     // Delete OTP record
@@ -205,12 +194,12 @@ const adminSignup = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Admin account created successfully',
+      message: `${resolvedAdminType} account created successfully`,
       admin: {
-        user_id: newAdmin.user_id,
+        admin_id: newAdmin.admin_id,
         username: newAdmin.username,
         email: newAdmin.email,
-        userType: newAdmin.userType,
+        adminType: newAdmin.adminType,
       }
     });
   } catch (err) {
@@ -229,8 +218,8 @@ const getUserStatistics = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -307,8 +296,8 @@ const getAllUsersAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -355,8 +344,8 @@ const getAllMasterAuctionsWithConfig = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -392,8 +381,8 @@ const createMasterAuctionAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -457,8 +446,8 @@ const getAllMasterAuctionsAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -496,8 +485,8 @@ const updateMasterAuctionAdmin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -602,8 +591,8 @@ const updateMasterAuctionAdmin = async (req, res) => {
   const deleteMasterAuctionAdmin = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -624,8 +613,8 @@ const updateMasterAuctionAdmin = async (req, res) => {
 const deleteDailyAuctionSlot = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -649,8 +638,8 @@ const deleteDailyAuctionSlot = async (req, res) => {
 const getPushSubscriptionStats = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -693,8 +682,8 @@ const getPushSubscriptionStats = async (req, res) => {
 const deletePushSubscriptionAdmin = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -714,8 +703,8 @@ const deletePushSubscriptionAdmin = async (req, res) => {
 const getAnalyticsData = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -907,8 +896,8 @@ const getAnalyticsData = async (req, res) => {
 const updateUserSuperAdminStatus = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || !adminUser.isSuperAdmin) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || adminUser.adminType !== 'SUPER_ADMIN') {
       return res.status(403).json({ success: false, message: 'Access denied. Super Admin privileges required.' });
     }
 
@@ -933,11 +922,11 @@ const setSuperAdminByEmail = async (req, res) => {
     const { email, secretKey } = req.body;
     if (secretKey !== '841941-DREAM60-SUPERADMIN') return res.status(403).json({ success: false, message: 'Invalid secret' });
 
-    const user = await User.findOne({ email: email.toLowerCase(), userType: 'ADMIN' });
-    if (!user) return res.status(404).json({ success: false, message: 'Admin not found' });
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
 
-    user.isSuperAdmin = true;
-    await user.save();
+    admin.adminType = 'SUPER_ADMIN';
+    await admin.save();
     return res.status(200).json({ success: true, message: 'Super Admin set' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -950,8 +939,8 @@ const setSuperAdminByEmail = async (req, res) => {
 const cancelHourlyAuction = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -1064,8 +1053,8 @@ const cancelHourlyAuction = async (req, res) => {
 const getRefunds = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -1083,17 +1072,12 @@ const getRefunds = async (req, res) => {
 const updateRefundStatus = async (req, res) => {
   try {
     const userId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    console.log(`[ADMIN-AUTH] Checking user_id: ${userId} for updateRefundStatus`);
+    console.log(`[ADMIN-AUTH] Checking admin_id: ${userId} for updateRefundStatus`);
     
-    const adminUser = await User.findOne({ user_id: userId });
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
     if (!adminUser) {
-      console.error(`[ADMIN-AUTH] User not found: ${userId}`);
-      return res.status(403).json({ success: false, message: 'Access denied. Admin user not found.' });
-    }
-    
-    if (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin) {
-      console.error(`[ADMIN-AUTH] User ${userId} is not an admin. Type: ${adminUser.userType}, Super: ${adminUser.isSuperAdmin}`);
-      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+      console.error(`[ADMIN-AUTH] Admin not found: ${userId}`);
+      return res.status(403).json({ success: false, message: 'Access denied. Admin not found.' });
     }
 
     const { refundId } = req.params;

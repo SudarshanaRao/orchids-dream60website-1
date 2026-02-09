@@ -207,7 +207,7 @@ export const AdminSignup = ({ onSignupSuccess, onBack }: AdminSignupProps) => {
                 Enter OTP
               </h1>
               <p className="text-emerald-300 text-sm">
-                OTP has been sent to admin approval email (dream60.official@gmail.com)
+                OTP has been sent to admin approval email (info@dream60.com)
               </p>
             </div>
 
@@ -386,7 +386,7 @@ export const AdminSignup = ({ onSignupSuccess, onBack }: AdminSignupProps) => {
 
           <div className="mt-6 pt-6 border-t border-slate-700">
             <p className="text-xs text-center text-slate-500">
-              OTP will be sent to dream60.official@gmail.com for approval
+              OTP will be sent to info@dream60.com for approval
             </p>
           </div>
         </div>

@@ -49,12 +49,10 @@ import { AdminRefundManagement } from './AdminRefundManagement';
 
 
 interface AdminUser {
-  user_id: string;
+  admin_id: string;
   username: string;
   email: string;
-  userType: string;
-  userCode: string;
-  isSuperAdmin?: boolean;
+  adminType: 'ADMIN' | 'SUPER_ADMIN' | 'DEVELOPER';
 }
 
 interface Statistics {
@@ -514,13 +512,53 @@ const EditSlotModal = ({
 
     const analyticsRef = useRef<{ refresh: () => Promise<void> }>(null);
     
-    const isSuperAdmin = adminUser.isSuperAdmin === true;
+    const isSuperAdmin = adminUser.adminType === 'SUPER_ADMIN' || adminUser.adminType === 'DEVELOPER';
+    const isDeveloper = adminUser.adminType === 'DEVELOPER';
+
+    // 15-minute session timeout for ADMIN type only
+    const SESSION_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+    const isSessionLimited = adminUser.adminType === 'ADMIN';
+    const [sessionTimeLeft, setSessionTimeLeft] = useState<number>(() => {
+      if (!isSessionLimited) return 0;
+      const loginTime = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
+      if (!loginTime) return SESSION_TIMEOUT_MS;
+      const elapsed = Date.now() - loginTime;
+      return Math.max(0, SESSION_TIMEOUT_MS - elapsed);
+    });
+
+    useEffect(() => {
+      if (!isSessionLimited) return;
+      const loginTime = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
+      if (!loginTime) {
+        localStorage.setItem('admin_login_time', String(Date.now()));
+      }
+
+      const interval = setInterval(() => {
+        const lt = parseInt(localStorage.getItem('admin_login_time') || '0', 10);
+        const remaining = Math.max(0, SESSION_TIMEOUT_MS - (Date.now() - lt));
+        setSessionTimeLeft(remaining);
+        if (remaining <= 0) {
+          clearInterval(interval);
+          toast.error('Session expired. Please login again.');
+          handleLogout();
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }, [isSessionLimited]);
+
+    const formatSessionTime = (ms: number) => {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
 
   const fetchUsers = async () => {
     setIsUsersLoading(true);
     try {
       const response = await fetch(
-        `${API_BASE}/admin/users?user_id=${adminUser.user_id}&page=${usersPage}&limit=${usersLimit}&search=${searchTerm}`
+        `${API_BASE}/admin/users?user_id=${adminUser.admin_id}&page=${usersPage}&limit=${usersLimit}&search=${searchTerm}`
       );
       const data = await response.json();
       if (data.success) {
@@ -639,7 +677,7 @@ const EditSlotModal = ({
   const fetchStatistics = async () => {
     try {
       const response = await fetch(
-        `${API_BASE}/admin/statistics?user_id=${adminUser.user_id}`
+        `${API_BASE}/admin/statistics?user_id=${adminUser.admin_id}`
       );
       const data = await response.json();
 
@@ -657,7 +695,7 @@ const EditSlotModal = ({
   const fetchMasterAuctions = async () => {
     try {
       const response = await fetch(
-        `${API_BASE}/admin/master-auctions/?user_id=${adminUser.user_id}`
+        `${API_BASE}/admin/master-auctions/?user_id=${adminUser.admin_id}`
       );
       const data = await response.json();
 
@@ -694,7 +732,7 @@ const EditSlotModal = ({
 
       try {
         const response = await fetch(
-          `${API_BASE}/admin/master-auctions/${auction.master_id}?user_id=${adminUser.user_id}`,
+          `${API_BASE}/admin/master-auctions/${auction.master_id}?user_id=${adminUser.admin_id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -730,7 +768,7 @@ const EditSlotModal = ({
 
     try {
       const response = await fetch(
-        `${API_BASE}/admin/master-auctions/${masterId}?user_id=${adminUser.user_id}`,
+        `${API_BASE}/admin/master-auctions/${masterId}?user_id=${adminUser.admin_id}`,
         {
           method: 'DELETE',
         }
@@ -756,7 +794,7 @@ const EditSlotModal = ({
 
     try {
       const response = await fetch(
-        `${API_BASE}/admin/master-auctions/${masterId}/slots/${auctionNumber}?user_id=${adminUser.user_id}`,
+        `${API_BASE}/admin/master-auctions/${masterId}/slots/${auctionNumber}?user_id=${adminUser.admin_id}`,
         {
           method: 'DELETE',
         }
@@ -797,7 +835,7 @@ const EditSlotModal = ({
       
       try {
         const response = await fetch(
-          `${API_BASE}/admin/master-auctions/${editingSlot.masterId}/slots/${updatedSlot.auctionNumber}?user_id=${adminUser.user_id}`,
+          `${API_BASE}/admin/master-auctions/${editingSlot.masterId}/slots/${updatedSlot.auctionNumber}?user_id=${adminUser.admin_id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -826,7 +864,7 @@ const EditSlotModal = ({
       setIsLoading(false);
     };
     loadData();
-  }, [adminUser.user_id]);
+  }, [adminUser.admin_id]);
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -848,6 +886,9 @@ const EditSlotModal = ({
   const handleLogout = () => {
     localStorage.removeItem('admin_user_id');
     localStorage.removeItem('admin_email');
+    localStorage.removeItem('admin_username');
+    localStorage.removeItem('admin_adminType');
+    localStorage.removeItem('admin_login_time');
     toast.success('Logged out successfully');
     onLogout();
   };
@@ -881,6 +922,18 @@ const EditSlotModal = ({
               </div>
             </div>
             <div className="flex items-center gap-4">
+              {isSessionLimited && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                  sessionTimeLeft < 60000 
+                    ? 'bg-red-50 border-red-300 text-red-700' 
+                    : sessionTimeLeft < 300000 
+                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                      : 'bg-purple-50 border-purple-200 text-purple-700'
+                }`}>
+                  <Timer className="w-4 h-4" />
+                  <span className="text-sm font-mono font-bold">{formatSessionTime(sessionTimeLeft)}</span>
+                </div>
+              )}
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
@@ -897,7 +950,7 @@ const EditSlotModal = ({
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-semibold text-purple-900">{adminUser.username}</p>
-                  <p className="text-xs text-purple-600">{adminUser.email}</p>
+                  <p className="text-xs text-purple-600">{adminUser.adminType.replace('_', ' ')}</p>
                 </div>
               </div>
               <button
@@ -1543,47 +1596,47 @@ const EditSlotModal = ({
 {/* Email & Notifications Tabs */}
           {activeTab === 'emails' && (
             <>
-              <AdminEmailManagement adminUserId={adminUser.user_id} />
+              <AdminEmailManagement adminUserId={adminUser.admin_id} />
             </>
           )}
 
           {activeTab === 'sms' && (
-            <AdminSmsManagement adminUserId={adminUser.user_id} />
+            <AdminSmsManagement adminUserId={adminUser.admin_id} />
           )}
 
           {activeTab === 'analytics' && (
-            <AdminAnalyticsDashboard ref={analyticsRef} adminUserId={adminUser.user_id} />
+            <AdminAnalyticsDashboard ref={analyticsRef} adminUserId={adminUser.admin_id} />
           )}
 
 {activeTab === 'notifications' && (
-              <AdminPushNotifications adminUserId={adminUser.user_id} />
+              <AdminPushNotifications adminUserId={adminUser.admin_id} />
             )}
 
               {activeTab === 'userAnalytics' && isSuperAdmin && (
-                <SuperAdminUserAnalytics adminUserId={adminUser.user_id} />
+                <SuperAdminUserAnalytics adminUserId={adminUser.admin_id} />
               )}
 
                 {activeTab === 'vouchers' && (
-                  <AdminVoucherManagement adminUserId={adminUser.user_id} />
+                  <AdminVoucherManagement adminUserId={adminUser.admin_id} />
                 )}
 
                 {activeTab === 'daily-auctions' && (
-                  <AdminDailyAuctions adminUserId={adminUser.user_id} />
+                  <AdminDailyAuctions adminUserId={adminUser.admin_id} />
                 )}
 
                 {activeTab === 'hourly-auctions' && (
-                  <AdminHourlyAuctions adminUserId={adminUser.user_id} />
+                  <AdminHourlyAuctions adminUserId={adminUser.admin_id} />
                 )}
 
                 {activeTab === 'refunds' && (
-                  <AdminRefundManagement adminUserId={adminUser.user_id} />
+                  <AdminRefundManagement adminUserId={adminUser.admin_id} />
                 )}
             </main>
 
       {/* Create/Edit Master Auction Modal */}
       {showCreateAuction && (
         <CreateMasterAuctionModal
-          adminUserId={adminUser.user_id}
+          adminUserId={adminUser.admin_id}
           editingAuction={editingAuction}
           onClose={handleCloseAuctionModal}
           onSuccess={() => {
