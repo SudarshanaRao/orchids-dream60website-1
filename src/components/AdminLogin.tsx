@@ -97,26 +97,32 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       // Store admin data temporarily (don't complete login yet)
       setAdminData(data.admin);
 
-      // Check if admin has an access code set
-      try {
-        const statusRes = await fetch(
-          `${API_ENDPOINTS.admin.accessCodeStatus}?admin_id=${data.admin.admin_id}`
-        );
-        const statusData = await statusRes.json();
-
-        if (statusData.success && statusData.hasAccessCode) {
+        // Check if admin has an access code set
+        // First check the login response itself (hasAccessCode field)
+        if (data.admin.hasAccessCode) {
           setStep('access-code');
           toast.success('Credentials verified');
         } else {
-          // No access code set yet - prompt to create one
-          setStep('setup-code');
-          toast.success('Credentials verified. Please set up your access code.');
+          // Double-check with the status API
+          try {
+            const statusRes = await fetch(
+              `${API_ENDPOINTS.admin.accessCodeStatus}?admin_id=${data.admin.admin_id}`
+            );
+            const statusData = await statusRes.json();
+
+            if (statusData.success && (statusData.data?.hasAccessCode || statusData.hasAccessCode)) {
+              setStep('access-code');
+              toast.success('Credentials verified');
+            } else {
+              setStep('setup-code');
+              toast.success('Credentials verified. Please set up your access code.');
+            }
+          } catch {
+            // If status check fails, assume no code set
+            setStep('setup-code');
+            toast.success('Credentials verified. Please set up your access code.');
+          }
         }
-      } catch {
-        // If status check fails, assume no code set
-        setStep('setup-code');
-        toast.success('Credentials verified. Please set up your access code.');
-      }
     } catch (error) {
       console.error('Admin login error:', error);
       toast.error('Failed to connect to server');
@@ -184,17 +190,17 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       const response = await fetch(API_ENDPOINTS.admin.setAccessCode, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          admin_id: adminData.admin_id,
-          accessCode: code,
-        }),
-      });
+          body: JSON.stringify({
+            admin_id: adminData.admin_id,
+            newAccessCode: code,
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (data.success) {
-        toast.success('Access code set successfully');
-        completeLogin();
+        if (data.success) {
+          toast.success('Access code set successfully');
+          completeLogin();
       } else {
         toast.error(data.message || 'Failed to set access code');
       }

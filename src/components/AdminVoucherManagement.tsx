@@ -305,12 +305,12 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
         const response = await fetch(`${API_BASE_URL}/admin/vouchers/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: adminUserId,
-            claimId: winner._id,
-            sku: 'AMAZON_GC', // Generic SKU for now, should be configurable
-            amount: winner.prizeAmountWon
-          }),
+            body: JSON.stringify({
+              user_id: adminUserId,
+              claimId: winner._id,
+              sku: selectedSku || 'AMAZON_GC',
+              amount: winner.prizeAmountWon
+            }),
         });
 
       const data = await response.json();

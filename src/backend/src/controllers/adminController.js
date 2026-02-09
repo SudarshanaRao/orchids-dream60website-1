@@ -1143,25 +1143,25 @@ const setAccessCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin ID and new access code are required' });
     }
 
-    if (!/^\d{6}$/.test(newAccessCode)) {
-      return res.status(400).json({ success: false, message: 'Access code must be exactly 6 digits' });
-    }
-
-    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
-    if (!adminUser) {
-      return res.status(404).json({ success: false, message: 'Admin not found' });
-    }
-
-    // If admin already has an access code, verify the current one
-    if (adminUser.personalAccessCode && currentAccessCode) {
-      const isValid = await adminUser.compareAccessCode(currentAccessCode);
-      if (!isValid) {
-        return res.status(401).json({ success: false, message: 'Current access code is incorrect' });
+    if (!/^\d{4,6}$/.test(newAccessCode)) {
+        return res.status(400).json({ success: false, message: 'Access code must be 4-6 digits' });
       }
-    }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedCode = await bcrypt.hash(newAccessCode, salt);
+      const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
+      if (!adminUser) {
+        return res.status(404).json({ success: false, message: 'Admin not found' });
+      }
+
+      // If admin already has an access code, verify the current one
+      if (adminUser.personalAccessCode && currentAccessCode) {
+        const isValid = await adminUser.compareAccessCode(currentAccessCode);
+        if (!isValid) {
+          return res.status(401).json({ success: false, message: 'Current access code is incorrect' });
+        }
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedCode = await bcrypt.hash(newAccessCode, salt);
 
     adminUser.personalAccessCode = hashedCode;
     adminUser.accessCodeCreatedAt = new Date();
@@ -1216,9 +1216,9 @@ const resetAccessCodeWithOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin ID, OTP, and new access code are required' });
     }
 
-    if (!/^\d{6}$/.test(newAccessCode)) {
-      return res.status(400).json({ success: false, message: 'Access code must be exactly 6 digits' });
-    }
+      if (!/^\d{4,6}$/.test(newAccessCode)) {
+        return res.status(400).json({ success: false, message: 'Access code must be 4-6 digits' });
+      }
 
     const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+accessCodeResetOtp +accessCodeResetOtpExpiry');
     if (!adminUser) {

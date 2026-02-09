@@ -159,12 +159,12 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
         return;
       }
 
-      // Set new code
-      const setRes = await fetch(API_ENDPOINTS.admin.setAccessCode, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: adminId, accessCode: newCode }),
-      });
+        // Set new code
+        const setRes = await fetch(API_ENDPOINTS.admin.setAccessCode, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_id: adminId, newAccessCode: newCode, currentAccessCode: current }),
+        });
       const setData = await setRes.json();
       if (setData.success) {
         toast.success('Access code changed successfully');
