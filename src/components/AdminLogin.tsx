@@ -296,17 +296,12 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     onLogin(adminData);
   };
 
-  const PinInputGroup = ({
-    pins,
-    setPins,
-    refs,
+    const renderPinInputGroup = (
+    pins: string[],
+    setPins: React.Dispatch<React.SetStateAction<string[]>>,
+    refs: React.RefObject<HTMLInputElement | null>[],
     autoFocus = false,
-  }: {
-    pins: string[];
-    setPins: React.Dispatch<React.SetStateAction<string[]>>;
-    refs: React.RefObject<HTMLInputElement | null>[];
-    autoFocus?: boolean;
-  }) => (
+  ) => (
     <div className="flex justify-center gap-3" onPaste={(e) => handlePinPaste(e, setPins, refs)}>
       {pins.map((digit, i) => (
         <input
@@ -432,7 +427,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
             </div>
 
             <form onSubmit={handleAccessCodeSubmit} className="space-y-6">
-              <PinInputGroup pins={accessCode} setPins={setAccessCode} refs={pinRefs} autoFocus />
+              {renderPinInputGroup(accessCode, setAccessCode, pinRefs, true)}
 
               <button
                 type="submit"
@@ -474,12 +469,12 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
             <form onSubmit={handleSetupCodeSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3 text-center">New PIN</label>
-                <PinInputGroup pins={newAccessCode} setPins={setNewAccessCode} refs={newPinRefs} autoFocus />
+                  {renderPinInputGroup(newAccessCode, setNewAccessCode, newPinRefs, true)}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-3 text-center">Confirm PIN</label>
-                <PinInputGroup pins={confirmAccessCode} setPins={setConfirmAccessCode} refs={confirmPinRefs} />
+                {renderPinInputGroup(confirmAccessCode, setConfirmAccessCode, confirmPinRefs)}
               </div>
 
               <button
@@ -541,7 +536,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
 
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-3 text-center">New 4-digit PIN</label>
-                    <PinInputGroup pins={newAccessCode} setPins={setNewAccessCode} refs={newPinRefs} />
+                      {renderPinInputGroup(newAccessCode, setNewAccessCode, newPinRefs)}
                   </div>
 
                   <button

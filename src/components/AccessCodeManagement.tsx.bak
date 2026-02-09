@@ -84,12 +84,17 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
     }
   };
 
-    const renderPinInputGroup = (
-    pins: string[],
-    setPins: React.Dispatch<React.SetStateAction<string[]>>,
-    refs: React.RefObject<HTMLInputElement | null>[],
+  const PinInputGroup = ({
+    pins,
+    setPins,
+    refs,
     autoFocus = false,
-  ) => (
+  }: {
+    pins: string[];
+    setPins: React.Dispatch<React.SetStateAction<string[]>>;
+    refs: React.RefObject<HTMLInputElement | null>[];
+    autoFocus?: boolean;
+  }) => (
     <div className="flex justify-center gap-3" onPaste={(e) => handlePinPaste(e, setPins, refs)}>
       {pins.map((digit, i) => (
         <input
@@ -284,7 +289,7 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
               {!revealedCode ? (
                 <form onSubmit={handleViewCode} className="space-y-6">
                   <p className="text-sm text-gray-600 text-center">Enter your current PIN to reveal it</p>
-                  {renderPinInputGroup(viewPin, setViewPin, viewPinRefs, true)}
+                  <PinInputGroup pins={viewPin} setPins={setViewPin} refs={viewPinRefs} autoFocus />
                   <button
                     type="submit"
                     disabled={isLoading || viewPin.join('').length !== 4}
@@ -323,15 +328,15 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
             <form onSubmit={handleChangeCode} className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Current PIN</label>
-                {renderPinInputGroup(currentPin, setCurrentPin, currentPinRefs, true)}
+                <PinInputGroup pins={currentPin} setPins={setCurrentPin} refs={currentPinRefs} autoFocus />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-center">New PIN</label>
-                {renderPinInputGroup(newPin, setNewPin, newPinRefs)}
+                <PinInputGroup pins={newPin} setPins={setNewPin} refs={newPinRefs} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Confirm New PIN</label>
-                {renderPinInputGroup(confirmPin, setConfirmPin, confirmPinRefs)}
+                <PinInputGroup pins={confirmPin} setPins={setConfirmPin} refs={confirmPinRefs} />
               </div>
               <button
                 type="submit"
@@ -375,7 +380,7 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2 text-center">New 4-digit PIN</label>
-                    {renderPinInputGroup(resetNewPin, setResetNewPin, resetPinRefs)}
+                    <PinInputGroup pins={resetNewPin} setPins={setResetNewPin} refs={resetPinRefs} />
                   </div>
                   <button
                     type="submit"
