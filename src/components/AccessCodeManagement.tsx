@@ -8,6 +8,19 @@ interface AccessCodeManagementProps {
   onClose: () => void;
 }
 
+  // Helper to safely parse JSON from a response (handles HTML 404 etc.)
+const safeJsonParse = async (response: Response) => {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return { success: false, message: `Server returned ${response.status}` };
+  }
+  try {
+    return await response.json();
+  } catch {
+    return { success: false, message: 'Invalid server response' };
+  }
+};
+
 export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementProps) => {
   const [view, setView] = useState<'menu' | 'view-code' | 'change-code' | 'reset-code'>('menu');
   const [isLoading, setIsLoading] = useState(false);
@@ -113,16 +126,15 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId, accessCode: code }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setRevealedCode(code);
-        toast.success('Access code verified');
-      } else {
-        toast.error(data.message || 'Invalid access code');
-        setViewPin(['', '', '', '']);
-        viewPinRefs[0]?.current?.focus();
-      }
-    } catch { toast.error('Verification failed'); }
+        const data = await safeJsonParse(res);
+        if (data.success) {
+          setRevealedCode(code);
+          toast.success('Access code verified');
+        } else {
+          toast.error(data.message || 'Invalid access code');
+          // Don't reset PIN inputs - let user see and correct
+        }
+      } catch { toast.error('Verification failed'); }
     finally { setIsLoading(false); }
   };
 
@@ -150,22 +162,21 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId, accessCode: current }),
       });
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        toast.error('Current PIN is incorrect');
-        setCurrentPin(['', '', '', '']);
-        currentPinRefs[0]?.current?.focus();
-        setIsLoading(false);
-        return;
-      }
+        const verifyData = await safeJsonParse(verifyRes);
+        if (!verifyData.success) {
+          toast.error('Current PIN is incorrect');
+          // Don't reset PIN inputs - let user see and correct
+          setIsLoading(false);
+          return;
+        }
 
-        // Set new code
-        const setRes = await fetch(API_ENDPOINTS.admin.setAccessCode, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ admin_id: adminId, newAccessCode: newCode, currentAccessCode: current }),
-        });
-      const setData = await setRes.json();
+          // Set new code
+          const setRes = await fetch(API_ENDPOINTS.admin.setAccessCode, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ admin_id: adminId, newAccessCode: newCode, currentAccessCode: current }),
+          });
+        const setData = await safeJsonParse(setRes);
       if (setData.success) {
         toast.success('Access code changed successfully');
         onClose();
@@ -185,11 +196,11 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setOtpSent(true);
-        toast.success('OTP sent to your email');
-      } else { toast.error(data.message || 'Failed to send OTP'); }
+        const data = await safeJsonParse(res);
+        if (data.success) {
+          setOtpSent(true);
+          toast.success('OTP sent to your email');
+        } else { toast.error(data.message || 'Failed to send OTP'); }
     } catch { toast.error('Failed to send OTP'); }
     finally { setIsSendingOtp(false); }
   };

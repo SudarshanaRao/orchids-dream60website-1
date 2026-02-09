@@ -71,6 +71,19 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     }
   };
 
+    // Helper to safely parse JSON from a response (handles HTML 404 etc.)
+  const safeJsonParse = async (response: Response) => {
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return { success: false, message: `Server returned ${response.status}` };
+    }
+    try {
+      return await response.json();
+    } catch {
+      return { success: false, message: 'Invalid server response' };
+    }
+  };
+
   // Step 1: Login with credentials
   const handleCredentialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +99,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (!response.ok || !data.success) {
         toast.error(data.message || 'Invalid admin credentials');
@@ -97,32 +110,31 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       // Store admin data temporarily (don't complete login yet)
       setAdminData(data.admin);
 
-        // Check if admin has an access code set
-        // First check the login response itself (hasAccessCode field)
-        if (data.admin.hasAccessCode) {
-          setStep('access-code');
-          toast.success('Credentials verified');
-        } else {
-          // Double-check with the status API
-          try {
-            const statusRes = await fetch(
-              `${API_ENDPOINTS.admin.accessCodeStatus}?admin_id=${data.admin.admin_id}`
-            );
-            const statusData = await statusRes.json();
+      // Check if admin has an access code set from the login response
+      if (data.admin.hasAccessCode) {
+        setStep('access-code');
+        toast.success('Credentials verified');
+      } else {
+        // Double-check with the status API
+        try {
+          const statusRes = await fetch(
+            `${API_ENDPOINTS.admin.accessCodeStatus}?admin_id=${data.admin.admin_id}`
+          );
+          const statusData = await safeJsonParse(statusRes);
 
-            if (statusData.success && (statusData.data?.hasAccessCode || statusData.hasAccessCode)) {
-              setStep('access-code');
-              toast.success('Credentials verified');
-            } else {
-              setStep('setup-code');
-              toast.success('Credentials verified. Please set up your access code.');
-            }
-          } catch {
-            // If status check fails, assume no code set
+          if (statusRes.ok && statusData.success && statusData.data?.hasAccessCode) {
+            setStep('access-code');
+            toast.success('Credentials verified');
+          } else {
             setStep('setup-code');
             toast.success('Credentials verified. Please set up your access code.');
           }
+        } catch {
+          // If status check fails, assume no code set
+          setStep('setup-code');
+          toast.success('Credentials verified. Please set up your access code.');
         }
+      }
     } catch (error) {
       console.error('Admin login error:', error);
       toast.error('Failed to connect to server');
@@ -151,14 +163,13 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
         }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
       if (data.success) {
         completeLogin();
       } else {
         toast.error(data.message || 'Invalid access code');
-        setAccessCode(['', '', '', '']);
-        pinRefs[0]?.current?.focus();
+        // Don't reset inputs - let user see what they entered and correct
       }
     } catch (error) {
       console.error('Access code verification error:', error);
@@ -190,17 +201,17 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       const response = await fetch(API_ENDPOINTS.admin.setAccessCode, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            admin_id: adminData.admin_id,
-            newAccessCode: code,
-          }),
-        });
+        body: JSON.stringify({
+          admin_id: adminData.admin_id,
+          newAccessCode: code,
+        }),
+      });
 
-        const data = await response.json();
+      const data = await safeJsonParse(response);
 
-        if (data.success) {
-          toast.success('Access code set successfully');
-          completeLogin();
+      if (data.success) {
+        toast.success('Access code set successfully');
+        completeLogin();
       } else {
         toast.error(data.message || 'Failed to set access code');
       }
@@ -222,47 +233,47 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
         body: JSON.stringify({ admin_id: adminData.admin_id }),
       });
 
-      const data = await response.json();
-      if (data.success) {
-        setOtpSent(true);
-        toast.success('OTP sent to your registered email');
-      } else {
-        toast.error(data.message || 'Failed to send OTP');
+        const data = await safeJsonParse(response);
+        if (data.success) {
+          setOtpSent(true);
+          toast.success('OTP sent to your registered email');
+        } else {
+          toast.error(data.message || 'Failed to send OTP');
+        }
+      } catch (error) {
+        toast.error('Failed to send OTP');
+      } finally {
+        setIsSendingOtp(false);
       }
-    } catch (error) {
-      toast.error('Failed to send OTP');
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
+    };
 
-  // Reset access code with OTP
-  const handleResetWithOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = newAccessCode.join('');
-    if (code.length !== 4) {
-      toast.error('Please enter a 4-digit PIN');
-      return;
-    }
-    if (!otp) {
-      toast.error('Please enter the OTP');
-      return;
-    }
+    // Reset access code with OTP
+    const handleResetWithOtp = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const code = newAccessCode.join('');
+      if (code.length !== 4) {
+        toast.error('Please enter a 4-digit PIN');
+        return;
+      }
+      if (!otp) {
+        toast.error('Please enter the OTP');
+        return;
+      }
 
-    setIsLoading(true);
-    try {
-      const response = await fetch(API_ENDPOINTS.admin.resetAccessCode, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          admin_id: adminData.admin_id,
-          otp,
-          newAccessCode: code,
-        }),
-      });
+      setIsLoading(true);
+      try {
+        const response = await fetch(API_ENDPOINTS.admin.resetAccessCode, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            admin_id: adminData.admin_id,
+            otp,
+            newAccessCode: code,
+          }),
+        });
 
-      const data = await response.json();
-      if (data.success) {
+        const data = await safeJsonParse(response);
+        if (data.success) {
         toast.success('Access code reset successfully');
         completeLogin();
       } else {
