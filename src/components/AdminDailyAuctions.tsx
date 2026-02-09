@@ -112,13 +112,16 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
   const fetchDailyAuctions = async (date: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/scheduler/daily-auction?date=${date}`);
+      const response = await fetch(`${API_BASE}/scheduler/daily-auction-by-date?date=${date}`);
       const data = await response.json();
       if (data.success && data.data) {
         // DailyAuction model has dailyAuctionConfig array which contains the slots
         setAuctions(data.data.dailyAuctionConfig || []);
       } else {
         setAuctions([]);
+        if (!data.success && data.message) {
+          toast.info(data.message);
+        }
       }
     } catch (error) {
       console.error('Error fetching daily auctions:', error);
@@ -191,7 +194,7 @@ export function AdminDailyAuctions({ adminUserId }: AdminDailyAuctionsProps) {
         ) : filteredAuctions.length === 0 ? (
           <div className="col-span-full text-center py-12 bg-white rounded-xl border-2 border-dashed border-purple-200">
             <Calendar className="w-12 h-12 text-purple-200 mx-auto mb-4" />
-            <p className="text-purple-600">No auctions found for today</p>
+              <p className="text-purple-600">No auctions found for {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
         ) : (
           filteredAuctions.map((auction, idx) => (

@@ -1,0 +1,1 @@
+const p=require(\"path\");const r=require.resolve(\"react\",{paths:[\"C:/Users/info/orchids-projects/dream60website-1/node_modules/@radix-ui/react-tooltip\"]});const r2=require.resolve(\"react\",{paths:[\"C:/Users/info/orchids-projects/dream60website-1\"]});console.log(\"radix react:\",r);console.log(\"app react:\",r2);console.log(\"same?\",r===r2)  
