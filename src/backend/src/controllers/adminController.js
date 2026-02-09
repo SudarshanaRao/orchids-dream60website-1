@@ -528,12 +528,12 @@ const updateMasterAuctionAdmin = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
       }
 
-      const adminUser = await User.findOne({ user_id: userId });
-      if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
-        return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
-      }
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
+    }
 
-      const { master_id, auction_number } = req.params;
+    const { master_id, auction_number } = req.params;
       const auctionNumber = parseInt(auction_number, 10);
 
       const masterAuction = await MasterAuction.findOne({ master_id });

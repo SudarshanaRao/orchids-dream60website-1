@@ -1,5 +1,5 @@
 const UserActivity = require('../models/UserActivity');
-const User = require('../models/user');
+const Admin = require('../models/Admin');
 const { randomUUID } = require('crypto');
 
 const formatDateIST = (date) => {
@@ -447,9 +447,9 @@ const getUserActivityList = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminUserId });
-    if (!adminUser || adminUser.userType !== 'ADMIN' || !adminUser.isSuperAdmin) {
-      return res.status(403).json({ success: false, message: 'Super Admin access required' });
+    const adminUser = await Admin.findOne({ admin_id: adminUserId, isActive: true });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
@@ -497,9 +497,9 @@ const getUserActivityDetail = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminUserId });
-    if (!adminUser || adminUser.userType !== 'ADMIN' || !adminUser.isSuperAdmin) {
-      return res.status(403).json({ success: false, message: 'Super Admin access required' });
+    const adminUser = await Admin.findOne({ admin_id: adminUserId, isActive: true });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
     const userActivity = await UserActivity.findOne({ userId: targetUserId }).lean();
@@ -646,9 +646,9 @@ const getOnlineUsers = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminUserId });
-    if (!adminUser || adminUser.userType !== 'ADMIN' || !adminUser.isSuperAdmin) {
-      return res.status(403).json({ success: false, message: 'Super Admin access required' });
+    const adminUser = await Admin.findOne({ admin_id: adminUserId, isActive: true });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);

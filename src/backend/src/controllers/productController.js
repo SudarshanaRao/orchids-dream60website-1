@@ -1,16 +1,14 @@
 // src/controllers/productController.js
 const Product = require('../models/Product');
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 
 /**
  * Validate admin user
  */
 const validateAdmin = async (userId) => {
-  const user = await User.findOne({ user_id: userId });
-  if (!user || (user.userType !== 'ADMIN' && user.isSuperAdmin !== true)) {
-    return false;
-  }
-  return true;
+  const admin = await Admin.findOne({ admin_id: userId, isActive: true });
+  return !!admin;
 };
 
 /**

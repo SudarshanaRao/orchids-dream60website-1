@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 const AuctionHistory = require('../models/AuctionHistory');
 const HourlyAuction = require('../models/HourlyAuction');
 const { sendSms, sendBulkSms, getBalance, getDeliveryReports, SMS_TEMPLATES, formatTemplate } = require('../utils/smsService');
@@ -6,8 +7,8 @@ const smsRestService = require('../utils/smsRestService');
 
 const verifyAdmin = async (userId) => {
   if (!userId) return null;
-  const adminUser = await User.findOne({ user_id: userId });
-  if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) return null;
+  const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+  if (!adminUser) return null;
   return adminUser;
 };
 

@@ -6,6 +6,7 @@ const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
 const AuctionHistory = require('../models/AuctionHistory');
 const DailyAuction = require('../models/DailyAuction');
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 const { syncUserStats } = require('./userController');
 const { sendPrizeClaimedEmail } = require('../utils/emailService');
 const { sendSms, formatTemplate } = require('../utils/smsService');
@@ -992,8 +993,8 @@ exports.processRefund = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
     
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
     
@@ -1088,8 +1089,8 @@ exports.getRefundablePayments = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
     
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
     
@@ -1156,8 +1157,8 @@ exports.getRefundHistory = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
     
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
     

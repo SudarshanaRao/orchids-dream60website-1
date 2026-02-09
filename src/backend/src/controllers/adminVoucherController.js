@@ -1,14 +1,15 @@
 // src/backend/src/controllers/adminVoucherController.js
 const AuctionHistory = require('../models/AuctionHistory');
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 const Voucher = require('../models/Voucher');
 const woohooService = require('../utils/woohooService');
 const { sendAmazonVoucherEmail } = require('../utils/emailService');
 
 const verifyAdmin = async (userId) => {
     if (!userId) return null;
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) return null;
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) return null;
     return adminUser;
 };
 

@@ -1,5 +1,6 @@
 // src/controllers/emailController.js
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 const EmailTemplate = require('../models/EmailTemplate');
 const Voucher = require('../models/Voucher');
 const { sendCustomEmail } = require('../utils/emailService');
@@ -19,8 +20,8 @@ const sendEmailToUsers = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -107,8 +108,8 @@ const createEmailTemplate = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -130,7 +131,7 @@ const createEmailTemplate = async (req, res) => {
       subject,
       body,
       category: category || 'CUSTOM',
-      createdBy: adminUser.user_id,
+      createdBy: adminUser.admin_id,
     });
 
     return res.status(201).json({
@@ -169,8 +170,8 @@ const getAllEmailTemplates = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -233,8 +234,8 @@ const getEmailTemplateById = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -277,8 +278,8 @@ const updateEmailTemplate = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -332,8 +333,8 @@ const deleteEmailTemplate = async (req, res) => {
       });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin privileges required.',
@@ -419,8 +420,8 @@ const sendManualVoucherEmail = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: userId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 

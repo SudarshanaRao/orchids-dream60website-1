@@ -1,6 +1,7 @@
 const webpush = require('web-push');
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/user');
+const Admin = require('../models/Admin');
 
 const DEFAULT_ACTIONS = [
   {
@@ -79,8 +80,8 @@ const generateVAPIDKeys = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -246,8 +247,8 @@ const sendToUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -353,10 +354,10 @@ const sendToAllParticipants = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminId });
-    console.log('[PUSH] Admin user lookup result:', adminUser ? { username: adminUser.username, userType: adminUser.userType, isSuperAdmin: adminUser.isSuperAdmin } : 'Not found');
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    console.log('[PUSH] Admin user lookup result:', adminUser ? { username: adminUser.username, adminType: adminUser.adminType } : 'Not found');
     
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
@@ -489,8 +490,8 @@ const sendToSelectedUsers = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Unauthorized. Admin user_id required.' });
     }
 
-    const adminUser = await User.findOne({ user_id: adminId });
-    if (!adminUser || (adminUser.userType !== 'ADMIN' && !adminUser.isSuperAdmin)) {
+    const adminUser = await Admin.findOne({ admin_id: adminId, isActive: true });
+    if (!adminUser) {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
