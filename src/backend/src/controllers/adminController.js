@@ -1143,8 +1143,8 @@ const setAccessCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin ID and new access code are required' });
     }
 
-    if (!/^\d{4,6}$/.test(newAccessCode)) {
-        return res.status(400).json({ success: false, message: 'Access code must be 4-6 digits' });
+    if (!/^\d{4}$/.test(newAccessCode)) {
+        return res.status(400).json({ success: false, message: 'Access code must be exactly 4 digits' });
       }
 
       const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+personalAccessCode');
@@ -1216,8 +1216,8 @@ const resetAccessCodeWithOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin ID, OTP, and new access code are required' });
     }
 
-      if (!/^\d{4,6}$/.test(newAccessCode)) {
-        return res.status(400).json({ success: false, message: 'Access code must be 4-6 digits' });
+      if (!/^\d{4}$/.test(newAccessCode)) {
+        return res.status(400).json({ success: false, message: 'Access code must be exactly 4 digits' });
       }
 
     const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+accessCodeResetOtp +accessCodeResetOtpExpiry');

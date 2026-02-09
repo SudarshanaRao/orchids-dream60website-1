@@ -42,7 +42,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     newPins[index] = value.slice(-1);
     setPins(newPins);
     if (value && index < 3) {
-      refs[index + 1]?.current?.focus();
+      setTimeout(() => refs[index + 1]?.current?.focus(), 0);
     }
   };
 

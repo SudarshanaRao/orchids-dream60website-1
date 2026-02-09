@@ -57,7 +57,7 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
     const updated = [...pins];
     updated[index] = value.slice(-1);
     setPins(updated);
-    if (value && index < 3) refs[index + 1]?.current?.focus();
+    if (value && index < 3) setTimeout(() => refs[index + 1]?.current?.focus(), 0);
   };
 
   const handlePinKeyDown = (
@@ -219,7 +219,7 @@ export const AccessCodeManagement = ({ adminId, onClose }: AccessCodeManagementP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ admin_id: adminId, otp, newAccessCode: code }),
       });
-      const data = await res.json();
+      const data = await safeJsonParse(res);
       if (data.success) {
         toast.success('Access code reset successfully');
         onClose();
