@@ -192,7 +192,8 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [selectAll, setSelectAll] = useState(false);
+    const [selectAll, setSelectAll] = useState(false);
+    const [selectAllPages, setSelectAllPages] = useState(false);
   
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [customMessage, setCustomMessage] = useState('');
@@ -437,30 +438,58 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
 
       const response = await fetch(url);
       const data = await response.json();
-      if (data.success) {
-        setUsers(data.data);
-        setTotalUsers(data.meta?.total || data.data.length);
-        setSelectedUsers(new Set());
-        setSelectAll(false);
-      }
+        if (data.success) {
+          setUsers(data.data);
+          setTotalUsers(data.meta?.total || data.data.length);
+          if (!selectAllPages) {
+            setSelectedUsers(new Set());
+            setSelectAll(false);
+          }
+        }
     } catch (error) {
       console.error('Error loading users:', error);
     }
   };
 
-  const handleSelectAll = () => {
-    if (selectAll) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(users.map(u => u.user_id)));
-    }
-    setSelectAll(!selectAll);
-  };
+    const handleSelectAll = async () => {
+      if (selectAllPages) {
+        // Deselect all
+        setSelectedUsers(new Set());
+        setSelectAll(false);
+        setSelectAllPages(false);
+      } else {
+        // Fetch ALL user IDs across all pages
+        try {
+          let url = `${API_BASE}/admin/sms/users?user_id=${adminUserId}&filter=${selectedFilter}&page=1&limit=10000`;
+          if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+          if (['auction_participants', 'round1_players', 'advanced_round2', 'eliminated_current', 'specific_round'].includes(selectedFilter) && selectedAuction) {
+            url += `&auctionId=${selectedAuction}`;
+          }
+          if (selectedFilter === 'specific_round' && selectedRound) {
+            url += `&round=${selectedRound}`;
+          }
+          const response = await fetch(url);
+          const data = await response.json();
+          if (data.success) {
+            const allUserIds = new Set(data.data.map((u: User) => u.user_id));
+            setSelectedUsers(allUserIds);
+            setSelectAll(true);
+            setSelectAllPages(true);
+          }
+        } catch (error) {
+          console.error('Error fetching all users:', error);
+          // Fallback: select current page only
+          setSelectedUsers(new Set(users.map(u => u.user_id)));
+          setSelectAll(true);
+        }
+      }
+    };
 
   const handleSelectUser = (userId: string) => {
     const newSelected = new Set(selectedUsers);
     if (newSelected.has(userId)) {
       newSelected.delete(userId);
+      setSelectAllPages(false);
     } else {
       newSelected.add(userId);
     }
@@ -613,30 +642,41 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
     }
   };
 
-  const executeSendBulk = async (rawMessage: string, vars: StarVariable[]) => {
-    if (!['all', 'active_players', 'winners', 'never_played'].includes(selectedFilter)) {
-      toast.error('Bulk send is only available for general filters');
-      return;
-    }
+    const executeSendBulk = async (rawMessage: string, vars: StarVariable[]) => {
+      if (!['all', 'active_players', 'winners', 'never_played'].includes(selectedFilter)) {
+        toast.error('Bulk send is only available for general filters');
+        return;
+      }
 
-    // For bulk with star variables, we fill non-username vars but username can't be personalized via bulk API
-    const finalMessage = vars.length > 0
-      ? renderSmsWithVariables(rawMessage, vars, '*')
-      : undefined;
+      // Fill non-username star variables but keep * for username — backend will personalize per user
+      const finalMessage = vars.length > 0
+        ? (() => {
+            let result = '';
+            let lastIndex = 0;
+            const sorted = [...vars].sort((a, b) => a.index - b.index);
+            for (const v of sorted) {
+              result += rawMessage.substring(lastIndex, v.index);
+              result += v.isUsername ? '*' : v.value;
+              lastIndex = v.index + 1;
+            }
+            result += rawMessage.substring(lastIndex);
+            return result;
+          })()
+        : undefined;
 
-    setIsSending(true);
-    try {
-      const response = await fetch(`${API_BASE}/admin/sms/send-bulk?user_id=${adminUserId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filter: selectedFilter,
-          senderId: selectedSenderId || undefined,
-          message: finalMessage || (selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined),
-          templateKey: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
-          templateVariables: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
-        }),
-      });
+      setIsSending(true);
+      try {
+        const response = await fetch(`${API_BASE}/admin/sms/send-bulk?user_id=${adminUserId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filter: selectedFilter,
+            senderId: selectedSenderId || undefined,
+            message: finalMessage || (selectedTemplate === 'CUSTOM' || !selectedTemplate ? customMessage : undefined),
+            templateKey: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? selectedTemplate : undefined,
+            templateVariables: !finalMessage && selectedTemplate && selectedTemplate !== 'CUSTOM' ? templateVariables : undefined,
+          }),
+        });
 
       const data = await response.json();
       if (data.success) {
@@ -970,15 +1010,20 @@ export function AdminSmsManagement({ adminUserId }: AdminSmsManagementProps) {
               <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-gray-800">Users ({users.length})</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSelectAll}
-                    className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                  >
-                    {selectAll ? 'Deselect All' : 'Select All'}
-                  </button>
+                    <h3 className="font-semibold text-gray-800">Users ({totalUsers})</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {selectAllPages && (
+                      <span className="text-xs text-green-600 font-medium">
+                        All {selectedUsers.size} users selected
+                      </span>
+                    )}
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                    >
+                      {selectAllPages ? 'Deselect All' : 'Select All'}
+                    </button>
                   <button
                     onClick={loadUsers}
                     className="p-1.5 text-gray-500 hover:text-purple-600 transition-colors"

@@ -504,88 +504,122 @@ const sendSmsToUsers = async (req, res) => {
 };
 
 const sendBulkSmsToFilter = async (req, res) => {
-  try {
-    const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
-    const admin = await verifyAdmin(adminId);
-    if (!admin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
-    const { filter, filterParams, message, templateKey, templateVariables, senderId } = req.body;
-
-    if (!message && !templateKey) {
-      return res.status(400).json({ success: false, message: 'Message or template required' });
-    }
-
-    let finalMessage = message;
-    let isRestTemplate = false;
-    let restTemplateId = null;
-
-    if (templateKey) {
-      if (templateKey.startsWith('rest_')) {
-        isRestTemplate = true;
-        restTemplateId = templateKey.replace('rest_', '');
-      } else {
-        const formatted = formatTemplate(templateKey, templateVariables || {});
-        if (!formatted.success) {
-          return res.status(400).json({ success: false, message: formatted.error });
-        }
-        finalMessage = formatted.message;
+    try {
+      const adminId = req.query.user_id || req.body.user_id || req.headers['x-user-id'];
+      const admin = await verifyAdmin(adminId);
+      if (!admin) {
+        return res.status(403).json({ success: false, message: 'Admin access required' });
       }
+
+      const { filter, filterParams, message, templateKey, templateVariables, senderId } = req.body;
+
+      if (!message && !templateKey) {
+        return res.status(400).json({ success: false, message: 'Message or template required' });
+      }
+
+      let finalMessage = message;
+      let isRestTemplate = false;
+      let restTemplateId = null;
+
+      if (templateKey) {
+        if (templateKey.startsWith('rest_')) {
+          isRestTemplate = true;
+          restTemplateId = templateKey.replace('rest_', '');
+        } else {
+          const formatted = formatTemplate(templateKey, templateVariables || {});
+          if (!formatted.success) {
+            return res.status(400).json({ success: false, message: formatted.error });
+          }
+          finalMessage = formatted.message;
+        }
+      }
+
+      let query = { isDeleted: false, userType: 'USER', mobile: { $exists: true, $ne: '' } };
+      let users = [];
+
+      // Always fetch username along with mobile for personalization
+      const selectFields = 'mobile username';
+
+      switch (filter) {
+        case 'all':
+          users = await User.find(query).select(selectFields).lean();
+          break;
+        case 'active_players':
+          query.totalAuctions = { $gt: 0 };
+          users = await User.find(query).select(selectFields).lean();
+          break;
+        case 'winners':
+          query.totalWins = { $gt: 0 };
+          users = await User.find(query).select(selectFields).lean();
+          break;
+        case 'never_played':
+          query.totalAuctions = 0;
+          users = await User.find(query).select(selectFields).lean();
+          break;
+        default:
+          return res.status(400).json({ success: false, message: 'Invalid filter' });
+      }
+
+      const usersWithMobile = users.filter(u => u.mobile);
+
+      if (usersWithMobile.length === 0) {
+        return res.status(400).json({ success: false, message: 'No users match the filter criteria' });
+      }
+
+      if (isRestTemplate && !finalMessage) {
+        const tplResult = await smsRestService.getTemplates();
+        const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
+        if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
+        finalMessage = template.Message;
+      }
+
+      // Check if the message contains * placeholders that need username personalization
+      const hasStarPlaceholders = finalMessage && finalMessage.includes('*');
+
+      let result;
+      let totalSent = 0;
+      let totalFailed = 0;
+
+      if (hasStarPlaceholders) {
+        // Personalize message per user by replacing * after "Dear" with username
+        // Send individually or in small batches
+        for (const user of usersWithMobile) {
+          const personalizedMsg = finalMessage.replace(
+            /(dear\s*)\*/i,
+            `$1${user.username || 'User'}`
+          );
+          try {
+            const sendResult = await smsRestService.sendSms(user.mobile, personalizedMsg, senderId);
+            if (sendResult.success) totalSent++;
+            else totalFailed++;
+          } catch (err) {
+            totalFailed++;
+          }
+        }
+        result = { success: totalSent > 0 };
+      } else {
+        // No personalization needed — send same message to all
+        const recipients = usersWithMobile.map(u => u.mobile);
+        result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
+        totalSent = result.success ? recipients.length : 0;
+      }
+
+      return res.status(200).json({
+        success: result.success,
+        message: result.success ? 'Bulk SMS sent successfully' : 'Failed to send bulk SMS',
+        data: {
+          filter,
+          recipientCount: usersWithMobile.length,
+          sent: totalSent,
+          failed: totalFailed,
+          ...result,
+        },
+      });
+    } catch (error) {
+      console.error('Send Bulk SMS Error:', error);
+      return res.status(500).json({ success: false, message: 'Server error' });
     }
-
-    let query = { isDeleted: false, userType: 'USER', mobile: { $exists: true, $ne: '' } };
-    let users = [];
-
-    switch (filter) {
-      case 'all':
-        users = await User.find(query).select('mobile').lean();
-        break;
-      case 'active_players':
-        query.totalAuctions = { $gt: 0 };
-        users = await User.find(query).select('mobile').lean();
-        break;
-      case 'winners':
-        query.totalWins = { $gt: 0 };
-        users = await User.find(query).select('mobile').lean();
-        break;
-      case 'never_played':
-        query.totalAuctions = 0;
-        users = await User.find(query).select('mobile').lean();
-        break;
-      default:
-        return res.status(400).json({ success: false, message: 'Invalid filter' });
-    }
-
-    const recipients = users.map(u => u.mobile).filter(Boolean);
-
-    if (recipients.length === 0) {
-      return res.status(400).json({ success: false, message: 'No users match the filter criteria' });
-    }
-
-    if (isRestTemplate && !finalMessage) {
-      const tplResult = await smsRestService.getTemplates();
-      const template = tplResult.data?.find(t => t.TemplateId == restTemplateId);
-      if (!template) return res.status(400).json({ success: false, message: 'REST Template not found' });
-      finalMessage = template.Message;
-    }
-
-    const result = await smsRestService.sendBulkSms(recipients, finalMessage, senderId);
-
-    return res.status(200).json({
-      success: result.success,
-      message: result.success ? 'Bulk SMS sent successfully' : 'Failed to send bulk SMS',
-      data: {
-        filter,
-        recipientCount: recipients.length,
-        ...result,
-      },
-    });
-  } catch (error) {
-    console.error('Send Bulk SMS Error:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
-  }
-};
+  };
 
 const getFilterStats = async (req, res) => {
   try {
