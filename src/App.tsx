@@ -16,8 +16,9 @@ import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
 import { Participation } from './components/Participation';
 import { AboutUs } from './components/AboutUs';
-import { ComingSoon } from './components/ComingSoon';
+// ComingSoon removed
 import { CareersForm } from './components/CareersForm';
+import { PushNotificationPermission } from './components/PushNotificationPermission';
 import { LoginForm } from './components/LoginForm';
 import { SignupForm } from './components/SignupForm';
 import { EntrySuccessModal } from './components/EntrySuccessModal';
@@ -291,22 +292,7 @@ const App = () => {
   const [serverTime, setServerTime] = useState<ServerTime | null>(null);
 
     const [currentPage, setCurrentPage] = useState(() => {
-      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-  
-    // Redirect to coming-soon if it's before the launch time (11:58 PM)
-    const now = new Date();
-    const launchDate = new Date();
-    launchDate.setHours(23, 58, 0, 0);
-    // If it's already past today's 11:58 PM, the target is tomorrow's 11:58 PM
-    if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
-    
-    // Check if we've already completed the countdown
-    const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
-
-    if (path === '/' && now < launchDate && !hasCompletedCountdown) {
-      window.history.replaceState({}, '', '/coming-soon');
-      return 'coming-soon';
-    }
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
 
     if (path === '/d60-ctrl-x9k7') {
       const adminUserId = localStorage.getItem('admin_user_id');
@@ -324,16 +310,11 @@ const App = () => {
     if (path === '/rules') return 'rules';
     if (path === '/participation') return 'participation';
     if (path === '/about') return 'about';
-    // If countdown completed, redirect /coming-soon to home
     if (path === '/coming-soon') {
-      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
-      if (hasCompletedCountdown) {
         window.history.replaceState({}, '', '/');
         return 'game';
       }
-      return 'coming-soon';
-    }
-    if (path === '/careers') return 'careers';
+      if (path === '/careers') return 'careers';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
     if (path === '/refund') return 'refund';
@@ -357,21 +338,7 @@ const App = () => {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-      const searchParams = new URLSearchParams(window.location.search);
-      
-      // Redirect to coming-soon if it's before the launch time (11:58 PM)
-      const now = new Date();
-      const launchDate = new Date();
-      launchDate.setHours(23, 58, 0, 0);
-      if (launchDate < now) launchDate.setDate(launchDate.getDate() + 1);
-
-      const hasCompletedCountdown = sessionStorage.getItem('countdown_completed') === 'true' || localStorage.getItem('countdown_completed') === 'true';
-
-      if (path === '/' && now < launchDate && !hasCompletedCountdown) {
-        window.history.replaceState({}, '', '/coming-soon');
-        setCurrentPage('coming-soon');
-        return;
-      }
+        const searchParams = new URLSearchParams(window.location.search);
 
       if (path === '/d60-ctrl-x9k7') {
         const adminUserId = localStorage.getItem('admin_user_id');
@@ -392,15 +359,10 @@ const App = () => {
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/about') setCurrentPage('about');
         else if (path === '/coming-soon') {
-          // If countdown completed, redirect /coming-soon to home
-          if (hasCompletedCountdown) {
             window.history.replaceState({}, '', '/');
             setCurrentPage('game');
-          } else {
-            setCurrentPage('coming-soon');
           }
-        }
-        else if (path === '/careers') setCurrentPage('careers');
+          else if (path === '/careers') setCurrentPage('careers');
       else if (path === '/terms') setCurrentPage('terms');
       else if (path === '/privacy') setCurrentPage('privacy');
       else if (path === '/refund') setCurrentPage('refund');
@@ -1129,7 +1091,6 @@ const App = () => {
       case 'forgot': return <ForgotPasswordPage onBack={handleSwitchToLogin} onNavigate={handleNavigate} />;
       case 'participation': return <Participation onBack={handleBackToGame} />;
       case 'careers': return <CareersForm onBack={handleBackToGame} />;
-      case 'coming-soon': return <ComingSoon onComplete={handleBackToGame} />;
       case 'about': return <><AboutUs onBack={handleBackToGame} onNavigate={handleNavigate} /><Footer onNavigate={handleNavigate} /></>;
       case 'terms': return <TermsAndConditions onBack={handleBackToGame} />;
       case 'refund': return <RefundPolicy onBack={handleBackToGame} />;
@@ -1266,7 +1227,8 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Sonner />
-          {renderContent()}
+            {renderContent()}
+            <PushNotificationPermission userId={currentUser?.id} />
         </TooltipProvider>
       </QueryClientProvider>
     </BrowserRouter>

@@ -14,11 +14,13 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
 
   useEffect(() => {
     if (!userId) return;
+    if (!('Notification' in window)) return;
 
-    const hasAskedPermission = localStorage.getItem('push-permission-asked');
     const hasSubscribed = localStorage.getItem('push-subscribed');
-    
-    if (!hasAskedPermission && !hasSubscribed && 'Notification' in window) {
+    const permission = Notification.permission;
+
+    // Always show the banner if not subscribed and permission is not denied
+    if (!hasSubscribed && permission !== 'denied') {
       setTimeout(() => setShowBanner(true), 2000);
     }
   }, [userId]);
@@ -46,12 +48,11 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
       const permission = await Notification.requestPermission();
       
       if (permission !== 'granted') {
-        toast.error('Notification permission denied');
-        localStorage.setItem('push-permission-asked', 'true');
-        setShowBanner(false);
-        setIsSubscribing(false);
-        return;
-      }
+          toast.error('Notification permission denied');
+          setShowBanner(false);
+          setIsSubscribing(false);
+          return;
+        }
 
       const registration = await navigator.serviceWorker.ready;
 
@@ -84,14 +85,11 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
 
       const subscribeData = await subscribeResponse.json();
 
-      if (subscribeData.success) {
-        toast.success('🔔 Notifications enabled! You\'ll receive updates on auctions, wins, and more.');
-        localStorage.setItem('push-subscribed', 'true');
-        localStorage.setItem('push-permission-asked', 'true');
-        setShowBanner(false);
-      } else {
-        throw new Error(subscribeData.message || 'Failed to subscribe');
-      }
+        if (subscribeData.success) {
+          toast.success('Notifications enabled! You\'ll receive updates on auctions, wins, and more.');
+          localStorage.setItem('push-subscribed', 'true');
+          setShowBanner(false);
+        }
     } catch (error) {
       console.error('Error enabling notifications:', error);
       toast.error('Failed to enable notifications. Please try again.');
@@ -101,7 +99,7 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
   };
 
   const handleDismiss = () => {
-    localStorage.setItem('push-permission-asked', 'true');
+    // Only dismiss for this session - will show again on next visit
     setShowBanner(false);
   };
 

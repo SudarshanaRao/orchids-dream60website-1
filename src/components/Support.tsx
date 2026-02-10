@@ -63,15 +63,15 @@ export function Support({ user, onBack, onNavigate }: SupportProps) {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        toast.success('Support ticket submitted successfully! We\'ll get back to you within 24 hours.');
-        setTicketName('');
-        setTicketEmail('');
-        setTicketSubject('');
-        setTicketMessage('');
-      } else {
-        throw new Error(data.message || 'Failed to submit ticket');
-      }
+        if (response.ok && data.success) {
+          toast.success('Support ticket submitted successfully! We\'ll get back to you within 24 hours.');
+          if (!user) {
+            setTicketName('');
+            setTicketEmail('');
+          }
+          setTicketSubject('');
+          setTicketMessage('');
+        }
     } catch (error) {
       console.error('Error submitting ticket:', error);
       toast.error('Failed to submit ticket. Please try again or contact support@dream60.com directly.');
