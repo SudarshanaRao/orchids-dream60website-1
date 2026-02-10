@@ -694,8 +694,9 @@ const sendManualVoucher = async (req, res) => {
             await existingVoucher.save();
             voucher = existingVoucher;
         } else {
-            // 4. Create new Voucher document
-            voucher = new Voucher({
+            // 4. Create new Voucher document — use findOneAndUpdate with upsert
+            //    to avoid E11000 on woohooOrderId null (old sparse unique index)
+            const voucherData = {
                 userId: user.user_id,
                 claimId: claimId,
                 auctionId: historyEntry.hourlyAuctionId || '',
@@ -706,8 +707,23 @@ const sendManualVoucher = async (req, res) => {
                 status: 'complete',
                 sentToUser: true,
                 sentAt: new Date()
-            });
-            await voucher.save();
+            };
+
+            try {
+                voucher = new Voucher(voucherData);
+                await voucher.save();
+            } catch (saveErr) {
+                if (saveErr.code === 11000) {
+                    // Duplicate key on woohooOrderId null — fall back to upsert by claimId
+                    voucher = await Voucher.findOneAndUpdate(
+                        { claimId: claimId },
+                        { $set: voucherData },
+                        { upsert: true, new: true, setDefaultsOnInsert: true }
+                    );
+                } else {
+                    throw saveErr;
+                }
+            }
         }
 
         // 5. Send email notification (optional)
