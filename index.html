@@ -78,6 +78,15 @@
 
   gtag('config', 'G-66YKRBMQPB');
 </script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "a74a1494-2603-48aa-a4cb-7ea9bde10b9d",
+    });
+  });
+</script>
   </head>
   <body oncontextmenu="return false;">
     <div id="root"></div>
