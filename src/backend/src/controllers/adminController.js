@@ -234,51 +234,55 @@ const getUserStatistics = async (req, res) => {
     ]);
 
       // --- Activity: from AuctionHistory, HourlyAuction, AirpayPayment ---
-      const [
-        auctionHistoryStats,
-        totalHourlyAuctions,
-        totalAmountSpentAgg,
-        prizeclaimTotalAgg,
-        totalParticipantsAgg,
-      ] = await Promise.all([
-        // Aggregate total auction participations from AuctionHistory
-        AuctionHistory.aggregate([
-          { $match: { auctionStatus: 'COMPLETED' } },
-          {
-            $group: {
-              _id: null,
-              totalParticipations: { $sum: 1 },
-              totalAmountWon: {
-                $sum: {
-                  $cond: [
-                    { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
-                    '$prizeAmountWon',
-                    0,
-                  ],
+        const [
+          auctionHistoryStats,
+          totalHourlyAuctions,
+          totalAmountSpentAgg,
+          prizeclaimTotalAgg,
+          totalParticipantsAgg,
+          totalHourlyJoins,
+        ] = await Promise.all([
+          // Aggregate total auction participations from AuctionHistory
+          AuctionHistory.aggregate([
+            { $match: { auctionStatus: 'COMPLETED' } },
+            {
+              $group: {
+                _id: null,
+                totalParticipations: { $sum: 1 },
+                totalAmountWon: {
+                  $sum: {
+                    $cond: [
+                      { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                      '$prizeAmountWon',
+                      0,
+                    ],
+                  },
                 },
               },
             },
-          },
-        ]).catch(() => []),
+          ]).catch(() => []),
 
-        // Total hourly auctions count
-        HourlyAuction.countDocuments({}).catch(() => 0),
+          // Total hourly auctions count
+          HourlyAuction.countDocuments({}).catch(() => 0),
 
-        // Total amount spent by users (successful payments only)
-        AirpayPayment.aggregate([
-          { $match: { status: 'paid' } },
-          { $group: { _id: null, total: { $sum: '$amount' } } },
-        ]).catch(() => []),
+          // Total amount spent by users (successful payments only)
+          AirpayPayment.aggregate([
+            { $match: { status: 'paid' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ]).catch(() => []),
 
-        // Total prize claim payments (PRIZE_CLAIM type, paid)
-        AirpayPayment.aggregate([
-          { $match: { status: 'paid', paymentType: 'PRIZE_CLAIM' } },
-          { $group: { _id: null, total: { $sum: '$amount' } } },
-        ]).catch(() => []),
+          // Total prize claim payments (PRIZE_CLAIM type, paid)
+          AirpayPayment.aggregate([
+            { $match: { status: 'paid', paymentType: 'PRIZE_CLAIM' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+          ]).catch(() => []),
 
-        // Total unique participants
-        AuctionHistory.distinct('userId', { auctionStatus: 'COMPLETED' }).catch(() => []),
-      ]);
+          // Total unique participants
+          AuctionHistory.distinct('userId', { auctionStatus: 'COMPLETED' }).catch(() => []),
+
+          // Total participations from HourlyAuctionJoin (actual confirmed joins)
+          HourlyAuctionJoin.countDocuments({ status: 'joined' }).catch(() => 0),
+        ]);
 
     const histStats = auctionHistoryStats[0] || {};
 
@@ -364,12 +368,12 @@ const getUserStatistics = async (req, res) => {
         totalHourlyAuctions,
       },
       activity: {
-        totalAuctions: histStats.totalParticipations || 0,
-        totalAmountSpent: totalAmountSpentAgg[0]?.total || 0,
-        totalAmountWon: histStats.totalAmountWon || 0,
-        totalPrizeClaimPayments: prizeclaimTotalAgg[0]?.total || 0,
-        totalParticipants: Array.isArray(totalParticipantsAgg) ? totalParticipantsAgg.length : 0,
-      },
+          totalAuctions: totalHourlyJoins || histStats.totalParticipations || 0,
+          totalAmountSpent: totalAmountSpentAgg[0]?.total || 0,
+          totalAmountWon: histStats.totalAmountWon || 0,
+          totalPrizeClaimPayments: prizeclaimTotalAgg[0]?.total || 0,
+          totalParticipants: Array.isArray(totalParticipantsAgg) ? totalParticipantsAgg.length : 0,
+        },
       recentUsers: (recentUsers || []).map(u => {
         const s = recentStatsMap[u.user_id] || {};
         return {
@@ -428,83 +432,113 @@ const getAllUsersAdmin = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
-    const { page = 1, limit = 20, search = '', includeDeleted = false, userType } = req.query;
-    const query = {};
-    if (includeDeleted !== 'true') query.isDeleted = false;
-    if (userType) query.userType = userType;
-    if (search) {
-      query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { mobile: { $regex: search, $options: 'i' } },
-        { userCode: { $regex: search, $options: 'i' } },
-      ];
-    }
+    const { page = 1, limit = 20, search = '', includeDeleted = false, userType, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+      const query = {};
+      if (includeDeleted !== 'true') query.isDeleted = false;
+      if (userType) query.userType = userType;
+      if (search) {
+        query.$or = [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { mobile: { $regex: search, $options: 'i' } },
+          { userCode: { $regex: search, $options: 'i' } },
+        ];
+      }
 
-    const l = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
-    const p = Math.max(parseInt(page, 10) || 1, 1);
-    const skip = (p - 1) * l;
+      const l = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+      const p = Math.max(parseInt(page, 10) || 1, 1);
+      const skip = (p - 1) * l;
 
-      const [users, total] = await Promise.all([
-        User.find(query).sort({ createdAt: -1 }).skip(skip).limit(l).select('-password').lean(),
-        User.countDocuments(query),
-      ]);
+      // Determine if sorting is by a computed field (needs post-sort) or DB field
+      const computedSortFields = ['totalAuctions', 'totalAmountSpent', 'totalAmountWon', 'profitLoss'];
+      const isComputedSort = computedSortFields.includes(sortBy);
+      const dbSortField = sortBy === 'name' ? 'username' : sortBy;
+      const dbSortDir = sortOrder === 'asc' ? 1 : -1;
 
-        // Enrich users with real stats from AuctionHistory (matching getUserStats logic)
-        const userIds = users.map(u => u.user_id);
-        const auctionStats = userIds.length > 0
-          ? await AuctionHistory.aggregate([
-              { $match: { userId: { $in: userIds }, auctionStatus: 'COMPLETED' } },
-              {
-                $group: {
-                  _id: '$userId',
-                  totalAuctions: { $sum: 1 },
-                  totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
-                  // totalSpent = all entry fees + lastRoundBidAmount for won+claimed auctions
-                  totalEntryFees: { $sum: '$entryFeePaid' },
-                  totalFinalRoundBidsForClaimedWins: {
-                    $sum: {
-                      $cond: [
-                        { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
-                        '$lastRoundBidAmount',
-                        0,
-                      ],
+      let users, total;
+      if (isComputedSort) {
+        // For computed fields, fetch all matching users then sort after enrichment
+        [users, total] = await Promise.all([
+          User.find(query).sort({ createdAt: -1 }).select('-password').lean(),
+          User.countDocuments(query),
+        ]);
+      } else {
+        [users, total] = await Promise.all([
+          User.find(query).sort({ [dbSortField]: dbSortDir }).skip(skip).limit(l).select('-password').lean(),
+          User.countDocuments(query),
+        ]);
+      }
+
+          // Enrich users with real stats from AuctionHistory (matching getUserStats logic)
+          const userIds = users.map(u => u.user_id);
+          const auctionStats = userIds.length > 0
+            ? await AuctionHistory.aggregate([
+                { $match: { userId: { $in: userIds }, auctionStatus: 'COMPLETED' } },
+                {
+                  $group: {
+                    _id: '$userId',
+                    totalAuctions: { $sum: 1 },
+                    totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
+                    // totalSpent = all entry fees + lastRoundBidAmount for won+claimed auctions
+                    totalEntryFees: { $sum: '$entryFeePaid' },
+                    totalFinalRoundBidsForClaimedWins: {
+                      $sum: {
+                        $cond: [
+                          { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                          '$lastRoundBidAmount',
+                          0,
+                        ],
+                      },
                     },
-                  },
-                  // totalWon = prizeAmountWon only for CLAIMED prizes
-                  totalAmountWon: {
-                    $sum: {
-                      $cond: [
-                        { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
-                        '$prizeAmountWon',
-                        0,
-                      ],
+                    // totalWon = prizeAmountWon only for CLAIMED prizes
+                    totalAmountWon: {
+                      $sum: {
+                        $cond: [
+                          { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                          '$prizeAmountWon',
+                          0,
+                        ],
+                      },
                     },
                   },
                 },
-              },
-            ]).catch(() => [])
-          : [];
+              ]).catch(() => [])
+            : [];
 
-        const auctionStatsMap = {};
-        for (const s of auctionStats) auctionStatsMap[s._id] = s;
+          const auctionStatsMap = {};
+          for (const s of auctionStats) auctionStatsMap[s._id] = s;
 
-        const enrichedUsers = users.map(u => {
-          const aStats = auctionStatsMap[u.user_id] || {};
-          return {
-            ...u,
-            totalAuctions: aStats.totalAuctions || 0,
-            totalWins: aStats.totalWins || 0,
-            totalAmountWon: aStats.totalAmountWon || 0,
-            totalAmountSpent: (aStats.totalEntryFees || 0) + (aStats.totalFinalRoundBidsForClaimedWins || 0),
-          };
+          let enrichedUsers = users.map(u => {
+            const aStats = auctionStatsMap[u.user_id] || {};
+            const spent = (aStats.totalEntryFees || 0) + (aStats.totalFinalRoundBidsForClaimedWins || 0);
+            const won = aStats.totalAmountWon || 0;
+            return {
+              ...u,
+              totalAuctions: aStats.totalAuctions || 0,
+              totalWins: aStats.totalWins || 0,
+              totalAmountWon: won,
+              totalAmountSpent: spent,
+              profitLoss: won - spent,
+            };
+          });
+
+          // Apply computed sort if needed
+          if (isComputedSort) {
+            const field = sortBy;
+            enrichedUsers.sort((a, b) => {
+              const aVal = a[field] || 0;
+              const bVal = b[field] || 0;
+              return dbSortDir === 1 ? aVal - bVal : bVal - aVal;
+            });
+            // Apply pagination after sorting
+            enrichedUsers = enrichedUsers.slice(skip, skip + l);
+          }
+
+        return res.status(200).json({
+          success: true,
+          data: enrichedUsers,
+          meta: { total, page: p, limit: l, pages: Math.ceil(total / l) },
         });
-
-      return res.status(200).json({
-        success: true,
-        data: enrichedUsers,
-        meta: { total, page: p, limit: l, pages: Math.ceil(total / l) },
-      });
   } catch (err) {
     console.error('Get All Users Admin Error:', err);
     return res.status(500).json({ success: false, message: 'Server error fetching users' });

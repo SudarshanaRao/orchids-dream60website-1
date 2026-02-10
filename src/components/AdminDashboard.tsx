@@ -537,6 +537,8 @@ const EditSlotModal = ({
     const [paginatedUsers, setUsers] = useState<CombinedUser[]>([]);
     const [totalUsers, setTotalUsers] = useState(0);
     const [isUsersLoading, setIsUsersLoading] = useState(false);
+    const [usersSortBy, setUsersSortBy] = useState('createdAt');
+    const [usersSortOrder, setUsersSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const analyticsRef = useRef<{ refresh: () => Promise<void> }>(null);
     
@@ -620,29 +622,29 @@ const EditSlotModal = ({
     };
 
   const fetchUsers = async () => {
-    setIsUsersLoading(true);
-    try {
-      const response = await fetch(
-        `${API_BASE}/admin/users?user_id=${adminUser.admin_id}&page=${usersPage}&limit=${usersLimit}&search=${searchTerm}`
-      );
-      const data = await response.json();
-      if (data.success) {
-        setUsers(data.data);
-        setTotalUsers(data.meta.total);
+      setIsUsersLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE}/admin/users?user_id=${adminUser.admin_id}&page=${usersPage}&limit=${usersLimit}&search=${searchTerm}&sortBy=${usersSortBy}&sortOrder=${usersSortOrder}`
+        );
+        const data = await response.json();
+        if (data.success) {
+          setUsers(data.data);
+          setTotalUsers(data.meta.total);
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error('Failed to fetch users');
+      } finally {
+        setIsUsersLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to fetch users');
-    } finally {
-      setIsUsersLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (activeTab === 'users') {
-      fetchUsers();
-    }
-  }, [activeTab, usersPage, searchTerm]);
+    useEffect(() => {
+      if (activeTab === 'users') {
+        fetchUsers();
+      }
+    }, [activeTab, usersPage, searchTerm, usersSortBy, usersSortOrder]);
 
   const Pagination = ({ 
     currentPage, 
@@ -1436,25 +1438,47 @@ const EditSlotModal = ({
         )}
 
           {activeTab === 'users' && (
-              <div className="space-y-6">
-                {/* Search Bar and Filters */}
-                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value);
-                          setUsersPage(1); // Reset to page 1 on search
-                        }}
-                        placeholder="Search users by username, email, mobile, or user code..."
-                        className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
-                      />
+                <div className="space-y-6">
+                  {/* Search Bar and Filters */}
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            setUsersPage(1); // Reset to page 1 on search
+                          }}
+                          placeholder="Search users by username, email, mobile, or user code..."
+                          className="w-full pl-10 pr-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          value={usersSortBy}
+                          onChange={(e) => { setUsersSortBy(e.target.value); setUsersPage(1); }}
+                          className="px-3 py-2 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 text-sm font-medium text-purple-700 bg-white"
+                        >
+                          <option value="createdAt">Sort by: Joined</option>
+                          <option value="name">Sort by: Name</option>
+                          <option value="totalAuctions">Sort by: Auctions</option>
+                          <option value="totalAmountSpent">Sort by: Spent</option>
+                          <option value="totalAmountWon">Sort by: Won</option>
+                          <option value="profitLoss">Sort by: Profit/Loss</option>
+                        </select>
+                        <button
+                          onClick={() => { setUsersSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); setUsersPage(1); }}
+                          className="flex items-center gap-1 px-3 py-2 border-2 border-purple-200 rounded-xl hover:bg-purple-50 text-sm font-medium text-purple-700"
+                          title={usersSortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                        >
+                          {usersSortOrder === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {usersSortOrder === 'asc' ? 'ASC' : 'DESC'}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
   
               {/* All Users Table */}
               <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200 overflow-hidden relative">
@@ -1465,54 +1489,59 @@ const EditSlotModal = ({
                 )}
                 <h2 className="text-xl font-bold text-purple-900 mb-4">All Users ({totalUsers})</h2>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-purple-200">
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Mobile</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Wins</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Spent</th>
-                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Won</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedUsers.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="py-8 text-center text-gray-500">No users found matching your search</td>
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-purple-200">
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Mobile</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Spent</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Won</th>
+                          <th className="text-left py-3 px-4 text-purple-700 font-semibold">Profit/Loss</th>
                         </tr>
-                      ) : (
-                        paginatedUsers.map((user: CombinedUser) => (
-                          <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
-                            <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
-                            <td className="py-3 px-4 font-medium text-purple-900">{user.username}</td>
-                            <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
-                            <td className="py-3 px-4 text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <span>{revealedMobiles.has(user.user_id) ? (user.mobile || 'N/A') : maskMobile(user.mobile || '')}</span>
-                                {user.mobile && !revealedMobiles.has(user.user_id) && (
-                                  <button
-                                    onClick={() => handleRequestMobileView(user.user_id, user.mobile || '')}
-                                    className="p-1 hover:bg-purple-100 rounded transition-colors"
-                                    title="View mobile number"
-                                  >
-                                    <Eye className="w-4 h-4 text-purple-500" />
-                                  </button>
-                                )}
-                                {user.mobile && revealedMobiles.has(user.user_id) && (
-                                  <EyeOff className="w-4 h-4 text-green-500" title="Mobile revealed" />
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">{user.totalAuctions || 0}</td>
-                            <td className="py-3 px-4 font-semibold text-green-600">{user.totalWins || 0}</td>
-                            <td className="py-3 px-4">₹{(user.totalAmountSpent || 0).toLocaleString()}</td>
-                            <td className="py-3 px-4">₹{(user.totalAmountWon || 0).toLocaleString()}</td>
+                      </thead>
+                      <tbody>
+                        {paginatedUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="py-8 text-center text-gray-500">No users found matching your search</td>
                           </tr>
-                        ))
-                      )}
+                        ) : (
+                          paginatedUsers.map((user: CombinedUser) => {
+                            const profitLoss = (user.totalAmountWon || 0) - (user.totalAmountSpent || 0);
+                            return (
+                            <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
+                              <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
+                              <td className="py-3 px-4 font-medium text-purple-900">{user.username}</td>
+                              <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
+                              <td className="py-3 px-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-2">
+                                  <span>{revealedMobiles.has(user.user_id) ? (user.mobile || 'N/A') : maskMobile(user.mobile || '')}</span>
+                                  {user.mobile && !revealedMobiles.has(user.user_id) && (
+                                    <button
+                                      onClick={() => handleRequestMobileView(user.user_id, user.mobile || '')}
+                                      className="p-1 hover:bg-purple-100 rounded transition-colors"
+                                      title="View mobile number"
+                                    >
+                                      <Eye className="w-4 h-4 text-purple-500" />
+                                    </button>
+                                  )}
+                                  {user.mobile && revealedMobiles.has(user.user_id) && (
+                                    <EyeOff className="w-4 h-4 text-green-500" title="Mobile revealed" />
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">{user.totalAuctions || 0}</td>
+                              <td className="py-3 px-4">₹{(user.totalAmountSpent || 0).toLocaleString()}</td>
+                              <td className="py-3 px-4">₹{(user.totalAmountWon || 0).toLocaleString()}</td>
+                              <td className={`py-3 px-4 font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {profitLoss >= 0 ? '+' : ''}₹{profitLoss.toLocaleString()}
+                              </td>
+                            </tr>
+                            );
+                          })
+                        )}
                     </tbody>
                   </table>
                 </div>
