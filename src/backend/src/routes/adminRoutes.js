@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const {
+    verifyCommonAccessCode,
     adminLogin,
     sendAdminSignupOtp,
     adminSignup,
@@ -30,6 +31,12 @@ const {
     sendMobileViewOtp,
     verifyMobileViewOtp,
     getAdminAuditLogs,
+    getAllAdmins,
+    createAdmin,
+    updateAdmin,
+    deleteAdmin,
+    resetAdminPassword,
+    resetAdminAccessCode,
   } = require('../controllers/adminController');
 
 
@@ -298,6 +305,7 @@ const {
  *       500:
  *         description: Server error
  */
+router.post('/verify-common-access-code', verifyCommonAccessCode);
 router.post('/login', adminLogin);
 
 router.post('/send-signup-otp', sendAdminSignupOtp);
@@ -1583,5 +1591,13 @@ router.get('/access-code-status', getAccessCodeStatus);
 router.post('/send-mobile-view-otp', sendMobileViewOtp);
 router.post('/verify-mobile-view-otp', verifyMobileViewOtp);
 router.get('/audit-logs', getAdminAuditLogs);
+
+// ============ Admin Management Routes (Super Admin / Developer) ============
+router.get('/admins', getAllAdmins);
+router.post('/admins', createAdmin);
+router.put('/admins/:admin_id', updateAdmin);
+router.delete('/admins/:admin_id', deleteAdmin);
+router.post('/admins/:admin_id/reset-password', resetAdminPassword);
+router.post('/admins/:admin_id/reset-access-code', resetAdminAccessCode);
 
 module.exports = router;

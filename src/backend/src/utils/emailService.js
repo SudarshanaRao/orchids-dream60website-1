@@ -1096,19 +1096,20 @@ const sendSupportReceiptEmail = async (email, details) => {
     );
 
     const mailOptions = {
-      from: `"Dream60 Support" <${process.env.EMAIL_SUPPORT_USER}>`,
-      to: email,
-      subject: subject,
-      html: htmlBody,
-    };
+        from: `"Dream60 Support" <${process.env.EMAIL_SUPPORT_USER}>`,
+        to: email,
+        subject: subject,
+        html: htmlBody,
+      };
 
-    const info = await transporter.sendMail(mailOptions);
-    return { success: true, messageId: info.messageId };
-  } catch (error) {
-    console.error('❌ Support email error:', error);
-    return { success: false };
-  }
-};
+      const supportTransporter = createSupportTransporter();
+      const info = await supportTransporter.sendMail(mailOptions);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      console.error('❌ Support email error:', error);
+      return { success: false };
+    }
+  };
 
 /**
  * Send Custom Email

@@ -72,22 +72,23 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
   const [stats, setStats] = useState<PlatformStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch(API_ENDPOINTS.platformStats);
-        const data = await res.json();
-        if (data.success) {
-          setStats(data.data);
+    useEffect(() => {
+      const fetchStats = async () => {
+        try {
+          const res = await fetch(API_ENDPOINTS.platformStats);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data.success) {
+            setStats(data.data);
+          }
+        } catch (err) {
+          console.error('Failed to fetch platform stats:', err);
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('Failed to fetch platform stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
+      };
+      fetchStats();
+    }, []);
 
   const platformStats = [
     {
@@ -256,7 +257,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       <div className="container mx-auto max-w-6xl px-4">
         {/* Stats Section */}
         <section className="-mt-12 relative z-20 mb-20">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
             {platformStats.map((stat, index) => (
               <motion.div
                 key={index}

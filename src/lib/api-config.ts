@@ -124,6 +124,7 @@ resendOtp: `${API_BASE_URL}/auth/resend-otp`,
       sendToSelected: `${API_BASE_URL}/push-notification/send-to-selected`,
     },
     admin: {
+      verifyCommonAccessCode: `${API_BASE_URL}/admin/verify-common-access-code`,
       pushSubscriptions: `${API_BASE_URL}/admin/push-subscriptions`,
       sendSignupOtp: `${API_BASE_URL}/admin/send-signup-otp`,
       signup: `${API_BASE_URL}/admin/signup`,

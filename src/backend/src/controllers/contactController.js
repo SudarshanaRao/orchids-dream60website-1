@@ -1,5 +1,6 @@
 // src/controllers/contactController.js
-const { sendEmailWithTemplate, sendSupportReceiptEmail } = require('../utils/emailService');
+const nodemailer = require('nodemailer');
+const { sendEmailWithTemplate, sendSupportReceiptEmail, buildEmailTemplate, getPrimaryClientUrl } = require('../utils/emailService');
 const SupportTicket = require('../models/SupportTicket');
 
 /**

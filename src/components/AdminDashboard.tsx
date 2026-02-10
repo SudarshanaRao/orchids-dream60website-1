@@ -49,6 +49,7 @@ import { AdminDailyAuctions } from './AdminDailyAuctions';
 import { AdminHourlyAuctions } from './AdminHourlyAuctions';
 import { AdminRefundManagement } from './AdminRefundManagement';
 import { AccessCodeManagement } from './AccessCodeManagement';
+import { AdminManagement } from './AdminManagement';
 import { useAdminSessionTimeout } from '../hooks/useAdminSessionTimeout';
 
 
@@ -479,7 +480,7 @@ const EditSlotModal = ({
 
 
   export const AdminDashboard = ({ adminUser, onLogout, onSessionTimeout }: AdminDashboardProps) => {
-      const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers'] as const;
+      const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers', 'admin-management'] as const;
       type TabType = typeof validTabs[number];
 
     const handleSessionTimeout = useCallback(() => {
@@ -970,8 +971,8 @@ const EditSlotModal = ({
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-        {/* Session Timer Banner for ADMIN role */}
-        {isSubjectToTimeout && (
+        {/* Session Timer Banner for ADMIN role - only shows when tab was inactive */}
+        {isSubjectToTimeout && remainingMs < 30 * 60 * 1000 && (
           <div className={`sticky top-0 z-50 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium ${
             remainingMs <= 5 * 60 * 1000
               ? 'bg-red-600 text-white'
@@ -1177,6 +1178,19 @@ const EditSlotModal = ({
                 <Ticket className="w-5 h-5 inline-block mr-2" />
                 Voucher Management
               </button>
+              {isSuperAdmin && (
+                <button
+                  onClick={() => setActiveTab('admin-management')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'admin-management'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <Shield className="w-5 h-5 inline-block mr-2" />
+                  Admin Management
+                </button>
+              )}
             </div>
         </div>
       </header>
@@ -1780,6 +1794,10 @@ const EditSlotModal = ({
 
                 {activeTab === 'refunds' && (
                   <AdminRefundManagement adminUserId={adminUser.admin_id} />
+                )}
+
+                {activeTab === 'admin-management' && isSuperAdmin && (
+                  <AdminManagement adminUser={adminUser} />
                 )}
             </main>
 

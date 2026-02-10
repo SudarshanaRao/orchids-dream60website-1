@@ -1586,7 +1586,210 @@ const getAdminAuditLogs = async (req, res) => {
   }
 };
 
+/**
+ * Verify Common Admin Access Code (6-digit gate before login)
+ */
+const verifyCommonAccessCode = async (req, res) => {
+  try {
+    const { accessCode } = req.body;
+    if (!accessCode) {
+      return res.status(400).json({ success: false, message: 'Access code is required' });
+    }
+
+    const commonCode = process.env.ADMIN_COMMON_ACCESS_CODE || '841941';
+    if (String(accessCode) !== String(commonCode)) {
+      return res.status(401).json({ success: false, message: 'Invalid access code' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Access code verified' });
+  } catch (err) {
+    console.error('Verify Common Access Code Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Get All Admins (Super Admin / Developer only)
+ */
+const getAllAdmins = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Super Admin or Developer required.' });
+    }
+
+    const admins = await Admin.find().select('-password').sort({ createdAt: -1 }).lean();
+    return res.status(200).json({ success: true, data: admins });
+  } catch (err) {
+    console.error('Get All Admins Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Create Admin (Super Admin / Developer only)
+ */
+const createAdmin = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.requester_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied. Super Admin or Developer required.' });
+    }
+
+    const { username, email, mobile, password, adminType } = req.body;
+    if (!username || !email || !mobile || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const existing = await Admin.findOne({
+      $or: [{ email: email.toLowerCase() }, { username: username.toLowerCase() }, { mobile }],
+    });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Admin with this email/username/mobile already exists' });
+    }
+
+    const validTypes = ['ADMIN', 'SUPER_ADMIN', 'DEVELOPER'];
+    const newAdmin = await Admin.create({
+      username,
+      email: email.toLowerCase(),
+      mobile,
+      password,
+      adminType: validTypes.includes(adminType) ? adminType : 'ADMIN',
+      isActive: true,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Admin created successfully',
+      data: { admin_id: newAdmin.admin_id, username: newAdmin.username, email: newAdmin.email, adminType: newAdmin.adminType },
+    });
+  } catch (err) {
+    console.error('Create Admin Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Update Admin (Super Admin / Developer only)
+ */
+const updateAdmin = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.requester_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const { admin_id } = req.params;
+    const { username, email, mobile, adminType, isActive, status } = req.body;
+
+    const target = await Admin.findOne({ admin_id });
+    if (!target) return res.status(404).json({ success: false, message: 'Admin not found' });
+
+    if (username) target.username = username;
+    if (email) target.email = email.toLowerCase();
+    if (mobile) target.mobile = mobile;
+    if (adminType && ['ADMIN', 'SUPER_ADMIN', 'DEVELOPER'].includes(adminType)) target.adminType = adminType;
+    if (typeof isActive === 'boolean') target.isActive = isActive;
+    if (status === 'blocked') target.isActive = false;
+    if (status === 'active') target.isActive = true;
+
+    await target.save();
+    return res.status(200).json({ success: true, message: 'Admin updated successfully' });
+  } catch (err) {
+    console.error('Update Admin Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Delete Admin (Super Admin / Developer only)
+ */
+const deleteAdmin = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const { admin_id } = req.params;
+    if (admin_id === userId) {
+      return res.status(400).json({ success: false, message: 'Cannot delete your own account' });
+    }
+
+    await Admin.findOneAndDelete({ admin_id });
+    return res.status(200).json({ success: true, message: 'Admin deleted successfully' });
+  } catch (err) {
+    console.error('Delete Admin Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Reset Admin Password (Super Admin / Developer only)
+ */
+const resetAdminPassword = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.requester_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const { admin_id } = req.params;
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const target = await Admin.findOne({ admin_id });
+    if (!target) return res.status(404).json({ success: false, message: 'Admin not found' });
+
+    target.password = newPassword; // pre-save hook will hash
+    await target.save();
+    return res.status(200).json({ success: true, message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('Reset Admin Password Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Reset Admin Personal Access Code (Super Admin / Developer only)
+ */
+const resetAdminAccessCode = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.body.requester_id || req.headers['x-user-id'];
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser || !['SUPER_ADMIN', 'DEVELOPER'].includes(adminUser.adminType)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const { admin_id } = req.params;
+    const { newAccessCode } = req.body;
+    if (!newAccessCode || !/^\d{4}$/.test(newAccessCode)) {
+      return res.status(400).json({ success: false, message: 'Access code must be 4 digits' });
+    }
+
+    const target = await Admin.findOne({ admin_id });
+    if (!target) return res.status(404).json({ success: false, message: 'Admin not found' });
+
+    const salt = await bcrypt.genSalt(10);
+    target.personalAccessCode = await bcrypt.hash(newAccessCode, salt);
+    target.accessCodeCreatedAt = new Date();
+    await target.save();
+    return res.status(200).json({ success: true, message: 'Access code reset successfully' });
+  } catch (err) {
+    console.error('Reset Admin Access Code Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
+  verifyCommonAccessCode,
   adminLogin,
   sendAdminSignupOtp,
   adminSignup,
@@ -1615,4 +1818,10 @@ module.exports = {
   sendMobileViewOtp,
   verifyMobileViewOtp,
   getAdminAuditLogs,
+  getAllAdmins,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
+  resetAdminPassword,
+  resetAdminAccessCode,
 };

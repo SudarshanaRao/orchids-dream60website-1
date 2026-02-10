@@ -96,7 +96,7 @@ export const AdminReauth = ({ adminUser, onReauth, onFullLogin }: AdminReauthPro
             <p className="text-slate-400 text-sm">
               Hi <span className="text-white font-medium">{adminUser.username}</span>, your 30-minute session has expired.
             </p>
-            <p className="text-slate-400 text-sm mt-1">Enter your access code to continue.</p>
+            <p className="text-slate-400 text-sm mt-1">Enter your personal access code to continue.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

@@ -70,7 +70,7 @@ const getPlatformStats = async (req, res) => {
       todayAuctions,
     ] = await Promise.all([
       User.countDocuments({ isDeleted: { $ne: true } }),
-      HourlyAuction.countDocuments({ status: 'COMPLETED' }),
+        HourlyAuction.countDocuments({ Status: 'COMPLETED' }),
       AuctionHistory.aggregate([
         { $match: { isWinner: true, prizeClaimStatus: 'CLAIMED' } },
         {
@@ -81,12 +81,12 @@ const getPlatformStats = async (req, res) => {
           },
         },
       ]),
-      HourlyAuction.countDocuments({
-        status: { $in: ['UPCOMING', 'LIVE', 'COMPLETED'] },
-        createdAt: {
-          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
-        },
-      }),
+        HourlyAuction.countDocuments({
+          Status: { $in: ['UPCOMING', 'LIVE', 'COMPLETED'] },
+          createdAt: {
+            $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        }),
     ]);
 
     const stats = winnerStats[0] || { totalWinners: 0, totalPrizePool: 0 };

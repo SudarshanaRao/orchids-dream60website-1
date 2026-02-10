@@ -16,11 +16,11 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
   const [showPassword, setShowPassword] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
 
-  // Access code state (4 digits)
-  const [accessCode, setAccessCode] = useState(['', '', '', '']);
+  // Access code state (6 digits)
+  const [accessCode, setAccessCode] = useState(['', '', '', '', '', '']);
   const [newAccessCode, setNewAccessCode] = useState(['', '', '', '']);
   const [confirmAccessCode, setConfirmAccessCode] = useState(['', '', '', '']);
-  const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const newPinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   const confirmPinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
@@ -40,7 +40,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       updated[index] = digit;
       return updated;
     });
-    if (digit && index < 3) {
+    if (digit && index < refs.length - 1) {
       setTimeout(() => refs[index + 1]?.current?.focus(), 0);
     }
   };
@@ -59,13 +59,14 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
   const handlePinPaste = (
     e: React.ClipboardEvent,
     setPins: React.Dispatch<React.SetStateAction<string[]>>,
-    refs: React.RefObject<HTMLInputElement | null>[]
+    refs: React.RefObject<HTMLInputElement | null>[],
+    length: number = 6
   ) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
-    if (pasted.length === 4) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
+    if (pasted.length === length) {
       setPins(pasted.split(''));
-      refs[3]?.current?.focus();
+      refs[length - 1]?.current?.focus();
     }
   };
 
@@ -81,27 +82,45 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     }
   };
 
-  // Step 1: Enter access code first
+  // Step 1: Enter common access code first (verified via backend)
   const handleAccessCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = accessCode.join('');
-    if (code.length !== 4) {
-      toast.error('Please enter a 4-digit access code');
+    if (code.length !== 6) {
+      toast.error('Please enter a 6-digit access code');
       return;
     }
-    // Store the access code and move to credentials
-    setVerifiedAccessCode(code);
-    setStep('credentials');
-    toast.success('Access code accepted. Enter your credentials.');
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.admin.verifyCommonAccessCode, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessCode: code }),
+      });
+      const data = await safeJsonParse(response);
+      if (data.success) {
+        setVerifiedAccessCode(code);
+        setStep('credentials');
+        toast.success('Access code verified. Enter your credentials.');
+      } else {
+        toast.error(data.message || 'Invalid access code');
+        setAccessCode(['', '', '', '', '', '']);
+        pinRefs[0]?.current?.focus();
+      }
+    } catch {
+      toast.error('Failed to verify access code');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Step 2: Login with credentials + verify access code with backend
+  // Step 2: Login with credentials (common code already verified in step 1)
   const handleCredentialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // First authenticate with credentials
       const response = await fetch(API_ENDPOINTS.auth.adminLogin, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,12 +140,11 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
 
       setAdminData(data.admin);
 
-      // Check if admin has an access code set
+      // Check if admin has a personal access code set
       const hasCode = data.admin.hasAccessCode;
       let codeSet = hasCode;
 
       if (!hasCode) {
-        // Double-check with status API
         try {
           const statusRes = await fetch(
             `${API_ENDPOINTS.admin.accessCodeStatus}?admin_id=${data.admin.admin_id}`
@@ -139,33 +157,15 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
       }
 
       if (!codeSet) {
-        // No access code set yet - need to set one up
+        // No personal access code set yet - need to set one up
         setStep('setup-code');
-        toast.success('Credentials verified. Please set up your access code.');
+        toast.success('Credentials verified. Please set up your personal access code.');
         setIsLoading(false);
         return;
       }
 
-      // Verify the access code that was entered in step 1
-      const codeRes = await fetch(API_ENDPOINTS.admin.verifyAccessCode, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          admin_id: data.admin.admin_id,
-          accessCode: verifiedAccessCode,
-        }),
-      });
-
-      const codeData = await safeJsonParse(codeRes);
-
-      if (codeData.success) {
-        completeLogin(data.admin);
-      } else {
-        toast.error('Invalid access code. Please go back and enter the correct code.');
-        setStep('access-code');
-        setAccessCode(['', '', '', '']);
-        setVerifiedAccessCode('');
-      }
+      // Login successful - common access code was already verified in step 1
+      completeLogin(data.admin);
     } catch (error) {
       console.error('Admin login error:', error);
       toast.error('Failed to connect to server');
@@ -234,7 +234,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     refs: React.RefObject<HTMLInputElement | null>[],
     autoFocus = false,
   ) => (
-    <div className="flex justify-center gap-3" onPaste={(e) => handlePinPaste(e, setPins, refs)}>
+    <div className="flex justify-center gap-2 sm:gap-3" onPaste={(e) => handlePinPaste(e, setPins, refs, pins.length)}>
       {pins.map((digit, i) => (
         <input
           key={i}
@@ -246,7 +246,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
           onChange={(e) => handlePinInput(i, e.target.value, setPins, refs)}
           onKeyDown={(e) => handlePinKeyDown(i, e, pins, refs)}
           autoFocus={autoFocus && i === 0}
-          className="w-14 h-14 text-center text-2xl font-bold bg-slate-900/50 border-2 border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-white transition-colors"
+          className="w-11 h-14 sm:w-14 sm:h-14 text-center text-2xl font-bold bg-slate-900/50 border-2 border-slate-600 rounded-xl focus:outline-none focus:border-purple-500 text-white transition-colors"
         />
       ))}
     </div>
@@ -268,19 +268,19 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
                 <Shield className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">Admin Portal</h1>
-              <p className="text-purple-300 text-sm">Enter your 4-digit access code to continue</p>
+                <p className="text-purple-300 text-sm">Enter the 6-digit admin access code to continue</p>
             </div>
 
             <form onSubmit={handleAccessCodeSubmit} className="space-y-6">
               {renderPinInputGroup(accessCode, setAccessCode, pinRefs, true)}
 
-              <button
-                type="submit"
-                disabled={accessCode.join('').length !== 4}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Continue
-              </button>
+                <button
+                  type="submit"
+                  disabled={accessCode.join('').length !== 6 || isLoading}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                >
+                  {isLoading ? 'Verifying...' : 'Continue'}
+                </button>
             </form>
 
             <div className="mt-6 pt-6 border-t border-slate-700">
@@ -307,7 +307,7 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
-          <button onClick={() => { setStep('access-code'); setAccessCode(['', '', '', '']); setVerifiedAccessCode(''); }} className="flex items-center gap-2 text-slate-300 hover:text-white mb-6 transition-colors">
+          <button onClick={() => { setStep('access-code'); setAccessCode(['', '', '', '', '', '']); setVerifiedAccessCode(''); }} className="flex items-center gap-2 text-slate-300 hover:text-white mb-6 transition-colors">
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
           </button>
@@ -386,8 +386,8 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4">
                 <Key className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">Set Up Access Code</h1>
-              <p className="text-slate-400 text-sm">Create a 4-digit PIN for quick access</p>
+              <h1 className="text-2xl font-bold text-white mb-2">Set Up Personal Access Code</h1>
+              <p className="text-slate-400 text-sm">Create a 4-digit PIN for session re-authentication</p>
             </div>
 
             <form onSubmit={handleSetupCodeSubmit} className="space-y-6">

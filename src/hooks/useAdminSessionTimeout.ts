@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const ADMIN_SESSION_DURATION = 30 * 60 * 1000; // 30 minutes of inactivity
-const SESSION_START_KEY = 'admin_session_start';
-const SESSION_ACTIVE_KEY = 'admin_session_active';
-const LAST_ACTIVITY_KEY = 'admin_last_activity';
+const LAST_HIDDEN_KEY = 'admin_tab_hidden_at';
 
 interface UseAdminSessionTimeoutOptions {
   adminType: string;
@@ -22,100 +20,89 @@ export const useAdminSessionTimeout = ({
   // Only ADMIN role has timeout, not SUPER_ADMIN or DEVELOPER
   const isSubjectToTimeout = adminType === 'ADMIN';
 
-  const updateLastActivity = useCallback(() => {
-    const now = Date.now();
-    localStorage.setItem(LAST_ACTIVITY_KEY, String(now));
-    localStorage.setItem(SESSION_START_KEY, String(now));
-    localStorage.setItem(SESSION_ACTIVE_KEY, 'true');
-    setRemainingMs(ADMIN_SESSION_DURATION);
+  const stopTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, []);
+
+  const startTimer = useCallback((fromMs: number) => {
+    stopTimer();
+    let remaining = fromMs;
+    setRemainingMs(remaining);
+
+    intervalRef.current = setInterval(() => {
+      remaining -= 1000;
+      if (remaining <= 0) {
+        stopTimer();
+        localStorage.removeItem(LAST_HIDDEN_KEY);
+        onSessionTimeoutRef.current();
+      } else {
+        setRemainingMs(remaining);
+      }
+    }, 1000);
+  }, [stopTimer]);
 
   const resetSession = useCallback(() => {
-    updateLastActivity();
-  }, [updateLastActivity]);
+    stopTimer();
+    localStorage.removeItem(LAST_HIDDEN_KEY);
+    setRemainingMs(ADMIN_SESSION_DURATION);
+  }, [stopTimer]);
 
   const clearSession = useCallback(() => {
-    localStorage.removeItem(SESSION_START_KEY);
-    localStorage.removeItem(SESSION_ACTIVE_KEY);
-    localStorage.removeItem(LAST_ACTIVITY_KEY);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  }, []);
+    stopTimer();
+    localStorage.removeItem(LAST_HIDDEN_KEY);
+  }, [stopTimer]);
 
   useEffect(() => {
     if (!isSubjectToTimeout) return;
 
-    // Initialize activity timestamp
-    updateLastActivity();
-
-    // Track user activity events - reset inactivity timer on any interaction
-    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
-    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const handleActivity = () => {
-      // Throttle to once per 5 seconds to avoid excessive localStorage writes
-      if (throttleTimer) return;
-      throttleTimer = setTimeout(() => {
-        throttleTimer = null;
-      }, 5000);
-      updateLastActivity();
-    };
-
-    activityEvents.forEach(event => {
-      window.addEventListener(event, handleActivity, { passive: true });
-    });
-
-    // Reset timer when tab becomes visible again
+    // When tab becomes hidden, record the time and start counting down
+    // When tab becomes visible, check elapsed time and reset if still valid
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        // Check if session expired while tab was hidden
-        const lastActivity = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10);
-        const elapsed = Date.now() - lastActivity;
-        if (elapsed >= ADMIN_SESSION_DURATION) {
-          clearSession();
-          onSessionTimeoutRef.current();
-        } else {
-          // Tab is active again - reset the timer fresh
-          updateLastActivity();
+      if (document.visibilityState === 'hidden') {
+        // Tab went inactive - record timestamp and start timer
+        localStorage.setItem(LAST_HIDDEN_KEY, String(Date.now()));
+        startTimer(ADMIN_SESSION_DURATION);
+      } else {
+        // Tab came back - check how long it was inactive
+        const hiddenAt = parseInt(localStorage.getItem(LAST_HIDDEN_KEY) || '0', 10);
+        if (hiddenAt > 0) {
+          const elapsed = Date.now() - hiddenAt;
+          if (elapsed >= ADMIN_SESSION_DURATION) {
+            // Session expired while away
+            stopTimer();
+            localStorage.removeItem(LAST_HIDDEN_KEY);
+            onSessionTimeoutRef.current();
+            return;
+          }
         }
+        // Still valid - stop the timer, reset to full
+        stopTimer();
+        localStorage.removeItem(LAST_HIDDEN_KEY);
+        setRemainingMs(ADMIN_SESSION_DURATION);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Check remaining time every second
-    intervalRef.current = setInterval(() => {
-      const lastActivity = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10);
-      const elapsed = Date.now() - lastActivity;
-      const left = ADMIN_SESSION_DURATION - elapsed;
-      if (left <= 0) {
-        clearSession();
-        onSessionTimeoutRef.current();
-      } else {
-        setRemainingMs(left);
-      }
-    }, 1000);
+    // On mount, check if tab is already hidden (e.g., opened in background)
+    if (document.visibilityState === 'hidden') {
+      localStorage.setItem(LAST_HIDDEN_KEY, String(Date.now()));
+      startTimer(ADMIN_SESSION_DURATION);
+    } else {
+      // Tab is active - no timer needed
+      stopTimer();
+      localStorage.removeItem(LAST_HIDDEN_KEY);
+      setRemainingMs(ADMIN_SESSION_DURATION);
+    }
 
     return () => {
-      activityEvents.forEach(event => {
-        window.removeEventListener(event, handleActivity);
-      });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (throttleTimer) clearTimeout(throttleTimer);
+      stopTimer();
     };
-  }, [isSubjectToTimeout, updateLastActivity, clearSession]);
-
-  // On tab close, clear the session_active flag
-  useEffect(() => {
-    if (!isSubjectToTimeout) return;
-
-    const handleBeforeUnload = () => {
-      localStorage.removeItem(SESSION_ACTIVE_KEY);
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isSubjectToTimeout]);
+  }, [isSubjectToTimeout, startTimer, stopTimer]);
 
   return {
     remainingMs,
