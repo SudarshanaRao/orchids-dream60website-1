@@ -518,8 +518,9 @@ const lightBrandStyles = `
 
 const activeBrandStyles = darkBrandStyles;
 
-// Global transporter instance
+// Global transporter instances
 let transporterInstance = null;
+let supportTransporterInstance = null;
 let templateCache = new Map();
 
 // Create reusable transporter with pooling for better performance
@@ -530,25 +531,52 @@ let templateCache = new Map();
         host: process.env.EMAIL_HOST || 'smtp.zoho.in',
         port,
         secure: port === 465,
-      pool: true, // Enable connection pooling
-      maxConnections: 10, // Increased for better throughput
+      pool: true,
+      maxConnections: 10,
       maxMessages: Infinity,
       rateDelta: 1000,
-      rateLimit: 10, // Increased rate limit
-      socketTimeout: 30000, // 30 seconds timeout
-      connectionTimeout: 15000, // 15 seconds connection timeout
+      rateLimit: 10,
+      socketTimeout: 30000,
+      connectionTimeout: 15000,
       greetingTimeout: 15000,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
       tls: {
-        // Do not fail on invalid certs
         rejectUnauthorized: false
       }
     });
   }
   return transporterInstance;
+};
+
+// Create support transporter using noreply@dream60.com credentials
+const createSupportTransporter = () => {
+  if (!supportTransporterInstance) {
+    const port = parseInt(process.env.EMAIL_PORT || '465');
+    supportTransporterInstance = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.zoho.in',
+      port,
+      secure: port === 465,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: Infinity,
+      rateDelta: 1000,
+      rateLimit: 10,
+      socketTimeout: 30000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      auth: {
+        user: process.env.EMAIL_SUPPORT_USER,
+        pass: process.env.EMAIL_SUPPORT_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+  return supportTransporterInstance;
 };
 
 const getPrimaryClientUrl = () => {
@@ -1033,9 +1061,12 @@ const sendPrizeClaimedEmail = async (email, details) => {
  */
 const sendSupportReceiptEmail = async (email, details) => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) return { success: false };
+    if (!process.env.EMAIL_SUPPORT_USER || !process.env.EMAIL_SUPPORT_PASSWORD) {
+      console.warn('⚠️ Support email credentials (EMAIL_SUPPORT_USER) not configured.');
+      return { success: false, message: 'Support email service not configured' };
+    }
 
-    const transporter = createTransporter();
+    const transporter = createSupportTransporter();
     const { username, topic, ticketId } = details;
     const primaryClientUrl = getPrimaryClientUrl();
     const generatedTicketId = ticketId || 'D60-' + Math.floor(Math.random() * 10000);
@@ -1065,7 +1096,7 @@ const sendSupportReceiptEmail = async (email, details) => {
     );
 
     const mailOptions = {
-      from: `"Dream60 Support" <${process.env.EMAIL_USER}>`,
+      from: `"Dream60 Support" <${process.env.EMAIL_SUPPORT_USER}>`,
       to: email,
       subject: subject,
       html: htmlBody,

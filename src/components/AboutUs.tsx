@@ -35,7 +35,6 @@ interface PlatformStats {
   totalWinners: number;
   totalPrizePool: number;
   dailyAuctions: number;
-  totalHourlyAuctions: number;
 }
 
 function AnimatedCounter({ target, prefix = '', suffix = '' }: { target: number; prefix?: string; suffix?: string }) {
@@ -106,14 +105,6 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       suffix: '+',
       icon: <Gavel className="w-6 h-6" />,
       color: 'from-purple-500 to-violet-600',
-    },
-    {
-      label: 'Hourly Auctions Completed',
-      value: stats?.totalHourlyAuctions || 0,
-      prefix: '',
-      suffix: '+',
-      icon: <Clock className="w-6 h-6" />,
-      color: 'from-cyan-500 to-blue-600',
     },
     {
       label: 'Total Winners',

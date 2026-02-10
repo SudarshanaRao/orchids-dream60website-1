@@ -1,5 +1,5 @@
 // src/controllers/contactController.js
-const { sendEmailWithTemplate } = require('../utils/emailService');
+const { sendEmailWithTemplate, sendSupportReceiptEmail } = require('../utils/emailService');
 const SupportTicket = require('../models/SupportTicket');
 
 /**
@@ -137,6 +137,22 @@ const sendContactMessage = async (req, res) => {
       }
     } else {
       console.log(`⚠️ Email service unavailable for ticket ${ticketId}, but ticket saved to DB`);
+    }
+
+    // Send auto-confirmation email to the user via noreply@dream60.com
+    try {
+      const confirmResult = await sendSupportReceiptEmail(email, {
+        username: name,
+        topic: subject,
+        ticketId
+      });
+      if (confirmResult.success) {
+        console.log(`✅ Auto-confirmation email sent to ${email} for ticket ${ticketId}`);
+      } else {
+        console.log(`⚠️ Failed to send confirmation email to ${email}: ${confirmResult.message || 'unknown error'}`);
+      }
+    } catch (confirmErr) {
+      console.error('⚠️ Error sending confirmation email to user:', confirmErr.message);
     }
 
     return res.status(200).json({
