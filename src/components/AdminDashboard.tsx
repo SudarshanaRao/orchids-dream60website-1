@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Users,
   TrendingUp,
-  Trophy,
   IndianRupee,
   LogOut,
     Plus,
@@ -68,10 +67,10 @@ interface Statistics {
   };
   activity: {
     totalAuctions: number;
-    totalWins: number;
     totalAmountSpent: number;
     totalAmountWon: number;
     totalPrizeClaimPayments: number;
+    totalParticipants: number;
   };
   recentUsers: Array<{
     user_id: string;
@@ -93,13 +92,12 @@ interface Statistics {
     totalAuctions: number;
   }>;
 
-  topWinners: Array<{
+  topParticipants: Array<{
     user_id: string;
     username: string;
     email: string;
     userCode: string;
-    totalWins: number;
-    totalAmountWon: number;
+    totalAuctions: number;
   }>;
 
 }
@@ -1188,31 +1186,31 @@ const EditSlotModal = ({
                   <h3 className="text-sm font-semibold text-blue-600">Total Participations</h3>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-amber-100 rounded-lg">
-                      <Trophy className="w-6 h-6 text-amber-700" />
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-amber-100 rounded-lg">
+                        <Users className="w-6 h-6 text-amber-700" />
+                      </div>
+                      <span className="text-2xl font-bold text-amber-900">
+                        {statistics.activity.totalParticipants || 0}
+                      </span>
                     </div>
-                    <span className="text-2xl font-bold text-amber-900">
-                      {statistics.activity.totalWins}
-                    </span>
+                    <h3 className="text-sm font-semibold text-amber-600">Total Participants</h3>
                   </div>
-                  <h3 className="text-sm font-semibold text-amber-600">Total Wins</h3>
-                </div>
 
-                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-amber-100 rounded-lg">
-                      <Ticket className="w-6 h-6 text-amber-700" />
+                  <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="p-3 bg-amber-100 rounded-lg">
+                        <Ticket className="w-6 h-6 text-amber-700" />
+                      </div>
+                      <span className="text-2xl font-bold text-amber-900">
+                        {statistics.activity.totalPrizeClaimPayments
+                          ? `₹${statistics.activity.totalPrizeClaimPayments.toLocaleString()}`
+                          : '₹0'}
+                      </span>
                     </div>
-                    <span className="text-2xl font-bold text-amber-900">
-                      {statistics.activity.totalPrizeClaimPayments
-                        ? `₹${statistics.activity.totalPrizeClaimPayments.toLocaleString()}`
-                        : '₹0'}
-                    </span>
+                    <h3 className="text-sm font-semibold text-amber-600">Prize Claim Payments</h3>
                   </div>
-                  <h3 className="text-sm font-semibold text-amber-600">Prize Claim Payments</h3>
-                </div>
               </div>
 
               {/* Financial Stats */}
@@ -1289,64 +1287,61 @@ const EditSlotModal = ({
                 </div>
               </div>
 
-            {/* Top Performers */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                <h2 className="text-xl font-bold text-purple-900 mb-4">Top Spenders</h2>
-                <div className="space-y-3">
-                  {statistics.topSpenders.slice(0, 5).map((user, index) => (
-                    <div
-                      key={user.user_id}
-                      className="flex items-center justify-between p-3 bg-purple-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-purple-700 rounded-full flex items-center justify-center text-white font-bold">
-                          {index + 1}
+              {/* Top Performers */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                  <h2 className="text-xl font-bold text-purple-900 mb-4">Top Prize Claimers</h2>
+                  <div className="space-y-3">
+                    {statistics.topSpenders.slice(0, 5).map((user, index) => (
+                      <div
+                        key={user.user_id}
+                        className="flex items-center justify-between p-3 bg-purple-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-purple-700 rounded-full flex items-center justify-center text-white font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-purple-900">{user.username}</p>
+                            <p className="text-sm text-purple-600">{user.userCode}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-purple-900">{user.username}</p>
-                          <p className="text-sm text-purple-600">{user.userCode}</p>
+                        <div className="text-right">
+                          <p className="font-bold text-purple-900">
+                            ₹{user.totalAmountSpent.toLocaleString()}
+                          </p>
+                          <p className="text-sm text-purple-600">{user.totalAuctions} claims</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-purple-900">
-                          ₹{user.totalAmountSpent.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-purple-600">{user.totalAuctions} auctions</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
-                <h2 className="text-xl font-bold text-green-900 mb-4">Top Winners</h2>
-                <div className="space-y-3">
-                  {statistics.topWinners.slice(0, 5).map((user, index) => (
-                    <div
-                      key={user.user_id}
-                      className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-white font-bold">
-                          {index + 1}
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
+                  <h2 className="text-xl font-bold text-green-900 mb-4">Top Participants</h2>
+                  <div className="space-y-3">
+                    {statistics.topParticipants.slice(0, 5).map((user, index) => (
+                      <div
+                        key={user.user_id}
+                        className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-white font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-green-900">{user.username}</p>
+                            <p className="text-sm text-green-600">{user.userCode}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-green-900">{user.username}</p>
-                          <p className="text-sm text-green-600">{user.userCode}</p>
+                        <div className="text-right">
+                          <p className="font-bold text-green-900">{user.totalAuctions} auctions</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-900">{user.totalWins} wins</p>
-                        <p className="text-sm text-green-600">
-                          ₹{user.totalAmountWon.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
           </div>
         )}
 
