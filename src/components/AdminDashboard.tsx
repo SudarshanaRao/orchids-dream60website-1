@@ -501,7 +501,19 @@ const EditSlotModal = ({
       return 'overview';
     };
 
-    const [activeTab, setActiveTab] = useState<TabType>(getInitialTab);
+    const [activeTab, setActiveTabRaw] = useState<TabType>(getInitialTab);
+    const setActiveTab = useCallback((tab: TabType) => {
+      setActiveTabRaw(tab);
+      localStorage.setItem('admin_active_tab', tab);
+      window.location.hash = tab;
+    }, []);
+
+    // Sync on mount (in case getInitialTab read from localStorage but hash is stale)
+    useEffect(() => {
+      localStorage.setItem('admin_active_tab', activeTab);
+      window.location.hash = activeTab;
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const [statistics, setStatistics] = useState<Statistics | null>(null);
     const [masterAuctions, setMasterAuctions] = useState<MasterAuction[]>([]);
     const [isLoading, setIsLoading] = useState(true);

@@ -641,7 +641,7 @@ const sendManualVoucher = async (req, res) => {
         const admin = await verifyAdmin(adminId);
         if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
-        const { claimId, voucherAmount, giftCardCode, paymentAmount, redeemLink } = req.body;
+        const { claimId, voucherAmount, giftCardCode, paymentAmount, redeemLink, forceResend } = req.body;
 
         if (!claimId || !voucherAmount || !giftCardCode) {
             return res.status(400).json({
@@ -668,11 +668,8 @@ const sendManualVoucher = async (req, res) => {
             return res.status(400).json({ success: false, message: 'User has not completed the claim process or payment' });
         }
 
-        // 2. Check if already issued
+        // 2. Check if already issued - allow update if forceResend is true
         const existingVoucher = await Voucher.findOne({ claimId });
-        if (existingVoucher) {
-            return res.status(400).json({ success: false, message: 'Voucher already issued for this claim' });
-        }
 
         // 3. Get user details
         const user = await User.findOne({ user_id: historyEntry.userId });
@@ -680,21 +677,38 @@ const sendManualVoucher = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        // 4. Create Voucher document
-        const voucher = new Voucher({
-            userId: user.user_id,
-            claimId: claimId,
-            auctionId: historyEntry.hourlyAuctionId || '',
-            source: 'manual',
-            amount: parsedAmount,
-            cardNumber: giftCardCode,
-            activationUrl: redeemLink || 'https://www.amazon.in/gc/redeem',
-            status: 'complete',
-            sentToUser: true,
-            sentAt: new Date()
-        });
+        let voucher;
 
-        await voucher.save();
+        if (existingVoucher) {
+            if (!forceResend) {
+                return res.status(400).json({ success: false, message: 'Voucher already issued for this claim' });
+            }
+            // Update existing voucher with new details
+            existingVoucher.amount = parsedAmount;
+            existingVoucher.cardNumber = giftCardCode;
+            existingVoucher.activationUrl = redeemLink || 'https://www.amazon.in/gc/redeem';
+            existingVoucher.status = 'complete';
+            existingVoucher.sentToUser = true;
+            existingVoucher.sentAt = new Date();
+            existingVoucher.source = 'manual';
+            await existingVoucher.save();
+            voucher = existingVoucher;
+        } else {
+            // 4. Create new Voucher document
+            voucher = new Voucher({
+                userId: user.user_id,
+                claimId: claimId,
+                auctionId: historyEntry.hourlyAuctionId || '',
+                source: 'manual',
+                amount: parsedAmount,
+                cardNumber: giftCardCode,
+                activationUrl: redeemLink || 'https://www.amazon.in/gc/redeem',
+                status: 'complete',
+                sentToUser: true,
+                sentAt: new Date()
+            });
+            await voucher.save();
+        }
 
         // 5. Send email notification (optional)
         if (user.email) {

@@ -269,13 +269,14 @@ export const AdminVoucherManagement = ({ adminUserId }: AdminVoucherManagementPr
       const response = await fetch(`${API_BASE_URL}/admin/vouchers/send-manual?user_id=${adminUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          claimId: manualVoucherWinner._id,
-          voucherAmount,
-          giftCardCode: GiftCardCode,
-          paymentAmount,
-          redeemLink: redeem_link,
-        }),
+          body: JSON.stringify({
+            claimId: manualVoucherWinner._id,
+            voucherAmount,
+            giftCardCode: GiftCardCode,
+            paymentAmount,
+            redeemLink: redeem_link,
+            forceResend: true,
+          }),
       });
 
       const data = await response.json();
