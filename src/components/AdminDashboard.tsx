@@ -64,12 +64,14 @@ interface Statistics {
     activeUsers: number;
     deletedUsers: number;
     adminUsers: number;
+    totalHourlyAuctions: number;
   };
   activity: {
     totalAuctions: number;
     totalWins: number;
     totalAmountSpent: number;
     totalAmountWon: number;
+    totalPrizeClaimPayments: number;
   };
   recentUsers: Array<{
     user_id: string;
@@ -1105,72 +1107,125 @@ const EditSlotModal = ({
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {activeTab === 'overview' && statistics && (
-          <div className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Users className="w-6 h-6 text-purple-700" />
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-8">
+          {activeTab === 'overview' && statistics && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <Users className="w-6 h-6 text-purple-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-purple-900">
+                      {statistics.overview.totalUsers}
+                    </span>
                   </div>
-                  <span className="text-2xl font-bold text-purple-900">
-                    {statistics.overview.totalUsers}
-                  </span>
+                  <h3 className="text-sm font-semibold text-purple-600">Total Users</h3>
                 </div>
-                <h3 className="text-sm font-semibold text-purple-600">Total Users</h3>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <UserCheck className="w-6 h-6 text-green-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-green-900">
+                      {statistics.overview.activeUsers}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-green-600">Active Users</h3>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-red-100 rounded-lg">
+                      <UserX className="w-6 h-6 text-red-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-red-900">
+                      {statistics.overview.deletedUsers}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-red-600">Deleted Users</h3>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-indigo-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-indigo-100 rounded-lg">
+                      <Shield className="w-6 h-6 text-indigo-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-indigo-900">
+                      {statistics.overview.adminUsers}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-indigo-600">Admin Users</h3>
+                </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <UserCheck className="w-6 h-6 text-green-700" />
+              {/* Activity Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <Clock className="w-6 h-6 text-blue-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-blue-900">
+                      {statistics.overview.totalHourlyAuctions || 0}
+                    </span>
                   </div>
-                  <span className="text-2xl font-bold text-green-900">
-                    {statistics.overview.activeUsers}
-                  </span>
+                  <h3 className="text-sm font-semibold text-blue-600">Total Hourly Auctions</h3>
                 </div>
-                <h3 className="text-sm font-semibold text-green-600">Active Users</h3>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-blue-100 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-blue-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-blue-900">
+                      {statistics.activity.totalAuctions}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-blue-600">Total Participations</h3>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-amber-100 rounded-lg">
+                      <Trophy className="w-6 h-6 text-amber-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-amber-900">
+                      {statistics.activity.totalWins}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-amber-600">Total Wins</h3>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-amber-100 rounded-lg">
+                      <Ticket className="w-6 h-6 text-amber-700" />
+                    </div>
+                    <span className="text-2xl font-bold text-amber-900">
+                      {statistics.activity.totalPrizeClaimPayments
+                        ? `₹${statistics.activity.totalPrizeClaimPayments.toLocaleString()}`
+                        : '₹0'}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-amber-600">Prize Claim Payments</h3>
+                </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <TrendingUp className="w-6 h-6 text-blue-700" />
-                  </div>
-                  <span className="text-2xl font-bold text-blue-900">
-                    {statistics.activity.totalAuctions}
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-blue-600">Total Auctions</h3>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <Trophy className="w-6 h-6 text-amber-700" />
-                  </div>
-                  <span className="text-2xl font-bold text-amber-900">
-                    {statistics.activity.totalWins}
-                  </span>
-                </div>
-                <h3 className="text-sm font-semibold text-amber-600">Total Wins</h3>
-              </div>
-            </div>
-
-            {/* Financial Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-<div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+              {/* Financial Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-3 bg-purple-100 rounded-lg">
                       <IndianRupee className="w-6 h-6 text-purple-700" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-purple-600">Total Amount Spent</h3>
+                      <h3 className="text-sm font-semibold text-purple-600">Total Amount Spent by Users</h3>
                       <p className="text-3xl font-bold text-purple-900">
-                        {statistics.activity.totalAmountSpent.toLocaleString()}
+                        ₹{statistics.activity.totalAmountSpent.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -1182,49 +1237,57 @@ const EditSlotModal = ({
                       <IndianRupee className="w-6 h-6 text-green-700" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-green-600">Total Amount Won</h3>
+                      <h3 className="text-sm font-semibold text-green-600">Total Amount Won (Claimed)</h3>
                       <p className="text-3xl font-bold text-green-900">
-                        {statistics.activity.totalAmountWon.toLocaleString()}
+                        ₹{statistics.activity.totalAmountWon.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </div>
-            </div>
-
-            {/* Recent Users */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-              <h2 className="text-xl font-bold text-purple-900 mb-4">Recent Users</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-purple-200">
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Mobile</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Joined</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
-                      <th className="text-left py-3 px-4 text-purple-700 font-semibold">Wins</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {statistics.recentUsers.map((user) => (
-                      <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
-                        <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
-                        <td className="py-3 px-4">{user.username}</td>
-                        <td className="py-3 px-4 text-sm">{user.email}</td>
-                        <td className="py-3 px-4">{user.mobile}</td>
-                        <td className="py-3 px-4 text-sm">
-                          {new Date(user.joinedAt).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">{user.totalAuctions}</td>
-                        <td className="py-3 px-4">{user.totalWins}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            </div>
+
+              {/* Recent Users */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-purple-900">Recent Users</h2>
+                  <button
+                    onClick={() => setActiveTab('users')}
+                    className="text-sm font-semibold text-purple-600 hover:text-purple-800 hover:underline transition-colors"
+                  >
+                    See All →
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-purple-200">
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">User Code</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Username</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Email</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Mobile</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Joined</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Auctions</th>
+                        <th className="text-left py-3 px-4 text-purple-700 font-semibold">Wins</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statistics.recentUsers.map((user) => (
+                        <tr key={user.user_id} className="border-b border-purple-100 hover:bg-purple-50">
+                          <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
+                          <td className="py-3 px-4">{user.username}</td>
+                          <td className="py-3 px-4 text-sm">{user.email}</td>
+                          <td className="py-3 px-4">{user.mobile}</td>
+                          <td className="py-3 px-4 text-sm">
+                            {new Date(user.joinedAt).toLocaleDateString()}
+                          </td>
+                          <td className="py-3 px-4">{user.totalAuctions}</td>
+                          <td className="py-3 px-4">{user.totalWins}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
             {/* Top Performers */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

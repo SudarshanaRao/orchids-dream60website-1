@@ -210,7 +210,7 @@ const adminSignup = async (req, res) => {
 };
 
 /**
- * Get User Statistics
+ * Get User Statistics - pulls real data from collections
  */
 const getUserStatistics = async (req, res) => {
   try {
@@ -224,60 +224,195 @@ const getUserStatistics = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Admin privileges required.' });
     }
 
-    const statsPromises = [
+    // --- Overview: from User + Admin collections ---
+    const [totalUsers, activeUsers, deletedUsers, adminUsers] = await Promise.all([
       User.countDocuments({ isDeleted: false }).catch(() => 0),
       User.countDocuments({ isDeleted: false, userType: 'USER' }).catch(() => 0),
       User.countDocuments({ isDeleted: true }).catch(() => 0),
-      User.aggregate([{ $match: { isDeleted: false } }, { $group: { _id: null, total: { $sum: '$totalAuctions' } } }]).catch(() => []),
-      User.aggregate([{ $match: { isDeleted: false } }, { $group: { _id: null, total: { $sum: '$totalWins' } } }]).catch(() => []),
-      User.aggregate([{ $match: { isDeleted: false } }, { $group: { _id: null, total: { $sum: '$totalAmountSpent' } } }]).catch(() => []),
-      User.aggregate([{ $match: { isDeleted: false } }, { $group: { _id: null, total: { $sum: '$totalAmountWon' } } }]).catch(() => []),
-      User.find({ isDeleted: false }).sort({ createdAt: -1 }).limit(10).select('user_id username email mobile userCode createdAt totalAuctions totalWins').lean().catch(() => []),
-      User.find({ isDeleted: false }).sort({ totalAmountSpent: -1 }).limit(10).select('user_id username email userCode totalAmountSpent totalAuctions').lean().catch(() => []),
-      User.find({ isDeleted: false }).sort({ totalWins: -1 }).limit(10).select('user_id username email userCode totalWins totalAmountWon').lean().catch(() => []),
-    ];
+      Admin.countDocuments({ isActive: true }).catch(() => 0),
+    ]);
 
-    const [totalUsers, activeUsers, deletedUsers, totalAuctions, totalWins, totalAmountSpent, totalAmountWon, recentUsers, topSpenders, topWinners] = await Promise.all(statsPromises);
+    // --- Activity: from AuctionHistory, HourlyAuction, AirpayPayment ---
+    const [
+      auctionHistoryStats,
+      totalHourlyAuctions,
+      totalAmountSpentAgg,
+      prizeclaimTotalAgg,
+    ] = await Promise.all([
+      // Aggregate wins and total auction participations from AuctionHistory
+      AuctionHistory.aggregate([
+        { $match: { auctionStatus: 'COMPLETED' } },
+        {
+          $group: {
+            _id: null,
+            totalParticipations: { $sum: 1 },
+            totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
+            totalAmountWon: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                  '$prizeAmountWon',
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]).catch(() => []),
+
+      // Total hourly auctions count
+      HourlyAuction.countDocuments({}).catch(() => 0),
+
+      // Total amount spent by users (successful payments only)
+      AirpayPayment.aggregate([
+        { $match: { status: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]).catch(() => []),
+
+      // Total prize claim payments (PRIZE_CLAIM type, paid)
+      AirpayPayment.aggregate([
+        { $match: { status: 'paid', paymentType: 'PRIZE_CLAIM' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]).catch(() => []),
+    ]);
+
+    const histStats = auctionHistoryStats[0] || {};
+
+    // --- Recent Users: from User collection ---
+    const recentUsers = await User.find({ isDeleted: false })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('user_id username email mobile userCode createdAt')
+      .lean()
+      .catch(() => []);
+
+    // Enrich recent users with real auction stats from AuctionHistory
+    const recentUserIds = (recentUsers || []).map(u => u.user_id);
+    const recentUserStats = recentUserIds.length > 0
+      ? await AuctionHistory.aggregate([
+          { $match: { userId: { $in: recentUserIds }, auctionStatus: 'COMPLETED' } },
+          {
+            $group: {
+              _id: '$userId',
+              totalAuctions: { $sum: 1 },
+              totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
+            },
+          },
+        ]).catch(() => [])
+      : [];
+    const recentStatsMap = {};
+    for (const s of recentUserStats) {
+      recentStatsMap[s._id] = s;
+    }
+
+    // --- Top Spenders: from AirpayPayment (successful payments) ---
+    const topSpendersAgg = await AirpayPayment.aggregate([
+      { $match: { status: 'paid' } },
+      {
+        $group: {
+          _id: '$userId',
+          totalAmountSpent: { $sum: '$amount' },
+          totalAuctions: { $addToSet: '$auctionId' },
+        },
+      },
+      { $sort: { totalAmountSpent: -1 } },
+      { $limit: 10 },
+      {
+        $project: {
+          _id: 1,
+          totalAmountSpent: 1,
+          totalAuctions: { $size: '$totalAuctions' },
+        },
+      },
+    ]).catch(() => []);
+
+    // Enrich top spenders with user details
+    const spenderUserIds = topSpendersAgg.map(s => s._id);
+    const spenderUsers = spenderUserIds.length > 0
+      ? await User.find({ user_id: { $in: spenderUserIds } }).select('user_id username email userCode').lean().catch(() => [])
+      : [];
+    const spenderUserMap = {};
+    for (const u of spenderUsers) {
+      spenderUserMap[u.user_id] = u;
+    }
+
+    // --- Top Winners: from AuctionHistory (actual wins) ---
+    const topWinnersAgg = await AuctionHistory.aggregate([
+      { $match: { isWinner: true, auctionStatus: 'COMPLETED' } },
+      {
+        $group: {
+          _id: '$userId',
+          totalWins: { $sum: 1 },
+          totalAmountWon: {
+            $sum: {
+              $cond: [{ $eq: ['$prizeClaimStatus', 'CLAIMED'] }, '$prizeAmountWon', 0],
+            },
+          },
+        },
+      },
+      { $sort: { totalWins: -1 } },
+      { $limit: 10 },
+    ]).catch(() => []);
+
+    const winnerUserIds = topWinnersAgg.map(w => w._id);
+    const winnerUsers = winnerUserIds.length > 0
+      ? await User.find({ user_id: { $in: winnerUserIds } }).select('user_id username email userCode').lean().catch(() => [])
+      : [];
+    const winnerUserMap = {};
+    for (const u of winnerUsers) {
+      winnerUserMap[u.user_id] = u;
+    }
 
     const statistics = {
       overview: {
         totalUsers,
         activeUsers,
         deletedUsers,
-        adminUsers: await User.countDocuments({ userType: 'ADMIN' }).catch(() => 0),
+        adminUsers,
+        totalHourlyAuctions,
       },
       activity: {
-        totalAuctions: totalAuctions[0]?.total || 0,
-        totalWins: totalWins[0]?.total || 0,
-        totalAmountSpent: totalAmountSpent[0]?.total || 0,
-        totalAmountWon: totalAmountWon[0]?.total || 0,
+        totalAuctions: histStats.totalParticipations || 0,
+        totalWins: histStats.totalWins || 0,
+        totalAmountSpent: totalAmountSpentAgg[0]?.total || 0,
+        totalAmountWon: histStats.totalAmountWon || 0,
+        totalPrizeClaimPayments: prizeclaimTotalAgg[0]?.total || 0,
       },
-      recentUsers: (recentUsers || []).map(u => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        mobile: u.mobile,
-        userCode: u.userCode,
-        joinedAt: u.createdAt,
-        totalAuctions: u.totalAuctions || 0,
-        totalWins: u.totalWins || 0,
-      })),
-      topSpenders: (topSpenders || []).map(u => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        userCode: u.userCode,
-        totalAmountSpent: u.totalAmountSpent || 0,
-        totalAuctions: u.totalAuctions || 0,
-      })),
-      topWinners: (topWinners || []).map(u => ({
-        user_id: u.user_id,
-        username: u.username,
-        email: u.email,
-        userCode: u.userCode,
-        totalWins: u.totalWins || 0,
-        totalAmountWon: u.totalAmountWon || 0,
-      })),
+      recentUsers: (recentUsers || []).map(u => {
+        const s = recentStatsMap[u.user_id] || {};
+        return {
+          user_id: u.user_id,
+          username: u.username,
+          email: u.email,
+          mobile: u.mobile,
+          userCode: u.userCode,
+          joinedAt: u.createdAt,
+          totalAuctions: s.totalAuctions || 0,
+          totalWins: s.totalWins || 0,
+        };
+      }),
+      topSpenders: topSpendersAgg.map(s => {
+        const u = spenderUserMap[s._id] || {};
+        return {
+          user_id: s._id,
+          username: u.username || 'Unknown',
+          email: u.email || '',
+          userCode: u.userCode || '',
+          totalAmountSpent: s.totalAmountSpent || 0,
+          totalAuctions: s.totalAuctions || 0,
+        };
+      }),
+      topWinners: topWinnersAgg.map(w => {
+        const u = winnerUserMap[w._id] || {};
+        return {
+          user_id: w._id,
+          username: u.username || 'Unknown',
+          email: u.email || '',
+          userCode: u.userCode || '',
+          totalWins: w.totalWins || 0,
+          totalAmountWon: w.totalAmountWon || 0,
+        };
+      }),
     };
 
     return res.status(200).json({ success: true, data: statistics });
@@ -319,16 +454,67 @@ const getAllUsersAdmin = async (req, res) => {
     const p = Math.max(parseInt(page, 10) || 1, 1);
     const skip = (p - 1) * l;
 
-    const [users, total] = await Promise.all([
-      User.find(query).sort({ createdAt: -1 }).skip(skip).limit(l).select('-password').lean(),
-      User.countDocuments(query),
-    ]);
+      const [users, total] = await Promise.all([
+        User.find(query).sort({ createdAt: -1 }).skip(skip).limit(l).select('-password').lean(),
+        User.countDocuments(query),
+      ]);
 
-    return res.status(200).json({
-      success: true,
-      data: users,
-      meta: { total, page: p, limit: l, pages: Math.ceil(total / l) },
-    });
+      // Enrich users with real stats from AuctionHistory and AirpayPayment
+      const userIds = users.map(u => u.user_id);
+      const [auctionStats, spentStats] = await Promise.all([
+        // Auction participations and wins from AuctionHistory
+        userIds.length > 0
+          ? AuctionHistory.aggregate([
+              { $match: { userId: { $in: userIds }, auctionStatus: 'COMPLETED' } },
+              {
+                $group: {
+                  _id: '$userId',
+                  totalAuctions: { $sum: 1 },
+                  totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
+                  totalAmountWon: {
+                    $sum: {
+                      $cond: [
+                        { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                        '$prizeAmountWon',
+                        0,
+                      ],
+                    },
+                  },
+                },
+              },
+            ]).catch(() => [])
+          : [],
+        // Total amount spent from successful payments (AirpayPayment)
+        userIds.length > 0
+          ? AirpayPayment.aggregate([
+              { $match: { userId: { $in: userIds }, status: 'paid' } },
+              { $group: { _id: '$userId', totalAmountSpent: { $sum: '$amount' } } },
+            ]).catch(() => [])
+          : [],
+      ]);
+
+      const auctionStatsMap = {};
+      for (const s of auctionStats) auctionStatsMap[s._id] = s;
+      const spentStatsMap = {};
+      for (const s of spentStats) spentStatsMap[s._id] = s;
+
+      const enrichedUsers = users.map(u => {
+        const aStats = auctionStatsMap[u.user_id] || {};
+        const sStats = spentStatsMap[u.user_id] || {};
+        return {
+          ...u,
+          totalAuctions: aStats.totalAuctions || 0,
+          totalWins: aStats.totalWins || 0,
+          totalAmountWon: aStats.totalAmountWon || 0,
+          totalAmountSpent: sStats.totalAmountSpent || 0,
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: enrichedUsers,
+        meta: { total, page: p, limit: l, pages: Math.ceil(total / l) },
+      });
   } catch (err) {
     console.error('Get All Users Admin Error:', err);
     return res.status(500).json({ success: false, message: 'Server error fetching users' });
