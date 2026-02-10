@@ -215,9 +215,25 @@ app.use('/user-activity', userActivityRoutes);
 let schedulerJobs = null;
 
 connectDB()
-  .then(() => {
+  .then(async () => {
     console.log(`✅ MongoDB connected successfully`);
-    
+
+    // Migrate: drop the old sparse unique index on woohooOrderId that blocks manual vouchers
+    try {
+      const voucherCollection = mongoose.connection.collection('vouchers');
+      const indexes = await voucherCollection.indexes();
+      const oldIndex = indexes.find(idx => idx.name === 'woohooOrderId_1' && idx.sparse === true);
+      if (oldIndex) {
+        await voucherCollection.dropIndex('woohooOrderId_1');
+        console.log('✅ Dropped old woohooOrderId_1 sparse index (replaced by partial filter index)');
+      }
+    } catch (indexErr) {
+      // Index may not exist or already dropped — safe to ignore
+      if (indexErr.codeName !== 'IndexNotFound') {
+        console.warn('⚠️ Could not drop old woohooOrderId index:', indexErr.message);
+      }
+    }
+
     // ✅ Wait a moment for connection to stabilize before initializing scheduler
     setTimeout(() => {
       if (isConnected()) {

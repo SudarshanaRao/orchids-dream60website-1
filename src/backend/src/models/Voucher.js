@@ -29,8 +29,7 @@ const VoucherSchema = new mongoose.Schema(
         },
         woohooOrderId: {
             type: String,
-            unique: true,
-            sparse: true
+            default: undefined
         },
         sku: {
             type: String
@@ -93,5 +92,12 @@ VoucherSchema.pre('save', function (next) {
     }
     next();
 });
+
+// Unique index on woohooOrderId only when it exists (not null/undefined)
+// This replaces the old sparse unique index that incorrectly blocked multiple null values
+VoucherSchema.index(
+    { woohooOrderId: 1 },
+    { unique: true, partialFilterExpression: { woohooOrderId: { $type: 'string' } } }
+);
 
 module.exports = mongoose.model('Voucher', VoucherSchema);
