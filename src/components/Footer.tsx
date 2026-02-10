@@ -15,8 +15,7 @@ export function Footer({ onNavigate }: FooterProps) {
             { label: 'How to Play', action: 'view-guide' },
             { label: 'Winning Tips', action: 'winning-tips' },
             { label: 'Auction Rules', action: 'rules' },
-            { label: 'Play Guide', action: 'participation' },
-            { label: 'Coming Soon', action: 'coming-soon' }
+            { label: 'Play Guide', action: 'participation' }
           ]
 
       },

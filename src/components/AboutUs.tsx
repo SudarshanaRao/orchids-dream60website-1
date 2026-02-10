@@ -35,6 +35,7 @@ interface PlatformStats {
   totalWinners: number;
   totalPrizePool: number;
   dailyAuctions: number;
+  totalHourlyAuctions: number;
 }
 
 function AnimatedCounter({ target, prefix = '', suffix = '' }: { target: number; prefix?: string; suffix?: string }) {
@@ -89,7 +90,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
     fetchStats();
   }, []);
 
-  const liveStats = [
+  const platformStats = [
     {
       label: 'Registered Users',
       value: stats?.totalUsers || 0,
@@ -97,7 +98,6 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       suffix: '+',
       icon: <Users className="w-6 h-6" />,
       color: 'from-blue-500 to-indigo-600',
-      bg: 'bg-blue-50',
     },
     {
       label: 'Auctions Completed',
@@ -106,7 +106,14 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       suffix: '+',
       icon: <Gavel className="w-6 h-6" />,
       color: 'from-purple-500 to-violet-600',
-      bg: 'bg-purple-50',
+    },
+    {
+      label: 'Hourly Auctions Completed',
+      value: stats?.totalHourlyAuctions || 0,
+      prefix: '',
+      suffix: '+',
+      icon: <Clock className="w-6 h-6" />,
+      color: 'from-cyan-500 to-blue-600',
     },
     {
       label: 'Total Winners',
@@ -115,7 +122,6 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       suffix: '+',
       icon: <Trophy className="w-6 h-6" />,
       color: 'from-amber-500 to-orange-600',
-      bg: 'bg-amber-50',
     },
     {
       label: 'Prize Pool Distributed',
@@ -124,7 +130,6 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       suffix: '+',
       icon: <IndianRupee className="w-6 h-6" />,
       color: 'from-emerald-500 to-green-600',
-      bg: 'bg-emerald-50',
     },
   ];
 
@@ -163,8 +168,8 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
       gradient: 'from-emerald-400 to-teal-600',
     },
     {
-      title: 'Skill-Based Winning',
-      description: 'Unlike luck-based games, Dream60 rewards strategy, timing, and smart bidding. Everyone has a fair chance.',
+      title: 'Purely Auction-Based',
+      description: 'Dream60 is a real-time auction platform. Place strategic bids across 4 rounds and the highest bidder wins. No luck involved.',
       icon: <Target className="w-6 h-6" />,
       gradient: 'from-amber-400 to-orange-600',
     },
@@ -243,25 +248,25 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
                 At Unbelievable Prices
               </span>
             </h1>
-            <p className="text-white/80 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
-              Dream60 is a real-time, skill-based live auction platform where users bid strategically 
-              to win premium products. Pay a small entry fee, place smart bids, and win big.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Live Auctions</Badge>
-              <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Skill-Based</Badge>
-              <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Verified Winners</Badge>
-              <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Instant Rewards</Badge>
-            </div>
+              <p className="text-white/80 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
+                Dream60 is a real-time live auction platform where users bid strategically 
+                to win premium products. Pay a small entry fee, place smart bids, and win big.
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Live Auctions</Badge>
+                <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Auction-Based</Badge>
+                <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Verified Winners</Badge>
+                <Badge className="bg-white/15 text-white border-white/20 px-4 py-2 text-sm">Instant Rewards</Badge>
+              </div>
           </motion.div>
         </div>
       </section>
 
       <div className="container mx-auto max-w-6xl px-4">
-        {/* Live Stats Section */}
+        {/* Stats Section */}
         <section className="-mt-12 relative z-20 mb-20">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
-            {liveStats.map((stat, index) => (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-5">
+            {platformStats.map((stat, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
@@ -281,10 +286,6 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
                     </div>
                   )}
                   <div className="text-xs sm:text-sm text-slate-500 font-bold uppercase tracking-tight">{stat.label}</div>
-                  <div className="mt-2 flex items-center justify-center gap-1">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] text-green-600 font-semibold">LIVE</span>
-                  </div>
                 </Card>
               </motion.div>
             ))}
@@ -319,7 +320,7 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
               </div>
               <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
                 Dream60 is India's pioneering <strong className="text-slate-800">live auction platform</strong> that runs premium hourly auctions daily. 
-                Unlike traditional e-commerce or luck-based games, Dream60 is purely <strong className="text-slate-800">skill and strategy-based</strong>.
+                Dream60 is purely <strong className="text-slate-800">auction-based</strong> - bid smart, bid high, and win.
               </p>
               <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
                 Each auction features real products with real market value. Users pay a small entry fee, 
@@ -493,9 +494,9 @@ export function AboutUs({ onBack, onNavigate }: AboutUsProps) {
                     <span className="font-bold text-slate-900 text-sm sm:text-base">Platform Type</span>
                   </div>
                   <p className="text-slate-600 text-xs sm:text-sm pl-8">
-                    Skill-based Live Auction Platform<br />
-                    Licensed & Regulated in India
-                  </p>
+                      Live Auction Platform<br />
+                      Licensed & Regulated in India
+                    </p>
                 </div>
                 <div className="p-4 sm:p-5 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-100">
                   <div className="flex items-center gap-3 mb-2">

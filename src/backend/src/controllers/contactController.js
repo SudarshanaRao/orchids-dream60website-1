@@ -1,9 +1,10 @@
 // src/controllers/contactController.js
 const { sendEmailWithTemplate } = require('../utils/emailService');
+const SupportTicket = require('../models/SupportTicket');
 
 /**
  * Send Contact Form Message
- * Receives contact form data and sends an email to the support team
+ * Receives contact form data, saves a support ticket to DB, and sends email to support@dream60.com
  */
 const sendContactMessage = async (req, res) => {
   try {
@@ -26,8 +27,8 @@ const sendContactMessage = async (req, res) => {
       });
     }
 
-    // Recipient email - Dream60 official support
-    const supportEmail = 'dream60.official@gmail.com';
+    // Recipient email
+    const supportEmail = 'support@dream60.com';
 
     // Category labels for display
     const categoryLabels = {
@@ -40,18 +41,11 @@ const sendContactMessage = async (req, res) => {
       partnership: 'Business Partnership',
       press: 'Press & Media',
       legal: 'Legal & Compliance',
+      support: 'Support',
       other: 'Other',
     };
 
     const categoryLabel = categoryLabels[category] || category;
-
-    // Log the contact form submission (this always works)
-    console.log('📩 New Contact Form Submission:');
-    console.log(`   From: ${name} <${email}>`);
-    console.log(`   Category: ${categoryLabel}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   Message: ${message}`);
-    console.log(`   Timestamp: ${new Date().toISOString()}`);
 
     const ticketId = `D60-${Math.floor(10000 + Math.random() * 90000)}`;
     const submittedAt = new Date().toLocaleString('en-IN', {
@@ -60,6 +54,55 @@ const sendContactMessage = async (req, res) => {
       timeZone: 'Asia/Kolkata'
     });
 
+    // Determine source based on category
+    const source = category === 'support' ? 'support_form' : 'contact_form';
+
+    // Determine priority based on category
+    let priority = 'medium';
+    if (['payment', 'account'].includes(category)) priority = 'high';
+    if (['feedback', 'partnership', 'press'].includes(category)) priority = 'low';
+
+    // Look up userId if user is logged in (by email)
+    let userId = null;
+    try {
+      const User = require('../models/user');
+      const existingUser = await User.findOne({ email: email.toLowerCase() }).select('_id').lean();
+      if (existingUser) userId = existingUser._id;
+    } catch (e) {
+      // Non-critical - proceed without userId
+    }
+
+    // Save support ticket to database
+    let savedTicket = null;
+    try {
+      savedTicket = await SupportTicket.create({
+        ticketId,
+        userId,
+        name,
+        email,
+        subject,
+        category,
+        message,
+        status: 'open',
+        priority,
+        source,
+        emailSent: false
+      });
+      console.log(`📝 Support ticket ${ticketId} saved to database`);
+    } catch (dbErr) {
+      console.error('⚠️ Failed to save support ticket to DB:', dbErr.message);
+    }
+
+    // Log the submission
+    console.log('📩 New Support Ticket:');
+    console.log(`   Ticket ID: ${ticketId}`);
+    console.log(`   From: ${name} <${email}>`);
+    console.log(`   Category: ${categoryLabel}`);
+    console.log(`   Subject: ${subject}`);
+    console.log(`   Source: ${source}`);
+    console.log(`   Timestamp: ${new Date().toISOString()}`);
+
+    // Send email to support@dream60.com
     const result = await sendEmailWithTemplate(
       supportEmail,
       'Support Ticket',
@@ -87,16 +130,19 @@ const sendContactMessage = async (req, res) => {
     );
 
     if (result.success) {
-      console.log(`✅ Contact form email sent successfully from ${email} to ${supportEmail}`);
+      console.log(`✅ Support email sent to ${supportEmail} for ticket ${ticketId}`);
+      // Update ticket emailSent status
+      if (savedTicket) {
+        await SupportTicket.updateOne({ _id: savedTicket._id }, { emailSent: true });
+      }
     } else {
-      // Log failure but don't fail the request - the contact info is logged above
-      console.log(`⚠️ Email service unavailable, but contact form logged successfully`);
+      console.log(`⚠️ Email service unavailable for ticket ${ticketId}, but ticket saved to DB`);
     }
 
-    // Always return success to the user - their message has been recorded
     return res.status(200).json({
       success: true,
       message: "Your message has been sent successfully. We'll get back to you within 24 hours.",
+      ticketId
     });
   } catch (err) {
     console.error('Send Contact Message Error:', err);
