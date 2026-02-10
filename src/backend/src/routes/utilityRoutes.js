@@ -1,7 +1,7 @@
 // src/routes/utilityRoutes.js 
 const express = require('express');
 const router = express.Router();
-const { getServerTime } = require('../controllers/utilityController');
+const { getServerTime, getPlatformStats } = require('../controllers/utilityController');
 
 /**
  * @swagger
@@ -123,5 +123,6 @@ const { getServerTime } = require('../controllers/utilityController');
  *                   example: "Internal server error"
  */
 router.get('/server-time', getServerTime);
+router.get('/platform-stats', getPlatformStats);
 
 module.exports = router;

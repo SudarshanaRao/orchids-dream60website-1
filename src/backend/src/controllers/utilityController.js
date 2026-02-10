@@ -1,7 +1,10 @@
 /**
  * Utility Controller
- * Provides utility endpoints like server time
+ * Provides utility endpoints like server time and platform stats
  */
+const User = require('../models/user');
+const AuctionHistory = require('../models/AuctionHistory');
+const HourlyAuction = require('../models/HourlyAuction');
 
 /**
  * Get current server time in IST (Indian Standard Time)
@@ -54,6 +57,61 @@ const getServerTime = async (req, res) => {
   }
 };
 
+/**
+ * Get public platform statistics for About Us page
+ * @route GET /utility/platform-stats
+ */
+const getPlatformStats = async (req, res) => {
+  try {
+    const [
+      totalUsers,
+      totalCompletedAuctions,
+      winnerStats,
+      todayAuctions,
+    ] = await Promise.all([
+      User.countDocuments({ isDeleted: { $ne: true } }),
+      HourlyAuction.countDocuments({ status: 'COMPLETED' }),
+      AuctionHistory.aggregate([
+        { $match: { isWinner: true, prizeClaimStatus: 'CLAIMED' } },
+        {
+          $group: {
+            _id: null,
+            totalWinners: { $sum: 1 },
+            totalPrizePool: { $sum: '$prizeAmountWon' },
+          },
+        },
+      ]),
+      HourlyAuction.countDocuments({
+        status: { $in: ['UPCOMING', 'LIVE', 'COMPLETED'] },
+        createdAt: {
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      }),
+    ]);
+
+    const stats = winnerStats[0] || { totalWinners: 0, totalPrizePool: 0 };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalAuctions: totalCompletedAuctions,
+        totalWinners: stats.totalWinners,
+        totalPrizePool: stats.totalPrizePool,
+        dailyAuctions: todayAuctions,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching platform stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch platform stats',
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   getServerTime,
+  getPlatformStats,
 };

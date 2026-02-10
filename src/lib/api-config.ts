@@ -38,6 +38,7 @@ export const API_BASE_URL = getApiBaseUrl();
 export const API_ENDPOINTS = {
   // Utility
   serverTime: `${API_BASE_URL}/utility/server-time`,
+  platformStats: `${API_BASE_URL}/utility/platform-stats`,
   
   // Contact
   contact: {

@@ -1,4 +1,4 @@
-import  { useState } from 'react';
+import  { useState, useEffect } from 'react';
 import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, Users, Headphones, Shield, Globe, Zap, Building2, Clock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -11,21 +11,37 @@ import { toast } from 'sonner';
 import { API_ENDPOINTS } from '../lib/api-config';
 
 interface ContactProps {
+  user?: {
+    id: string;
+    username: string;
+    email?: string;
+  } | null;
   onBack: () => void;
 }
 
-export function Contact({ onBack }: ContactProps) {
+export function Contact({ user, onBack }: ContactProps) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.username || '',
+    email: user?.email || '',
     subject: '',
     category: '',
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.username || '',
+        email: user.email || ''
+      }));
+    }
+  }, [user]);
+
   const handleInputChange = (field: string, value: string) => {
+    if (user && (field === 'name' || field === 'email')) return;
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -59,15 +75,15 @@ export function Contact({ onBack }: ContactProps) {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        toast.success('Message sent successfully! We\'ll get back to you within 24 hours.');
-        setFormData({
-          name: '',
-          email: '',
-          subject: '',
-          category: '',
-          message: ''
-        });
+        if (response.ok && data.success) {
+          toast.success('Message sent successfully! We\'ll get back to you within 24 hours.');
+          setFormData(prev => ({
+            name: user ? prev.name : '',
+            email: user ? prev.email : '',
+            subject: '',
+            category: '',
+            message: ''
+          }));
       } else {
         throw new Error(data.message || 'Failed to send message');
       }
@@ -215,28 +231,30 @@ export function Contact({ onBack }: ContactProps) {
                   <CardContent className="relative z-10 font-medium">
                     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                       <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-                        <div>
-                          <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
-                          <Input
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
-                            placeholder="Enter your full name"
-                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
-                            required
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
-                          <Input
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            placeholder="your.email@example.com"
-                            className="bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm"
-                            required
-                          />
+                          <div>
+                            <label className="block text-purple-700 font-bold mb-2">Full Name *</label>
+                            <Input
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) => handleInputChange('name', e.target.value)}
+                              readOnly={!!user}
+                              placeholder="Enter your full name"
+                              className={`bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm ${user ? 'cursor-not-allowed opacity-70' : ''}`}
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-purple-700 font-bold mb-2">Email Address *</label>
+                            <Input
+                              type="email"
+                              value={formData.email}
+                              onChange={(e) => handleInputChange('email', e.target.value)}
+                              readOnly={!!user}
+                              placeholder="your.email@example.com"
+                              className={`bg-white border-purple-300 text-purple-800 placeholder:text-purple-400 focus:border-purple-500 focus:ring-purple-500 font-medium shadow-sm ${user ? 'cursor-not-allowed opacity-70' : ''}`}
+                              required
+                            />
                         </div>
                       </div>
 

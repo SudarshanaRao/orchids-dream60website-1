@@ -36,67 +36,113 @@ export function PushNotificationPermission({ userId }: PushNotificationPermissio
     return outputArray;
   };
 
-  const handleAcceptAll = async () => {
-    if (!userId) {
-      toast.error('Please login to enable notifications');
-      return;
-    }
+    const handleAcceptAll = async () => {
+      if (!userId) {
+        toast.error('Please login to enable notifications');
+        return;
+      }
 
-    setIsSubscribing(true);
-    
-    try {
-      const permission = await Notification.requestPermission();
+      setIsSubscribing(true);
       
-      if (permission !== 'granted') {
-          toast.error('Notification permission denied');
+      try {
+        // Check if service worker is supported and registered
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          toast.error('Push notifications are not supported in this browser.');
           setShowBanner(false);
           setIsSubscribing(false);
           return;
         }
 
-      const registration = await navigator.serviceWorker.ready;
+        const permission = await Notification.requestPermission();
+        
+        if (permission !== 'granted') {
+          toast.error('Notification permission denied. Please enable it in browser settings.');
+          setShowBanner(false);
+          setIsSubscribing(false);
+          return;
+        }
 
-      const response = await fetch(`${API_ENDPOINTS.pushNotification.vapidPublicKey}`);
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error('Failed to get VAPID public key');
-      }
+        // Wait for service worker to be ready
+        const registration = await navigator.serviceWorker.ready;
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(data.publicKey)
-      });
+        // Check if already subscribed
+        const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {
+          // Already subscribed at browser level, just register with backend
+          const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                       (window.navigator as any).standalone === true;
 
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                   (window.navigator as any).standalone === true;
+          const subscribeResponse = await fetch(`${API_ENDPOINTS.pushNotification.subscribe}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              subscription: existingSub.toJSON(),
+              deviceType: isPWA ? 'PWA' : 'Web'
+            })
+          });
 
-      const subscribeResponse = await fetch(`${API_ENDPOINTS.pushNotification.subscribe}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          subscription: subscription.toJSON(),
-          deviceType: isPWA ? 'PWA' : 'Web'
-        })
-      });
+          const subscribeData = await subscribeResponse.json();
+          if (subscribeData.success) {
+            toast.success('Notifications enabled!');
+            localStorage.setItem('push-subscribed', 'true');
+            setShowBanner(false);
+          }
+          return;
+        }
 
-      const subscribeData = await subscribeResponse.json();
+        // Get VAPID public key
+        const response = await fetch(`${API_ENDPOINTS.pushNotification.vapidPublicKey}`);
+        if (!response.ok) {
+          throw new Error(`VAPID key request failed: ${response.status}`);
+        }
+        const data = await response.json();
+        
+        if (!data.success || !data.publicKey) {
+          throw new Error('Failed to get VAPID public key');
+        }
+
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+        });
+
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                     (window.navigator as any).standalone === true;
+
+        const subscribeResponse = await fetch(`${API_ENDPOINTS.pushNotification.subscribe}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            subscription: subscription.toJSON(),
+            deviceType: isPWA ? 'PWA' : 'Web'
+          })
+        });
+
+        const subscribeData = await subscribeResponse.json();
 
         if (subscribeData.success) {
           toast.success('Notifications enabled! You\'ll receive updates on auctions, wins, and more.');
           localStorage.setItem('push-subscribed', 'true');
           setShowBanner(false);
+        } else {
+          throw new Error(subscribeData.message || 'Backend subscription failed');
         }
-    } catch (error) {
-      console.error('Error enabling notifications:', error);
-      toast.error('Failed to enable notifications. Please try again.');
-    } finally {
-      setIsSubscribing(false);
-    }
-  };
+      } catch (error: any) {
+        console.error('Error enabling notifications:', error);
+        const msg = error?.message || '';
+        if (msg.includes('VAPID')) {
+          toast.error('Notification setup failed. Server configuration issue.');
+        } else if (msg.includes('push service')) {
+          toast.error('Push service unavailable. Please try again later.');
+        } else {
+          toast.error('Failed to enable notifications. Please try again.');
+        }
+      } finally {
+        setIsSubscribing(false);
+      }
+    };
 
   const handleDismiss = () => {
     // Only dismiss for this session - will show again on next visit

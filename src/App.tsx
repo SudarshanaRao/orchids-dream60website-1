@@ -1123,7 +1123,7 @@ const App = () => {
           onClose={handleCloseEntrySuccess}
         />;
       case 'payment-failure': return <PaymentFailure amount={showEntryFailure?.entryFee || 0} errorMessage={showEntryFailure?.errorMessage || 'Payment failed'} auctionId={showEntryFailure?.auctionId} auctionNumber={showEntryFailure?.auctionNumber} productName={showEntryFailure?.productName} productWorth={showEntryFailure?.productWorth} timeSlot={showEntryFailure?.timeSlot} paidBy={showEntryFailure?.paidBy} paymentMethod={showEntryFailure?.paymentMethod} transactionId={showEntryFailure?.transactionId} transactionTime={showEntryFailure?.transactionTime} onRetry={() => setShowEntryFailure(null)} onBackToHome={handleBackToGame} onClose={handleCloseEntryFailure} />;
-      case 'contact': return <Contact onBack={handleBackToGame} />;
+      case 'contact': return <Contact user={currentUser} onBack={handleBackToGame} />;
       default: return (
         <div className="min-h-screen bg-background">
           <Header user={currentUser} onNavigate={handleNavigate} onLogin={handleShowLogin} onLogout={handleLogout} onStartTutorial={handleStartTutorial} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
