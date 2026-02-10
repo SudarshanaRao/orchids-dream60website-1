@@ -287,14 +287,6 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
               <p className="text-xs text-center text-slate-500">
                 Admin, Super Admin & Developer access only
               </p>
-              {onSignupClick && (
-                <button
-                  onClick={onSignupClick}
-                  className="w-full mt-4 text-sm text-purple-400 hover:text-purple-300 transition-colors"
-                >
-                  Need an admin account? Register here
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -370,6 +362,17 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
                 {isLoading ? 'Verifying...' : 'Login'}
               </button>
             </form>
+
+            {onSignupClick && (
+              <div className="mt-6 pt-6 border-t border-slate-700 text-center">
+                <button
+                  onClick={onSignupClick}
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Need an admin account? Register here
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

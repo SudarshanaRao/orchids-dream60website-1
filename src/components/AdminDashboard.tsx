@@ -1180,7 +1180,7 @@ const EditSlotModal = ({
                 <Ticket className="w-5 h-5 inline-block mr-2" />
                 Voucher Management
               </button>
-              {isSuperAdmin && (
+              {isDeveloper && (
                 <button
                   onClick={() => setActiveTab('admin-management')}
                   className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
@@ -1825,7 +1825,7 @@ const EditSlotModal = ({
                   <AdminRefundManagement adminUserId={adminUser.admin_id} />
                 )}
 
-                {activeTab === 'admin-management' && isSuperAdmin && (
+                {activeTab === 'admin-management' && isDeveloper && (
                   <AdminManagement adminUser={adminUser} />
                 )}
             </main>
