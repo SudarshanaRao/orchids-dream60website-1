@@ -78,15 +78,16 @@
 
   gtag('config', 'G-66YKRBMQPB');
 </script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "a74a1494-2603-48aa-a4cb-7ea9bde10b9d",
-    });
-  });
+    <!-- PushAlert Unified Code -->
+<script type="text/javascript">
+    (function(d, t) {
+        var g = d.createElement(t),
+        s = d.getElementsByTagName(t)[0];
+        g.src = "https://cdn.pushalert.co/unified_f4a95fee564b710765e06191b17e55da.js";
+        s.parentNode.insertBefore(g, s);
+    }(document, "script"));
 </script>
+<!-- End PushAlert Unified Code -->
   </head>
   <body oncontextmenu="return false;">
     <div id="root"></div>
