@@ -10,6 +10,7 @@ const OTP = require('../models/OTP');
 const Refund = require('../models/Refund');
 const AirpayPayment = require('../models/AirpayPayment');
 const HourlyAuctionJoin = require('../models/HourlyAuctionJoin');
+const AdminAuditLog = require('../models/AdminAuditLog');
 const bcrypt = require('bcryptjs');
 const { sendOtpEmail, sendEmailWithTemplate } = require('../utils/emailService');
 const { sendSms, SMS_TEMPLATES } = require('../utils/smsService');
@@ -449,18 +450,28 @@ const getAllUsersAdmin = async (req, res) => {
         User.countDocuments(query),
       ]);
 
-      // Enrich users with real stats from AuctionHistory and AirpayPayment
-      const userIds = users.map(u => u.user_id);
-      const [auctionStats, spentStats] = await Promise.all([
-        // Auction participations and wins from AuctionHistory
-        userIds.length > 0
-          ? AuctionHistory.aggregate([
+        // Enrich users with real stats from AuctionHistory (matching getUserStats logic)
+        const userIds = users.map(u => u.user_id);
+        const auctionStats = userIds.length > 0
+          ? await AuctionHistory.aggregate([
               { $match: { userId: { $in: userIds }, auctionStatus: 'COMPLETED' } },
               {
                 $group: {
                   _id: '$userId',
                   totalAuctions: { $sum: 1 },
                   totalWins: { $sum: { $cond: ['$isWinner', 1, 0] } },
+                  // totalSpent = all entry fees + lastRoundBidAmount for won+claimed auctions
+                  totalEntryFees: { $sum: '$entryFeePaid' },
+                  totalFinalRoundBidsForClaimedWins: {
+                    $sum: {
+                      $cond: [
+                        { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$prizeClaimStatus', 'CLAIMED'] }] },
+                        '$lastRoundBidAmount',
+                        0,
+                      ],
+                    },
+                  },
+                  // totalWon = prizeAmountWon only for CLAIMED prizes
                   totalAmountWon: {
                     $sum: {
                       $cond: [
@@ -473,32 +484,21 @@ const getAllUsersAdmin = async (req, res) => {
                 },
               },
             ]).catch(() => [])
-          : [],
-        // Total amount spent from successful payments (AirpayPayment)
-        userIds.length > 0
-          ? AirpayPayment.aggregate([
-              { $match: { userId: { $in: userIds }, status: 'paid' } },
-              { $group: { _id: '$userId', totalAmountSpent: { $sum: '$amount' } } },
-            ]).catch(() => [])
-          : [],
-      ]);
+          : [];
 
-      const auctionStatsMap = {};
-      for (const s of auctionStats) auctionStatsMap[s._id] = s;
-      const spentStatsMap = {};
-      for (const s of spentStats) spentStatsMap[s._id] = s;
+        const auctionStatsMap = {};
+        for (const s of auctionStats) auctionStatsMap[s._id] = s;
 
-      const enrichedUsers = users.map(u => {
-        const aStats = auctionStatsMap[u.user_id] || {};
-        const sStats = spentStatsMap[u.user_id] || {};
-        return {
-          ...u,
-          totalAuctions: aStats.totalAuctions || 0,
-          totalWins: aStats.totalWins || 0,
-          totalAmountWon: aStats.totalAmountWon || 0,
-          totalAmountSpent: sStats.totalAmountSpent || 0,
-        };
-      });
+        const enrichedUsers = users.map(u => {
+          const aStats = auctionStatsMap[u.user_id] || {};
+          return {
+            ...u,
+            totalAuctions: aStats.totalAuctions || 0,
+            totalWins: aStats.totalWins || 0,
+            totalAmountWon: aStats.totalAmountWon || 0,
+            totalAmountSpent: (aStats.totalEntryFees || 0) + (aStats.totalFinalRoundBidsForClaimedWins || 0),
+          };
+        });
 
       return res.status(200).json({
         success: true,
@@ -1453,6 +1453,139 @@ const getAccessCodeStatus = async (req, res) => {
   }
 };
 
+/**
+ * Send OTP to admin mobile for viewing user mobile number
+ */
+const sendMobileViewOtp = async (req, res) => {
+  try {
+    const { admin_id } = req.body;
+    if (!admin_id) {
+      return res.status(400).json({ success: false, message: 'Admin ID is required' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true });
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    if (!adminUser.mobile) {
+      return res.status(400).json({ success: false, message: 'Admin mobile number not configured' });
+    }
+
+    const otp = generateOtp();
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await Admin.updateOne(
+      { admin_id },
+      { mobileViewOtp: otp, mobileViewOtpExpiry: otpExpiry }
+    );
+
+    // Send OTP via SMS to admin's mobile
+    const message = `Dear ${adminUser.username}, use this OTP ${otp} to view user mobile number on Dream60 Admin Panel. Valid for 5 minutes. - Finpages Tech`;
+    await sendSms(adminUser.mobile, message, { templateId: '1207176898558880888' });
+
+    return res.status(200).json({ success: true, message: 'OTP sent to your registered mobile number' });
+  } catch (err) {
+    console.error('Send Mobile View OTP Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Verify OTP and reveal user mobile number with audit logging
+ */
+const verifyMobileViewOtp = async (req, res) => {
+  try {
+    const { admin_id, otp, target_user_id } = req.body;
+    if (!admin_id || !otp || !target_user_id) {
+      return res.status(400).json({ success: false, message: 'Admin ID, OTP, and target user ID are required' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id, isActive: true }).select('+mobileViewOtp +mobileViewOtpExpiry');
+    if (!adminUser) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    if (!adminUser.mobileViewOtp || adminUser.mobileViewOtp !== otp) {
+      return res.status(401).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (adminUser.mobileViewOtpExpiry && adminUser.mobileViewOtpExpiry < new Date()) {
+      return res.status(401).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Get the target user's mobile number
+    const targetUser = await User.findOne({ user_id: target_user_id }).select('user_id username mobile').lean();
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'Target user not found' });
+    }
+
+    // Clear OTP after successful verification
+    await Admin.updateOne(
+      { admin_id },
+      { $unset: { mobileViewOtp: 1, mobileViewOtpExpiry: 1 } }
+    );
+
+    // Create audit log
+    await AdminAuditLog.create({
+      adminId: adminUser.admin_id,
+      adminUsername: adminUser.username,
+      adminEmail: adminUser.email,
+      action: 'VIEW_MOBILE_NUMBER',
+      targetUserId: target_user_id,
+      targetUsername: targetUser.username || 'Unknown',
+      details: `Admin viewed mobile number of user ${targetUser.username} (${target_user_id})`,
+      ipAddress: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+      userAgent: req.headers['user-agent'] || 'unknown',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully',
+      data: { mobile: targetUser.mobile },
+    });
+  } catch (err) {
+    console.error('Verify Mobile View OTP Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
+ * Get admin audit logs
+ */
+const getAdminAuditLogs = async (req, res) => {
+  try {
+    const userId = req.query.user_id || req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const adminUser = await Admin.findOne({ admin_id: userId, isActive: true });
+    if (!adminUser) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    const { page = 1, limit = 50 } = req.query;
+    const l = Math.min(Math.max(parseInt(limit, 10) || 50, 1), 200);
+    const p = Math.max(parseInt(page, 10) || 1, 1);
+    const skip = (p - 1) * l;
+
+    const [logs, total] = await Promise.all([
+      AdminAuditLog.find().sort({ createdAt: -1 }).skip(skip).limit(l).lean(),
+      AdminAuditLog.countDocuments(),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: logs,
+      meta: { total, page: p, limit: l, pages: Math.ceil(total / l) },
+    });
+  } catch (err) {
+    console.error('Get Admin Audit Logs Error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 module.exports = {
   adminLogin,
   sendAdminSignupOtp,
@@ -1479,4 +1612,7 @@ module.exports = {
   sendAccessCodeResetOtp,
   resetAccessCodeWithOtp,
   getAccessCodeStatus,
+  sendMobileViewOtp,
+  verifyMobileViewOtp,
+  getAdminAuditLogs,
 };

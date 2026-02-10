@@ -19,8 +19,9 @@ import {
     Mail,
       Bell,
       BarChart3,
-      Eye,
-      Ticket,
+        Eye,
+        EyeOff,
+        Ticket,
       ChevronDown,
       ChevronUp,
       ChevronLeft,
@@ -542,6 +543,80 @@ const EditSlotModal = ({
     const isDeveloper = adminUser.adminType === 'DEVELOPER';
 
     const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
+
+    // OTP mobile reveal state
+    const [revealedMobiles, setRevealedMobiles] = useState<Set<string>>(new Set());
+    const [otpModal, setOtpModal] = useState<{ userId: string; mobile: string } | null>(null);
+    const [otpValue, setOtpValue] = useState('');
+    const [otpSending, setOtpSending] = useState(false);
+    const [otpVerifying, setOtpVerifying] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpError, setOtpError] = useState('');
+
+    const maskMobile = (mobile: string) => {
+      if (!mobile || mobile.length < 4) return mobile || 'N/A';
+      return mobile.slice(0, 2) + '****' + mobile.slice(-2);
+    };
+
+    const handleRequestMobileView = (userId: string, mobile: string) => {
+      if (revealedMobiles.has(userId)) return;
+      setOtpModal({ userId, mobile });
+      setOtpValue('');
+      setOtpSent(false);
+      setOtpError('');
+    };
+
+    const handleSendOtp = async () => {
+      setOtpSending(true);
+      setOtpError('');
+      try {
+        const response = await fetch(`${API_BASE}/admin/send-mobile-view-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ admin_id: adminUser.admin_id }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setOtpSent(true);
+          toast.success('OTP sent to your registered mobile number');
+        } else {
+          setOtpError(data.message || 'Failed to send OTP');
+        }
+      } catch {
+        setOtpError('Failed to send OTP. Please try again.');
+      } finally {
+        setOtpSending(false);
+      }
+    };
+
+    const handleVerifyOtp = async () => {
+      if (!otpModal) return;
+      setOtpVerifying(true);
+      setOtpError('');
+      try {
+        const response = await fetch(`${API_BASE}/admin/verify-mobile-view-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            admin_id: adminUser.admin_id,
+            otp: otpValue,
+            target_user_id: otpModal.userId,
+          }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setRevealedMobiles(prev => new Set(prev).add(otpModal.userId));
+          setOtpModal(null);
+          toast.success('Mobile number revealed successfully');
+        } else {
+          setOtpError(data.message || 'Invalid OTP');
+        }
+      } catch {
+        setOtpError('Verification failed. Please try again.');
+      } finally {
+        setOtpVerifying(false);
+      }
+    };
 
   const fetchUsers = async () => {
     setIsUsersLoading(true);
@@ -1275,7 +1350,7 @@ const EditSlotModal = ({
                           <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
                           <td className="py-3 px-4">{user.username}</td>
                           <td className="py-3 px-4 text-sm">{user.email}</td>
-                          <td className="py-3 px-4">{user.mobile}</td>
+                          <td className="py-3 px-4">{maskMobile(user.mobile)}</td>
                           <td className="py-3 px-4 text-sm">
                             {new Date(user.joinedAt).toLocaleDateString()}
                           </td>
@@ -1400,7 +1475,23 @@ const EditSlotModal = ({
                             <td className="py-3 px-4 font-mono text-sm">{user.userCode}</td>
                             <td className="py-3 px-4 font-medium text-purple-900">{user.username}</td>
                             <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
-                            <td className="py-3 px-4 text-sm text-gray-600">{user.mobile || 'N/A'}</td>
+                            <td className="py-3 px-4 text-sm text-gray-600">
+                              <div className="flex items-center gap-2">
+                                <span>{revealedMobiles.has(user.user_id) ? (user.mobile || 'N/A') : maskMobile(user.mobile || '')}</span>
+                                {user.mobile && !revealedMobiles.has(user.user_id) && (
+                                  <button
+                                    onClick={() => handleRequestMobileView(user.user_id, user.mobile || '')}
+                                    className="p-1 hover:bg-purple-100 rounded transition-colors"
+                                    title="View mobile number"
+                                  >
+                                    <Eye className="w-4 h-4 text-purple-500" />
+                                  </button>
+                                )}
+                                {user.mobile && revealedMobiles.has(user.user_id) && (
+                                  <EyeOff className="w-4 h-4 text-green-500" title="Mobile revealed" />
+                                )}
+                              </div>
+                            </td>
                             <td className="py-3 px-4">{user.totalAuctions || 0}</td>
                             <td className="py-3 px-4 font-semibold text-green-600">{user.totalWins || 0}</td>
                             <td className="py-3 px-4">₹{(user.totalAmountSpent || 0).toLocaleString()}</td>
@@ -1720,6 +1811,76 @@ const EditSlotModal = ({
           adminId={adminUser.admin_id}
           onClose={() => setShowAccessCodeModal(false)}
         />
+      )}
+
+      {/* OTP Verification Modal for Mobile Viewing */}
+      {otpModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-purple-900">Verify Identity</h2>
+              <button
+                onClick={() => setOtpModal(null)}
+                className="p-2 hover:bg-purple-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-purple-600" />
+              </button>
+            </div>
+
+            <div className="mb-4 p-3 bg-purple-50 rounded-lg">
+              <p className="text-sm text-purple-700">
+                To view the user's mobile number, an OTP will be sent to your registered admin mobile number for verification. This action will be logged.
+              </p>
+            </div>
+
+            {!otpSent ? (
+              <button
+                onClick={handleSendOtp}
+                disabled={otpSending}
+                className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50"
+              >
+                {otpSending ? 'Sending OTP...' : 'Send OTP to My Mobile'}
+              </button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-purple-700 mb-1">Enter OTP</label>
+                  <input
+                    type="text"
+                    value={otpValue}
+                    onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="Enter 6-digit OTP"
+                    className="w-full px-4 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:border-purple-500 text-center text-lg tracking-widest"
+                    maxLength={6}
+                  />
+                </div>
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={otpVerifying || otpValue.length < 4}
+                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all disabled:opacity-50"
+                >
+                  {otpVerifying ? 'Verifying...' : 'Verify & View Mobile'}
+                </button>
+                <button
+                  onClick={handleSendOtp}
+                  disabled={otpSending}
+                  className="w-full py-2 text-purple-600 text-sm hover:underline disabled:opacity-50"
+                >
+                  {otpSending ? 'Sending...' : 'Resend OTP'}
+                </button>
+              </div>
+            )}
+
+            {otpError && (
+              <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                <p className="text-sm text-red-600 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {otpError}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -27,6 +27,9 @@ const {
     sendAccessCodeResetOtp,
     resetAccessCodeWithOtp,
     getAccessCodeStatus,
+    sendMobileViewOtp,
+    verifyMobileViewOtp,
+    getAdminAuditLogs,
   } = require('../controllers/adminController');
 
 
@@ -1575,5 +1578,10 @@ router.post('/set-access-code', setAccessCode);
 router.post('/send-access-code-otp', sendAccessCodeResetOtp);
 router.post('/reset-access-code', resetAccessCodeWithOtp);
 router.get('/access-code-status', getAccessCodeStatus);
+
+// ============ Mobile View OTP & Audit Log Routes ============
+router.post('/send-mobile-view-otp', sendMobileViewOtp);
+router.post('/verify-mobile-view-otp', verifyMobileViewOtp);
+router.get('/audit-logs', getAdminAuditLogs);
 
 module.exports = router;

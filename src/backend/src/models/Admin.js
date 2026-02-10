@@ -66,6 +66,14 @@ const adminSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    mobileViewOtp: {
+      type: String,
+      select: false,
+    },
+    mobileViewOtpExpiry: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );
