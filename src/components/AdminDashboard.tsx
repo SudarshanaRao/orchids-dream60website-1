@@ -31,8 +31,9 @@ import {
       AlertCircle,
       Key,
       MessageSquare,
-      Timer,
-    } from 'lucide-react';
+        Timer,
+        Trophy,
+      } from 'lucide-react';
 
 import { toast } from 'sonner';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
