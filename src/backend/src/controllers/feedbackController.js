@@ -28,9 +28,9 @@ const submitFeedback = async (req, res) => {
       contentType: screenshot.mimetype,
     }] : [];
 
-    const result = await sendEmailWithTemplate(
-      recipientEmail,
-      'Support Ticket',
+      const result = await sendEmailWithTemplate(
+        recipientEmail,
+        'Support Request Received',
       {
         name: reporterName,
         Name: reporterName,
