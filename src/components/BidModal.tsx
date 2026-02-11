@@ -565,7 +565,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
                     </div>
 
                       {/* Max Bid Warning - shows when bid amount + entry fee exceeds max */}
-                      {!userHasBidInRound && typeof bidAmount === 'number' && bidAmount > 0 && (bidAmount >= maxBidAmount || bidAmount + (userEntryFee || 1) > maxBidAmount) && (
+                      {!userHasBidInRound && typeof bidAmount === 'number' && bidAmount > 0 && (bidAmount >= maxBidAmount || bidAmount + (userEntryFee || 1) > maxBidAmount) && box.roundNumber && box.roundNumber < 4 && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
