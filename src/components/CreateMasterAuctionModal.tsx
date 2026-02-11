@@ -77,6 +77,7 @@ export function CreateMasterAuctionModal({
   const productRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const suggestionRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const debounceTimers = useRef<Record<number, NodeJS.Timeout>>({});
+  const [descriptionTexts, setDescriptionTexts] = useState<Record<number, string>>({});
 
   // Scroll to specific product when editingProductIndex is set
   useEffect(() => {
@@ -181,57 +182,80 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
-    const handleDescriptionChange = (configIndex: number, text: string) => {
-        const updated = [...auctionConfigs];
-        if (!text.trim()) {
-          updated[configIndex].productDescription = {};
-        } else {
-          // Parse lines as "key: value" pairs; lines without ":" are stored with auto-generated keys
-          const desc: Record<string, string> = {};
-          const lines = text.split('\n');
-          let miscIndex = 0;
-          lines.forEach((line) => {
-            const colonIdx = line.indexOf(':');
-            if (colonIdx > 0) {
-              const key = line.substring(0, colonIdx).trim();
-              const value = line.substring(colonIdx + 1).trim();
-              if (key) {
-                desc[key] = value;
-                return;
-              }
-            }
-            // Line without valid "key: value" format
-            if (line.trim()) {
-              miscIndex++;
-              desc[`detail_${miscIndex}`] = line.trim();
-            }
-          });
-          updated[configIndex].productDescription = desc;
+    const parseDescriptionText = (text: string): Record<string, string> => {
+      if (!text.trim()) return {};
+      const desc: Record<string, string> = {};
+      const lines = text.split('\n');
+      lines.forEach((line) => {
+        if (!line.trim()) return;
+        // Strip hidden unicode chars (Amazon adds these)
+        const cleanLine = line.replace(/[\u200E\u200F\u200B\u00AD\u202A\u202C\u200D\uFEFF]/g, '');
+        if (!cleanLine.trim()) return;
+        // Try tab separator first (Amazon-style: "OS\tAndroid 15")
+        const tabIdx = cleanLine.indexOf('\t');
+        if (tabIdx > 0) {
+          const key = cleanLine.substring(0, tabIdx).trim();
+          const value = cleanLine.substring(tabIdx + 1).trim();
+          if (key) { desc[key] = value; return; }
         }
-        setAuctionConfigs(updated);
-      };
+        // Try colon separator ("OS: Android 15")
+        const colonIdx = cleanLine.indexOf(':');
+        if (colonIdx > 0) {
+          const key = cleanLine.substring(0, colonIdx).trim();
+          const value = cleanLine.substring(colonIdx + 1).trim();
+          if (key) { desc[key] = value; return; }
+        }
+        // Try 2+ consecutive spaces as separator ("OS    Android 15")
+        const spaceMatch = cleanLine.match(/^(\S[\S ]*?\S)\s{2,}(.+)$/);
+        if (spaceMatch) {
+          const key = spaceMatch[1].trim();
+          const value = spaceMatch[2].trim();
+          if (key) { desc[key] = value; return; }
+        }
+        // Fallback: whole line as key with empty value
+        desc[cleanLine.trim()] = '';
+      });
+      return desc;
+    };
 
-      const getDescriptionString = (description?: Record<string, string>) => {
-        if (!description || Object.keys(description).length === 0) return '';
-        return Object.entries(description)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join('\n');
-      };
+    const descriptionToString = (description?: Record<string, string>) => {
+      if (!description || Object.keys(description).length === 0) return '';
+      return Object.entries(description)
+        .map(([key, value]) => value ? `${key}\t${value}` : key)
+        .join('\n');
+    };
+
+    const getDescriptionText = (index: number) => {
+      // If user has typed/pasted into this textarea, use local text
+      if (descriptionTexts[index] !== undefined) return descriptionTexts[index];
+      // Otherwise derive from stored key-value pairs
+      return descriptionToString(auctionConfigs[index]?.productDescription);
+    };
+
+    const handleDescriptionTextChange = (index: number, text: string) => {
+      setDescriptionTexts(prev => ({ ...prev, [index]: text }));
+    };
+
+    const handleDescriptionBlur = (index: number) => {
+      const text = descriptionTexts[index];
+      if (text === undefined) return;
+      const updated = [...auctionConfigs];
+      updated[index].productDescription = parseDescriptionText(text);
+      setAuctionConfigs(updated);
+      // Clear local text so it re-derives from parsed key-value pairs
+      setDescriptionTexts(prev => {
+        const copy = { ...prev };
+        delete copy[index];
+        return copy;
+      });
+    };
 
   const applyProductSuggestion = (index: number, product: ProductSuggestion) => {
     const updated = [...auctionConfigs];
-    // Convert productDescription from backend (may be key-value map) to single description string
-    let description: Record<string, string> = {};
-    if (product.productDescription) {
-      const entries = Object.entries(product.productDescription);
-      if (entries.length === 1 && entries[0][0] === 'description') {
-        description = { description: entries[0][1] };
-      } else if (entries.length > 0) {
-        // Convert key-value pairs to a single description text
-        const text = entries.map(([key, value]) => `${key}: ${value}`).join('\n');
-        description = { description: text };
-      }
-    }
+    // Keep the original key-value pairs from the product description as-is
+    const description: Record<string, string> = product.productDescription && Object.keys(product.productDescription).length > 0
+      ? { ...product.productDescription }
+      : {};
     updated[index] = {
       ...updated[index],
       auctionName: product.name,
@@ -247,6 +271,12 @@ export function CreateMasterAuctionModal({
       roundCount: product.roundCount || updated[index].roundCount,
     };
     setAuctionConfigs(updated);
+    // Clear local description text so it re-derives from the product's key-value pairs
+    setDescriptionTexts(prev => {
+      const copy = { ...prev };
+      delete copy[index];
+      return copy;
+    });
   };
 
   const fetchProductSuggestions = async (index: number, query: string) => {
@@ -703,11 +733,12 @@ export function CreateMasterAuctionModal({
                       <label className="block text-sm font-semibold text-purple-900 mb-2">
                         Product Description
                       </label>
-                      <textarea
-                        value={getDescriptionString(config.productDescription)}
-                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                        placeholder="Enter product description here... You can paste or type freely."
-                        rows={4}
+                        <textarea
+                          value={getDescriptionText(index)}
+                          onChange={(e) => handleDescriptionTextChange(index, e.target.value)}
+                          onBlur={() => handleDescriptionBlur(index)}
+                          placeholder={"Paste product specs (tab, colon, or space separated):\nOS\tAndroid 15\nRAM\t4 GB\nProduct Dimensions\t16.6 x 7.6 x 0.8 cm"}
+                          rows={4}
                         className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
                       />
                     </div>
