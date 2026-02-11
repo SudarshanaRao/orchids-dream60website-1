@@ -134,6 +134,14 @@ productSchema.statics.incrementUsage = async function (productId) {
 productSchema.methods.publicProfile = function () {
   const obj = this.toObject({ virtuals: true });
   delete obj.__v;
+  // Convert Mongoose Map to plain object for proper JSON serialization
+  if (this.productDescription instanceof Map) {
+    const descObj = {};
+    this.productDescription.forEach((value, key) => {
+      descObj[key] = value;
+    });
+    obj.productDescription = descObj;
+  }
   return obj;
 };
 

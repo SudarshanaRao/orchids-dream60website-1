@@ -182,23 +182,41 @@ export function CreateMasterAuctionModal({
   };
 
     const handleDescriptionChange = (configIndex: number, text: string) => {
-      const updated = [...auctionConfigs];
-      // Store as a single key "description" with the full text
-      updated[configIndex].productDescription = text ? { description: text } : {};
-      setAuctionConfigs(updated);
-    };
+        const updated = [...auctionConfigs];
+        if (!text.trim()) {
+          updated[configIndex].productDescription = {};
+        } else {
+          // Parse lines as "key: value" pairs; lines without ":" are stored with auto-generated keys
+          const desc: Record<string, string> = {};
+          const lines = text.split('\n');
+          let miscIndex = 0;
+          lines.forEach((line) => {
+            const colonIdx = line.indexOf(':');
+            if (colonIdx > 0) {
+              const key = line.substring(0, colonIdx).trim();
+              const value = line.substring(colonIdx + 1).trim();
+              if (key) {
+                desc[key] = value;
+                return;
+              }
+            }
+            // Line without valid "key: value" format
+            if (line.trim()) {
+              miscIndex++;
+              desc[`detail_${miscIndex}`] = line.trim();
+            }
+          });
+          updated[configIndex].productDescription = desc;
+        }
+        setAuctionConfigs(updated);
+      };
 
-    const getDescriptionString = (description?: Record<string, string>) => {
-      if (!description) return '';
-      // If it has a single "description" key, return its value directly
-      if (description.description && Object.keys(description).length === 1) {
-        return description.description;
-      }
-      // Legacy format: convert key-value pairs to readable text
-      return Object.entries(description)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n');
-    };
+      const getDescriptionString = (description?: Record<string, string>) => {
+        if (!description || Object.keys(description).length === 0) return '';
+        return Object.entries(description)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('\n');
+      };
 
   const applyProductSuggestion = (index: number, product: ProductSuggestion) => {
     const updated = [...auctionConfigs];
