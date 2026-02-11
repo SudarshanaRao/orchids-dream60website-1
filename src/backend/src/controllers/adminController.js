@@ -991,6 +991,7 @@ const getAnalyticsData = async (req, res) => {
         totalEntryFees: history.reduce((sum, h) => sum + (h.entryFeePaid || 0), 0),
         totalPrizeValue: hourlyAuctions.reduce((sum, a) => sum + (a.prizeValue || 0), 0),
         totalClaimedValue: successfulClaims.reduce((sum, h) => sum + (h.prizeAmountWon || 0), 0),
+        totalAmountSpentByClaiming: successfulClaims.reduce((sum, h) => sum + (h.remainingProductFees || 0), 0),
       };
 
     // Status Distribution
