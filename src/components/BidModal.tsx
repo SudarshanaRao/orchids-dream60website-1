@@ -564,8 +564,31 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
                       </div>
                     </div>
 
-                    {/* Potential Profit */}
-                    {potentialProfit > 0 && (
+                      {/* Max Bid Warning - shows when bid amount + entry fee exceeds max */}
+                      {!userHasBidInRound && typeof bidAmount === 'number' && bidAmount > 0 && (bidAmount >= maxBidAmount || bidAmount + (userEntryFee || 1) > maxBidAmount) && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-3"
+                        >
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <p className="text-xs font-bold text-amber-800">
+                                {bidAmount >= maxBidAmount
+                                  ? 'You are bidding the maximum amount!'
+                                  : 'You are very close to the maximum bid!'}
+                              </p>
+                              <p className="text-[11px] text-amber-700 mt-1">
+                                You will not be able to place a bid in the next round as your bid amount leaves no room to increase. Proceed only if you are confident about winning this round.
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Potential Profit */}
+                      {potentialProfit > 0 && (
                       <motion.div 
                         className="bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-3"
                         initial={{ opacity: 0, scale: 0.95 }}
