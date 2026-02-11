@@ -181,37 +181,45 @@ export function CreateMasterAuctionModal({
     setAuctionConfigs(updated);
   };
 
-  const handleDescriptionChange = (configIndex: number, text: string) => {
-    const updated = [...auctionConfigs];
-    const lines = text.split('\n');
-    const description: Record<string, string> = {};
-    
-    lines.forEach(line => {
-      const [key, ...valueParts] = line.split('\t');
-      if (key && valueParts.length > 0) {
-        description[key.trim()] = valueParts.join('\t').trim();
-      }
-    });
-    
-    updated[configIndex].productDescription = description;
-    setAuctionConfigs(updated);
-  };
+    const handleDescriptionChange = (configIndex: number, text: string) => {
+      const updated = [...auctionConfigs];
+      // Store as a single key "description" with the full text
+      updated[configIndex].productDescription = text ? { description: text } : {};
+      setAuctionConfigs(updated);
+    };
 
-  const getDescriptionString = (description?: Record<string, string>) => {
-    if (!description) return '';
-    return Object.entries(description)
-      .map(([key, value]) => `${key}\t${value}`)
-      .join('\n');
-  };
+    const getDescriptionString = (description?: Record<string, string>) => {
+      if (!description) return '';
+      // If it has a single "description" key, return its value directly
+      if (description.description && Object.keys(description).length === 1) {
+        return description.description;
+      }
+      // Legacy format: convert key-value pairs to readable text
+      return Object.entries(description)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+    };
 
   const applyProductSuggestion = (index: number, product: ProductSuggestion) => {
     const updated = [...auctionConfigs];
+    // Convert productDescription from backend (may be key-value map) to single description string
+    let description: Record<string, string> = {};
+    if (product.productDescription) {
+      const entries = Object.entries(product.productDescription);
+      if (entries.length === 1 && entries[0][0] === 'description') {
+        description = { description: entries[0][1] };
+      } else if (entries.length > 0) {
+        // Convert key-value pairs to a single description text
+        const text = entries.map(([key, value]) => `${key}: ${value}`).join('\n');
+        description = { description: text };
+      }
+    }
     updated[index] = {
       ...updated[index],
       auctionName: product.name,
       prizeValue: product.prizeValue || updated[index].prizeValue,
       imageUrl: product.imageUrl || '',
-      productDescription: product.productDescription || {},
+      productDescription: description,
       EntryFee: product.entryFeeType || updated[index].EntryFee,
       minEntryFee: product.minEntryFee ?? updated[index].minEntryFee,
       maxEntryFee: product.maxEntryFee ?? updated[index].maxEntryFee,
@@ -649,54 +657,42 @@ export function CreateMasterAuctionModal({
                       <ImageIcon className="w-4 h-4 inline-block mr-1" />
                       Prize Image URL
                     </label>
-                    <input
-                      type="url"
-                      value={config.imageUrl || ''}
-                      onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Product Description (Key [Tab] Value)
-                    </label>
-                    <textarea
-                      value={getDescriptionString(config.productDescription)}
-                      onChange={(e) => handleDescriptionChange(index, e.target.value)}
-                      placeholder="Weight	500g&#10;Color	Midnight Black&#10;Warranty	1 Year"
-                      rows={4}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
-                    />
-                    <p className="text-xs text-purple-500 mt-1 italic">
-                      Each line should be "Key [Tab] Value".
-                    </p>
-
-                    {config.productDescription && Object.keys(config.productDescription).length > 0 && (
-                      <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                        <h5 className="text-xs font-bold text-purple-900 mb-2 uppercase tracking-wider">Description Preview</h5>
-                        <div className="overflow-hidden rounded-md border border-purple-200 bg-white">
-                          <table className="w-full text-xs">
-                            <thead className="bg-purple-100">
-                              <tr>
-                                <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Attribute</th>
-                                <th className="px-3 py-2 text-left font-bold text-purple-900 border-b border-purple-200">Value</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Object.entries(config.productDescription).map(([key, value], idx) => (
-                                <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
-                                  <td className="px-3 py-2 font-semibold text-purple-800 border-b border-purple-100">{key}</td>
-                                  <td className="px-3 py-2 text-purple-700 border-b border-purple-100">{value}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                      <input
+                        type="url"
+                        value={config.imageUrl || ''}
+                        onChange={(e) => handleConfigChange(index, 'imageUrl', e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                      />
+                      {config.imageUrl && (
+                        <div className="mt-2 inline-block">
+                          <img
+                            src={config.imageUrl}
+                            alt="Product preview"
+                            className="w-24 h-24 object-cover rounded-lg border-2 border-purple-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                            onLoad={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'block';
+                            }}
+                          />
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Product Description
+                      </label>
+                      <textarea
+                        value={getDescriptionString(config.productDescription)}
+                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                        placeholder="Enter product description here... You can paste or type freely."
+                        rows={4}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                      />
+                    </div>
                 </div>
               </div>
             ))}
