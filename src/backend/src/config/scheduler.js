@@ -276,19 +276,19 @@ const calculateRanksAndQualified = (playersData) => {
     previousAmount = plainPlayer.auctionPlacedAmount;
     
     rankedPlayers.push({
-      ...plainPlayer,
-      rank: currentRank,
-      isQualified: currentRank <= 3, // Top 3 ranks are qualified
-    });
-  }
+        ...plainPlayer,
+        rank: currentRank,
+        isQualified: true, // All players who placed a bid are qualified for next round
+      });
+    }
 
-  // Extract qualified player IDs (top 3 ranks) - ensure we only get valid IDs
-  const qualifiedPlayerIds = rankedPlayers
-    .filter(p => p.rank <= 3 && p.playerId)
-    .map(p => String(p.playerId));
+    // Extract qualified player IDs - ALL players who placed a bid qualify
+    const qualifiedPlayerIds = rankedPlayers
+      .filter(p => p.playerId)
+      .map(p => String(p.playerId));
 
-  console.log(`     🔍 [RANK-DEBUG] Total players: ${rankedPlayers.length}, Qualified: ${qualifiedPlayerIds.length}`);
-  console.log(`     🔍 [RANK-DEBUG] Qualified IDs:`, qualifiedPlayerIds);
+    console.log(`     🔍 [RANK-DEBUG] Total players: ${rankedPlayers.length}, Qualified: ${qualifiedPlayerIds.length}`);
+    console.log(`     🔍 [RANK-DEBUG] Qualified IDs:`, qualifiedPlayerIds);
 
   return { rankedPlayers, qualifiedPlayerIds };
 };
