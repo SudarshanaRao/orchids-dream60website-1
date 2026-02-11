@@ -475,7 +475,7 @@ exports.handleAirpayResponse = async (req, res) => {
     
     if (!responseData) {
       console.error('Airpay Error: Missing response data');
-      const frontendUrl = getFrontendUrl();
+      const frontendUrl = getFrontendUrl(req);
       return res.redirect(`${frontendUrl}/payment/failure?message=${encodeURIComponent('Payment response data missing from Airpay')}`);
     }
 
@@ -499,12 +499,16 @@ exports.handleAirpayResponse = async (req, res) => {
       transactionTime: data.transaction_time || data.date || data.TRANSACTIONDATE || data.TRANSDATE || ''
     };
 
-    res.cookie('airpay_txn_data', JSON.stringify(txnSummary), { 
+    const cookieOptions = { 
       maxAge: 3600000, // 1 hour
       path: '/'
-    });
+    };
+    if (process.env.NODE_ENV === 'production') {
+      cookieOptions.domain = '.dream60.com';
+    }
+    res.cookie('airpay_txn_data', JSON.stringify(txnSummary), cookieOptions);
 
-    const frontendUrl = getFrontendUrl();
+    const frontendUrl = getFrontendUrl(req);
     const redirectUrl = `${frontendUrl}/payment/result?orderId=${TRANSACTIONID}`;
 
     console.log(`Redirecting user to: ${redirectUrl}`);
@@ -540,13 +544,19 @@ exports.handleAirpayWebhook = async (req, res) => {
   }
 };
 
-function getFrontendUrl() {
+function getFrontendUrl(req) {
   const allowedOriginsRaw = process.env.CLIENT_URL || '';
   const origins = allowedOriginsRaw.split(',').map(o => o.trim()).filter(Boolean);
   
   let frontendUrl = 'http://localhost:3000';
   if (process.env.NODE_ENV === 'production') {
-    frontendUrl = 'https://dream60.com';
+    // Check if the request originated from www.dream60.com
+    const referer = req?.headers?.referer || req?.headers?.origin || '';
+    if (referer.includes('www.dream60.com')) {
+      frontendUrl = 'https://www.dream60.com';
+    } else {
+      frontendUrl = 'https://dream60.com';
+    }
   } else if (origins.some(o => o.includes('test.dream60.com'))) {
     frontendUrl = 'https://test.dream60.com';
   } else if (origins.length > 0) {
