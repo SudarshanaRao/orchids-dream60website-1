@@ -729,19 +729,51 @@ export function CreateMasterAuctionModal({
                       )}
                     </div>
 
-                    <div className="col-span-2">
-                      <label className="block text-sm font-semibold text-purple-900 mb-2">
-                        Product Description
-                      </label>
-                        <textarea
-                          value={getDescriptionText(index)}
-                          onChange={(e) => handleDescriptionTextChange(index, e.target.value)}
-                          onBlur={() => handleDescriptionBlur(index)}
-                          placeholder={"Paste product specs (tab, colon, or space separated):\nOS\tAndroid 15\nRAM\t4 GB\nProduct Dimensions\t16.6 x 7.6 x 0.8 cm"}
-                          rows={4}
-                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
-                      />
-                    </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-semibold text-purple-900 mb-2">
+                          Product Description (Key [Tab] Value)
+                        </label>
+                          <textarea
+                            value={getDescriptionText(index)}
+                            onChange={(e) => handleDescriptionTextChange(index, e.target.value)}
+                            onBlur={() => handleDescriptionBlur(index)}
+                            placeholder={"OS\tAndroid 15\nRAM\t4 GB\nProduct Dimensions\t16.6 x 7.6 x 0.8 cm\n197 g"}
+                            rows={5}
+                            className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm font-mono"
+                          />
+                          <p className="text-xs text-purple-400 mt-1 italic">Each line should be "Key [Tab] Value".</p>
+
+                          {/* Description Preview Table */}
+                          {(() => {
+                            const text = getDescriptionText(index);
+                            const parsed = text ? parseDescriptionText(text) : (config.productDescription || {});
+                            const entries = Object.entries(parsed);
+                            if (entries.length === 0) return null;
+                            return (
+                              <div className="mt-3 border-2 border-purple-200 rounded-lg overflow-hidden">
+                                <div className="bg-purple-50 px-4 py-2 border-b border-purple-200">
+                                  <p className="text-xs font-bold text-purple-900 tracking-wide uppercase">Description Preview</p>
+                                </div>
+                                <table className="w-full text-sm">
+                                  <thead>
+                                    <tr className="bg-purple-50/50">
+                                      <th className="text-left px-4 py-2 text-purple-700 font-semibold border-b border-purple-100 w-2/5">Attribute</th>
+                                      <th className="text-left px-4 py-2 text-purple-700 font-semibold border-b border-purple-100">Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {entries.map(([key, value], i) => (
+                                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-purple-50/30'}>
+                                        <td className="px-4 py-2 text-purple-600 font-medium border-b border-purple-50">{key}</td>
+                                        <td className="px-4 py-2 text-purple-800 border-b border-purple-50">{value || '—'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            );
+                          })()}
+                      </div>
                 </div>
               </div>
             ))}
