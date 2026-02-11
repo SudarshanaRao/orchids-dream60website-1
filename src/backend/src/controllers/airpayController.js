@@ -550,13 +550,9 @@ function getFrontendUrl(req) {
   
   let frontendUrl = 'http://localhost:3000';
   if (process.env.NODE_ENV === 'production') {
-    // Check if the request originated from www.dream60.com
-    const referer = req?.headers?.referer || req?.headers?.origin || '';
-    if (referer.includes('www.dream60.com')) {
-      frontendUrl = 'https://www.dream60.com';
-    } else {
-      frontendUrl = 'https://dream60.com';
-    }
+    // Use www.dream60.com as the canonical production URL
+    // After Airpay redirect, referer is Airpay's domain so we can't rely on it
+    frontendUrl = 'https://www.dream60.com';
   } else if (origins.some(o => o.includes('test.dream60.com'))) {
     frontendUrl = 'https://test.dream60.com';
   } else if (origins.length > 0) {

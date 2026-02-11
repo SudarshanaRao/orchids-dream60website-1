@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SupportCenterHeader } from './SupportCenterHeader';
+import { API_BASE_URL } from '@/lib/api-config';
 
 interface TesterFeedbackProps {
   user?: {
@@ -107,7 +108,7 @@ interface TesterFeedbackProps {
           formData.append('screenshot', screenshot);
         }
 
-        const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/feedback`, {
+        const response = await fetch(`${API_BASE_URL}/feedback`, {
           method: 'POST',
           body: formData,
         });
