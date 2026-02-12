@@ -956,6 +956,7 @@ interface PrizeShowcaseProps {
                       productName={displayPrize}
                       prizeValue={displayPrizeValue}
                       productDescription={liveAuctions[0]?.productDescription}
+                      maxDiscount={effectiveLiveAuctionData?.maxDiscount}
                     />
                   ) : (
                     <div className="relative w-full h-full flex items-center justify-center">

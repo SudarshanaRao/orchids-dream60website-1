@@ -14,9 +14,10 @@ interface ProductFlipCardProps {
   productName: string;
   prizeValue: number;
   productDescription?: Record<string, string>;
+  maxDiscount?: number;
 }
 
-  export function ProductFlipCard({ productImages, productName, prizeValue, productDescription: topLevelDescription }: ProductFlipCardProps) {
+  export function ProductFlipCard({ productImages, productName, prizeValue, productDescription: topLevelDescription, maxDiscount }: ProductFlipCardProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -362,6 +363,21 @@ onClick={(e) => {
                     </p>
                   </div>
                 </div>
+
+                {/* Max Discount Info */}
+                {maxDiscount != null && maxDiscount > 0 && (
+                  <div className="flex items-start gap-2 p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow">
+                      <span className="text-sm font-bold text-white">%</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {maxDiscount}% OFF</h4>
+                      <p className="text-xs text-green-700 leading-relaxed">
+                        The company is offering a <strong>{maxDiscount}% discount</strong> on this auction. Take advantage of this special offer!
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}
