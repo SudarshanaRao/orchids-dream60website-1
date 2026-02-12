@@ -314,11 +314,11 @@ onClick={(e) => {
             onClick={() => setShowDisclaimer(false)}
           >
             <div 
-              className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3">
+              <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Info className="w-4 h-4 text-white" />
@@ -334,7 +334,7 @@ onClick={(e) => {
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-3 overflow-y-auto flex-1">
                 {/* Representation Disclaimer - Red */}
                 <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
                   <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -373,7 +373,7 @@ onClick={(e) => {
                     <div>
                       <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {maxDiscount}% OFF</h4>
                       <p className="text-xs text-green-700 leading-relaxed">
-                        The company is offering a <strong>{maxDiscount}% discount</strong> on this auction. Take advantage of this special offer!
+                        The company is offering a <strong>{maxDiscount}% mandatory discount</strong> on this auction. You can place your bid up to a maximum of <strong>{100 - maxDiscount}%</strong> of the product value (₹{Math.round(prizeValue * (100 - maxDiscount) / 100).toLocaleString('en-IN')}). Place your auction amount accordingly.
                       </p>
                     </div>
                   </div>
@@ -381,7 +381,7 @@ onClick={(e) => {
               </div>
 
               {/* Footer */}
-              <div className="px-4 pb-4">
+              <div className="px-4 pb-4 flex-shrink-0">
                 <button
                   onClick={() => setShowDisclaimer(false)}
                   className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm"

@@ -28,6 +28,7 @@ interface UpcomingProduct {
   minEntryFee: number | null;
   maxEntryFee: number | null;
   FeeSplits: { BoxA: number; BoxB: number } | null;
+  maxDiscount?: number;
 }
 
 interface PrizeShowcasePageProps {
@@ -179,6 +180,7 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
               productName={product.auctionName}
               prizeValue={product.prizeValue}
               productDescription={product.productDescription}
+              maxDiscount={product.maxDiscount}
             />
           </div>
 
