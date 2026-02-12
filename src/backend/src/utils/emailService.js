@@ -521,6 +521,7 @@ const activeBrandStyles = darkBrandStyles;
 // Global transporter instances
 let transporterInstance = null;
 let supportTransporterInstance = null;
+let contactTransporterInstance = null;
 let templateCache = new Map();
 
 // Create reusable transporter with pooling for better performance
@@ -577,6 +578,34 @@ const createSupportTransporter = () => {
     });
   }
   return supportTransporterInstance;
+};
+
+// Create contact transporter using support@dream60.com (EMAIL_CONTACT_USER)
+const createContactTransporter = () => {
+  if (!contactTransporterInstance) {
+    const port = parseInt(process.env.EMAIL_PORT || '465');
+    contactTransporterInstance = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.zoho.in',
+      port,
+      secure: port === 465,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: Infinity,
+      rateDelta: 1000,
+      rateLimit: 10,
+      socketTimeout: 30000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      auth: {
+        user: process.env.EMAIL_CONTACT_USER,
+        pass: process.env.EMAIL_CONTACT_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+  return contactTransporterInstance;
 };
 
 const getPrimaryClientUrl = () => {
@@ -1236,6 +1265,34 @@ const sendAmazonVoucherEmail = async (email, details) => {
   };
 
 
+/**
+ * Send Support Reply Email from support@dream60.com
+ */
+const sendSupportReplyEmail = async (toEmail, subject, htmlBody, ticketId) => {
+  try {
+    if (!process.env.EMAIL_CONTACT_USER || !process.env.EMAIL_CONTACT_PASSWORD) {
+      console.warn('⚠️ Contact email credentials (EMAIL_CONTACT_USER) not configured.');
+      return { success: false, message: 'Contact email service not configured' };
+    }
+
+    const transporter = createContactTransporter();
+    const mailOptions = {
+      from: `"Dream60 Support" <${process.env.EMAIL_CONTACT_USER}>`,
+      to: toEmail,
+      subject: subject,
+      html: htmlBody,
+      text: htmlBody.replace(/<[^>]*>/g, ''),
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL] Support reply sent to ${toEmail} for ticket ${ticketId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Support reply email error:', error);
+    return { success: false, message: error.message };
+  }
+};
+
 module.exports = {
   sendOtpEmail,
   sendWelcomeEmail,
@@ -1248,6 +1305,7 @@ module.exports = {
   sendCustomEmail,
   sendAmazonVoucherEmail,
   sendEmailWithTemplate,
+  sendSupportReplyEmail,
   getTemplateByName,
   replaceTemplateVariables,
   buildEmailTemplate,

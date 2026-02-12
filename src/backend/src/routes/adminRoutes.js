@@ -81,6 +81,14 @@ const {
   incrementUsage,
 } = require('../controllers/productController');
 
+const {
+  getSupportTickets,
+  getSupportTicketById,
+  updateTicketStatus,
+  replyToTicket,
+  getSupportTemplates,
+} = require('../controllers/adminSupportController');
+
 /**
  * @swagger
  * tags:
@@ -1599,5 +1607,12 @@ router.put('/admins/:admin_id', updateAdmin);
 router.delete('/admins/:admin_id', deleteAdmin);
 router.post('/admins/:admin_id/reset-password', resetAdminPassword);
 router.post('/admins/:admin_id/reset-access-code', resetAdminAccessCode);
+
+// ============ Support Ticket Management Routes ============
+router.get('/support/tickets', getSupportTickets);
+router.get('/support/tickets/:ticketId', getSupportTicketById);
+router.patch('/support/tickets/:ticketId/status', updateTicketStatus);
+router.post('/support/tickets/:ticketId/reply', replyToTicket);
+router.get('/support/templates', getSupportTemplates);
 
 module.exports = router;

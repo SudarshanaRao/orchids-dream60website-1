@@ -535,7 +535,7 @@ interface LeaderboardEntry {
     doc.setFontSize(14);
     doc.setTextColor(107, 63, 160);
     doc.setFont('helvetica', 'bold');
-    doc.text('Top 3 Winners', 15, yPos);
+    doc.text('Winners', 15, yPos);
     
     yPos += 8;
     

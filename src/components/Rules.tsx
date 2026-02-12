@@ -138,7 +138,7 @@ export function Rules({ onBack }: RulesProps) {
                     <h3 className="text-purple-800 font-semibold text-sm sm:text-base">Bidding Rounds</h3>
                   </div>
                   <p className="text-purple-600 text-xs sm:text-sm">
-                    4 rounds open every 15 minutes. Strategically raise your bid to stay in the Top 3 and advance to the final win.
+                    4 rounds open every 15 minutes. All players advance to the next round. Winners are announced in the final round (Round 4). If only 3 participants, winners are announced in Round 1 itself.
                   </p>
                 </div>
               </div>
@@ -193,11 +193,11 @@ export function Rules({ onBack }: RulesProps) {
                     Elimination Process
                   </h4>
                   <div className="text-orange-700 text-xs sm:text-sm space-y-1">
-                    <div>• <strong>After each round</strong>, lowest ranked bidders are eliminated</div>
-                    <div>• <strong>Only Top 3</strong> participants advance to the next round</div>
-                    <div>• <strong>Round 1-3:</strong> Place strategic bids to stay in Top 3</div>
-                    <div>• <strong>Round 4 (Final):</strong> Only the remaining top bidders compete for the prize</div>
-                    <div>• <strong>Eliminated?</strong> You cannot re-enter that auction box</div>
+                    <div>• <strong>After each round</strong>, all players advance to the next round</div>
+                    <div>• <strong>All participants</strong> move forward through each round</div>
+                    <div>• <strong>Round 1-3:</strong> Place strategic bids to build your position</div>
+                    <div>• <strong>Round 4 (Final):</strong> Winners are announced in the final round</div>
+                    <div>• <strong>3 or fewer participants?</strong> Winners are announced in Round 1 itself</div>
                   </div>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export function Rules({ onBack }: RulesProps) {
                       <strong className="text-orange-800">Round Ranking:</strong> After each 15-minute round, participants are ranked by their bid amount in that specific round. Bids are separate for each round and NOT cumulative.
                     </p>
                   <p className="text-orange-700">
-                    <strong className="text-orange-800">Survival Rule:</strong> Only the Top 3 bidders advance to the next round. All others are eliminated.
+                    <strong className="text-orange-800">Survival Rule:</strong> All players advance to the next round. Winners are announced in the final round only.
                   </p>
                   <p className="text-orange-700">
                     <strong className="text-orange-800">Strategy Required:</strong> You must strategically increase your bids each round to maintain a top position and avoid elimination.

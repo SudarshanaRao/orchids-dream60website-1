@@ -91,7 +91,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
     
     // Check if user is not qualified for this round
     if (isNotQualified) {
-      setError(`You are not qualified for Round ${box.roundNumber}. Only top 3 players from Round ${box.roundNumber! - 1} can proceed.`);
+      setError(`You are not qualified for Round ${box.roundNumber}. Only qualified players from Round ${box.roundNumber! - 1} can proceed.`);
       return;
     }
     
@@ -332,11 +332,11 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
                       <div className="flex-1 space-y-2">
                         <h3 className="text-sm font-bold text-red-900">Not Qualified</h3>
                         <p className="text-xs font-medium text-red-700 leading-relaxed">
-                          You did not qualify from Round {box.roundNumber! - 1}. Only the <span className="font-bold">top 3 ranked players</span> can proceed to Round {box.roundNumber}.
+                          You did not qualify from Round {box.roundNumber! - 1}. Only <span className="font-bold">qualified players</span> can proceed to Round {box.roundNumber}.
                         </p>
                         <div className="bg-red-200/50 border border-red-300 rounded-lg p-2 mt-2">
                           <p className="text-[10px] font-bold text-red-800 uppercase tracking-wide">Qualification Rule</p>
-                          <p className="text-xs text-red-700 mt-1">Achieve rank 1, 2, or 3 in the previous round to advance.</p>
+                          <p className="text-xs text-red-700 mt-1">All players advance to the next round. Winners are announced in the final round only. If only 3 participants, winners are announced in Round 1 itself.</p>
                         </div>
                       </div>
                     </div>
@@ -727,7 +727,7 @@ export function BidModal({ box, prizeValue, onBid, onClose, userPreviousBid, use
                 
                 <p className="text-xs text-purple-600 text-center">
                   {isNotQualified 
-                    ? 'Finish in top 3 next time to advance'
+                    ? 'Keep playing to win in the final round'
                     : isEntryBox 
                       ? 'Entry fees are non-refundable'
                       : 'Bids are final and cannot be changed'

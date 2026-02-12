@@ -227,12 +227,12 @@ export function Participation({ onBack }: ParticipationProps) {
                       Elimination Process
                     </h4>
                       <div className="text-orange-700 text-xs space-y-1">
-                        <div>• <strong>Progressive elimination:</strong> Happens after each round based on the bid placed in that round.</div>
+                        <div>• <strong>Progressive rounds:</strong> All players advance to the next round.</div>
                         <div>• <strong>Separate Bids:</strong> Bids for each round are separate and NOT cumulative.</div>
-                        <div>• <strong>Top 3 bidders</strong> advance to the next round</div>
-                        <div>• <strong>Lower-ranked participants</strong> are eliminated from the auction</div>
-                        <div>• <strong>Round 4 (Final):</strong> Only remaining top bidders compete for the prize</div>
-                        <div>• <strong>Stay competitive:</strong> Strategically place your bids each round to avoid elimination</div>
+                        <div>• <strong>All players</strong> move forward through each round</div>
+                        <div>• <strong>Winners announced</strong> in the final round (Round 4) only</div>
+                        <div>• <strong>3 or fewer participants?</strong> Winners are announced in Round 1 itself</div>
+                        <div>• <strong>Stay competitive:</strong> Strategically place your bids each round to maximize your position</div>
                       </div>
                   </div>
                 </div>
@@ -301,7 +301,7 @@ export function Participation({ onBack }: ParticipationProps) {
                         <div className="text-yellow-700 text-xs space-y-1">
                           <div>• 4 bidding rounds open sequentially</div>
                           <div>• Raise your bid strategically each round</div>
-                          <div>• Maintain your rank in the Top 3</div>
+                          <div>• Maintain your position through all rounds</div>
                           <div>• Final round bid determines winner</div>
                         </div>
                       </div>

@@ -50,6 +50,7 @@ import { AdminHourlyAuctions } from './AdminHourlyAuctions';
 import { AdminRefundManagement } from './AdminRefundManagement';
 import { AccessCodeManagement } from './AccessCodeManagement';
 import { AdminManagement } from './AdminManagement';
+import { AdminSupportManagement } from './AdminSupportManagement';
 import { useAdminSessionTimeout } from '../hooks/useAdminSessionTimeout';
 
 
@@ -463,7 +464,7 @@ const EditSlotModal = ({
 
 
   export const AdminDashboard = ({ adminUser, onLogout, onSessionTimeout }: AdminDashboardProps) => {
-      const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers', 'admin-management'] as const;
+      const validTabs = ['overview', 'users', 'auctions', 'daily-auctions', 'hourly-auctions', 'refunds', 'support', 'analytics', 'emails', 'sms', 'notifications', 'userAnalytics', 'vouchers', 'admin-management'] as const;
       type TabType = typeof validTabs[number];
 
     const handleSessionTimeout = useCallback(() => {
@@ -1117,6 +1118,19 @@ const EditSlotModal = ({
                 >
                   <IndianRupee className="w-5 h-5 inline-block mr-2" />
                   Refunds
+                </button>
+              )}
+              {isTabAllowed('support') && (
+                <button
+                  onClick={() => setActiveTab('support')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'support'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5 inline-block mr-2" />
+                  Support
                 </button>
               )}
               {isTabAllowed('emails') && (
@@ -1840,6 +1854,10 @@ const EditSlotModal = ({
 
                 {activeTab === 'refunds' && (
                   <AdminRefundManagement adminUserId={adminUser.admin_id} />
+                )}
+
+                {activeTab === 'support' && (
+                  <AdminSupportManagement adminUserId={adminUser.admin_id} />
                 )}
 
               {activeTab === 'admin-management' && isDeveloper && (

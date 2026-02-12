@@ -33,7 +33,7 @@ export function Footer({ onNavigate }: FooterProps) {
             { label: 'About Us', action: 'about' },
             { label: 'Terms of Use', action: 'terms' },
           { label: 'Privacy Policy', action: 'privacy' },
-          { label: 'Refund & Cancellation', action: 'refund-cancellation' }
+          { label: 'Refund & Cancellation', action: 'refund' }
         ]
       }
     ];

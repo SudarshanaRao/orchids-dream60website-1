@@ -454,7 +454,7 @@ export function AuctionLeaderboard({ hourlyAuctionId, userId, onBack }: AuctionL
                       <div>
                         <p className="font-semibold text-purple-900">Better luck next time!</p>
                         <p className="text-sm text-purple-600 mt-1">
-                          You participated in this auction but didn't make it to the top 3 winners. 
+                          You participated in this auction but didn't make it to the winners list. 
                           Keep trying, your winning moment is just around the corner!
                         </p>
                       </div>

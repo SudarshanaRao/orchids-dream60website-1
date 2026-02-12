@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const supportTicketReplySchema = new mongoose.Schema({
+  message: { type: String, required: true },
+  sentBy: { type: String, required: true }, // admin email or name
+  sentAt: { type: Date, default: Date.now },
+  emailSent: { type: Boolean, default: false },
+  emailMessageId: { type: String, default: null }
+}, { _id: true });
+
 const supportTicketSchema = new mongoose.Schema({
   ticketId: {
     type: String,
@@ -61,6 +69,7 @@ const supportTicketSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  replies: [supportTicketReplySchema],
   resolvedAt: {
     type: Date,
     default: null

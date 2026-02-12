@@ -99,7 +99,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
       1: {
         strategy: 'Start conservative! Many players overbid in Round 1. Consider mid-range unique amounts.',
         tip: 'Observe patterns - avoid common numbers like 100, 500, 1000',
-        focus: 'Qualification is key - you need to be in top 3 to advance'
+        focus: 'All players advance to the next round - stay competitive!'
       },
       2: {
         strategy: 'Competition intensifies! Analyze Round 1 patterns and adjust your auction amount accordingly.',
@@ -109,7 +109,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
       3: {
         strategy: 'Mid-round advantage! Use insights from previous rounds to identify winning ranges.',
         tip: 'Psychology matters - think what others might avoid',
-        focus: 'Top 3 advance from 9 players - precision is crucial'
+        focus: 'All players advance from each round - precision is crucial'
       },
       4: {
         strategy: 'Semi-finals! Every auction amount counts. Balance between being unique and competitive.',
@@ -153,7 +153,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
           title: 'Qualification',
           text: roundNum === 6 
             ? 'Final round - Winner takes the grand prize!'
-            : 'Top 3 highest unique auction amounts advance to next round'
+            : 'All players advance to the next round. Winners are announced in the final round (Round 4). If only 3 participants, winners are announced in Round 1 itself.'
         },
         {
           icon: Zap,
@@ -621,7 +621,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       <Users className="w-3 h-3 text-blue-600" />
                       <span className="text-[10px] text-blue-700 font-medium">Qualifiers</span>
                     </div>
-                    <p className="text-xs font-bold text-blue-900">Top 3 Players</p>
+                    <p className="text-xs font-bold text-blue-900">All Players Advance</p>
                   </div>
                   
                   <div className="bg-gradient-to-br from-violet-50/90 to-purple-50/90 backdrop-blur-sm rounded-lg p-2 border border-violet-200/60">
@@ -791,7 +791,7 @@ export function AuctionBox({ box, onClick, isUserHighestBidder, onShowLeaderboar
                       Not Qualified
                     </div>
                     <div className="text-xs text-red-700">
-                      You did not qualify from Round {(box.roundNumber || 1) - 1}. Only top 3 players can proceed.
+                      You did not qualify from Round {(box.roundNumber || 1) - 1}. Only qualified players can proceed.
                     </div>
                   </div>
                 </div>
