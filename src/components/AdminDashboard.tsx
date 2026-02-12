@@ -1842,9 +1842,14 @@ const EditSlotModal = ({
                   <AdminRefundManagement adminUserId={adminUser.admin_id} />
                 )}
 
-                {activeTab === 'admin-management' && isDeveloper && (
-                  <AdminManagement adminUser={adminUser} />
-                )}
+              {activeTab === 'admin-management' && isDeveloper && (
+                <AdminManagement adminUser={adminUser} onTabPermissionsChanged={(adminId, perms) => {
+                  // Update localStorage for any admin whose permissions changed
+                  if (adminId === adminUser.admin_id) {
+                    localStorage.setItem('admin_tabPermissions', JSON.stringify(perms));
+                  }
+                }} />
+              )}
             </main>
 
       {/* Create/Edit Master Auction Modal */}

@@ -1657,17 +1657,20 @@ const getAllAdmins = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Super Admin or Developer required.' });
     }
 
-      const admins = await Admin.find().select('-password').sort({ createdAt: -1 }).lean();
-      // Convert tabPermissions Map to plain object for each admin
-      const adminsData = admins.map(a => {
-        if (a.tabPermissions instanceof Map) {
-          a.tabPermissions = Object.fromEntries(a.tabPermissions);
-        } else if (a.tabPermissions && typeof a.tabPermissions === 'object' && a.tabPermissions._doc) {
-          a.tabPermissions = a.tabPermissions._doc;
-        }
-        return a;
-      });
-      return res.status(200).json({ success: true, data: adminsData });
+    const admins = await Admin.find().select('-password').sort({ createdAt: -1 });
+    // Convert tabPermissions Map to plain object for each admin
+    const adminsData = admins.map(a => {
+      const obj = a.toObject();
+      // Mongoose Map -> plain object
+      if (a.tabPermissions instanceof Map) {
+        obj.tabPermissions = Object.fromEntries(a.tabPermissions);
+      } else if (obj.tabPermissions && typeof obj.tabPermissions === 'object') {
+        // lean/toObject may produce nested _doc or Map-like structures
+        obj.tabPermissions = JSON.parse(JSON.stringify(obj.tabPermissions));
+      }
+      return obj;
+    });
+    return res.status(200).json({ success: true, data: adminsData });
   } catch (err) {
     console.error('Get All Admins Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });

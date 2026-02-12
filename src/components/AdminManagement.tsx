@@ -5,6 +5,7 @@ import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 
 interface AdminManagementProps {
   adminUser: { admin_id: string; username: string; adminType: string };
+  onTabPermissionsChanged?: (adminId: string, perms: Record<string, boolean>) => void;
 }
 
 interface AdminRecord {
@@ -19,7 +20,7 @@ interface AdminRecord {
   tabPermissions?: Record<string, boolean>;
 }
 
-export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
+export const AdminManagement = ({ adminUser, onTabPermissionsChanged }: AdminManagementProps) => {
   const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -61,15 +62,21 @@ export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tabPermissions: updated }),
       });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(`Tab "${ALL_TABS.find(t => t.key === tabKey)?.label}" ${enabled ? 'enabled' : 'disabled'}`);
-        // Update local state
-        setAdmins(prev => prev.map(a => a.admin_id === admin.admin_id ? { ...a, tabPermissions: updated } : a));
-        if (tabPermModal?.admin_id === admin.admin_id) {
-          setTabPermModal({ ...admin, tabPermissions: updated });
-        }
-      } else {
+    const data = await res.json();
+        if (data.success) {
+          toast.success(`Tab "${ALL_TABS.find(t => t.key === tabKey)?.label}" ${enabled ? 'enabled' : 'disabled'}`);
+          // Update local state
+          setAdmins(prev => prev.map(a => a.admin_id === admin.admin_id ? { ...a, tabPermissions: updated } : a));
+          if (tabPermModal?.admin_id === admin.admin_id) {
+            setTabPermModal({ ...admin, tabPermissions: updated });
+          }
+          // Persist to localStorage so refresh picks it up
+          if (admin.admin_id === adminUser.admin_id) {
+            localStorage.setItem('admin_tabPermissions', JSON.stringify(updated));
+          }
+          // Notify parent so dashboard tabs update live
+          onTabPermissionsChanged?.(admin.admin_id, updated);
+        } else {
         toast.error(data.message || 'Failed to update');
       }
     } catch {
