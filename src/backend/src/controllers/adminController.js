@@ -108,16 +108,19 @@ const adminLogin = async (req, res) => {
     }
 
     return res.status(200).json({
-      success: true,
-      message: 'Admin login successful',
-      admin: {
-        admin_id: adminUser.admin_id,
-        username: adminUser.username,
-        email: adminUser.email,
-        adminType: adminUser.adminType,
-        hasAccessCode: !!adminUser.personalAccessCode,
-      },
-    });
+        success: true,
+        message: 'Admin login successful',
+        admin: {
+          admin_id: adminUser.admin_id,
+          username: adminUser.username,
+          email: adminUser.email,
+          adminType: adminUser.adminType,
+          hasAccessCode: !!adminUser.personalAccessCode,
+          tabPermissions: adminUser.tabPermissions instanceof Map
+            ? Object.fromEntries(adminUser.tabPermissions)
+            : adminUser.tabPermissions || {},
+        },
+      });
   } catch (err) {
     console.error('Admin Login Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -1654,8 +1657,17 @@ const getAllAdmins = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied. Super Admin or Developer required.' });
     }
 
-    const admins = await Admin.find().select('-password').sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ success: true, data: admins });
+      const admins = await Admin.find().select('-password').sort({ createdAt: -1 }).lean();
+      // Convert tabPermissions Map to plain object for each admin
+      const adminsData = admins.map(a => {
+        if (a.tabPermissions instanceof Map) {
+          a.tabPermissions = Object.fromEntries(a.tabPermissions);
+        } else if (a.tabPermissions && typeof a.tabPermissions === 'object' && a.tabPermissions._doc) {
+          a.tabPermissions = a.tabPermissions._doc;
+        }
+        return a;
+      });
+      return res.status(200).json({ success: true, data: adminsData });
   } catch (err) {
     console.error('Get All Admins Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
@@ -1718,7 +1730,7 @@ const updateAdmin = async (req, res) => {
     }
 
     const { admin_id } = req.params;
-    const { username, email, mobile, adminType, isActive, status } = req.body;
+    const { username, email, mobile, adminType, isActive, status, tabPermissions } = req.body;
 
     const target = await Admin.findOne({ admin_id });
     if (!target) return res.status(404).json({ success: false, message: 'Admin not found' });
@@ -1730,6 +1742,9 @@ const updateAdmin = async (req, res) => {
     if (typeof isActive === 'boolean') target.isActive = isActive;
     if (status === 'blocked') target.isActive = false;
     if (status === 'active') target.isActive = true;
+    if (tabPermissions && typeof tabPermissions === 'object') {
+      target.tabPermissions = new Map(Object.entries(tabPermissions));
+    }
 
     await target.save();
     return res.status(200).json({ success: true, message: 'Admin updated successfully' });

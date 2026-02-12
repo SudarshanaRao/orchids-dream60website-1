@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Trash2, Shield, Key, Lock, Eye, EyeOff, X, RefreshCw, Ban, CheckCircle2, Edit } from 'lucide-react';
+import { Users, Plus, Trash2, Shield, Key, Lock, Eye, EyeOff, X, RefreshCw, Ban, CheckCircle2, Edit, ToggleLeft, ToggleRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
 
@@ -16,6 +16,7 @@ interface AdminRecord {
   isActive: boolean;
   createdAt: string;
   accessCodeCreatedAt?: string;
+  tabPermissions?: Record<string, boolean>;
 }
 
 export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
@@ -31,6 +32,52 @@ export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
     username: '', email: '', mobile: '', password: '', adminType: 'ADMIN',
   });
   const [createLoading, setCreateLoading] = useState(false);
+  const [tabPermModal, setTabPermModal] = useState<AdminRecord | null>(null);
+  const [tabPermLoading, setTabPermLoading] = useState(false);
+
+  const ALL_TABS = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'users', label: 'Users' },
+    { key: 'auctions', label: 'Master Auctions' },
+    { key: 'daily-auctions', label: 'Daily Auctions' },
+    { key: 'hourly-auctions', label: 'Hourly Auctions' },
+    { key: 'refunds', label: 'Refunds' },
+    { key: 'emails', label: 'Email Management' },
+    { key: 'sms', label: 'SMS Management' },
+    { key: 'analytics', label: 'Analytics' },
+    { key: 'notifications', label: 'Push Notifications' },
+    { key: 'userAnalytics', label: 'User Tracking' },
+    { key: 'vouchers', label: 'Voucher Management' },
+    { key: 'admin-management', label: 'Admin Management' },
+  ];
+
+  const handleToggleTabPermission = async (admin: AdminRecord, tabKey: string, enabled: boolean) => {
+    setTabPermLoading(true);
+    const current = admin.tabPermissions || ALL_TABS.reduce((acc, t) => ({ ...acc, [t.key]: true }), {} as Record<string, boolean>);
+    const updated = { ...current, [tabKey]: enabled };
+    try {
+      const res = await fetch(`${API_BASE}/admin/admins/${admin.admin_id}?user_id=${adminUser.admin_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tabPermissions: updated }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Tab "${ALL_TABS.find(t => t.key === tabKey)?.label}" ${enabled ? 'enabled' : 'disabled'}`);
+        // Update local state
+        setAdmins(prev => prev.map(a => a.admin_id === admin.admin_id ? { ...a, tabPermissions: updated } : a));
+        if (tabPermModal?.admin_id === admin.admin_id) {
+          setTabPermModal({ ...admin, tabPermissions: updated });
+        }
+      } else {
+        toast.error(data.message || 'Failed to update');
+      }
+    } catch {
+      toast.error('Failed to update tab permissions');
+    } finally {
+      setTabPermLoading(false);
+    }
+  };
 
   const fetchAdmins = async () => {
     setLoading(true);
@@ -256,8 +303,11 @@ export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
                   </td>
                   <td className="py-3 px-4 text-sm text-slate-500">{new Date(admin.createdAt).toLocaleDateString()}</td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-1">
-                      {admin.isActive ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setTabPermModal(admin)} title="Manage Tabs" className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        {admin.isActive ? (
                         <button onClick={() => handleToggleStatus(admin, 'blocked')} title="Block" className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
                           <Ban className="w-4 h-4" />
                         </button>
@@ -365,6 +415,50 @@ export const AdminManagement = ({ adminUser }: AdminManagementProps) => {
                   {actionLoading ? 'Processing...' : 'Confirm'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Permissions Modal */}
+      {tabPermModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white flex items-center justify-between p-5 border-b border-purple-200">
+              <div>
+                <h3 className="text-lg font-bold text-purple-900">Manage Tab Visibility</h3>
+                <p className="text-sm text-slate-500 mt-0.5">{tabPermModal.username} ({tabPermModal.adminType.replace('_', ' ')})</p>
+              </div>
+              <button onClick={() => setTabPermModal(null)} className="p-2 hover:bg-purple-50 rounded-lg"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 space-y-2">
+              {tabPermModal.adminType === 'DEVELOPER' && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                  Developers always have access to all tabs.
+                </div>
+              )}
+              {ALL_TABS.map(tab => {
+                const perms = tabPermModal.tabPermissions || {};
+                const isEnabled = perms[tab.key] !== false;
+                const isDevTarget = tabPermModal.adminType === 'DEVELOPER';
+                return (
+                  <div key={tab.key} className={`flex items-center justify-between p-3 rounded-lg border ${isEnabled ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <span className={`font-medium text-sm ${isEnabled ? 'text-purple-900' : 'text-gray-500'}`}>{tab.label}</span>
+                    <button
+                      onClick={() => handleToggleTabPermission(tabPermModal, tab.key, !isEnabled)}
+                      disabled={tabPermLoading || isDevTarget}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={isDevTarget ? 'Developers always have all tabs' : isEnabled ? 'Click to disable' : 'Click to enable'}
+                    >
+                      {isEnabled ? (
+                        <ToggleRight className="w-8 h-8 text-purple-600" />
+                      ) : (
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

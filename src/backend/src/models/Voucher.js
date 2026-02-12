@@ -83,12 +83,17 @@ const VoucherSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+// Generate a unique transactionId
+const generateTransactionId = () => {
+    const timestamp = Date.now().toString(36).toUpperCase();
+    const uuid = randomUUID().replace(/-/g, '').toUpperCase();
+    return `D60-AV-${timestamp}-${uuid.slice(0, 12)}`;
+};
+
 // Auto-generate transactionId before save
 VoucherSchema.pre('save', function (next) {
     if (!this.transactionId) {
-        const timestamp = Date.now().toString(36).toUpperCase();
-        const random = randomUUID().split('-')[0].toUpperCase();
-        this.transactionId = `D60-AV-${timestamp}-${random}`;
+        this.transactionId = generateTransactionId();
     }
     next();
 });
@@ -100,4 +105,6 @@ VoucherSchema.index(
     { unique: true, partialFilterExpression: { woohooOrderId: { $type: 'string' } } }
 );
 
-module.exports = mongoose.model('Voucher', VoucherSchema);
+const VoucherModel = mongoose.model('Voucher', VoucherSchema);
+VoucherModel.generateTransactionId = generateTransactionId;
+module.exports = VoucherModel;

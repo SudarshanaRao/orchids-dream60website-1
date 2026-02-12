@@ -58,6 +58,7 @@ interface AdminUser {
   username: string;
   email: string;
   adminType: 'ADMIN' | 'SUPER_ADMIN' | 'DEVELOPER';
+  tabPermissions?: Record<string, boolean>;
 }
 
 interface Statistics {
@@ -170,55 +171,46 @@ const EditSlotModal = ({
 }) => {
   const [formData, setFormData] = useState<DailyAuctionConfigItem>({ ...slot });
   const [isSaving, setIsSaving] = useState(false);
-  const [descriptionRows, setDescriptionRows] = useState(() => {
+  const [descriptionText, setDescriptionText] = useState(() => {
     const entries = Object.entries(slot.productDescription || {});
-    if (entries.length === 0) {
-      return [{ key: '', value: '' }];
-    }
-    return entries.map(([key, value]) => ({
-      key,
-      value: value ? String(value) : ''
-    }));
+    if (entries.length === 0) return '';
+    return entries.map(([key, value]) => `${key}\t${value}`).join('\n');
   });
+
+  const parseDescription = (text: string): Record<string, string> => {
+    const result: Record<string, string> = {};
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const trimmed = line.replace(/[\u200E\u200F\u200B\u00AD\u200C\u200D\uFEFF]/g, '').trim();
+      if (!trimmed) continue;
+      let key = '', value = '';
+      if (trimmed.includes('\t')) {
+        const idx = trimmed.indexOf('\t');
+        key = trimmed.slice(0, idx).trim();
+        value = trimmed.slice(idx + 1).trim();
+      } else if (trimmed.includes(':')) {
+        const idx = trimmed.indexOf(':');
+        key = trimmed.slice(0, idx).trim();
+        value = trimmed.slice(idx + 1).trim();
+      } else {
+        const match = trimmed.match(/^(\S+(?:\s\S+)*?)\s{2,}(.+)$/);
+        if (match) { key = match[1].trim(); value = match[2].trim(); }
+        else { key = trimmed; value = ''; }
+      }
+      if (key) result[key] = value;
+    }
+    return result;
+  };
+
+  const parsedEntries = Object.entries(parseDescription(descriptionText));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-
-    const productDescription = descriptionRows.reduce<Record<string, string>>((acc, row) => {
-      const key = row.key.trim();
-      if (!key) return acc;
-      acc[key] = row.value ?? '';
-      return acc;
-    }, {});
-
-    const updatedData = {
-      ...formData,
-      productDescription
-    };
+    const productDescription = parseDescription(descriptionText);
+    const updatedData = { ...formData, productDescription };
     await onSave(updatedData);
     setIsSaving(false);
-  };
-
-  const handleDescriptionChange = (index: number, field: 'key' | 'value', value: string) => {
-    setDescriptionRows((prev) =>
-      prev.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, [field]: value } : row
-      )
-    );
-  };
-
-  const handleAddDescriptionRow = () => {
-    setDescriptionRows((prev) => [...prev, { key: '', value: '' }]);
-  };
-
-  const handleRemoveDescriptionRow = (index: number) => {
-    setDescriptionRows((prev) => {
-      if (prev.length === 1) {
-        return [{ key: '', value: '' }];
-      }
-      return prev.filter((_, rowIndex) => rowIndex !== index);
-    });
   };
 
   return (
@@ -269,49 +261,40 @@ const EditSlotModal = ({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-purple-900 mb-2">
-              Description
-            </label>
-            <div className="space-y-2">
-              <div className="grid grid-cols-[1fr_1.5fr_auto] gap-2 text-xs font-semibold text-purple-700">
-                <span>Label</span>
-                <span>Value</span>
-                <span className="sr-only">Actions</span>
-              </div>
-              {descriptionRows.map((row, index) => (
-                <div key={`${row.key}-${index}`} className="grid grid-cols-[1fr_1.5fr_auto] gap-2">
-                  <input
-                    type="text"
-                    value={row.key}
-                    onChange={(e) => handleDescriptionChange(index, 'key', e.target.value)}
-                    placeholder="e.g., Color"
-                    className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                  />
-                  <input
-                    type="text"
-                    value={row.value}
-                    onChange={(e) => handleDescriptionChange(index, 'value', e.target.value)}
-                    placeholder="e.g., Red"
-                    className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDescriptionRow(index)}
-                    className="px-3 py-2 text-xs font-semibold text-red-600 border-2 border-red-200 rounded-lg hover:bg-red-50"
-                  >
-                    Remove
-                  </button>
+              <label className="block text-sm font-semibold text-purple-900 mb-2">
+                Product Description (Key [Tab] Value)
+              </label>
+              <textarea
+                value={descriptionText}
+                onChange={(e) => setDescriptionText(e.target.value)}
+                placeholder={"OS\tAndroid 15\nRAM\t4 GB\nColor\tBlack"}
+                className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 font-mono text-sm"
+                rows={5}
+              />
+              <p className="text-xs text-purple-500 mt-1 italic">Each line should be "Key [Tab] Value".</p>
+
+              {parsedEntries.length > 0 && (
+                <div className="mt-3 border-2 border-purple-200 rounded-lg overflow-hidden">
+                  <div className="bg-purple-100 px-4 py-2 text-sm font-bold text-purple-900 tracking-wide">DESCRIPTION PREVIEW</div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-purple-50">
+                        <th className="text-left px-4 py-2 text-purple-700 font-semibold">Attribute</th>
+                        <th className="text-left px-4 py-2 text-purple-700 font-semibold">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedEntries.map(([key, value], idx) => (
+                        <tr key={idx} className={idx % 2 === 0 ? 'bg-purple-50/50' : 'bg-white'}>
+                          <td className="px-4 py-2 text-purple-700 font-medium">{key}</td>
+                          <td className="px-4 py-2 text-purple-600">{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddDescriptionRow}
-                className="w-full sm:w-auto px-3 py-2 text-xs font-semibold text-purple-700 border-2 border-purple-200 rounded-lg hover:bg-purple-50"
-              >
-                Add Row
-              </button>
+              )}
             </div>
-          </div>
 
           {/* Time Slot */}
           <div>
@@ -544,6 +527,19 @@ const EditSlotModal = ({
     
     const isSuperAdmin = adminUser.adminType === 'SUPER_ADMIN' || adminUser.adminType === 'DEVELOPER';
     const isDeveloper = adminUser.adminType === 'DEVELOPER';
+
+    // Tab permissions - DEVELOPER always has all tabs, others check tabPermissions
+    const getTabPermissions = (): Record<string, boolean> => {
+      if (isDeveloper) {
+        return validTabs.reduce((acc, tab) => ({ ...acc, [tab]: true }), {} as Record<string, boolean>);
+      }
+      const stored = localStorage.getItem('admin_tabPermissions');
+      const perms = adminUser.tabPermissions || (stored ? JSON.parse(stored) : null);
+      if (!perms) return validTabs.reduce((acc, tab) => ({ ...acc, [tab]: true }), {} as Record<string, boolean>);
+      return perms;
+    };
+    const tabPermissions = getTabPermissions();
+    const isTabAllowed = (tab: string) => tabPermissions[tab] !== false;
 
     const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
 
@@ -956,6 +952,7 @@ const EditSlotModal = ({
     localStorage.removeItem('admin_username');
     localStorage.removeItem('admin_adminType');
     localStorage.removeItem('admin_login_time');
+    localStorage.removeItem('admin_tabPermissions');
     toast.success('Logged out successfully');
     onLogout();
   };
@@ -1044,152 +1041,172 @@ const EditSlotModal = ({
 
           {/* Tabs */}
           <div className="flex gap-2 mt-4 border-b border-purple-200 overflow-x-auto">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'overview'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-              <Activity className="w-5 h-5 inline-block mr-2" />
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'users'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-              <Users className="w-5 h-5 inline-block mr-2" />
-              Users
-            </button>
+              {isTabAllowed('overview') && (
               <button
-                onClick={() => setActiveTab('auctions')}
+                onClick={() => setActiveTab('overview')}
                 className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'auctions'
+                  activeTab === 'overview'
                     ? 'text-purple-700 border-b-2 border-purple-700'
                     : 'text-purple-500 hover:text-purple-700'
                 }`}
               >
-                <Trophy className="w-5 h-5 inline-block mr-2" />
-                Master Auctions
+                <Activity className="w-5 h-5 inline-block mr-2" />
+                Overview
               </button>
+              )}
+              {isTabAllowed('users') && (
               <button
-                onClick={() => setActiveTab('daily-auctions')}
+                onClick={() => setActiveTab('users')}
                 className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'daily-auctions'
+                  activeTab === 'users'
                     ? 'text-purple-700 border-b-2 border-purple-700'
                     : 'text-purple-500 hover:text-purple-700'
                 }`}
               >
-                <Calendar className="w-5 h-5 inline-block mr-2" />
-                Daily Auctions
+                <Users className="w-5 h-5 inline-block mr-2" />
+                Users
               </button>
-              <button
-                onClick={() => setActiveTab('hourly-auctions')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'hourly-auctions'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <Clock className="w-5 h-5 inline-block mr-2" />
-                Hourly Auctions
-              </button>
-              <button
-                onClick={() => setActiveTab('refunds')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'refunds'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <IndianRupee className="w-5 h-5 inline-block mr-2" />
-                Refunds
-              </button>
-              <button
-                onClick={() => setActiveTab('emails')}
-              className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'emails'
-                  ? 'text-purple-700 border-b-2 border-purple-700'
-                  : 'text-purple-500 hover:text-purple-700'
-              }`}
-            >
-<Mail className="w-5 h-5 inline-block mr-2" />
-                Email Management
-              </button>
-              {/* Added Analytics tab */}
-              <button
-                onClick={() => setActiveTab('sms')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
-                  activeTab === 'sms'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <MessageSquare className="w-5 h-5 mr-2" />
-                SMS Management
-              </button>
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'analytics'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <BarChart3 className="w-5 h-5 inline-block mr-2" />
-                Analytics
-              </button>
-              {/* Added Notifications tab */}
-<button
-                onClick={() => setActiveTab('notifications')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'notifications'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <Bell className="w-5 h-5 inline-block mr-2" />
-                Push Notifications
-              </button>
-              {isSuperAdmin && (
+              )}
+              {isTabAllowed('auctions') && (
                 <button
-                  onClick={() => setActiveTab('userAnalytics')}
+                  onClick={() => setActiveTab('auctions')}
                   className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                    activeTab === 'userAnalytics'
+                    activeTab === 'auctions'
                       ? 'text-purple-700 border-b-2 border-purple-700'
                       : 'text-purple-500 hover:text-purple-700'
                   }`}
                 >
-                  <Eye className="w-5 h-5 inline-block mr-2" />
-                  User Tracking
+                  <Trophy className="w-5 h-5 inline-block mr-2" />
+                  Master Auctions
                 </button>
               )}
-              <button
-                onClick={() => setActiveTab('vouchers')}
-                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                  activeTab === 'vouchers'
-                    ? 'text-purple-700 border-b-2 border-purple-700'
-                    : 'text-purple-500 hover:text-purple-700'
-                }`}
-              >
-                <Ticket className="w-5 h-5 inline-block mr-2" />
-                Voucher Management
-              </button>
-              {isDeveloper && (
+              {isTabAllowed('daily-auctions') && (
                 <button
-                  onClick={() => setActiveTab('admin-management')}
+                  onClick={() => setActiveTab('daily-auctions')}
                   className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
-                    activeTab === 'admin-management'
+                    activeTab === 'daily-auctions'
                       ? 'text-purple-700 border-b-2 border-purple-700'
                       : 'text-purple-500 hover:text-purple-700'
                   }`}
                 >
-                  <Shield className="w-5 h-5 inline-block mr-2" />
+                  <Calendar className="w-5 h-5 inline-block mr-2" />
+                  Daily Auctions
+                </button>
+              )}
+              {isTabAllowed('hourly-auctions') && (
+                <button
+                  onClick={() => setActiveTab('hourly-auctions')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'hourly-auctions'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <Clock className="w-5 h-5 inline-block mr-2" />
+                  Hourly Auctions
+                </button>
+              )}
+              {isTabAllowed('refunds') && (
+                <button
+                  onClick={() => setActiveTab('refunds')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'refunds'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <IndianRupee className="w-5 h-5 inline-block mr-2" />
+                  Refunds
+                </button>
+              )}
+              {isTabAllowed('emails') && (
+                <button
+                  onClick={() => setActiveTab('emails')}
+                className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'emails'
+                    ? 'text-purple-700 border-b-2 border-purple-700'
+                    : 'text-purple-500 hover:text-purple-700'
+                }`}
+              >
+<Mail className="w-5 h-5 inline-block mr-2" />
+                  Email Management
+                </button>
+              )}
+              {isTabAllowed('sms') && (
+                <button
+                  onClick={() => setActiveTab('sms')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap flex items-center ${
+                    activeTab === 'sms'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <MessageSquare className="w-5 h-5 mr-2" />
+                  SMS Management
+                </button>
+              )}
+              {isTabAllowed('analytics') && (
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'analytics'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <BarChart3 className="w-5 h-5 inline-block mr-2" />
+                  Analytics
+                </button>
+              )}
+              {isTabAllowed('notifications') && (
+<button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'notifications'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <Bell className="w-5 h-5 inline-block mr-2" />
+                  Push Notifications
+                </button>
+              )}
+                {isSuperAdmin && isTabAllowed('userAnalytics') && (
+                  <button
+                    onClick={() => setActiveTab('userAnalytics')}
+                    className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                      activeTab === 'userAnalytics'
+                        ? 'text-purple-700 border-b-2 border-purple-700'
+                        : 'text-purple-500 hover:text-purple-700'
+                    }`}
+                  >
+                    <Eye className="w-5 h-5 inline-block mr-2" />
+                    User Tracking
+                  </button>
+                )}
+              {isTabAllowed('vouchers') && (
+                <button
+                  onClick={() => setActiveTab('vouchers')}
+                  className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                    activeTab === 'vouchers'
+                      ? 'text-purple-700 border-b-2 border-purple-700'
+                      : 'text-purple-500 hover:text-purple-700'
+                  }`}
+                >
+                  <Ticket className="w-5 h-5 inline-block mr-2" />
+                  Voucher Management
+                </button>
+              )}
+                {isDeveloper && (
+                  <button
+                    onClick={() => setActiveTab('admin-management')}
+                    className={`px-6 py-3 font-semibold transition-all whitespace-nowrap ${
+                      activeTab === 'admin-management'
+                        ? 'text-purple-700 border-b-2 border-purple-700'
+                        : 'text-purple-500 hover:text-purple-700'
+                    }`}
+                  >
+                    <Shield className="w-5 h-5 inline-block mr-2" />
                   Admin Management
                 </button>
               )}

@@ -224,6 +224,9 @@ export const AdminLogin = ({ onLogin, onBack, onSignupClick }: AdminLoginProps) 
     localStorage.setItem('admin_username', admin.username);
     localStorage.setItem('admin_adminType', admin.adminType);
     localStorage.setItem('admin_login_time', String(Date.now()));
+    if (admin.tabPermissions) {
+      localStorage.setItem('admin_tabPermissions', JSON.stringify(admin.tabPermissions));
+    }
     toast.success('Login successful');
     onLogin(admin);
   };

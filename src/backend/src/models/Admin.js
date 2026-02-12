@@ -51,6 +51,25 @@ const adminSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    tabPermissions: {
+      type: Map,
+      of: Boolean,
+      default: () => new Map([
+        ['overview', true],
+        ['users', true],
+        ['auctions', true],
+        ['daily-auctions', true],
+        ['hourly-auctions', true],
+        ['refunds', true],
+        ['analytics', true],
+        ['emails', true],
+        ['sms', true],
+        ['notifications', true],
+        ['userAnalytics', true],
+        ['vouchers', true],
+        ['admin-management', true],
+      ]),
+    },
     personalAccessCode: {
       type: String,
       select: false,
@@ -111,10 +130,14 @@ adminSchema.methods.compareAccessCode = async function (enteredCode) {
 };
 
 adminSchema.methods.publicProfile = function () {
-  const obj = this.toObject({ virtuals: true });
-  delete obj.password;
-  delete obj.__v;
-  return obj;
-};
+    const obj = this.toObject({ virtuals: true });
+    delete obj.password;
+    delete obj.__v;
+    // Convert Mongoose Map to plain object
+    if (obj.tabPermissions instanceof Map) {
+      obj.tabPermissions = Object.fromEntries(obj.tabPermissions);
+    }
+    return obj;
+  };
 
 module.exports = mongoose.models.Admin || mongoose.model('Admin', adminSchema);
