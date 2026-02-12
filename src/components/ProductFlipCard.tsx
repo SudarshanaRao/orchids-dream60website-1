@@ -298,27 +298,35 @@ onClick={(e) => {
           .rotate-y-180 {
             transform: rotateY(180deg);
           }
-          .custom-scrollbar {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-          }
-          .custom-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
+           .custom-scrollbar {
+              scrollbar-width: thin;
+              scrollbar-color: #d1d5db transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background-color: #d1d5db;
+              border-radius: 4px;
+            }
         `}</style>
 
         {/* Disclaimer Modal */}
         {showDisclaimer && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/60 backdrop-blur-sm"
-            onClick={() => setShowDisclaimer(false)}
-          >
             <div 
-              className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDisclaimer(false)}
             >
+                  <div 
+                    className="relative w-full max-w-sm bg-white rounded-xl shadow-2xl flex flex-col"
+                    style={{ maxHeight: '50vh' }}
+                  onClick={(e) => e.stopPropagation()}
+                >
               {/* Header */}
-              <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 flex-shrink-0">
+              <div className="bg-gradient-to-r from-red-600 to-red-500 px-4 py-3 flex-shrink-0 rounded-t-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Info className="w-4 h-4 text-white" />
@@ -334,7 +342,7 @@ onClick={(e) => {
               </div>
 
               {/* Content */}
-              <div className="p-4 space-y-3 overflow-y-auto flex-1">
+              <div className="p-3 space-y-2.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
                 {/* Representation Disclaimer - Red */}
                 <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
                   <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -381,7 +389,7 @@ onClick={(e) => {
               </div>
 
               {/* Footer */}
-              <div className="px-4 pb-4 flex-shrink-0">
+              <div className="px-4 py-3 flex-shrink-0 border-t border-gray-100 rounded-b-xl">
                 <button
                   onClick={() => setShowDisclaimer(false)}
                   className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all text-sm"
