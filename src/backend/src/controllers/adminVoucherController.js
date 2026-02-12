@@ -178,6 +178,29 @@ const sendVoucher = async (req, res) => {
         });
     } catch (error) {
         console.error('Error sending voucher:', error.response?.data || error);
+        
+        // Auto-repair old woohooOrderId index if it causes duplicate key error
+        if (error.code === 11000 && (error.keyPattern?.woohooOrderId !== undefined || (error.message && error.message.includes('woohooOrderId')))) {
+            try {
+                const indexes = await Voucher.collection.getIndexes();
+                for (const [name] of Object.entries(indexes)) {
+                    if (name.includes('woohooOrderId')) {
+                        await Voucher.collection.dropIndex(name).catch(() => {});
+                    }
+                }
+                await Voucher.collection.createIndex(
+                    { woohooOrderId: 1 },
+                    { unique: true, partialFilterExpression: { woohooOrderId: { $type: 'string' } } }
+                ).catch(() => {});
+            } catch (repairErr) {
+                console.error('Index repair failed:', repairErr);
+            }
+            return res.status(400).json({
+                success: false,
+                message: 'A stale database index caused a conflict. It has been repaired - please try again.'
+            });
+        }
+        
         return res.status(500).json({
             success: false,
             message: 'Error creating voucher via Woohoo API',
@@ -752,11 +775,45 @@ const sendManualVoucher = async (req, res) => {
         });
     } catch (error) {
         console.error('Error sending manual voucher:', error);
-        const errorMessage = error.code === 11000
-            ? 'Duplicate voucher entry - a voucher may already exist for this claim'
-            : error.name === 'ValidationError'
-                ? `Validation error: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}`
-                : 'Error creating manual voucher';
+        
+        if (error.code === 11000) {
+            const keyPattern = error.keyPattern || {};
+            console.error('Duplicate key details - pattern:', keyPattern, 'value:', error.keyValue);
+            
+            // If it's a woohooOrderId null collision from old sparse index, auto-repair
+            if (keyPattern.woohooOrderId !== undefined || (error.message && error.message.includes('woohooOrderId'))) {
+                try {
+                    const indexes = await Voucher.collection.getIndexes();
+                    for (const [name] of Object.entries(indexes)) {
+                        if (name.includes('woohooOrderId')) {
+                            await Voucher.collection.dropIndex(name).catch(() => {});
+                            console.log(`Dropped conflicting index: ${name}`);
+                        }
+                    }
+                    // Ensure the correct partial filter index
+                    await Voucher.collection.createIndex(
+                        { woohooOrderId: 1 },
+                        { unique: true, partialFilterExpression: { woohooOrderId: { $type: 'string' } } }
+                    ).catch(() => {});
+                } catch (repairErr) {
+                    console.error('Index repair failed:', repairErr);
+                }
+                return res.status(400).json({
+                    success: false,
+                    message: 'A stale database index caused a conflict. It has been repaired automatically - please try sending the voucher again.'
+                });
+            }
+            
+            // transactionId or claimId collision
+            return res.status(400).json({
+                success: false,
+                message: 'A voucher already exists for this claim. If you want to resend, enable "Force Resend".'
+            });
+        }
+        
+        const errorMessage = error.name === 'ValidationError'
+            ? `Validation error: ${Object.values(error.errors || {}).map(e => e.message).join(', ')}`
+            : 'Error creating manual voucher';
         return res.status(500).json({
             success: false,
             message: errorMessage,

@@ -98,8 +98,7 @@ VoucherSchema.pre('save', function (next) {
     next();
 });
 
-// Unique index on woohooOrderId only when it exists (not null/undefined)
-// This replaces the old sparse unique index that incorrectly blocked multiple null values
+// Unique index on woohooOrderId only when it exists and is a non-empty string
 VoucherSchema.index(
     { woohooOrderId: 1 },
     { unique: true, partialFilterExpression: { woohooOrderId: { $type: 'string' } } }
@@ -107,4 +106,22 @@ VoucherSchema.index(
 
 const VoucherModel = mongoose.model('Voucher', VoucherSchema);
 VoucherModel.generateTransactionId = generateTransactionId;
+
+// Drop any old conflicting indexes on woohooOrderId (e.g. sparse unique)
+// and ensure the correct partial filter index exists
+VoucherModel.collection.getIndexes().then(indexes => {
+    const conflicting = Object.entries(indexes).find(([name, keys]) => {
+        return keys.some && keys.some(k => k[0] === 'woohooOrderId') && name !== 'woohooOrderId_1';
+    });
+    // Drop ALL woohooOrderId indexes and let Mongoose recreate the correct one
+    const woohooIndexes = Object.entries(indexes).filter(([name]) =>
+        name.includes('woohooOrderId')
+    );
+    for (const [indexName] of woohooIndexes) {
+        VoucherModel.collection.dropIndex(indexName).then(() => {
+            console.log(`Dropped old index: ${indexName}`);
+        }).catch(() => {});
+    }
+}).catch(() => {});
+
 module.exports = VoucherModel;
