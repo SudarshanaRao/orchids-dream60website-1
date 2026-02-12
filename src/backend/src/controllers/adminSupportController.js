@@ -120,29 +120,35 @@ const replyToTicket = async (req, res) => {
     const admin = await verifyAdmin(req.query.user_id);
     if (!admin) return res.status(403).json({ success: false, message: 'Admin access required' });
 
-    const { message, templateId } = req.body;
+    const { message, templateId, isHtml } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Reply message is required' });
 
     const ticket = await SupportTicket.findOne({ ticketId: req.params.ticketId });
     if (!ticket) return res.status(404).json({ success: false, message: 'Ticket not found' });
 
-    // Build email HTML
-    const primaryClientUrl = getPrimaryClientUrl();
-    const emailHtml = buildEmailTemplate({
-      primaryClientUrl,
-      title: `Re: ${ticket.subject}`,
-      status: 'Support Reply',
-      bodyHtml: `
-        <div style="padding: 30px 40px;">
-          <p style="font-size: 16px; color: #e5e7eb; margin-bottom: 16px;">Hi ${ticket.name},</p>
-          <div style="font-size: 14px; color: #d1d5db; line-height: 1.8; white-space: pre-wrap;">${message}</div>
-          <div style="margin-top: 24px; padding: 16px; background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px;">
-            <p style="font-size: 12px; color: #a78bfa; margin-bottom: 4px;">Ticket ID: ${ticket.ticketId}</p>
-            <p style="font-size: 12px; color: #6b7280;">If you have further questions, please reply to this email or visit our support center.</p>
+    let emailHtml;
+    if (isHtml && message.includes('<')) {
+      // Message is already HTML (from a template) - send it directly
+      emailHtml = message;
+    } else {
+      // Plain text reply - wrap in the branded email template
+      const primaryClientUrl = getPrimaryClientUrl();
+      emailHtml = buildEmailTemplate({
+        primaryClientUrl,
+        title: `Re: ${ticket.subject}`,
+        status: 'Support Reply',
+        bodyHtml: `
+          <div style="padding: 30px 40px;">
+            <p style="font-size: 16px; color: #e5e7eb; margin-bottom: 16px;">Hi ${ticket.name},</p>
+            <div style="font-size: 14px; color: #d1d5db; line-height: 1.8; white-space: pre-wrap;">${message}</div>
+            <div style="margin-top: 24px; padding: 16px; background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px;">
+              <p style="font-size: 12px; color: #a78bfa; margin-bottom: 4px;">Ticket ID: ${ticket.ticketId}</p>
+              <p style="font-size: 12px; color: #6b7280;">If you have further questions, please reply to this email or visit our support center.</p>
+            </div>
           </div>
-        </div>
-      `,
-    });
+        `,
+      });
+    }
 
     // Send email from support@dream60.com
     const emailResult = await sendSupportReplyEmail(

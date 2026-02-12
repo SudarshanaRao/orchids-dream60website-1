@@ -540,7 +540,12 @@ const EditSlotModal = ({
       return perms;
     };
     const tabPermissions = getTabPermissions();
-    const isTabAllowed = (tab: string) => tabPermissions[tab] !== false;
+      // Tabs that default to disabled (must be explicitly enabled)
+      const defaultDisabledTabs = ['support'];
+      const isTabAllowed = (tab: string) => {
+        if (tabPermissions[tab] === undefined && defaultDisabledTabs.includes(tab)) return false;
+        return tabPermissions[tab] !== false;
+      };
 
     const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
 

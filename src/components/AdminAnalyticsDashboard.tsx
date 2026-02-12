@@ -57,7 +57,7 @@ interface AnalyticsData {
     totalEntryFees: number;
     totalPrizeValue: number;
       totalClaimedValue: number;
-      totalAmountSpentByClaiming: number;
+      totalPrizeClaimedAmount: number;
     };
   statusDistribution: {
     live: number;
@@ -481,12 +481,12 @@ export const AdminAnalyticsDashboard = forwardRef<{ refresh: () => Promise<void>
               </div>
 
               <div className="bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-center gap-3 mb-2">
-                  <IndianRupee className="w-6 h-6" />
-                  <p className="text-rose-100">Amount Spent by Users</p>
+                  <div className="flex items-center gap-3 mb-2">
+                    <IndianRupee className="w-6 h-6" />
+                    <p className="text-rose-100">Prize Claimed Amount</p>
+                  </div>
+                  <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalPrizeClaimedAmount)}</p>
                 </div>
-                <p className="text-3xl font-bold">{formatCurrency(analyticsData.summary.totalAmountSpentByClaiming)}</p>
-              </div>
           </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

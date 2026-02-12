@@ -37,20 +37,21 @@ export const AdminManagement = ({ adminUser, onTabPermissionsChanged }: AdminMan
   const [tabPermLoading, setTabPermLoading] = useState(false);
 
   const ALL_TABS = [
-    { key: 'overview', label: 'Overview' },
-    { key: 'users', label: 'Users' },
-    { key: 'auctions', label: 'Master Auctions' },
-    { key: 'daily-auctions', label: 'Daily Auctions' },
-    { key: 'hourly-auctions', label: 'Hourly Auctions' },
-    { key: 'refunds', label: 'Refunds' },
-    { key: 'emails', label: 'Email Management' },
-    { key: 'sms', label: 'SMS Management' },
-    { key: 'analytics', label: 'Analytics' },
-    { key: 'notifications', label: 'Push Notifications' },
-    { key: 'userAnalytics', label: 'User Tracking' },
-    { key: 'vouchers', label: 'Voucher Management' },
-    { key: 'admin-management', label: 'Admin Management' },
-  ];
+      { key: 'overview', label: 'Overview' },
+      { key: 'users', label: 'Users' },
+      { key: 'auctions', label: 'Master Auctions' },
+      { key: 'daily-auctions', label: 'Daily Auctions' },
+      { key: 'hourly-auctions', label: 'Hourly Auctions' },
+      { key: 'refunds', label: 'Refunds' },
+      { key: 'support', label: 'Support' },
+      { key: 'emails', label: 'Email Management' },
+      { key: 'sms', label: 'SMS Management' },
+      { key: 'analytics', label: 'Analytics' },
+      { key: 'notifications', label: 'Push Notifications' },
+      { key: 'userAnalytics', label: 'User Tracking' },
+      { key: 'vouchers', label: 'Voucher Management' },
+      { key: 'admin-management', label: 'Admin Management' },
+    ];
 
   const handleToggleTabPermission = async (admin: AdminRecord, tabKey: string, enabled: boolean) => {
     setTabPermLoading(true);

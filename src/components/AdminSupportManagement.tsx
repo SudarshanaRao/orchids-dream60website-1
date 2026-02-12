@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Search, RefreshCw, Send, Clock, AlertCircle, CheckCircle,
   ChevronDown, ChevronUp, X, Mail, MessageSquare, FileText,
-  User, Tag, Filter
+  User, Tag, Filter, Eye, Edit3
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL as API_BASE } from '@/lib/api-config';
@@ -72,6 +72,49 @@ const categoryLabels: Record<string, string> = {
   legal: 'Legal', support: 'Support', other: 'Other',
 };
 
+// Extract all {{Variable}} and [Variable] placeholders from template body
+const extractVariables = (body: string): string[] => {
+  const vars = new Set<string>();
+  const bracketRegex = /\[([A-Za-z_][A-Za-z0-9_ ]*)\]/g;
+  const braceRegex = /\{\{([A-Za-z_][A-Za-z0-9_ ]*)\}\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = bracketRegex.exec(body)) !== null) vars.add(m[1]);
+  while ((m = braceRegex.exec(body)) !== null) vars.add(m[1]);
+  return Array.from(vars);
+};
+
+// Replace variables in template text
+const replaceVars = (text: string, vars: Record<string, string>): string => {
+  let result = text;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replace(new RegExp(`\\[${key}\\]`, 'gi'), value);
+    result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'gi'), value);
+  }
+  return result;
+};
+
+// Known auto-fill variable names (case-insensitive match)
+const AUTO_FILL_KEYS: Record<string, (ticket: Ticket) => string> = {
+  name: (t) => t.name,
+  username: (t) => t.name,
+  user: (t) => t.name,
+  'user name': (t) => t.name,
+  'ticket id': (t) => t.ticketId,
+  ticketid: (t) => t.ticketId,
+  'ticket number': (t) => t.ticketId,
+  email: (t) => t.email,
+  subject: (t) => t.subject,
+  category: (t) => categoryLabels[t.category] || t.category,
+};
+
+const getAutoFillValue = (varName: string, ticket: Ticket): string | null => {
+  const key = varName.toLowerCase().trim();
+  for (const [k, fn] of Object.entries(AUTO_FILL_KEYS)) {
+    if (key === k) return fn(ticket);
+  }
+  return null;
+};
+
 export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementProps) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState<Stats>({ open: 0, in_progress: 0, resolved: 0, closed: 0 });
@@ -87,6 +130,18 @@ export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementPr
   const [totalPages, setTotalPages] = useState(1);
   const [showTemplates, setShowTemplates] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Template variable fill state
+  const [pendingTemplate, setPendingTemplate] = useState<Template | null>(null);
+  const [missingVars, setMissingVars] = useState<string[]>([]);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [showVarModal, setShowVarModal] = useState(false);
+
+  // Preview/confirm state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewSubject, setPreviewSubject] = useState('');
+  const previewRef = useRef<HTMLIFrameElement>(null);
 
   const fetchTickets = useCallback(async () => {
     setLoading(true);
@@ -118,24 +173,90 @@ export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementPr
   useEffect(() => { fetchTickets(); }, [fetchTickets]);
   useEffect(() => { fetchTemplates(); }, [fetchTemplates]);
 
-  const handleReply = async () => {
+  // When a template is selected, auto-fill known vars and prompt for missing ones
+  const useTemplate = (template: Template) => {
+    if (!selectedTicket) return;
+    const allVars = extractVariables(template.body);
+    const autoFilled: Record<string, string> = {};
+    const missing: string[] = [];
+
+    for (const v of allVars) {
+      const auto = getAutoFillValue(v, selectedTicket);
+      if (auto !== null) {
+        autoFilled[v] = auto;
+      } else {
+        missing.push(v);
+      }
+    }
+
+    setPendingTemplate(template);
+    setVarValues(autoFilled);
+
+    if (missing.length > 0) {
+      setMissingVars(missing);
+      setShowVarModal(true);
+    } else {
+      // All variables filled, go straight to preview
+      applyTemplateAndPreview(template, autoFilled);
+    }
+    setShowTemplates(false);
+  };
+
+  const applyTemplateAndPreview = (template: Template, vars: Record<string, string>) => {
+    const filledBody = replaceVars(template.body, vars);
+    const filledSubject = replaceVars(template.subject, vars);
+    setReplyText(filledBody);
+    setPreviewSubject(filledSubject);
+    setPreviewHtml(filledBody);
+    setShowPreview(true);
+    setShowVarModal(false);
+    setPendingTemplate(null);
+    setMissingVars([]);
+  };
+
+  const handleVarSubmit = () => {
+    if (!pendingTemplate) return;
+    const allFilled = missingVars.every(v => varValues[v]?.trim());
+    if (!allFilled) {
+      toast.error('Please fill in all required variables');
+      return;
+    }
+    applyTemplateAndPreview(pendingTemplate, varValues);
+  };
+
+  const handleSendFromPreview = async () => {
     if (!selectedTicket || !replyText.trim()) return;
     setSending(true);
     try {
       const res = await fetch(`${API_BASE}/admin/support/tickets/${selectedTicket.ticketId}/reply?user_id=${adminUserId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: replyText }),
+        body: JSON.stringify({
+          message: replyText,
+          isHtml: true,
+          templateId: pendingTemplate?.template_id,
+        }),
       });
       const data = await res.json();
       if (data.success) {
         toast.success(data.emailSent ? 'Reply sent via email' : 'Reply saved (email failed)');
         setSelectedTicket(data.data);
         setReplyText('');
+        setPreviewHtml('');
+        setPreviewSubject('');
+        setShowPreview(false);
         fetchTickets();
       } else toast.error(data.message);
     } catch { toast.error('Failed to send reply'); }
     setSending(false);
+  };
+
+  const handleReply = async () => {
+    if (!selectedTicket || !replyText.trim()) return;
+    // Show preview before sending
+    setPreviewHtml(replyText);
+    setPreviewSubject(`Re: ${selectedTicket.subject}`);
+    setShowPreview(true);
   };
 
   const handleStatusUpdate = async (ticketId: string, newStatus: string) => {
@@ -172,13 +293,19 @@ export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementPr
     } catch { toast.error('Failed to update priority'); }
   };
 
-  const useTemplate = (template: Template) => {
-    const body = template.body.replace(/<[^>]*>/g, '').replace(/\[Name\]/gi, selectedTicket?.name || 'User');
-    setReplyText(body);
-    setShowTemplates(false);
-  };
-
   const formatDate = (d: string) => new Date(d).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+
+  // Write iframe content after render
+  useEffect(() => {
+    if (showPreview && previewRef.current && previewHtml) {
+      const doc = previewRef.current.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(previewHtml);
+        doc.close();
+      }
+    }
+  }, [showPreview, previewHtml]);
 
   return (
     <div className="space-y-6">
@@ -374,7 +501,7 @@ export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementPr
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-purple-800 whitespace-pre-wrap leading-relaxed">{reply.message}</p>
+                  <div className="text-sm text-purple-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: reply.message }} />
                 </div>
               ))}
             </div>
@@ -411,23 +538,154 @@ export const AdminSupportManagement = ({ adminUserId }: AdminSupportManagementPr
                 <textarea
                   value={replyText}
                   onChange={e => setReplyText(e.target.value)}
-                  placeholder="Type your reply... (will be sent from support@dream60.com)"
+                  placeholder="Type your reply or select a template... (sent from support@dream60.com)"
                   rows={3}
-                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg text-sm focus:outline-none focus:border-purple-500 resize-none"
+                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg text-sm focus:outline-none focus:border-purple-500 resize-none font-mono"
                 />
-                <button
-                  onClick={handleReply}
-                  disabled={sending || !replyText.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 transition-all self-end"
-                >
-                  {sending ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                </button>
+                <div className="flex flex-col gap-1 self-end">
+                  <button
+                    onClick={handleReply}
+                    disabled={sending || !replyText.trim()}
+                    title="Preview & Send"
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 transition-all"
+                  >
+                    {sending ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
-              <p className="text-[10px] text-gray-400 mt-1">Replies are sent from support@dream60.com and recorded on the ticket.</p>
+              <p className="text-[10px] text-gray-400 mt-1">Click the preview button to see and confirm the email before sending.</p>
             </div>
           </div>
         )}
       </div>
+
+      {/* Variable Fill Modal */}
+      {showVarModal && pendingTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="p-5 bg-gradient-to-r from-purple-600 to-purple-700">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                <Edit3 className="w-5 h-5" />
+                Fill Template Variables
+              </h3>
+              <p className="text-purple-200 text-xs mt-1">Template: {pendingTemplate.name}</p>
+            </div>
+            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* Show auto-filled variables (read-only) */}
+              {Object.entries(varValues).filter(([k]) => !missingVars.includes(k)).length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Auto-filled from ticket
+                  </p>
+                  {Object.entries(varValues).filter(([k]) => !missingVars.includes(k)).map(([key, val]) => (
+                    <div key={key} className="flex items-center gap-2 text-xs text-green-800 py-0.5">
+                      <span className="font-mono bg-green-100 px-1.5 py-0.5 rounded">[{key}]</span>
+                      <span>=</span>
+                      <span className="font-medium">{val}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Missing variables that need user input */}
+              {missingVars.map(v => (
+                <div key={v}>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <span className="font-mono text-purple-600">[{v}]</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={varValues[v] || ''}
+                    onChange={e => setVarValues(prev => ({ ...prev, [v]: e.target.value }))}
+                    placeholder={`Enter value for ${v}...`}
+                    className="w-full px-3 py-2 border-2 border-purple-200 rounded-lg text-sm focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-gray-100 flex gap-3 justify-end">
+              <button
+                onClick={() => { setShowVarModal(false); setPendingTemplate(null); setMissingVars([]); }}
+                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVarSubmit}
+                className="px-4 py-2 text-sm font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+              >
+                Preview Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Preview & Confirmation Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
+            <div className="p-5 bg-gradient-to-r from-purple-600 to-purple-700 flex-shrink-0">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Email Preview
+              </h3>
+              <p className="text-purple-200 text-xs mt-1">
+                To: {selectedTicket?.email} | Subject: {previewSubject || `Re: ${selectedTicket?.subject}`}
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 min-h-0">
+              {/* Rendered HTML Preview */}
+              <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <div className="bg-gray-100 px-3 py-2 border-b border-gray-200 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <span className="text-xs font-medium text-gray-600">Email Preview (as recipient will see it)</span>
+                </div>
+                <iframe
+                  ref={previewRef}
+                  title="Email Preview"
+                  className="w-full bg-white"
+                  style={{ minHeight: '400px', border: 'none' }}
+                  sandbox="allow-same-origin"
+                />
+              </div>
+
+              {/* Raw HTML source (collapsed) */}
+              <details className="mt-3">
+                <summary className="text-xs text-gray-500 cursor-pointer hover:text-purple-600 flex items-center gap-1">
+                  <Filter className="w-3 h-3" /> View raw HTML source
+                </summary>
+                <pre className="mt-2 p-3 bg-gray-900 text-green-400 rounded-lg text-xs overflow-x-auto max-h-48 overflow-y-auto font-mono">
+                  {previewHtml}
+                </pre>
+              </details>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 flex gap-3 justify-between items-center flex-shrink-0">
+              <p className="text-xs text-gray-400">
+                Sending from: support@dream60.com
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowPreview(false); }}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 flex items-center gap-1"
+                >
+                  <Edit3 className="w-4 h-4" /> Edit
+                </button>
+                <button
+                  onClick={handleSendFromPreview}
+                  disabled={sending}
+                  className="px-6 py-2 text-sm font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {sending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Confirm & Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
