@@ -128,6 +128,33 @@ export function usePushNotifications(userId?: string): UsePushNotificationsRetur
     }
   }, []);
 
+  // Listen for PLAY_NOTIFICATION_SOUND messages from service worker
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
+        const { sound } = event.data;
+        if (sound) {
+          try {
+            const audio = new Audio(sound);
+            audio.volume = 1.0;
+            audio.play().catch((err) => {
+              console.warn('[Push] Could not play notification sound:', err);
+            });
+          } catch (err) {
+            console.warn('[Push] Error creating audio for notification sound:', err);
+          }
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+    };
+  }, []);
+
   return {
     isSupported,
     permission,

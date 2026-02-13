@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Send, Users, Loader2, Smartphone, Monitor, Sparkles, Trash2 } from 'lucide-react';
+import { Bell, Send, Users, Loader2, Smartphone, Monitor, Sparkles, Trash2, Volume2, Play, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_BASE_URL, API_ENDPOINTS } from '@/lib/api-config';
 
@@ -46,12 +46,27 @@ interface AdminPushNotificationsProps {
   adminUserId?: string;
 }
 
+const NOTIFICATION_SOUNDS = [
+  { id: 'none', label: 'No Sound (Silent)', file: '' },
+  { id: 'classic-alert', label: 'Classic Alert', file: '/sounds/classic-alert.wav' },
+  { id: 'gentle-chime', label: 'Gentle Chime', file: '/sounds/gentle-chime.wav' },
+  { id: 'urgent-alarm', label: 'Urgent Alarm', file: '/sounds/urgent-alarm.wav' },
+  { id: 'success-fanfare', label: 'Success Fanfare', file: '/sounds/success-fanfare.wav' },
+  { id: 'soft-pop', label: 'Soft Pop', file: '/sounds/soft-pop.wav' },
+  { id: 'digital-ring', label: 'Digital Ring', file: '/sounds/digital-ring.wav' },
+  { id: 'warning-siren', label: 'Warning Siren', file: '/sounds/warning-siren.wav' },
+  { id: 'auction-bell', label: 'Auction Bell', file: '/sounds/auction-bell.wav' },
+];
+
 export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsProps) {
   const [notificationData, setNotificationData] = useState({
     title: '',
     body: '',
     url: '/'
   });
+  const [selectedSound, setSelectedSound] = useState('classic-alert');
+  const [playingSound, setPlayingSound] = useState<string | null>(null);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [richNotificationData, setRichNotificationData] = useState({
     icon: '/icons/icon-192x192.png',
     image: '',
@@ -82,6 +97,27 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
     fetchSubscriptionStats();
     fetchUsersWithBidAlerts();
   }, []);
+
+  const handlePreviewSound = (soundId: string) => {
+    const sound = NOTIFICATION_SOUNDS.find(s => s.id === soundId);
+    if (!sound || !sound.file) return;
+
+    if (audioRef) {
+      audioRef.pause();
+      audioRef.currentTime = 0;
+    }
+
+    if (playingSound === soundId) {
+      setPlayingSound(null);
+      return;
+    }
+
+    const audio = new Audio(sound.file);
+    audio.onended = () => setPlayingSound(null);
+    audio.play().catch(() => toast.error('Could not play sound'));
+    setAudioRef(audio);
+    setPlayingSound(soundId);
+  };
 
   const fetchUsersWithBidAlerts = async () => {
     try {
@@ -202,14 +238,16 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
             'Content-Type': 'application/json',
             'x-user-id': resolvedAdminId
           },
-          body: JSON.stringify({
-            ...notificationData,
-            ...richNotificationData,
-            userIds: uniqueUserIds,
-            subscriptionIds,
-            adminId: resolvedAdminId,
-            user_id: resolvedAdminId
-          })
+            body: JSON.stringify({
+              ...notificationData,
+              ...richNotificationData,
+              sound: NOTIFICATION_SOUNDS.find(s => s.id === selectedSound)?.file || '',
+              soundId: selectedSound,
+              userIds: uniqueUserIds,
+              subscriptionIds,
+              adminId: resolvedAdminId,
+              user_id: resolvedAdminId
+            })
         });
 
 
@@ -276,12 +314,14 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
           'Content-Type': 'application/json',
           'x-user-id': resolvedAdminId
         },
-        body: JSON.stringify({
-          ...notificationData,
-          ...richNotificationData,
-          adminId: resolvedAdminId,
-          user_id: resolvedAdminId
-        })
+          body: JSON.stringify({
+            ...notificationData,
+            ...richNotificationData,
+            sound: NOTIFICATION_SOUNDS.find(s => s.id === selectedSound)?.file || '',
+            soundId: selectedSound,
+            adminId: resolvedAdminId,
+            user_id: resolvedAdminId
+          })
       });
 
       const data = await response.json();

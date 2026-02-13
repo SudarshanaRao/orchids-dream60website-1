@@ -29,6 +29,8 @@ const buildNotificationPayload = (payload = {}) => {
     requireInteraction = false,
     tag = 'dream60-notification',
     silent = false,
+    sound = '',
+    soundId = 'none',
     data = {},
   } = payload;
 
@@ -44,6 +46,8 @@ const buildNotificationPayload = (payload = {}) => {
     requireInteraction,
     tag,
     silent,
+    sound,
+    soundId,
     timestamp: Date.now(),
     data,
   });

@@ -275,7 +275,7 @@ self.addEventListener('push', (event) => {
       tag: data.tag || 'dream60-notification',   // Notification grouping
       requireInteraction: data.requireInteraction || false, // Keep notification visible
       renotify: true,                             // Alert on replace
-      silent: data.silent || false,               // Sound on/off
+      silent: !!(data.sound && data.soundId && data.soundId !== 'none') || data.silent || false, // Silent if custom sound will be played by client
       
       // Data payload for click handling
       data: {
@@ -283,6 +283,8 @@ self.addEventListener('push', (event) => {
         timestamp: Date.now(),
         notificationId: data.notificationId || `notif-${Date.now()}`,
         clickAction: data.clickAction || 'open_app',
+        sound: data.sound || '',
+        soundId: data.soundId || 'none',
         ...data.customData
       },
       
@@ -315,6 +317,18 @@ self.addEventListener('push', (event) => {
         options
       ).then(() => {
         console.log('[SW] Notification displayed successfully');
+        // If a custom sound was selected, message all clients to play it
+        if (data.sound && data.soundId && data.soundId !== 'none') {
+          return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            clientList.forEach((client) => {
+              client.postMessage({
+                type: 'PLAY_NOTIFICATION_SOUND',
+                sound: data.sound,
+                soundId: data.soundId
+              });
+            });
+          });
+        }
       }).catch((error) => {
         console.error('[SW] Failed to show notification:', error);
       })
