@@ -20,31 +20,29 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  return (
-    <section className="relative w-full h-[35vh] lg:h-[75vh] overflow-hidden bg-[#050a14]">
-      {/* Background Cinematic Container */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* Main Video Background */}
-        <video
-          key={isLargeScreen ? 'large' : 'small'}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover object-center"
-        >
-          <source 
-            src={isLargeScreen ? "/large_screens_launch_video.mp4" : "/launch_video.mp4"} 
-            type="video/mp4" 
+    return (
+      <section className="relative w-full h-[35vh] lg:h-[75vh] overflow-hidden bg-[#1a2236]">
+        {/* Background Image Container */}
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src="/New_Auction_Rules.png"
+            alt="Dream60 New Auction Rules"
+            className="w-full h-full object-cover object-center"
           />
-        </video>
-        
-        {/* Elegant Overlays */}
-        <div className="absolute inset-0 bg-black/50 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050a14] via-transparent to-[#050a14]/50 z-10" />
-      </div>
+          
+            {/* Subtle Overlays - keep image bright */}
+            <div className="absolute inset-0 bg-black/10 z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#1a2236]/70 via-transparent to-transparent z-10" />
+        </div>
 
-      {/* Main Content Area */}
+        {/* DREAM60 Watermark */}
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-6 z-30">
+          <span className="text-white/60 text-sm sm:text-lg lg:text-xl font-bold tracking-[0.15em] uppercase select-none drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]">
+            DREAM60
+          </span>
+        </div>
+
+        {/* Main Content Area */}
       <div className="relative z-30 h-full max-w-[1440px] mx-auto px-4 sm:px-12 md:px-20 lg:px-24 flex flex-col items-center justify-end pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -70,34 +68,84 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
                 onClick={onCheckRules}
                 className="group relative px-10 py-4 bg-transparent border-2 border-yellow-500 hover:bg-yellow-500/10 rounded-full font-bold text-yellow-400 hover:text-yellow-300 uppercase tracking-widest shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.3)] transition-all duration-300 active:scale-95 flex items-center gap-2"
               >
-                Check Now
+                  New Rules
                 <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
             </div>
           </motion.div>
       </div>
 
-      {/* Background Particles */}
+      {/* Fire Rising Particles - Small */}
       <div className="absolute inset-0 pointer-events-none z-20">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(50)].map((_, i) => (
           <motion.div
-            key={`particle-${i}`}
+            key={`particle-sm-${i}`}
             initial={{ 
-              top: `${Math.random() * 100}%`, 
+              bottom: `${-2 - Math.random() * 5}%`,
               left: `${Math.random() * 100}%`, 
               opacity: 0 
             }}
             animate={{
-              y: [0, -50],
-              opacity: [0, 0.5, 0],
+              y: [0, -(window?.innerHeight || 800) * 1.1],
+              x: [0, 30 + Math.random() * 80],
+              opacity: [0, 0.7, 0.6, 0.3, 0],
+              scale: [1, 1.1, 0.9, 0.5],
             }}
             transition={{
-              duration: 3 + Math.random() * 5,
+              duration: 8 + Math.random() * 6,
               repeat: Infinity,
               ease: "linear",
-              delay: Math.random() * 5,
+              delay: Math.random() * 10,
             }}
             className="absolute w-1 h-1 bg-yellow-400 rounded-full blur-[1px]"
+          />
+        ))}
+        {/* Fire Rising Particles - Medium */}
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={`particle-md-${i}`}
+            initial={{ 
+              bottom: `${-2 - Math.random() * 5}%`,
+              left: `${Math.random() * 100}%`, 
+              opacity: 0 
+            }}
+            animate={{
+              y: [0, -(window?.innerHeight || 800) * 1.15],
+              x: [0, 20 + Math.random() * 100],
+              opacity: [0, 0.6, 0.5, 0.2, 0],
+              scale: [0.8, 1.3, 1, 0.4],
+            }}
+            transition={{
+              duration: 10 + Math.random() * 6,
+              repeat: Infinity,
+              ease: "linear",
+              delay: Math.random() * 12,
+            }}
+            className="absolute w-1.5 h-1.5 bg-orange-400 rounded-full blur-[2px]"
+          />
+        ))}
+        {/* Fire Rising Particles - Large Embers */}
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={`particle-lg-${i}`}
+            initial={{ 
+              bottom: `${-2 - Math.random() * 5}%`,
+              left: `${Math.random() * 100}%`, 
+              opacity: 0 
+            }}
+            animate={{
+              y: [0, -(window?.innerHeight || 800) * 1.2],
+              x: [0, 40 + Math.random() * 120],
+              opacity: [0, 0.5, 0.4, 0.15, 0],
+              scale: [1, 1.5, 1.1, 0.3],
+            }}
+            transition={{
+              duration: 12 + Math.random() * 6,
+              repeat: Infinity,
+              ease: "linear",
+              delay: Math.random() * 14,
+            }}
+            className="absolute w-2 h-2 bg-amber-500 rounded-full blur-[3px]"
           />
         ))}
       </div>
