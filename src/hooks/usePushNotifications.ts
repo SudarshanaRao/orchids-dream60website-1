@@ -128,24 +128,75 @@ export function usePushNotifications(userId?: string): UsePushNotificationsRetur
     }
   }, []);
 
+  // Initialize AudioContext on first user interaction so we can play sounds later
+  // without autoplay restrictions blocking us
+  useEffect(() => {
+    let audioCtx: AudioContext | null = null;
+
+    const initAudioContext = () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Resume in case it was created in a suspended state
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+      // Store globally so the SW message handler can use it
+      (window as any).__dream60AudioCtx = audioCtx;
+    };
+
+    // Listen for any user interaction to unlock audio
+    const events = ['click', 'touchstart', 'keydown'];
+    events.forEach((e) => document.addEventListener(e, initAudioContext, { once: true }));
+
+    return () => {
+      events.forEach((e) => document.removeEventListener(e, initAudioContext));
+    };
+  }, []);
+
   // Listen for PLAY_NOTIFICATION_SOUND messages from service worker
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
     const handleSWMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
-        const { sound } = event.data;
+        const { sound, soundId } = event.data;
         if (sound) {
+          console.log('[Push] Playing Dream60 custom sound:', soundId);
           try {
+            // Resume AudioContext if it exists (may be suspended after tab goes idle)
+            const ctx = (window as any).__dream60AudioCtx as AudioContext | undefined;
+            if (ctx && ctx.state === 'suspended') {
+              ctx.resume();
+            }
+
             const audio = new Audio(sound);
             audio.volume = 1.0;
-            // Try to play immediately; if blocked by autoplay policy, 
-            // the native OS notification sound serves as fallback
             const playPromise = audio.play();
             if (playPromise) {
-              playPromise.catch((err) => {
-                console.warn('[Push] Autoplay blocked for notification sound (native OS sound will play instead):', err.message);
-              });
+              playPromise
+                .then(() => {
+                  console.log('[Push] Dream60 sound playing successfully:', soundId);
+                })
+                .catch((err) => {
+                  console.warn('[Push] Autoplay blocked, trying AudioContext fallback:', err.message);
+                  // Fallback: use AudioContext to decode and play
+                  if (ctx) {
+                    fetch(sound)
+                      .then((res) => res.arrayBuffer())
+                      .then((buf) => ctx.decodeAudioData(buf))
+                      .then((decoded) => {
+                        const source = ctx.createBufferSource();
+                        source.buffer = decoded;
+                        source.connect(ctx.destination);
+                        source.start(0);
+                        console.log('[Push] Dream60 sound playing via AudioContext fallback');
+                      })
+                      .catch((fallbackErr) => {
+                        console.warn('[Push] AudioContext fallback also failed:', fallbackErr);
+                      });
+                  }
+                });
             }
           } catch (err) {
             console.warn('[Push] Error creating audio for notification sound:', err);

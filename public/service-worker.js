@@ -1,4 +1,4 @@
-const VERSION = '1.0.4';
+const VERSION = '1.0.5';
 const CACHE_NAME = `dream60-v${VERSION}`;
 const STATIC_CACHE = `dream60-static-v${VERSION}`;
 const DYNAMIC_CACHE = `dream60-dynamic-v${VERSION}`;
@@ -256,70 +256,63 @@ self.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
     console.log('[SW] Push data:', data);
+
+    const hasCustomSound = data.sound && data.soundId && data.soundId !== 'none';
     
-      // Professional notification options with brand styling
-      const options = {
-        // Core content
-        body: data.body || 'New notification from Dream60',
-        
-        // Visual branding
-        icon: data.icon || '/icons/icon-192x192.png',           // App icon (Square)
-        badge: '/icons/icon-72x72.png',            // Monochrome badge icon (Android)
-        
-        // iOS Safari 16.4+ does not support rich images in notifications
-        // Only include image for Android/Desktop Chrome/Edge
-        ...(data.image && !/(iPhone|iPad|iPod)/.test(navigator.userAgent) ? { image: data.image } : {}),
-        
-        // Interaction settings
-      vibrate: [200, 100, 200, 100, 200],        // Vibration pattern
-      tag: data.tag || 'dream60-notification',   // Notification grouping
-      requireInteraction: data.requireInteraction || false, // Keep notification visible
-      renotify: true,                             // Alert on replace
-      silent: data.silent || false, // Never force silent for custom sounds - native OS sound is the reliable fallback
-      
-      // Data payload for click handling
-      data: {
-        url: data.url || '/',
-        timestamp: Date.now(),
-        notificationId: data.notificationId || `notif-${Date.now()}`,
-        clickAction: data.clickAction || 'open_app',
-        sound: data.sound || '',
-        soundId: data.soundId || 'none',
-        ...data.customData
-      },
-      
-      // Action buttons (Android, Desktop - not iOS)
-      actions: data.actions || [
-        {
-          action: 'open',
-          title: '🎯 Open',
-          icon: '/icons/icon-96x96.png'
-        },
-        {
-          action: 'close',
-          title: '❌ Dismiss',
-          icon: '/icons/icon-72x72.png'
-        }
-      ],
-      
-      // Localization
-      dir: data.dir || 'ltr',
-      lang: data.lang || 'en-US',
-      
-      // Timestamp (for sorting)
-      timestamp: data.timestamp || Date.now()
-    };
-    
-    // Show notification
     event.waitUntil(
-      self.registration.showNotification(
-        data.title || '🎁 Dream60 Auction',
-        options
-      ).then(() => {
-        console.log('[SW] Notification displayed successfully');
-        // If a custom sound was selected, message all clients to play it
-        if (data.sound && data.soundId && data.soundId !== 'none') {
-          return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // First, check if any client windows are open to play custom sound
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        const hasActiveClients = clientList.length > 0;
+
+        // If custom sound selected AND clients are open: suppress OS sound (silent: true)
+        // so only our Dream60 custom sound plays via the client.
+        // If no clients open: use OS default sound as fallback (silent: false).
+        const useSilent = hasCustomSound && hasActiveClients;
+
+        const options = {
+          body: data.body || 'New notification from Dream60',
+          icon: data.icon || '/icons/icon-192x192.png',
+          badge: '/icons/icon-72x72.png',
+          ...(data.image && !/(iPhone|iPad|iPod)/.test(navigator.userAgent) ? { image: data.image } : {}),
+          vibrate: useSilent ? [] : [200, 100, 200, 100, 200],
+          tag: data.tag || 'dream60-notification',
+          requireInteraction: data.requireInteraction || false,
+          renotify: true,
+          silent: useSilent,
+          data: {
+            url: data.url || '/',
+            timestamp: Date.now(),
+            notificationId: data.notificationId || `notif-${Date.now()}`,
+            clickAction: data.clickAction || 'open_app',
+            sound: data.sound || '',
+            soundId: data.soundId || 'none',
+            ...data.customData
+          },
+          actions: data.actions || [
+            {
+              action: 'open',
+              title: '🎯 Open',
+              icon: '/icons/icon-96x96.png'
+            },
+            {
+              action: 'close',
+              title: '❌ Dismiss',
+              icon: '/icons/icon-72x72.png'
+            }
+          ],
+          dir: data.dir || 'ltr',
+          lang: data.lang || 'en-US',
+          timestamp: data.timestamp || Date.now()
+        };
+        
+        return self.registration.showNotification(
+          data.title || '🎁 Dream60 Auction',
+          options
+        ).then(() => {
+          console.log('[SW] Notification displayed successfully');
+          // Send custom sound to all open clients
+          if (hasCustomSound && hasActiveClients) {
+            console.log('[SW] Sending custom sound to', clientList.length, 'client(s):', data.soundId);
             clientList.forEach((client) => {
               client.postMessage({
                 type: 'PLAY_NOTIFICATION_SOUND',
@@ -327,8 +320,10 @@ self.addEventListener('push', (event) => {
                 soundId: data.soundId
               });
             });
-          });
-        }
+          } else if (hasCustomSound && !hasActiveClients) {
+            console.log('[SW] No active clients to play custom sound, OS default sound used');
+          }
+        });
       }).catch((error) => {
         console.error('[SW] Failed to show notification:', error);
       })
