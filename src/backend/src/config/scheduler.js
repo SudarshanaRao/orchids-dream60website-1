@@ -937,20 +937,20 @@ const autoActivateAuctions = async () => {
                 })();
             local.currentRound = local.roundCount || local.rounds.length;
             
-            // Calculate and add winners when auction is completed
-            const winners = calculateRound4Winners(local);
-            if (winners.length > 0) {
-              local.winners = winners;
-              // Set primary winner info
-              local.winnerId = winners[0].playerId;
-              local.winnerUsername = winners[0].playerUsername;
-              local.winningBid = winners[0].finalAuctionAmount;
-              local.markModified('winners');
-              console.log(`     🏆 [WINNERS] Added ${winners.length} winners to auction ${local.hourlyAuctionCode}`);
+              // Calculate and add winners when auction is completed
+              const winners = calculateRound4Winners(local);
+              if (winners.length > 0) {
+                local.winners = winners;
+                // Set primary winner info
+                local.winnerId = winners[0].playerId;
+                local.winnerUsername = winners[0].playerUsername;
+                local.winningBid = winners[0].finalAuctionAmount;
+                local.markModified('winners');
+                console.log(`     🏆 [WINNERS] Added ${winners.length} winners to auction ${local.hourlyAuctionCode}`);
+              }
               
-              // ✅ NEW: Automatically mark winners in AuctionHistory
+              // Always mark auction history entries as COMPLETED (even with no winners)
               await markWinnersInHistory(local);
-            }
             
             local.updatedAt = now; // ✅ Use IST time
             await local.save();
@@ -1209,23 +1209,23 @@ const autoActivateAuctions = async () => {
             // ✅ CRITICAL: Do NOT sync status to dailyAuctionConfig yet
             console.log(`     ✅ [EARLY-COMPLETE] Winners announced but auction remains LIVE until hour ends`);
           }
-          // If round 4 just completed normally, calculate winners
-          else if (round4JustCompleted && local.winners.length === 0) {
-            const winners = calculateRound4Winners(local);
-            if (winners.length > 0) {
-              local.winners = winners;
-              // Set primary winner info
-              local.winnerId = winners[0].playerId;
-              local.winnerUsername = winners[0].playerUsername;
-              local.winningBid = winners[0].finalAuctionAmount;
-              local.markModified('winners');
-              roundsUpdated = true;
-              console.log(`     🏆 [WINNERS] Added ${winners.length} winners after Round 4 completion`);
+            // If round 4 just completed normally, calculate winners
+            else if (round4JustCompleted && local.winners.length === 0) {
+              const winners = calculateRound4Winners(local);
+              if (winners.length > 0) {
+                local.winners = winners;
+                // Set primary winner info
+                local.winnerId = winners[0].playerId;
+                local.winnerUsername = winners[0].playerUsername;
+                local.winningBid = winners[0].finalAuctionAmount;
+                local.markModified('winners');
+                roundsUpdated = true;
+                console.log(`     🏆 [WINNERS] Added ${winners.length} winners after Round 4 completion`);
+              }
               
-              // ✅ NEW: Automatically mark winners in AuctionHistory
+              // Always mark auction history entries as COMPLETED (even with no winners)
               await markWinnersInHistory(local);
             }
-          }
 
           // If minute >= 60 (or edge case after 59) treat as auction COMPLETED
           if (currentMinute >= 60) {
@@ -1274,28 +1274,28 @@ const autoActivateAuctions = async () => {
               local.currentRound = local.roundCount || local.rounds.length;
               
               // Calculate winners when auction completes
-              if (local.winners.length === 0) {
-                const winners = calculateRound4Winners(local);
-                if (winners.length > 0) {
-                  local.winners = winners;
-                  // Set primary winner info
-                  local.winnerId = winners[0].playerId;
-                  local.winnerUsername = winners[0].playerUsername;
-                  local.winningBid = winners[0].finalAuctionAmount;
-                  local.markModified('winners');
-                  console.log(`     🏆 [WINNERS] Added ${winners.length} winners on auction completion`);
-                  
-                  // ✅ NEW: Automatically mark winners in AuctionHistory
-                  await markWinnersInHistory(local);
+                if (local.winners.length === 0) {
+                  const winners = calculateRound4Winners(local);
+                  if (winners.length > 0) {
+                    local.winners = winners;
+                    // Set primary winner info
+                    local.winnerId = winners[0].playerId;
+                    local.winnerUsername = winners[0].playerUsername;
+                    local.winningBid = winners[0].finalAuctionAmount;
+                    local.markModified('winners');
+                    console.log(`     🏆 [WINNERS] Added ${winners.length} winners on auction completion`);
+                  }
                 }
-              }
-              
-              roundsUpdated = true;
-              
-              // Sync status to dailyAuctionConfig
-              await syncHourlyStatusToDailyConfig(local.hourlyAuctionId, 'COMPLETED');
-              
-              console.log(`  ✅ Auction ${local.hourlyAuctionId} completed (minute >= 60 edge case)`);
+                
+                // Always mark auction history entries as COMPLETED (even with no winners)
+                await markWinnersInHistory(local);
+                
+                roundsUpdated = true;
+                
+                // Sync status to dailyAuctionConfig
+                await syncHourlyStatusToDailyConfig(local.hourlyAuctionId, 'COMPLETED');
+                
+                console.log(`  ✅ Auction ${local.hourlyAuctionId} completed (minute >= 60 edge case)`);
             }
           } else {
             // update currentRound (only if not completing early)
