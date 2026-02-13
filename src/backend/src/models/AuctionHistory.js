@@ -666,19 +666,36 @@ auctionHistorySchema.statics.getUserHistory = async function(userId, filters = {
  */
 auctionHistorySchema.statics.getUserStats = async function(userId) {
   try {
+    // Count ALL auctions (including IN_PROGRESS) for totalAuctions
+    // but only count wins/losses from COMPLETED auctions
     const stats = await this.aggregate([
-      { $match: { userId, auctionStatus: 'COMPLETED' } },
+      { $match: { userId } },
       {
         $group: {
           _id: null,
+          // Count ALL entries for total auctions participated
           totalAuctions: { $sum: 1 },
+          // Only count wins from COMPLETED auctions
           totalWins: {
-            $sum: { $cond: ['$isWinner', 1, 0] }
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$isWinner', true] }, { $eq: ['$auctionStatus', 'COMPLETED'] }] },
+                1,
+                0
+              ]
+            }
           },
+          // Only count losses from COMPLETED auctions
           totalLosses: {
-            $sum: { $cond: ['$isWinner', 0, 1] }
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ['$isWinner', false] }, { $eq: ['$auctionStatus', 'COMPLETED'] }] },
+                1,
+                0
+              ]
+            }
           },
-          // Total entry fees from all auctions joined
+          // Total entry fees from ALL auctions joined
           totalEntryFees: { $sum: '$entryFeePaid' },
           // Sum of lastRoundBidAmount ONLY for auctions where user won AND claimed prize
           totalFinalRoundBidsForClaimedWins: {

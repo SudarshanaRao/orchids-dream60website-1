@@ -315,9 +315,9 @@ router.get('/auction-history', async (req, res) => {
     }
 
     // Find all auction history entries for this user, sorted by date (most recent first)
+    // Include ALL statuses (JOINED, IN_PROGRESS, COMPLETED) so totalAuctions is accurate
     const historyEntries = await AuctionHistory.find({
-      userId: userId,
-      auctionStatus: 'COMPLETED'
+      userId: userId
     }).sort({ auctionDate: -1, TimeSlot: -1 }).lean();
 
     console.log(`📊 [AUCTION-HISTORY] Found ${historyEntries.length} completed auctions for user ${userId}`);
