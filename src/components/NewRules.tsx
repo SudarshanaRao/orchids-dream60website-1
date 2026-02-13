@@ -1,8 +1,9 @@
-import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee, Gift, Users, Timer, Award, ChevronRight, Zap, Shield, UserCheck, LogIn, Eye, CreditCard, Hash, BarChart3, Scale, CheckCircle2, TrendingUp, Lock, Bot, Ban } from 'lucide-react';
+import { ArrowLeft, Clock, Target, Trophy, AlertCircle, Sparkles, IndianRupee, Gift, Users, Timer, Award, ChevronRight, Zap, Shield, UserCheck, LogIn, Eye, CreditCard, Hash, BarChart3, Scale, CheckCircle2, TrendingUp, Lock, Bot, Ban, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 
 interface NewRulesProps {
   onBack: () => void;
@@ -18,6 +19,39 @@ const fadeIn = {
 };
 
 export function NewRules({ onBack }: NewRulesProps) {
+  const [expandedBox, setExpandedBox] = useState<string | null>(null);
+
+  const overviewBoxes = [
+    {
+      id: 'duration',
+      icon: <Timer className="w-5 h-5 mx-auto mb-1 text-yellow-300" />,
+      value: '60 min',
+      label: 'Per Auction',
+      detail: 'Every auction runs for exactly 60 minutes, divided into 4 rounds of 15 minutes each. If an auction starts at 11:00, it completes at 12:00 regardless of the outcome. All results are finalized within this window.',
+    },
+    {
+      id: 'rounds',
+      icon: <Zap className="w-5 h-5 mx-auto mb-1 text-yellow-300" />,
+      value: '4',
+      label: 'Bidding Rounds',
+      detail: 'Round 1 (0-15 min) opens Box 3, Round 2 (15-30 min) opens Box 4, Round 3 (30-45 min) opens Box 5, and Round 4 (45-60 min) opens Box 6. Each round requires a progressively higher bid based on the cutoff percentage and entry fee rules.',
+    },
+    {
+      id: 'players',
+      icon: <Users className="w-5 h-5 mx-auto mb-1 text-yellow-300" />,
+      value: 'All',
+      label: 'Players Advance',
+      detail: 'There is no elimination between rounds. Every participant who paid the entry fee continues through all 4 rounds. If you skip a round, you remain in the auction but your cumulative score may be impacted. Budget your bids wisely across all rounds.',
+    },
+    {
+      id: 'winners',
+      icon: <Award className="w-5 h-5 mx-auto mb-1 text-yellow-300" />,
+      value: '3',
+      label: 'Winners',
+      detail: 'Top 3 highest bidders in Round 4 are ranked as 1st, 2nd, and 3rd winners. Ties are broken by cumulative bid total from all rounds, then by earlier timestamp. Rank 1 gets the first claim window (15 min), then it passes to Rank 2, then Rank 3.',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-purple-50/30 to-white relative overflow-hidden">
       {/* Header */}
@@ -86,28 +120,67 @@ export function NewRules({ onBack }: NewRulesProps) {
                 <p className="text-purple-100 text-sm sm:text-base leading-relaxed mb-4">
                     Dream60 is a real-time, structured online auction platform where users strategically compete across four timed bidding rounds within 60 minutes to win high-value products.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                    <Timer className="w-5 h-5 mx-auto mb-1 text-yellow-300" />
-                    <div className="text-lg font-bold">60 min</div>
-                    <div className="text-xs text-purple-200">Per Auction</div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                    <Zap className="w-5 h-5 mx-auto mb-1 text-yellow-300" />
-                    <div className="text-lg font-bold">4</div>
-                    <div className="text-xs text-purple-200">Bidding Rounds</div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                    <Users className="w-5 h-5 mx-auto mb-1 text-yellow-300" />
-                    <div className="text-lg font-bold">All</div>
-                    <div className="text-xs text-purple-200">Players Advance</div>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
-                    <Award className="w-5 h-5 mx-auto mb-1 text-yellow-300" />
-                    <div className="text-lg font-bold">3</div>
-                    <div className="text-xs text-purple-200">Winners</div>
-                  </div>
-                </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      {overviewBoxes.map((box) => (
+                        <div
+                          key={box.id}
+                          onClick={() => setExpandedBox(expandedBox === box.id ? null : box.id)}
+                          className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center cursor-pointer hover:bg-white/20 transition-all duration-200 active:scale-95 ring-1 ring-white/10 hover:ring-white/30"
+                        >
+                          {box.icon}
+                          <div className="text-lg font-bold">{box.value}</div>
+                          <div className="text-xs text-purple-200">{box.label}</div>
+                          <div className="text-[10px] text-yellow-300/70 mt-1">Tap to learn more</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Full-screen modal for overview box details */}
+                    <AnimatePresence>
+                      {expandedBox && (() => {
+                        const box = overviewBoxes.find(b => b.id === expandedBox);
+                        if (!box) return null;
+                        return (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                            onClick={() => setExpandedBox(null)}
+                          >
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                              transition={{ duration: 0.25 }}
+                              className="bg-white rounded-2xl p-5 sm:p-6 shadow-2xl border border-purple-200 max-w-sm w-full"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#53317B] to-[#8456BC] flex items-center justify-center text-white">
+                                    {box.icon}
+                                  </div>
+                                  <div>
+                                    <div className="text-purple-800 font-bold text-base">{box.value}</div>
+                                    <div className="text-purple-500 text-xs">{box.label}</div>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => setExpandedBox(null)}
+                                  className="text-purple-400 hover:text-purple-700 hover:bg-purple-50 rounded-full p-1 transition-colors"
+                                >
+                                  <X className="w-5 h-5" />
+                                </button>
+                              </div>
+                              <div className="w-full h-px bg-purple-100 mb-3"></div>
+                              <p className="text-purple-700 text-sm leading-relaxed">{box.detail}</p>
+                            </motion.div>
+                          </motion.div>
+                        );
+                      })()}
+                    </AnimatePresence>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 space-y-1.5">
                   <p className="text-purple-100 text-xs sm:text-sm flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-yellow-300 shrink-0 mt-0.5" /> Every participant continues through all rounds</p>
                   <p className="text-purple-100 text-xs sm:text-sm flex items-start gap-2"><CheckCircle2 className="w-4 h-4 text-yellow-300 shrink-0 mt-0.5" /> No player is eliminated mid-auction</p>
