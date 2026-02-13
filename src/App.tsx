@@ -14,6 +14,7 @@ import { RefundPolicy } from './components/RefundPolicy';
 import { Support } from './components/Support';
 import { Contact } from './components/Contact';
 import { Rules } from './components/Rules';
+import { NewRules } from './components/NewRules';
 import { Participation } from './components/Participation';
 import { AboutUs } from './components/AboutUs';
 // ComingSoon removed
@@ -308,6 +309,7 @@ const App = () => {
     if (path === '/signup') return 'signup';
     if (path === '/forgot-password') return 'forgot';
     if (path === '/rules') return 'rules';
+    if (path === '/new-rules') return 'new-rules';
     if (path === '/participation') return 'participation';
     if (path === '/about') return 'about';
     if (path === '/coming-soon') {
@@ -356,6 +358,7 @@ const App = () => {
       else if (path === '/signup') setCurrentPage('signup');
       else if (path === '/forgot-password') setCurrentPage('forgot');
       else if (path === '/rules') setCurrentPage('rules');
+      else if (path === '/new-rules') setCurrentPage('new-rules');
       else if (path === '/participation') setCurrentPage('participation');
       else if (path === '/about') setCurrentPage('about');
         else if (path === '/coming-soon') {
@@ -945,7 +948,7 @@ const App = () => {
       window.history.pushState({}, '', '/prizeshowcase');
       return;
     }
-    const urlMap: any = { 'game': '/', 'login': '/login', 'signup': '/signup', 'forgot': '/forgot-password', 'rules': '/rules', 'participation': '/participation', 'about': '/about', 'terms': '/terms', 'privacy': '/privacy', 'refund': '/refund', 'support': '/support', 'contact': '/contact', 'profile': '/profile', 'history': '/history', 'leaderboard': '/leaderboard', 'admin-login': '/d60-ctrl-x9k7', 'admin-dashboard': '/d60-ctrl-x9k7', 'view-guide': '/view-guide', 'winning-tips': '/winning-tips', 'support-chat': '/support-chat', 'tester-feedback': '/tester-feedback', 'transactions': '/transactions', 'prizeshowcase': '/prizeshowcase', 'careers': '/careers' };
+    const urlMap: any = { 'game': '/', 'login': '/login', 'signup': '/signup', 'forgot': '/forgot-password', 'rules': '/rules', 'new-rules': '/new-rules', 'participation': '/participation', 'about': '/about', 'terms': '/terms', 'privacy': '/privacy', 'refund': '/refund', 'support': '/support', 'contact': '/contact', 'profile': '/profile', 'history': '/history', 'leaderboard': '/leaderboard', 'admin-login': '/d60-ctrl-x9k7', 'admin-dashboard': '/d60-ctrl-x9k7', 'view-guide': '/view-guide', 'winning-tips': '/winning-tips', 'support-chat': '/support-chat', 'tester-feedback': '/tester-feedback', 'transactions': '/transactions', 'prizeshowcase': '/prizeshowcase', 'careers': '/careers' };
     window.history.pushState({}, '', urlMap[page] || '/');
   };
 
@@ -1087,7 +1090,8 @@ const App = () => {
         return currentUser ? <AuctionHistory user={currentUser} onBack={handleBackToGame} onViewDetails={(a) => { setSelectedAuctionDetails(a); localStorage.setItem('selectedAuctionDetails', JSON.stringify(a)); window.history.pushState({}, '', '/history/details'); }} serverTime={serverTime} /> : null;
       case 'login': return <LoginForm onLogin={handleLogin} onSwitchToSignup={handleSwitchToSignup} onBack={handleBackToGame} onNavigate={handleNavigate} />;
       case 'signup': return <SignupForm onSignup={handleSignup} onSwitchToLogin={handleSwitchToLogin} onBack={handleBackToGame} onNavigate={handleNavigate} />;
-      case 'rules': return <><Rules onBack={handleBackToGame} /><Footer onNavigate={handleNavigate} /></>;
+      case 'rules': return <><NewRules onBack={handleBackToGame} /><Footer onNavigate={handleNavigate} /></>;
+      case 'new-rules': return <><NewRules onBack={handleBackToGame} /><Footer onNavigate={handleNavigate} /></>;
       case 'forgot': return <ForgotPasswordPage onBack={handleSwitchToLogin} onNavigate={handleNavigate} />;
       case 'participation': return <Participation onBack={handleBackToGame} />;
       case 'careers': return <CareersForm onBack={handleBackToGame} />;
@@ -1128,7 +1132,7 @@ const App = () => {
         <div className="min-h-screen bg-background">
           <Header user={currentUser} onNavigate={handleNavigate} onLogin={handleShowLogin} onLogout={handleLogout} onStartTutorial={handleStartTutorial} mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
           {currentUser && <WinnerClaimBanner userId={currentUser.id} onNavigate={handleNavigate} serverTime={serverTime} />}
-          <div data-whatsnew-target="prize-showcase"><ChristmasHeroBanner user={currentUser} onJoinNow={() => { if (!currentUser) handleShowLogin(); else document.querySelector('[data-whatsnew-target="prize-showcase-section"]')?.scrollIntoView({ behavior: 'smooth' }); }} /></div>
+          <div data-whatsnew-target="prize-showcase"><ChristmasHeroBanner user={currentUser} onJoinNow={() => { if (!currentUser) handleShowLogin(); else document.querySelector('[data-whatsnew-target="prize-showcase-section"]')?.scrollIntoView({ behavior: 'smooth' }); }} onCheckRules={() => handleNavigate('rules')} /></div>
           <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
             {serverTime && (
               <div className="space-y-4">

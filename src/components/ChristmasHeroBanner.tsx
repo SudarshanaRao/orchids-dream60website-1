@@ -7,9 +7,10 @@ import { ChevronRight } from 'lucide-react';
 interface ChristmasHeroBannerProps {
   user?: any;
   onJoinNow?: () => void;
+  onCheckRules?: () => void;
 }
 
-export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow }) => {
+export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, onJoinNow, onCheckRules }) => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   useEffect(() => {
@@ -51,17 +52,29 @@ export const ChristmasHeroBanner: React.FC<ChristmasHeroBannerProps> = ({ user, 
           transition={{ duration: 0.8 }}
           className="flex flex-col items-center text-center"
         >
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            onClick={onJoinNow}
-            className="group relative px-10 py-4 bg-yellow-500 hover:bg-yellow-400 rounded-full font-bold text-black uppercase tracking-widest shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transition-all duration-300 active:scale-95 flex items-center gap-2"
-          >
-            Join Now
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
-        </motion.div>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                onClick={onJoinNow}
+                className="group relative px-10 py-4 bg-yellow-500 hover:bg-yellow-400 rounded-full font-bold text-black uppercase tracking-widest shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transition-all duration-300 active:scale-95 flex items-center gap-2"
+              >
+                Join Now
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
+                onClick={onCheckRules}
+                className="group relative px-10 py-4 bg-transparent border-2 border-yellow-500 hover:bg-yellow-500/10 rounded-full font-bold text-yellow-400 hover:text-yellow-300 uppercase tracking-widest shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.3)] transition-all duration-300 active:scale-95 flex items-center gap-2"
+              >
+                Check Now
+                <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </div>
+          </motion.div>
       </div>
 
       {/* Background Particles */}
