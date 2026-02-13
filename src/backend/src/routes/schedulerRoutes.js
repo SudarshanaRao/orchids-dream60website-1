@@ -22,6 +22,7 @@ const {
   getFirstUpcomingProduct,
   syncMasterToAuctions,
   getDailyAuctionByDate,
+  recalculateUserStats,
 } = require('../controllers/schedulerController');
 
 /**
@@ -1150,5 +1151,134 @@ router.get('/first-upcoming-product', getFirstUpcomingProduct);
  *         description: Internal server error
  */
 router.post('/sync-master-to-auctions', syncMasterToAuctions);
+
+/**
+ * @swagger
+ * /scheduler/recalculate-user-stats:
+ *   post:
+ *     summary: Recalculate all user auction history stats from raw auction data
+ *     description: |
+ *       Recalculates ALL values fresh for a user by reading each HourlyAuction they participated in.
+ *       
+ *       **What it recalculates per auction entry:**
+ *       - `totalAmountBid` - Sum of actual bids from rounds playersData
+ *       - `roundsParticipated` - Count of rounds where user placed a bid
+ *       - `totalBidsPlaced` - Count of bids placed across all rounds
+ *       - `totalParticipants` - From auction participants array
+ *       - `totalAmountSpent` - entryFee + lastRoundBidAmount (only if won AND claimed)
+ *       - `isEliminated` / `eliminatedInRound` - From round qualification data
+ *       - `lastRoundBidAmount` - From last round's actual bid data
+ *       
+ *       **What it aggregates (stats):**
+ *       - `totalAuctions` - Count of completed auctions
+ *       - `totalWins` - Count of auctions won
+ *       - `totalLosses` - Count of auctions lost
+ *       - `totalSpent` - Sum of all entry fees + final round bids for claimed wins
+ *       - `totalWon` - Sum of prize amounts for claimed wins only
+ *       - `totalClaimed` - Count of prizes claimed
+ *       - `winRate` - Win percentage
+ *       - `netGain` - totalWon - totalSpent
+ *       
+ *       **What it syncs to User profile:**
+ *       - totalAuctions, totalWins, totalLosses, totalAmountSpent, totalAmountWon, winRate, netGain
+ *       
+ *       **Use this endpoint to:**
+ *       - Fix incorrect stats after manual data corrections
+ *       - Recalculate after system issues or bugs
+ *       - Audit and verify user statistics
+ *     tags: [Scheduler]
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's UUID
+ *         example: "56ac4975-e2fe-4bc5-84d2-dd3eaf8ee35b"
+ *     responses:
+ *       200:
+ *         description: Stats recalculated and synced successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Recalculated stats for 10 auction entries and synced to user profile"
+ *                 data:
+ *                   type: array
+ *                   description: Updated auction history entries
+ *                   items:
+ *                     type: object
+ *                 stats:
+ *                   type: object
+ *                   description: Aggregated statistics
+ *                   properties:
+ *                     totalAuctions:
+ *                       type: number
+ *                       example: 8
+ *                     totalWins:
+ *                       type: number
+ *                       example: 4
+ *                     totalLosses:
+ *                       type: number
+ *                       example: 4
+ *                     totalSpent:
+ *                       type: number
+ *                       example: 5063
+ *                     totalWon:
+ *                       type: number
+ *                       example: 5500
+ *                     totalClaimed:
+ *                       type: number
+ *                       example: 3
+ *                     winRate:
+ *                       type: number
+ *                       example: 50
+ *                     netGain:
+ *                       type: number
+ *                       example: 437
+ *                 userProfile:
+ *                   type: object
+ *                   description: Updated user profile stats
+ *                   properties:
+ *                     totalAuctions:
+ *                       type: number
+ *                     totalWins:
+ *                       type: number
+ *                     totalLosses:
+ *                       type: number
+ *                     totalAmountSpent:
+ *                       type: number
+ *                     totalAmountWon:
+ *                       type: number
+ *                     winRate:
+ *                       type: number
+ *                     netGain:
+ *                       type: number
+ *                 recalculatedEntries:
+ *                   type: array
+ *                   description: Details of what was recalculated per entry
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       hourlyAuctionId:
+ *                         type: string
+ *                       auctionName:
+ *                         type: string
+ *                       updates:
+ *                         type: object
+ *       400:
+ *         description: Missing userId parameter
+ *       404:
+ *         description: No auction history found for user
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/recalculate-user-stats', recalculateUserStats);
 
 module.exports = router;

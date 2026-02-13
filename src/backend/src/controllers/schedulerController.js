@@ -2789,6 +2789,201 @@ const getDailyAuctionByDate = async (req, res) => {
   }
 };
 
+/**
+ * Recalculate user auction history stats from raw auction data
+ * POST /scheduler/recalculate-user-stats?userId=xxx
+ * 
+ * Recalculates ALL values fresh by reading each HourlyAuction the user participated in:
+ *   - totalAmountBid (sum of bids from rounds playersData)
+ *   - roundsParticipated (count of rounds where user placed a bid)
+ *   - totalBidsPlaced (count of bids placed)
+ *   - totalParticipants (from auction participants array)
+ *   - totalAmountSpent per entry (entryFee + lastRoundBidAmount if won+claimed)
+ *   - isEliminated / eliminatedInRound
+ * Then aggregates stats and syncs to User profile.
+ */
+const recalculateUserStats = async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId is required',
+      });
+    }
+
+    // 1. Get all auction history entries for this user
+    const historyEntries = await AuctionHistory.find({ userId }).lean();
+
+    if (!historyEntries || historyEntries.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No auction history found for this user',
+      });
+    }
+
+    // 2. Batch fetch all HourlyAuctions the user participated in
+    const auctionIds = [...new Set(historyEntries.map(e => e.hourlyAuctionId))];
+    const auctions = await HourlyAuction.find({
+      hourlyAuctionId: { $in: auctionIds }
+    }).lean();
+    const auctionMap = new Map(auctions.map(a => [a.hourlyAuctionId, a]));
+
+    let updatedCount = 0;
+    const updatedEntries = [];
+
+    // 3. Recalculate each entry from raw HourlyAuction data
+    for (const entry of historyEntries) {
+      const auction = auctionMap.get(entry.hourlyAuctionId);
+      const updates = {};
+
+      if (auction) {
+        // Recalculate from rounds data
+        let totalAmountBid = 0;
+        let roundsParticipated = 0;
+        let totalBidsPlaced = 0;
+        let lastRoundBidAmount = 0;
+        let isEliminated = false;
+        let eliminatedInRound = null;
+
+        if (auction.rounds && auction.rounds.length > 0) {
+          for (const round of auction.rounds) {
+            const playerData = round.playersData?.find(p => p.playerId === userId);
+            if (playerData) {
+              totalAmountBid += playerData.auctionPlacedAmount || 0;
+              roundsParticipated += 1;
+              totalBidsPlaced += 1;
+              lastRoundBidAmount = playerData.auctionPlacedAmount || 0;
+            }
+          }
+
+          // Check elimination: user is eliminated if they were in a round but not qualified
+          for (const round of auction.rounds) {
+            const playerData = round.playersData?.find(p => p.playerId === userId);
+            if (playerData && round.status === 'COMPLETED') {
+              const qualified = round.qualifiedPlayers?.includes(userId);
+              if (!qualified) {
+                isEliminated = true;
+                eliminatedInRound = round.roundNumber;
+                break;
+              }
+            }
+          }
+        }
+
+        // Total participants from auction
+        const totalParticipants = auction.participants?.length || 0;
+
+        // Determine isSettled
+        let isSettled = false;
+        if (auction.winners && auction.winners.length > 0) {
+          const hasClaimed = auction.winners.some(w => w.prizeClaimStatus === 'CLAIMED');
+          const allExpired = auction.winners.every(w => w.prizeClaimStatus === 'EXPIRED');
+          isSettled = hasClaimed || allExpired;
+        } else if (auction.Status === 'COMPLETED') {
+          isSettled = true;
+        }
+
+        // Calculate totalAmountSpent correctly
+        let totalAmountSpent = entry.entryFeePaid || 0;
+        if (entry.isWinner && entry.prizeClaimStatus === 'CLAIMED') {
+          totalAmountSpent += (entry.lastRoundBidAmount || lastRoundBidAmount || 0);
+        }
+
+        updates.totalAmountBid = totalAmountBid;
+        updates.roundsParticipated = roundsParticipated;
+        updates.totalBidsPlaced = totalBidsPlaced;
+        updates.totalParticipants = totalParticipants;
+        updates.totalAmountSpent = totalAmountSpent;
+        updates.isSettled = isSettled;
+
+        // Only update elimination if auction is completed and user didn't win
+        if (auction.Status === 'COMPLETED' && !entry.isWinner) {
+          updates.isEliminated = isEliminated;
+          updates.eliminatedInRound = eliminatedInRound;
+        }
+
+        // Update lastRoundBidAmount if user is a winner (from raw data)
+        if (entry.isWinner && lastRoundBidAmount > 0) {
+          updates.lastRoundBidAmount = lastRoundBidAmount;
+        }
+      } else {
+        // Auction not found - just recalculate totalAmountSpent from existing fields
+        let totalAmountSpent = entry.entryFeePaid || 0;
+        if (entry.isWinner && entry.prizeClaimStatus === 'CLAIMED') {
+          totalAmountSpent += (entry.lastRoundBidAmount || 0);
+        }
+        updates.totalAmountSpent = totalAmountSpent;
+      }
+
+      // Apply updates to DB
+      await AuctionHistory.updateOne(
+        { _id: entry._id },
+        { $set: updates }
+      );
+
+      updatedCount++;
+      updatedEntries.push({
+        hourlyAuctionId: entry.hourlyAuctionId,
+        auctionName: entry.auctionName,
+        updates,
+      });
+    }
+
+    // 4. Recalculate aggregated stats and sync to User profile
+    const stats = await AuctionHistory.getUserStats(userId);
+
+    // Re-fetch enriched history (same logic as getUserAuctionHistory)
+    const enrichedHistory = await AuctionHistory.find({ userId })
+      .sort({ auctionDate: -1, TimeSlot: -1 })
+      .lean();
+
+    // Enrich with isSettled
+    const enrichedData = enrichedHistory.map(entry => {
+      const auction = auctionMap.get(entry.hourlyAuctionId);
+      let isSettled = false;
+      if (auction) {
+        if (auction.winners && auction.winners.length > 0) {
+          const hasClaimed = auction.winners.some(w => w.prizeClaimStatus === 'CLAIMED');
+          const allExpired = auction.winners.every(w => w.prizeClaimStatus === 'EXPIRED');
+          isSettled = hasClaimed || allExpired;
+        } else if (auction.Status === 'COMPLETED') {
+          isSettled = true;
+        }
+      }
+      return { ...entry, isSettled };
+    });
+
+    // 5. Sync to User profile
+    const updatedUser = await syncUserStats(userId);
+
+    return res.status(200).json({
+      success: true,
+      message: `Recalculated stats for ${updatedCount} auction entries and synced to user profile`,
+      data: enrichedData,
+      stats,
+      userProfile: updatedUser ? {
+        totalAuctions: updatedUser.totalAuctions,
+        totalWins: updatedUser.totalWins,
+        totalLosses: updatedUser.totalLosses,
+        totalAmountSpent: updatedUser.totalAmountSpent,
+        totalAmountWon: updatedUser.totalAmountWon,
+        winRate: updatedUser.winRate,
+        netGain: updatedUser.netGain,
+      } : null,
+      recalculatedEntries: updatedEntries,
+    });
+  } catch (error) {
+    console.error('❌ [RECALCULATE_STATS] Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createDailyAuction,
   createHourlyAuctions,
@@ -2815,4 +3010,5 @@ module.exports = {
   forceCompleteAuction,
   getFirstUpcomingProduct,
   syncMasterToAuctions,
+  recalculateUserStats,
 };
