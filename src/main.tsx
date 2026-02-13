@@ -36,6 +36,8 @@ if ('serviceWorker' in navigator) {
           console.log('[SW] Unregistered old sw.js');
         }
       }
+    }).catch((err) => {
+      console.warn('[SW] Could not check existing registrations:', err.message);
     });
 
     navigator.serviceWorker.register('/service-worker.js')
@@ -66,7 +68,7 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
-        console.error('❌ [SW] Service Worker registration failed:', error);
+        console.warn('[SW] Service Worker registration failed (may be expected in iframe/preview):', error.message || error);
       });
   });
 }

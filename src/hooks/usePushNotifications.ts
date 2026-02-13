@@ -139,9 +139,14 @@ export function usePushNotifications(userId?: string): UsePushNotificationsRetur
           try {
             const audio = new Audio(sound);
             audio.volume = 1.0;
-            audio.play().catch((err) => {
-              console.warn('[Push] Could not play notification sound:', err);
-            });
+            // Try to play immediately; if blocked by autoplay policy, 
+            // the native OS notification sound serves as fallback
+            const playPromise = audio.play();
+            if (playPromise) {
+              playPromise.catch((err) => {
+                console.warn('[Push] Autoplay blocked for notification sound (native OS sound will play instead):', err.message);
+              });
+            }
           } catch (err) {
             console.warn('[Push] Error creating audio for notification sound:', err);
           }

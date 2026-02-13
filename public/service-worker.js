@@ -275,7 +275,7 @@ self.addEventListener('push', (event) => {
       tag: data.tag || 'dream60-notification',   // Notification grouping
       requireInteraction: data.requireInteraction || false, // Keep notification visible
       renotify: true,                             // Alert on replace
-      silent: !!(data.sound && data.soundId && data.soundId !== 'none') || data.silent || false, // Silent if custom sound will be played by client
+      silent: data.silent || false, // Never force silent for custom sounds - native OS sound is the reliable fallback
       
       // Data payload for click handling
       data: {

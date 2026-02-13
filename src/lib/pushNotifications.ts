@@ -67,14 +67,19 @@ async function getVAPIDPublicKey(): Promise<string> {
 async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!supportsPush()) return null;
 
-  let registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) {
-    registration = await navigator.serviceWorker.register('/service-worker.js');
-  }
+  try {
+    let registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('/service-worker.js');
+    }
 
-  // Wait until the SW is active/ready
-  await navigator.serviceWorker.ready;
-  return registration;
+    // Wait until the SW is active/ready
+    await navigator.serviceWorker.ready;
+    return registration;
+  } catch (err) {
+    console.warn('[Push] Service worker registration failed:', (err as Error).message);
+    return null;
+  }
 }
 
 function detectDeviceType(): 'PWA' | 'Web' {
