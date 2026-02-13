@@ -2693,22 +2693,23 @@ const syncMasterToAuctions = async (req, res) => {
         if (freshConfig) {
           // Merge fresh config over the hourly auction data
           // Prioritize fields from dailyAuctionConfig which is the source of truth for product info
-          upcomingAuction = {
-            ...upcomingAuction,
-            auctionName: freshConfig.auctionName || upcomingAuction.auctionName,
-            prizeValue: freshConfig.prizeValue || upcomingAuction.prizeValue,
-            imageUrl: freshConfig.imageUrl || upcomingAuction.imageUrl,
-            productImages: freshConfig.productImages || upcomingAuction.productImages,
-            productDescription: freshConfig.productDescription || upcomingAuction.productDescription,
-            minSlotsCriteria: freshConfig.minSlotsCriteria || upcomingAuction.minSlotsCriteria,
-            minSlotsValue: freshConfig.minSlotsValue || upcomingAuction.minSlotsValue,
-            EntryFee: freshConfig.EntryFee || upcomingAuction.EntryFee,
-            minEntryFee: freshConfig.minEntryFee || upcomingAuction.minEntryFee,
-            maxEntryFee: freshConfig.maxEntryFee || upcomingAuction.maxEntryFee,
-            FeeSplits: freshConfig.FeeSplits || upcomingAuction.FeeSplits,
-            roundConfig: freshConfig.roundConfig || upcomingAuction.roundConfig,
-            roundCount: freshConfig.roundCount || upcomingAuction.roundCount,
-          };
+            upcomingAuction = {
+              ...upcomingAuction,
+              auctionName: freshConfig.auctionName || upcomingAuction.auctionName,
+              prizeValue: freshConfig.prizeValue || upcomingAuction.prizeValue,
+              imageUrl: freshConfig.imageUrl || upcomingAuction.imageUrl,
+              productImages: freshConfig.productImages || upcomingAuction.productImages,
+              productDescription: freshConfig.productDescription || upcomingAuction.productDescription,
+              minSlotsCriteria: freshConfig.minSlotsCriteria || upcomingAuction.minSlotsCriteria,
+              minSlotsValue: freshConfig.minSlotsValue || upcomingAuction.minSlotsValue,
+              EntryFee: freshConfig.EntryFee || upcomingAuction.EntryFee,
+              minEntryFee: freshConfig.minEntryFee || upcomingAuction.minEntryFee,
+              maxEntryFee: freshConfig.maxEntryFee || upcomingAuction.maxEntryFee,
+              FeeSplits: freshConfig.FeeSplits || upcomingAuction.FeeSplits,
+              roundConfig: freshConfig.roundConfig || upcomingAuction.roundConfig,
+              roundCount: freshConfig.roundCount || upcomingAuction.roundCount,
+              maxDiscount: freshConfig.maxDiscount !== undefined ? freshConfig.maxDiscount : upcomingAuction.maxDiscount,
+            };
         }
       }
     } catch (mergeError) {

@@ -122,6 +122,17 @@ html {
   scrollbar-color: #9333ea #f3e8ff;
 }
 
+@keyframes blink-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(234,179,8,0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(234,179,8,0.7), 0 0 40px rgba(234,179,8,0.3);
+    transform: scale(1.05);
+  }
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
