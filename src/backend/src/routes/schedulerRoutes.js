@@ -1156,9 +1156,12 @@ router.post('/sync-master-to-auctions', syncMasterToAuctions);
  * @swagger
  * /scheduler/recalculate-user-stats:
  *   post:
- *     summary: Recalculate all user auction history stats from raw auction data
+ *     summary: Recalculate auction history stats for ALL users from raw auction data
  *     description: |
- *       Recalculates ALL values fresh for a user by reading each HourlyAuction they participated in.
+ *       Finds ALL distinct users in AuctionHistory and recalculates their stats fresh
+ *       by reading each HourlyAuction they participated in. No parameters required.
+ *       
+ *       **Stats count ALL auction entries** (including IN_PROGRESS), not just COMPLETED.
  *       
  *       **What it recalculates per auction entry:**
  *       - `totalAmountBid` - Sum of actual bids from rounds playersData
@@ -1169,35 +1172,23 @@ router.post('/sync-master-to-auctions', syncMasterToAuctions);
  *       - `isEliminated` / `eliminatedInRound` - From round qualification data
  *       - `lastRoundBidAmount` - From last round's actual bid data
  *       
- *       **What it aggregates (stats):**
- *       - `totalAuctions` - Count of completed auctions
- *       - `totalWins` - Count of auctions won
- *       - `totalLosses` - Count of auctions lost
+ *       **What it aggregates per user (stats):**
+ *       - `totalAuctions` - Count of ALL auctions (including IN_PROGRESS)
+ *       - `totalWins` - Count of completed auctions won
+ *       - `totalLosses` - Count of completed auctions lost
+ *       - `totalInProgress` - Count of IN_PROGRESS/JOINED auctions
  *       - `totalSpent` - Sum of all entry fees + final round bids for claimed wins
  *       - `totalWon` - Sum of prize amounts for claimed wins only
  *       - `totalClaimed` - Count of prizes claimed
- *       - `winRate` - Win percentage
+ *       - `winRate` - Win percentage (wins / total auctions)
  *       - `netGain` - totalWon - totalSpent
  *       
- *       **What it syncs to User profile:**
+ *       **What it syncs to each User profile:**
  *       - totalAuctions, totalWins, totalLosses, totalAmountSpent, totalAmountWon, winRate, netGain
- *       
- *       **Use this endpoint to:**
- *       - Fix incorrect stats after manual data corrections
- *       - Recalculate after system issues or bugs
- *       - Audit and verify user statistics
  *     tags: [Scheduler]
- *     parameters:
- *       - in: query
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         description: User's UUID
- *         example: "56ac4975-e2fe-4bc5-84d2-dd3eaf8ee35b"
  *     responses:
  *       200:
- *         description: Stats recalculated and synced successfully
+ *         description: Stats recalculated and synced for all users
  *         content:
  *           application/json:
  *             schema:
@@ -1208,74 +1199,64 @@ router.post('/sync-master-to-auctions', syncMasterToAuctions);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Recalculated stats for 10 auction entries and synced to user profile"
- *                 data:
+ *                   example: "Recalculated stats for 5 users (42 total entries) and synced to user profiles"
+ *                 totalUsers:
+ *                   type: number
+ *                   example: 5
+ *                 totalEntriesUpdated:
+ *                   type: number
+ *                   example: 42
+ *                 users:
  *                   type: array
- *                   description: Updated auction history entries
- *                   items:
- *                     type: object
- *                 stats:
- *                   type: object
- *                   description: Aggregated statistics
- *                   properties:
- *                     totalAuctions:
- *                       type: number
- *                       example: 8
- *                     totalWins:
- *                       type: number
- *                       example: 4
- *                     totalLosses:
- *                       type: number
- *                       example: 4
- *                     totalSpent:
- *                       type: number
- *                       example: 5063
- *                     totalWon:
- *                       type: number
- *                       example: 5500
- *                     totalClaimed:
- *                       type: number
- *                       example: 3
- *                     winRate:
- *                       type: number
- *                       example: 50
- *                     netGain:
- *                       type: number
- *                       example: 437
- *                 userProfile:
- *                   type: object
- *                   description: Updated user profile stats
- *                   properties:
- *                     totalAuctions:
- *                       type: number
- *                     totalWins:
- *                       type: number
- *                     totalLosses:
- *                       type: number
- *                     totalAmountSpent:
- *                       type: number
- *                     totalAmountWon:
- *                       type: number
- *                     winRate:
- *                       type: number
- *                     netGain:
- *                       type: number
- *                 recalculatedEntries:
- *                   type: array
- *                   description: Details of what was recalculated per entry
  *                   items:
  *                     type: object
  *                     properties:
- *                       hourlyAuctionId:
+ *                       userId:
  *                         type: string
- *                       auctionName:
+ *                       username:
  *                         type: string
- *                       updates:
+ *                       entriesRecalculated:
+ *                         type: number
+ *                       stats:
  *                         type: object
- *       400:
- *         description: Missing userId parameter
+ *                         properties:
+ *                           totalAuctions:
+ *                             type: number
+ *                           totalWins:
+ *                             type: number
+ *                           totalLosses:
+ *                             type: number
+ *                           totalInProgress:
+ *                             type: number
+ *                           totalSpent:
+ *                             type: number
+ *                           totalWon:
+ *                             type: number
+ *                           totalClaimed:
+ *                             type: number
+ *                           winRate:
+ *                             type: number
+ *                           netGain:
+ *                             type: number
+ *                       userProfile:
+ *                         type: object
+ *                         properties:
+ *                           totalAuctions:
+ *                             type: number
+ *                           totalWins:
+ *                             type: number
+ *                           totalLosses:
+ *                             type: number
+ *                           totalAmountSpent:
+ *                             type: number
+ *                           totalAmountWon:
+ *                             type: number
+ *                           winRate:
+ *                             type: number
+ *                           netGain:
+ *                             type: number
  *       404:
- *         description: No auction history found for user
+ *         description: No auction history found
  *       500:
  *         description: Internal server error
  */
