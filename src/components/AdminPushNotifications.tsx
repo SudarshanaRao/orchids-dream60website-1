@@ -656,6 +656,86 @@ export function AdminPushNotifications({ adminUserId }: AdminPushNotificationsPr
         )}
       </div>
 
+      {/* Sound Alerts from Dream60 */}
+      <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-amber-200">
+        <div className="flex items-center gap-3 mb-2">
+          <Volume2 className="w-6 h-6 text-amber-700" />
+          <h2 className="text-xl font-bold text-amber-900">Sound Alerts from Dream60</h2>
+        </div>
+        <p className="text-sm text-amber-600 mb-4">
+          Attach a sound alert to your push notification. Users will hear this sound when the notification arrives on their device.
+        </p>
+
+        {/* Sound Selection Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {NOTIFICATION_SOUNDS.map((sound) => {
+            const isSelected = selectedSound === sound.id;
+            const isPlaying = playingSound === sound.id;
+            return (
+              <div
+                key={sound.id}
+                onClick={() => setSelectedSound(sound.id)}
+                className={`relative flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300 shadow-md'
+                    : 'border-gray-200 hover:border-amber-300 hover:bg-amber-50/50'
+                }`}
+              >
+                {/* Radio indicator */}
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  isSelected ? 'border-amber-600 bg-amber-600' : 'border-gray-300'
+                }`}>
+                  {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+
+                {/* Sound info */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold truncate ${isSelected ? 'text-amber-900' : 'text-gray-800'}`}>
+                    {sound.label}
+                  </p>
+                  {sound.file && (
+                    <p className="text-xs text-gray-500 truncate mt-0.5">{sound.file.split('/').pop()}</p>
+                  )}
+                </div>
+
+                {/* Preview button */}
+                {sound.file && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePreviewSound(sound.id);
+                    }}
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                      isPlaying
+                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                        : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    }`}
+                    title={isPlaying ? 'Stop' : 'Preview sound'}
+                  >
+                    {isPlaying ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected sound summary */}
+        <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-3">
+          <Volume2 className="w-5 h-5 text-amber-700 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-900">
+              Selected: {NOTIFICATION_SOUNDS.find(s => s.id === selectedSound)?.label || 'None'}
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              {selectedSound === 'none'
+                ? 'Notification will be sent silently without any sound.'
+                : 'This sound will play when the push notification is delivered to users.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Notification Form */}
       <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
         <div className="space-y-4">
