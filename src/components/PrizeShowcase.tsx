@@ -640,7 +640,7 @@ interface PrizeShowcaseProps {
                   </div>
                 </div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#3A2257] via-[#53317B] to-[#6B3FA0] bg-clip-text text-transparent">
-                  Current Prize
+                  Current Auction
                 </h2>
               </div>
 

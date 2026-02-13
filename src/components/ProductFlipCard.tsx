@@ -343,20 +343,20 @@ onClick={(e) => {
 
                 {/* Content */}
                 <div className="p-3 space-y-2.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-                  {/* Max Discount Info - Most Important */}
-                  {maxDiscount != null && maxDiscount > 0 && (
-                    <div className="flex items-start gap-2 p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow">
-                        <span className="text-sm font-bold text-white">%</span>
+                    {/* Max Discount Info - Most Important */}
+                    {maxDiscount !== undefined && maxDiscount !== null && Number(maxDiscount) > 0 && (
+                      <div className="flex items-start gap-2 p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow">
+                          <span className="text-sm font-bold text-white">%</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {Number(maxDiscount)}% OFF</h4>
+                          <p className="text-xs text-green-700 leading-relaxed">
+                            The company is offering a <strong>{Number(maxDiscount)}% mandatory discount</strong> on this auction. You can place your bid up to a maximum of <strong>{100 - Number(maxDiscount)}%</strong> of the product value (₹{Math.round(prizeValue * (100 - Number(maxDiscount)) / 100).toLocaleString('en-IN')}). Place your auction amount accordingly.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {maxDiscount}% OFF</h4>
-                        <p className="text-xs text-green-700 leading-relaxed">
-                          The company is offering a <strong>{maxDiscount}% mandatory discount</strong> on this auction. You can place your bid up to a maximum of <strong>{100 - maxDiscount}%</strong> of the product value (₹{Math.round(prizeValue * (100 - maxDiscount) / 100).toLocaleString('en-IN')}). Place your auction amount accordingly.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Representation Disclaimer - Red */}
                   <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">

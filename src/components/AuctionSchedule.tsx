@@ -412,11 +412,19 @@ export function AuctionSchedule({ user, onNavigate, serverTime }: AuctionSchedul
                         <Clock className="w-6 h-6 text-purple-600" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-purple-900">{auction.time}</span>
-                          <Badge className={`${getStatusColor(auction.status)} text-[10px]`}>
-                            {getStatusText(auction.status)}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-purple-900">{auction.time}</span>
+                            {auction.status === 'completed' ? (
+                              auction.isPrizeClaimed ? (
+                                <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 text-[10px]">
+                                  Sold Out
+                                </Badge>
+                              ) : null
+                            ) : (
+                              <Badge className={`${getStatusColor(auction.status)} text-[10px]`}>
+                                {getStatusText(auction.status)}
+                              </Badge>
+                            )}
                         </div>
                         <div className="text-xs text-purple-500 font-medium">Auction #{auction.sequenceNumber}</div>
                       </div>
