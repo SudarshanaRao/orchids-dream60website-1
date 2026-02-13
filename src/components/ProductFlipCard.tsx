@@ -341,52 +341,52 @@ onClick={(e) => {
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="p-3 space-y-2.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-                {/* Representation Disclaimer - Red */}
-                <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
-                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm">⚠️</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-red-800 text-sm mb-0.5">Representation Only</h4>
-                    <p className="text-xs text-red-700 leading-relaxed">
-                      Images shown are for illustrative purposes. Actual products may vary.
-                    </p>
-                  </div>
-                </div>
+                {/* Content */}
+                <div className="p-3 space-y-2.5 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+                  {/* Max Discount Info - Most Important */}
+                  {maxDiscount != null && maxDiscount > 0 && (
+                    <div className="flex items-start gap-2 p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow">
+                        <span className="text-sm font-bold text-white">%</span>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {maxDiscount}% OFF</h4>
+                        <p className="text-xs text-green-700 leading-relaxed">
+                          The company is offering a <strong>{maxDiscount}% mandatory discount</strong> on this auction. You can place your bid up to a maximum of <strong>{100 - maxDiscount}%</strong> of the product value (₹{Math.round(prizeValue * (100 - maxDiscount) / 100).toLocaleString('en-IN')}). Place your auction amount accordingly.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-                {/* Amazon Voucher Info - Highlighted */}
-                <div className="flex items-start gap-2 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-400">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow">
-                    <span className="text-base">🎁</span>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-purple-800 text-sm mb-1">Prize: Amazon Voucher</h4>
-                    <p className="text-xs text-purple-700 leading-relaxed">
-                      <strong>Winners get Amazon Gift Voucher</strong> worth ₹{prizeValue.toLocaleString('en-IN')}, not the product shown.
-                    </p>
-                    <p className="text-[10px] text-purple-600 mt-1 italic">
-                      Redeem on Amazon.in for any item
-                    </p>
-                  </div>
-                </div>
-
-                {/* Max Discount Info */}
-                {maxDiscount != null && maxDiscount > 0 && (
-                  <div className="flex items-start gap-2 p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-300">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0 shadow">
-                      <span className="text-sm font-bold text-white">%</span>
+                  {/* Representation Disclaimer - Red */}
+                  <div className="flex items-start gap-2 p-2.5 bg-red-50 rounded-lg border border-red-200">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm">⚠️</span>
                     </div>
                     <div>
-                      <h4 className="font-bold text-green-800 text-sm mb-0.5">Company Discount: {maxDiscount}% OFF</h4>
-                      <p className="text-xs text-green-700 leading-relaxed">
-                        The company is offering a <strong>{maxDiscount}% mandatory discount</strong> on this auction. You can place your bid up to a maximum of <strong>{100 - maxDiscount}%</strong> of the product value (₹{Math.round(prizeValue * (100 - maxDiscount) / 100).toLocaleString('en-IN')}). Place your auction amount accordingly.
+                      <h4 className="font-semibold text-red-800 text-sm mb-0.5">Representation Only</h4>
+                      <p className="text-xs text-red-700 leading-relaxed">
+                        Images shown are for illustrative purposes. Actual products may vary.
                       </p>
                     </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Amazon Voucher Info - Highlighted */}
+                  <div className="flex items-start gap-2 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border-2 border-purple-400">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow">
+                      <span className="text-base">🎁</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-purple-800 text-sm mb-1">Prize: Amazon Voucher</h4>
+                      <p className="text-xs text-purple-700 leading-relaxed">
+                        <strong>Winners get Amazon Gift Voucher</strong> worth ₹{prizeValue.toLocaleString('en-IN')}, not the product shown.
+                      </p>
+                      <p className="text-[10px] text-purple-600 mt-1 italic">
+                        Redeem on Amazon.in for any item
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
               {/* Footer */}
               <div className="px-4 py-3 flex-shrink-0 border-t border-gray-100 rounded-b-xl">

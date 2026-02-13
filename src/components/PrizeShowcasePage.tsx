@@ -128,7 +128,7 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
                   Back to Auction
                 </Button>
                 <div className="w-px h-6 bg-purple-300 hidden sm:block"></div>
-                <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Prize Showcase</h1>
+                <h1 className="hidden sm:block text-xl sm:text-2xl font-bold text-purple-800">Product Showcase</h1>
               </div>
               
               {/* Logo */}
@@ -160,13 +160,13 @@ export function PrizeShowcasePage({ onBack, onJoinAuction, hourlyAuctionId }: Pr
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            Prize Showcase
+            Product Showcase
           </motion.h1>
 
           <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full mb-4">
             <Gift className="w-5 h-5 text-purple-600" />
-            <span className="text-sm font-semibold text-purple-700">Upcoming Prize</span>
+            <span className="text-sm font-semibold text-purple-700">Upcoming Auction</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-pink-600 bg-clip-text text-transparent mb-2">
             {product.auctionName}
