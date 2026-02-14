@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, Shield, Bell, Check, Trash2, History, LogOut, Gavel, Trophy, Clock, Award, Star, Flame, Target, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -61,6 +61,7 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
   const [showNewPhoneInput, setShowNewPhoneInput] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [playerBadges, setPlayerBadges] = useState<Array<{ label: string; color: string; icon: string; description: string }>>([]);
 
   const formatIndianMobile = (input: string) => {
     const digits = input.replace(/\D/g, "").slice(0, 10);
@@ -132,6 +133,76 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
     };
 
     fetchUserData();
+  }, []);
+
+  // Fetch auction history to compute player badges
+  useEffect(() => {
+    const fetchBadges = async () => {
+      try {
+        const userId = localStorage.getItem('user_id');
+        if (!userId) return;
+        const queryParams = buildQueryString({ userId, page: '1', limit: '50' });
+        const response = await fetch(`${API_ENDPOINTS.scheduler.userAuctionHistory}${queryParams}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.success || !data.data?.auctions) return;
+
+        const auctions = data.data.auctions;
+        const totalAuctions = auctions.length;
+        const wins = auctions.filter((a: any) => a.isWinner).length;
+        const totalBids = auctions.reduce((sum: number, a: any) => sum + (a.totalBidsPlaced || 0), 0);
+        const totalSpent = auctions.reduce((sum: number, a: any) => sum + (a.totalAmountSpent || 0), 0);
+        const avgSpent = totalAuctions > 0 ? totalSpent / totalAuctions : 0;
+
+        const badges: Array<{ label: string; color: string; icon: string; description: string }> = [];
+
+        // Win-based badges
+        if (wins >= 10) {
+          badges.push({ label: 'Auction Legend', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: '👑', description: 'Won 10+ auctions' });
+        } else if (wins >= 5) {
+          badges.push({ label: 'Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: '🏆', description: 'Won 5+ auctions' });
+        } else if (wins >= 1) {
+          badges.push({ label: 'Winner', color: 'bg-green-100 text-green-800 border-green-300', icon: '🎯', description: 'Won at least 1 auction' });
+        }
+
+        // Participation badges
+        if (totalAuctions >= 20) {
+          badges.push({ label: 'Veteran', color: 'bg-purple-100 text-purple-800 border-purple-300', icon: '⭐', description: 'Participated in 20+ auctions' });
+        } else if (totalAuctions >= 10) {
+          badges.push({ label: 'Regular', color: 'bg-blue-100 text-blue-800 border-blue-300', icon: '🔁', description: 'Participated in 10+ auctions' });
+        } else if (totalAuctions >= 3) {
+          badges.push({ label: 'Getting Started', color: 'bg-cyan-100 text-cyan-800 border-cyan-300', icon: '🚀', description: 'Participated in 3+ auctions' });
+        }
+
+        // Bidding style badges
+        if (avgSpent > 5) {
+          badges.push({ label: 'Aggressive Bidder', color: 'bg-red-100 text-red-700 border-red-300', icon: '🔥', description: 'High average spend per auction' });
+        } else if (avgSpent <= 3 && totalAuctions >= 3) {
+          badges.push({ label: 'Safe Player', color: 'bg-blue-100 text-blue-700 border-blue-300', icon: '🛡️', description: 'Low average spend per auction' });
+        } else if (totalAuctions >= 3) {
+          badges.push({ label: 'Balanced', color: 'bg-purple-100 text-purple-700 border-purple-300', icon: '⚖️', description: 'Moderate spending pattern' });
+        }
+
+        // Activity badges
+        if (totalBids >= 20) {
+          badges.push({ label: 'Active Bidder', color: 'bg-orange-100 text-orange-700 border-orange-300', icon: '⚡', description: 'Placed 20+ total bids' });
+        }
+
+        // Win rate
+        if (totalAuctions >= 5 && wins / totalAuctions >= 0.5) {
+          badges.push({ label: 'Sharp Shooter', color: 'bg-emerald-100 text-emerald-700 border-emerald-300', icon: '🎯', description: '50%+ win rate' });
+        }
+
+        if (badges.length === 0) {
+          badges.push({ label: 'Newcomer', color: 'bg-gray-100 text-gray-700 border-gray-300', icon: '👋', description: 'Welcome to Dream60!' });
+        }
+
+        setPlayerBadges(badges);
+      } catch (error) {
+        console.log('Could not compute badges:', error);
+      }
+    };
+    fetchBadges();
   }, []);
 
   const handleDeleteAccount = async () => {
@@ -789,8 +860,64 @@ export function AccountSettings({ user, onBack, onNavigate, onDeleteAccount, onL
             </div>
           </motion.div>
 
-          <motion.div
-            custom={4}
+            {/* Player Badges Section */}
+            {playerBadges.length > 0 && (
+              <motion.div
+                custom={3.5}
+                initial="hidden"
+                animate="visible"
+                variants={cardVariants}
+                className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-inner shadow-purple-500/20 border border-purple-200/50 overflow-hidden relative"
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none"
+                  initial={{ x: '-100%', y: '-100%' }}
+                  animate={{ x: '100%', y: '100%' }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    repeatDelay: 5,
+                    ease: "easeInOut"
+                  }}
+                />
+
+                <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-purple-200/50 bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm relative">
+                  <div className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
+                      transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+                    >
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700" />
+                    </motion.div>
+                    <h2 className="text-base sm:text-lg font-semibold text-purple-900">Your Badges</h2>
+                    <span className="text-xs text-purple-500 ml-1">Based on your auction performance</span>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-5 md:p-6 relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {playerBadges.map((badge, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 * idx, duration: 0.3 }}
+                        className={`flex items-center gap-3 p-3 rounded-xl border ${badge.color} transition-all hover:shadow-md`}
+                      >
+                        <div className="text-2xl flex-shrink-0">{badge.icon}</div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm">{badge.label}</p>
+                          <p className="text-[11px] opacity-75">{badge.description}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <motion.div
+              custom={4}
             initial="hidden"
             animate="visible"
             variants={cardVariants}

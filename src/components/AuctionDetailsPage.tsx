@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Trophy, Calendar, Clock, IndianRupee, Target, Award, Crown, Users, TrendingUp, Sparkles, Box, CheckCircle2, XCircle, Lock, Medal, TrendingDown, BarChart3, Zap, Loader2, AlertCircle, CheckCircle, Gift, Timer, HourglassIcon, ChevronDown, ChevronUp, Eye, EyeOff, Shield, Flame, Hash, Activity } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ArrowLeft, Trophy, Calendar, Clock, IndianRupee, Target, Award, Crown, Users, TrendingUp, Sparkles, Box, CheckCircle2, XCircle, Lock, Medal, TrendingDown, BarChart3, Zap, Loader2, AlertCircle, CheckCircle, Gift, Timer, HourglassIcon, ChevronDown, ChevronUp, Eye, EyeOff, Shield, Flame, Hash, Activity, Star } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -67,6 +67,47 @@ const formatTime = (ts: string | number | undefined) => {
     hour12: true,
     timeZone: 'Asia/Kolkata',
   });
+};
+
+const formatTimeShort = (ts: string | number | undefined) => {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Kolkata',
+  });
+};
+
+// Badge assignment logic based on player behavior
+const assignPlayerBadge = (player: { totalBidsPlaced: number; totalAmountBid: number; entryFee: number; avgBid: number; roundsPlayed: number; isWinner: boolean; rank: number }) => {
+  const badges: Array<{ label: string; color: string; icon: string }> = [];
+
+  if (player.isWinner && player.rank === 1) {
+    badges.push({ label: 'Champion', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: '🏆' });
+  } else if (player.isWinner) {
+    badges.push({ label: 'Winner', color: 'bg-green-100 text-green-800 border-green-300', icon: '🎯' });
+  }
+
+  if (player.avgBid > player.entryFee * 1.5) {
+    badges.push({ label: 'Aggressive Bidder', color: 'bg-red-100 text-red-700 border-red-300', icon: '🔥' });
+  } else if (player.avgBid <= player.entryFee) {
+    badges.push({ label: 'Safe Player', color: 'bg-blue-100 text-blue-700 border-blue-300', icon: '🛡️' });
+  } else {
+    badges.push({ label: 'Balanced', color: 'bg-purple-100 text-purple-700 border-purple-300', icon: '⚖️' });
+  }
+
+  if (player.totalBidsPlaced >= 3) {
+    badges.push({ label: 'Active Bidder', color: 'bg-orange-100 text-orange-700 border-orange-300', icon: '⚡' });
+  }
+
+  if (player.roundsPlayed >= 3) {
+    badges.push({ label: 'Survivor', color: 'bg-teal-100 text-teal-700 border-teal-300', icon: '💪' });
+  }
+
+  return badges;
 };
 
 interface RoundDetails {
@@ -925,47 +966,28 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
             )}
 
             {/* ===== ROUND-BY-ROUND TIMELINE ===== */}
-            {detailedData && detailedData.rounds && detailedData.rounds.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="mb-5"
-              >
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 bg-gradient-to-br from-violet-600 to-purple-700 rounded-lg flex items-center justify-center shadow">
-                    <BarChart3 className="w-5 h-5 text-white" />
+              {detailedData && detailedData.hourlyAuction?.rounds && detailedData.hourlyAuction.rounds.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
+                  className="mb-5"
+                >
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-9 h-9 bg-gradient-to-br from-violet-600 to-purple-700 rounded-lg flex items-center justify-center shadow">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-purple-900 text-base sm:text-lg">Round-by-Round Timeline</h2>
+                      <p className="text-[10px] sm:text-xs text-purple-500">Detailed breakdown of every round</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="font-bold text-purple-900 text-base sm:text-lg">Round-by-Round Timeline</h2>
-                    <p className="text-[10px] sm:text-xs text-purple-500">Detailed breakdown of every round</p>
-                  </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="relative">
-                  {/* Vertical line */}
-                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-300 via-purple-200 to-purple-100 hidden sm:block" />
 
                   <div className="space-y-4">
-                    {detailedData.rounds.map((round: RoundDetails, index: number) => {
-                      const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1 && ['pending', 'active', 'upcoming'].includes((round.status || '').toLowerCase());
+                    {detailedData.hourlyAuction.rounds.map((round: any, index: number) => {
                       const isExpanded = expandedRounds.has(round.roundNumber);
-                      const userParticipated = round.userBid !== null && round.userBid !== undefined;
-                      const eliminatedCount = round.totalParticipants - round.qualifiedCount;
-
-                      let roundStatusLabel = round.status;
-                      let statusColor = 'bg-gray-100 text-gray-600';
-                      if (isSkippedRound) {
-                        roundStatusLabel = 'Skipped — Winners Declared';
-                        statusColor = 'bg-yellow-100 text-yellow-700';
-                      } else if (round.status?.toLowerCase() === 'completed') {
-                        roundStatusLabel = 'Completed';
-                        statusColor = 'bg-green-100 text-green-700';
-                      } else if (round.status?.toLowerCase() === 'active') {
-                        roundStatusLabel = 'Active';
-                        statusColor = 'bg-blue-100 text-blue-700';
-                      }
+                      const hasPlayers = round.playersData && round.playersData.length > 0;
+                      const roundStatus = round.status || 'COMPLETED';
 
                       return (
                         <motion.div
@@ -973,35 +995,20 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                           initial={{ opacity: 0, x: -15 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 + index * 0.08, duration: 0.4 }}
-                          className="relative"
                         >
-                          {/* Timeline dot */}
-                          <div className="absolute left-3.5 top-5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-md z-10 hidden sm:block" style={{
-                            background: userParticipated
-                              ? (round.userQualified ? '#10b981' : '#8b5cf6')
-                              : '#9ca3af'
-                          }} />
-
-                          <div className={`sm:ml-12 rounded-xl border-2 overflow-hidden transition-all shadow-sm hover:shadow-md ${
-                            userParticipated
-                              ? round.userQualified
-                                ? 'border-green-200 bg-white'
-                                : 'border-purple-200 bg-white'
-                              : 'border-gray-200 bg-gray-50/50'
+                          <div className={`rounded-xl border-2 overflow-hidden transition-all shadow-sm hover:shadow-md ${
+                            hasPlayers ? 'border-purple-200 bg-white' : 'border-gray-200 bg-gray-50/50'
                           }`}>
-                            {/* Round Header - Always visible */}
+                            {/* Round Header */}
                             <button
-                              onClick={() => !isSkippedRound && userParticipated && toggleRoundExpanded(round.roundNumber)}
-                              className={`w-full text-left p-3.5 sm:p-4 ${!isSkippedRound && userParticipated ? 'cursor-pointer hover:bg-purple-50/30' : 'cursor-default'}`}
+                              onClick={() => toggleRoundExpanded(round.roundNumber)}
+                              className="w-full text-left p-3.5 sm:p-4 cursor-pointer hover:bg-purple-50/30"
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  {/* Round number badge */}
                                   <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center font-bold text-white text-sm shadow flex-shrink-0 ${
-                                    userParticipated
-                                      ? round.userQualified
-                                        ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                        : 'bg-gradient-to-br from-purple-500 to-violet-600'
+                                    hasPlayers
+                                      ? 'bg-gradient-to-br from-purple-500 to-violet-600'
                                       : 'bg-gradient-to-br from-gray-400 to-gray-500'
                                   }`}>
                                     R{round.roundNumber}
@@ -1010,79 +1017,46 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <h3 className="font-bold text-gray-900 text-sm">Round {round.roundNumber}</h3>
-                                      <Badge className={`text-[10px] font-medium px-1.5 py-0 border-0 ${statusColor}`}>
-                                        {roundStatusLabel}
+                                      <Badge className={`text-[10px] font-medium px-1.5 py-0 border-0 ${
+                                        roundStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                      }`}>
+                                        {roundStatus}
                                       </Badge>
+                                      <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                                        <Users className="w-3 h-3" /> {round.totalParticipants} players
+                                      </span>
                                     </div>
 
-                                    {/* Timestamps */}
-                                    {!isSkippedRound && (
-                                      <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
-                                        <Clock className="w-2.5 h-2.5" />
-                                        <span>{formatTime(round.startedAt)}</span>
-                                        {round.completedAt && (
-                                          <><span className="text-gray-300">→</span><span>{formatTime(round.completedAt)}</span></>
-                                        )}
-                                      </div>
-                                    )}
+                                    {/* Time display: e.g. 12:00 to 12:15 */}
+                                    <div className="flex items-center gap-1 text-[11px] text-gray-600 mt-0.5 font-medium">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{formatTimeShort(round.startedAt)} to {formatTimeShort(round.completedAt)}</span>
+                                    </div>
                                   </div>
                                 </div>
 
-                                {/* Right side summary */}
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  {userParticipated && !isSkippedRound && (
-                                    <div className="flex items-center gap-2">
-                                      {/* Quick stats */}
-                                      <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500 mr-2">
-                                        <span className="flex items-center gap-0.5">
-                                          <Users className="w-3 h-3" /> {round.totalParticipants}
-                                        </span>
-                                        <span className="flex items-center gap-0.5 font-medium text-purple-700">
-                                          <IndianRupee className="w-3 h-3" />{round.userBid?.toLocaleString('en-IN')}
-                                        </span>
-                                        <span className="flex items-center gap-0.5 font-medium text-violet-700">
-                                          #{round.userRank || '—'}
-                                        </span>
-                                      </div>
-
-                                      {round.userQualified ? (
-                                        <Badge className="bg-green-500 text-white border-0 text-[10px] px-2">
-                                          <CheckCircle2 className="w-3 h-3 mr-0.5" /> Qualified
-                                        </Badge>
-                                      ) : (
-                                        <Badge className="bg-red-100 text-red-700 border-0 text-[10px] px-2">
-                                          <XCircle className="w-3 h-3 mr-0.5" /> Eliminated
-                                        </Badge>
-                                      )}
-
-                                      {!isSkippedRound && (
-                                        isExpanded
-                                          ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                                          : <ChevronDown className="w-4 h-4 text-gray-400" />
-                                      )}
-                                    </div>
+                                  {hasPlayers && (
+                                    <span className="text-[10px] text-purple-600 font-medium hidden sm:inline">
+                                      {round.qualifiedPlayers?.length || 0} qualified
+                                    </span>
                                   )}
-                                  {!userParticipated && !isSkippedRound && (
+                                  {!hasPlayers && (
                                     <Badge className="bg-gray-100 text-gray-500 border-0 text-[10px] px-2">
-                                      <Lock className="w-3 h-3 mr-0.5" /> Did not participate
+                                      No bids placed
                                     </Badge>
                                   )}
+                                  {isExpanded
+                                    ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                    : <ChevronDown className="w-4 h-4 text-gray-400" />
+                                  }
                                 </div>
                               </div>
-
-                              {/* Mobile quick stats */}
-                              {userParticipated && !isSkippedRound && (
-                                <div className="flex sm:hidden items-center gap-3 mt-2 text-[10px] text-gray-500 pl-[52px]">
-                                  <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {round.totalParticipants} players</span>
-                                  <span className="flex items-center gap-0.5 font-medium text-purple-700"><IndianRupee className="w-2.5 h-2.5" />{round.userBid?.toLocaleString('en-IN')}</span>
-                                  <span className="font-medium text-violet-700">Rank #{round.userRank || '—'}</span>
-                                </div>
-                              )}
                             </button>
 
-                            {/* Expanded Details */}
+                            {/* Expanded: Show all participants */}
                             <AnimatePresence>
-                              {isExpanded && userParticipated && !isSkippedRound && (
+                              {isExpanded && (
                                 <motion.div
                                   initial={{ height: 0, opacity: 0 }}
                                   animate={{ height: 'auto', opacity: 1 }}
@@ -1091,104 +1065,86 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                                   className="overflow-hidden"
                                 >
                                   <div className="px-3.5 sm:px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
-                                    {/* Stats Grid */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                      <div className="bg-purple-50/80 rounded-lg p-2.5 border border-purple-100">
-                                        <p className="text-[10px] text-purple-500 font-medium uppercase mb-0.5">Participants</p>
-                                        <p className="font-bold text-purple-900 text-lg">{round.totalParticipants}</p>
-                                      </div>
-                                      <div className="bg-green-50/80 rounded-lg p-2.5 border border-green-100">
-                                        <p className="text-[10px] text-green-500 font-medium uppercase mb-0.5">Qualified</p>
-                                        <p className="font-bold text-green-900 text-lg">{round.qualifiedCount}</p>
-                                      </div>
-                                      <div className="bg-red-50/80 rounded-lg p-2.5 border border-red-100">
-                                        <p className="text-[10px] text-red-500 font-medium uppercase mb-0.5">Eliminated</p>
-                                        <p className="font-bold text-red-900 text-lg">{eliminatedCount}</p>
-                                      </div>
-                                      {round.cutoffPercentage !== undefined && round.cutoffPercentage !== null && (
-                                        <div className="bg-amber-50/80 rounded-lg p-2.5 border border-amber-100">
-                                          <p className="text-[10px] text-amber-500 font-medium uppercase mb-0.5">Cutoff</p>
-                                          <p className="font-bold text-amber-900 text-lg">{round.cutoffPercentage}%</p>
+                                    {hasPlayers ? (
+                                      <>
+                                        {/* Stats row */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                          <div className="bg-purple-50/80 rounded-lg p-2.5 border border-purple-100 text-center">
+                                            <p className="text-[10px] text-purple-500 font-medium uppercase mb-0.5">Participants</p>
+                                            <p className="font-bold text-purple-900 text-lg">{round.totalParticipants}</p>
+                                          </div>
+                                          <div className="bg-green-50/80 rounded-lg p-2.5 border border-green-100 text-center">
+                                            <p className="text-[10px] text-green-500 font-medium uppercase mb-0.5">Qualified</p>
+                                            <p className="font-bold text-green-900 text-lg">{round.qualifiedPlayers?.length || 0}</p>
+                                          </div>
+                                          <div className="bg-red-50/80 rounded-lg p-2.5 border border-red-100 text-center">
+                                            <p className="text-[10px] text-red-500 font-medium uppercase mb-0.5">Eliminated</p>
+                                            <p className="font-bold text-red-900 text-lg">{round.totalParticipants - (round.qualifiedPlayers?.length || 0)}</p>
+                                          </div>
                                         </div>
-                                      )}
-                                    </div>
 
-                                    {/* Bid Range Bar */}
-                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                      <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                                        <BarChart3 className="w-3.5 h-3.5 text-purple-500" /> Bid Range
-                                      </h4>
-                                      <div className="flex items-center gap-3">
-                                        <div className="text-center">
-                                          <p className="text-[10px] text-gray-500 mb-0.5">Lowest</p>
-                                          <p className="font-bold text-green-700 text-sm flex items-center justify-center">
-                                            <IndianRupee className="w-3 h-3" />{round.lowestBid.toLocaleString('en-IN')}
-                                          </p>
+                                        {/* Player table */}
+                                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                          <div className="bg-gradient-to-r from-purple-50 to-violet-50 px-3 py-2 border-b border-gray-200">
+                                            <h4 className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                                              <Users className="w-3.5 h-3.5" /> Participants & Bids
+                                            </h4>
+                                          </div>
+                                          <div className="divide-y divide-gray-100">
+                                            {/* Table header */}
+                                            <div className="grid grid-cols-12 gap-1 px-3 py-2 bg-gray-50 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                                              <div className="col-span-1">#</div>
+                                              <div className="col-span-4">Player</div>
+                                              <div className="col-span-3 text-right">Bid Amount</div>
+                                              <div className="col-span-2 text-center">Rank</div>
+                                              <div className="col-span-2 text-center">Status</div>
+                                            </div>
+                                            {round.playersData.map((player: any, pIdx: number) => {
+                                              const isQualified = player.isQualified;
+                                              return (
+                                                <div key={player.playerId} className={`grid grid-cols-12 gap-1 px-3 py-2.5 items-center text-sm ${
+                                                  pIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                                }`}>
+                                                  <div className="col-span-1 text-xs text-gray-400 font-medium">{pIdx + 1}</div>
+                                                  <div className="col-span-4">
+                                                    <p className="font-semibold text-gray-900 text-xs truncate">{player.playerUsername}</p>
+                                                    <p className="text-[10px] text-gray-400">{formatTimeShort(player.auctionPlacedTime)}</p>
+                                                  </div>
+                                                  <div className="col-span-3 text-right">
+                                                    <span className="font-bold text-purple-900 text-xs flex items-center justify-end">
+                                                      <IndianRupee className="w-3 h-3" />{player.auctionPlacedAmount}
+                                                    </span>
+                                                  </div>
+                                                  <div className="col-span-2 text-center">
+                                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold text-xs">
+                                                      {player.rank}
+                                                    </span>
+                                                  </div>
+                                                  <div className="col-span-2 text-center">
+                                                    {isQualified ? (
+                                                      <Badge className="bg-green-100 text-green-700 border-0 text-[9px] px-1.5">
+                                                        <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" /> Pass
+                                                      </Badge>
+                                                    ) : (
+                                                      <Badge className="bg-red-100 text-red-700 border-0 text-[9px] px-1.5">
+                                                        <XCircle className="w-2.5 h-2.5 mr-0.5" /> Out
+                                                      </Badge>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
                                         </div>
-                                        <div className="flex-1 h-2 bg-gradient-to-r from-green-300 via-purple-300 to-red-300 rounded-full relative">
-                                          {/* User bid marker */}
-                                          {round.userBid && round.highestBid > round.lowestBid && (
-                                            <div
-                                              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-full shadow-md"
-                                              style={{
-                                                left: `${Math.min(100, Math.max(0, ((round.userBid - round.lowestBid) / (round.highestBid - round.lowestBid)) * 100))}%`,
-                                                transform: 'translate(-50%, -50%)'
-                                              }}
-                                              title={`Your bid: ₹${round.userBid.toLocaleString('en-IN')}`}
-                                            />
-                                          )}
-                                        </div>
-                                        <div className="text-center">
-                                          <p className="text-[10px] text-gray-500 mb-0.5">Highest</p>
-                                          <p className="font-bold text-red-700 text-sm flex items-center justify-center">
-                                            <IndianRupee className="w-3 h-3" />{round.highestBid.toLocaleString('en-IN')}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="text-center mt-1.5">
-                                        <p className="text-[10px] text-purple-600 font-medium">
-                                          Your Bid: <span className="font-bold">₹{round.userBid?.toLocaleString('en-IN')}</span> · Rank <span className="font-bold">#{round.userRank}</span>
+                                      </>
+                                    ) : (
+                                      <div className="text-center py-4">
+                                        <p className="text-sm text-gray-500">No players participated in this round</p>
+                                        <p className="text-[10px] text-gray-400 mt-1">
+                                          {formatTimeShort(round.startedAt)} to {formatTimeShort(round.completedAt)}
                                         </p>
                                       </div>
-                                    </div>
-
-                                    {/* Your Performance */}
-                                    <div className={`rounded-lg p-3 border ${
-                                      round.userQualified
-                                        ? 'bg-green-50/50 border-green-200'
-                                        : 'bg-red-50/50 border-red-200'
-                                    }`}>
-                                      <div className="flex items-center gap-2">
-                                        {round.userQualified ? (
-                                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                        ) : (
-                                          <XCircle className="w-5 h-5 text-red-500" />
-                                        )}
-                                        <div>
-                                          <p className={`text-sm font-bold ${round.userQualified ? 'text-green-800' : 'text-red-800'}`}>
-                                            {round.userQualified ? 'You Qualified!' : 'You Were Eliminated'}
-                                          </p>
-                                          <p className={`text-xs ${round.userQualified ? 'text-green-600' : 'text-red-600'}`}>
-                                            {round.userQualified
-                                              ? `Advanced to ${round.roundNumber < totalRounds ? `Round ${round.roundNumber + 1}` : 'Final Results'}`
-                                              : `Your bid of ₹${round.userBid?.toLocaleString('en-IN')} ranked #${round.userRank} — below the cutoff threshold`
-                                            }
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Timestamps */}
-                                    <div className="flex flex-wrap gap-3 text-[10px] text-gray-500">
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="w-2.5 h-2.5" /> Started: {formatTimestamp(round.startedAt)}
-                                      </span>
-                                      {round.completedAt && (
-                                        <span className="flex items-center gap-1">
-                                          <CheckCircle className="w-2.5 h-2.5" /> Ended: {formatTimestamp(round.completedAt)}
-                                        </span>
-                                      )}
-                                    </div>
+                                    )}
                                   </div>
                                 </motion.div>
                               )}
@@ -1198,9 +1154,147 @@ export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime
                       );
                     })}
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
+
+              {/* ===== CUMULATIVE PLAYER SCOREBOARD WITH BADGES ===== */}
+              {detailedData && detailedData.hourlyAuction?.participants && detailedData.hourlyAuction.participants.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.25 }}
+                  className="mb-5"
+                >
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center shadow">
+                      <Trophy className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-purple-900 text-base sm:text-lg">Player Scoreboard</h2>
+                      <p className="text-[10px] sm:text-xs text-purple-500">Cumulative performance & badges</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(() => {
+                      const participants = detailedData.hourlyAuction.participants;
+                      const winners = detailedData.hourlyAuction.winners || [];
+                      const winnersMap = new Map(winners.map((w: any) => [w.playerId, w]));
+
+                      // Sort by totalAmountBid desc, then by rank
+                      const sorted = [...participants].sort((a: any, b: any) => {
+                        const aWinner = winnersMap.get(a.playerId);
+                        const bWinner = winnersMap.get(b.playerId);
+                        const aRank = aWinner ? (aWinner as any).rank : 999;
+                        const bRank = bWinner ? (bWinner as any).rank : 999;
+                        if (aRank !== bRank) return aRank - bRank;
+                        return b.totalAmountBid - a.totalAmountBid;
+                      });
+
+                      return sorted.map((p: any, idx: number) => {
+                        const winner = winnersMap.get(p.playerId) as any;
+                        const isWinner = !!winner;
+                        const rank = winner?.rank || idx + 1;
+                        const avgBid = p.totalBidsPlaced > 0 ? p.totalAmountBid / p.totalBidsPlaced : 0;
+
+                        const badges = assignPlayerBadge({
+                          totalBidsPlaced: p.totalBidsPlaced,
+                          totalAmountBid: p.totalAmountBid,
+                          entryFee: p.entryFee,
+                          avgBid,
+                          roundsPlayed: p.totalBidsPlaced,
+                          isWinner,
+                          rank,
+                        });
+
+                        return (
+                          <div key={p.playerId} className={`rounded-xl border-2 p-4 transition-all ${
+                            isWinner && rank === 1
+                              ? 'border-yellow-300 bg-gradient-to-r from-yellow-50 via-amber-50 to-orange-50 shadow-md'
+                              : isWinner
+                              ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'
+                              : 'border-gray-200 bg-white'
+                          }`}>
+                            <div className="flex items-start gap-3">
+                              {/* Rank badge */}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow flex-shrink-0 ${
+                                rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white' :
+                                rank === 2 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
+                                rank === 3 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-white' :
+                                'bg-gradient-to-br from-gray-200 to-gray-300 text-gray-600'
+                              }`}>
+                                #{rank}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <h3 className="font-bold text-gray-900 text-sm">{p.playerUsername}</h3>
+                                  {isWinner && (
+                                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 text-[10px] px-1.5">
+                                      <Crown className="w-2.5 h-2.5 mr-0.5" /> Winner
+                                    </Badge>
+                                  )}
+                                  {p.isEliminated && (
+                                    <Badge className="bg-red-50 text-red-600 border-red-200 text-[10px] px-1.5">
+                                      Eliminated R{p.eliminatedInRound}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Stats */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                                  <div className="text-[11px]">
+                                    <span className="text-gray-500">Entry Fee: </span>
+                                    <span className="font-semibold text-gray-900 inline-flex items-center"><IndianRupee className="w-2.5 h-2.5" />{p.entryFee}</span>
+                                  </div>
+                                  <div className="text-[11px]">
+                                    <span className="text-gray-500">Total Bid: </span>
+                                    <span className="font-semibold text-gray-900 inline-flex items-center"><IndianRupee className="w-2.5 h-2.5" />{p.totalAmountBid}</span>
+                                  </div>
+                                  <div className="text-[11px]">
+                                    <span className="text-gray-500">Bids Placed: </span>
+                                    <span className="font-semibold text-gray-900">{p.totalBidsPlaced}</span>
+                                  </div>
+                                  <div className="text-[11px]">
+                                    <span className="text-gray-500">Joined: </span>
+                                    <span className="font-semibold text-gray-900">{formatTimeShort(p.joinedAt)}</span>
+                                  </div>
+                                </div>
+
+                                {/* Badges */}
+                                <div className="flex flex-wrap gap-1.5">
+                                  {badges.map((badge, bIdx) => (
+                                    <span key={bIdx} className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border ${badge.color}`}>
+                                      <span>{badge.icon}</span> {badge.label}
+                                    </span>
+                                  ))}
+                                </div>
+
+                                {/* Winner prize info */}
+                                {isWinner && winner && (
+                                  <div className="mt-2 bg-white/60 rounded-lg p-2 border border-green-100 flex items-center gap-3 text-[11px]">
+                                    <span className="text-green-700 font-medium flex items-center gap-1">
+                                      <Gift className="w-3 h-3" /> Prize: <span className="font-bold inline-flex items-center"><IndianRupee className="w-2.5 h-2.5" />{winner.prizeAmount}</span>
+                                    </span>
+                                    <span className="text-gray-400">|</span>
+                                    <span className="text-gray-600">
+                                      Final Bid: <span className="font-bold inline-flex items-center"><IndianRupee className="w-2.5 h-2.5" />{winner.finalAuctionAmount}</span>
+                                    </span>
+                                    <span className="text-gray-400">|</span>
+                                    <span className={`font-medium ${winner.prizeClaimStatus === 'PENDING' ? 'text-amber-600' : winner.prizeClaimStatus === 'CLAIMED' ? 'text-green-600' : 'text-red-500'}`}>
+                                      {winner.prizeClaimStatus}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </motion.div>
+              )}
 
             {/* ===== NET PROFIT ===== */}
             {auction.isWinner && auction.lastRoundBidAmount && auction.prizeValue && auction.prizeClaimStatus === 'CLAIMED' && (
