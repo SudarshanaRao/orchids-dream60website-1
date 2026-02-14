@@ -612,24 +612,40 @@ export function CreateMasterAuctionModal({
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Round Count
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={config.roundCount}
-                      onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
-                      className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
-                      required
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Max Discount (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={config.maxDiscount}
+                        onChange={(e) => handleConfigChange(index, 'maxDiscount', parseFloat(e.target.value) || 0)}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        placeholder="e.g. 10 for 10% company discount"
+                      />
+                      <p className="text-xs text-purple-400 mt-1">Company discount shown to users (0 = no discount)</p>
+                    </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-purple-900 mb-2">
-                      Entry Fee Type
-                    </label>
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Round Count
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={config.roundCount}
+                        onChange={(e) => handleConfigChange(index, 'roundCount', parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-purple-900 mb-2">
+                        Entry Fee Type
+                      </label>
                     <select
                       value={config.EntryFee}
                       onChange={(e) => handleConfigChange(index, 'EntryFee', e.target.value)}
@@ -773,11 +789,152 @@ export function CreateMasterAuctionModal({
                               </div>
                             );
                           })()}
-                      </div>
+                        </div>
+
+                  {/* Round Configuration */}
+                  <div className="col-span-2 mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-semibold text-purple-900">
+                        Round Configuration
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = [...auctionConfigs];
+                          const currentRounds = updated[index].roundConfig || [];
+                          const newRound = {
+                            round: currentRounds.length + 1,
+                            minPlayers: null,
+                            duration: 15,
+                            maxBid: null,
+                            roundCutoffPercentage: null,
+                            topBidAmountsPerRound: 3,
+                          };
+                          updated[index].roundConfig = [...currentRounds, newRound];
+                          updated[index].roundCount = updated[index].roundConfig.length;
+                          setAuctionConfigs(updated);
+                        }}
+                        className="text-xs px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-medium"
+                      >
+                        <Plus className="w-3 h-3 inline-block mr-1" />
+                        Add Round
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(config.roundConfig || []).map((round, rIdx) => (
+                        <div key={rIdx} className="border-2 border-purple-100 rounded-lg p-3 bg-purple-50/30">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-sm font-bold text-purple-800">Round {round.round}</h5>
+                            {config.roundConfig.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...auctionConfigs];
+                                  updated[index].roundConfig = updated[index].roundConfig.filter((_, i) => i !== rIdx);
+                                  updated[index].roundConfig.forEach((r, i) => { r.round = i + 1; });
+                                  updated[index].roundCount = updated[index].roundConfig.length;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="text-xs text-red-600 hover:text-red-700 font-medium"
+                              >
+                                <Trash2 className="w-3 h-3 inline-block mr-0.5" />
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-purple-700 mb-1">Duration (min)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={round.duration}
+                                onChange={(e) => {
+                                  const updated = [...auctionConfigs];
+                                  updated[index].roundConfig[rIdx].duration = parseInt(e.target.value) || 15;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-purple-700 mb-1">Cutoff % (elimination)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={round.roundCutoffPercentage ?? ''}
+                                onChange={(e) => {
+                                  const updated = [...auctionConfigs];
+                                  const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                                  updated[index].roundConfig[rIdx].roundCutoffPercentage = val;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                placeholder="e.g. 50"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-purple-700 mb-1">Min Players</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={round.minPlayers ?? ''}
+                                onChange={(e) => {
+                                  const updated = [...auctionConfigs];
+                                  const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                  updated[index].roundConfig[rIdx].minPlayers = val;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                placeholder="Auto"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-purple-700 mb-1">Max Bid (₹)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={round.maxBid ?? ''}
+                                onChange={(e) => {
+                                  const updated = [...auctionConfigs];
+                                  const val = e.target.value === '' ? null : parseInt(e.target.value);
+                                  updated[index].roundConfig[rIdx].maxBid = val;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                                placeholder="No limit"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-medium text-purple-700 mb-1">Top Bids/Round</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={round.topBidAmountsPerRound}
+                                onChange={(e) => {
+                                  const updated = [...auctionConfigs];
+                                  updated[index].roundConfig[rIdx].topBidAmountsPerRound = parseInt(e.target.value) || 3;
+                                  setAuctionConfigs(updated);
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-purple-200 rounded-lg focus:outline-none focus:border-purple-500 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
           <div className="flex items-center gap-4 pt-6 border-t border-purple-200">
             <button

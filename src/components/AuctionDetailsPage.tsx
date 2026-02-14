@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Trophy, Calendar, Clock, IndianRupee, Target, Award, Crown, Users, TrendingUp, Sparkles, Box, CheckCircle2, XCircle, Lock, Medal, TrendingDown, BarChart3, Zap, Loader2, AlertCircle, CheckCircle, Gift, Timer, HourglassIcon } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, Clock, IndianRupee, Target, Award, Crown, Users, TrendingUp, Sparkles, Box, CheckCircle2, XCircle, Lock, Medal, TrendingDown, BarChart3, Zap, Loader2, AlertCircle, CheckCircle, Gift, Timer, HourglassIcon, ChevronDown, ChevronUp, Eye, EyeOff, Shield, Flame, Hash, Activity } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { usePayment } from '../hooks/usePayment';
 import { AirpayForm } from './AirpayForm';
@@ -20,14 +20,53 @@ const maskEmail = (email: string) => {
   const maskedLocal = local.length <= 2
     ? `${local.slice(0, 1)}***`
     : `${local.slice(0, 1)}***${local.slice(-1)}`;
-
   const [domainName = '', ...restDomain] = domain.split('.');
   const maskedDomain = domainName.length <= 2
     ? `${domainName.slice(0, 1)}***`
     : `${domainName.slice(0, 1)}***${domainName.slice(-1)}`;
-
   const domainSuffix = restDomain.join('.');
   return `${maskedLocal}@${maskedDomain}${domainSuffix ? `.${domainSuffix}` : ''}`;
+};
+
+const maskMobile = (mobile: string) => {
+  if (!mobile) return '';
+  if (mobile.length <= 4) return '****';
+  return mobile.slice(0, 2) + '****' + mobile.slice(-2);
+};
+
+const maskUsername = (name: string) => {
+  if (!name) return '';
+  if (name.length <= 2) return name[0] + '***';
+  return name[0] + '***' + name.slice(-1);
+};
+
+const formatTimestamp = (ts: string | number | undefined) => {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
+};
+
+const formatTime = (ts: string | number | undefined) => {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
 };
 
 interface RoundDetails {
@@ -42,72 +81,78 @@ interface RoundDetails {
   userQualified: boolean;
   startedAt: string;
   completedAt: string;
+  cutoffPercentage?: number;
+  eliminatedCount?: number;
+  participants?: Array<{
+    username: string;
+    email?: string;
+    mobile?: string;
+    bidAmount: number;
+    rank: number;
+    qualified: boolean;
+    eliminationReason?: string;
+    bidPlacedAt?: string;
+  }>;
 }
 
-  interface AuctionDetailsData {
-    id: number;
-    date: Date;
-    prize: string;
-    prizeValue: number;
-    status: 'won' | 'lost';
-    totalParticipants: number;
-    myRank: number;
-    auctionStartTime: string;
-    auctionEndTime: string;
-    auctionStatus?: string;
-    entryFeePaid?: number;
-    totalAmountBid?: number;
-    totalAmountSpent?: number;
-    roundsParticipated?: number;
-    totalBidsPlaced?: number;
-    hourlyAuctionId?: string;
-    isWinner?: boolean;
-    finalRank?: number;
-    prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
-    claimDeadline?: number; // ✅ STORE as UTC timestamp (milliseconds)
-    claimedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
-    lastRoundBidAmount?: number;
-    prizeAmountWon?: number;
-    winnersAnnounced?: boolean;
-    claimedBy?: string;
-      claimUpiId?: string;
-      claimedByRank?: number;
-      // NEW: Priority claim fields
-      currentEligibleRank?: number; // Which rank (1, 2, or 3) can currently claim
-      claimWindowStartedAt?: number; // ✅ STORE as UTC timestamp (milliseconds)
-      winnersAnnouncedAt?: number; // ✅ When winners were declared (UTC ms)
-    }
+interface AuctionDetailsData {
+  id: number;
+  date: Date;
+  prize: string;
+  prizeValue: number;
+  status: 'won' | 'lost';
+  totalParticipants: number;
+  myRank: number;
+  auctionStartTime: string;
+  auctionEndTime: string;
+  auctionStatus?: string;
+  entryFeePaid?: number;
+  totalAmountBid?: number;
+  totalAmountSpent?: number;
+  roundsParticipated?: number;
+  totalBidsPlaced?: number;
+  hourlyAuctionId?: string;
+  isWinner?: boolean;
+  finalRank?: number;
+  prizeClaimStatus?: 'PENDING' | 'CLAIMED' | 'EXPIRED' | 'NOT_APPLICABLE';
+  claimDeadline?: number;
+  claimedAt?: number;
+  lastRoundBidAmount?: number;
+  prizeAmountWon?: number;
+  winnersAnnounced?: boolean;
+  claimedBy?: string;
+  claimUpiId?: string;
+  claimedByRank?: number;
+  currentEligibleRank?: number;
+  claimWindowStartedAt?: number;
+  winnersAnnouncedAt?: number;
+  imageUrl?: string;
+}
 
+interface AuctionDetailsPageProps {
+  auction: AuctionDetailsData;
+  onBack: () => void;
+  serverTime: any;
+}
 
+export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
+  const [auction, setAuction] = useState(initialAuction);
+  const [isLoading, setIsLoading] = useState(true);
+  const [detailedData, setDetailedData] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set());
+  const isAuctionInProgress = auction.auctionStatus === 'IN_PROGRESS';
 
-  interface AuctionDetailsPageProps {
-    auction: AuctionDetailsData;
-    onBack: () => void;
-    serverTime: any;
-  }
+  const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
+  const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
 
-  export function AuctionDetailsPage({ auction: initialAuction, onBack, serverTime }: AuctionDetailsPageProps) {
-    const [auction, setAuction] = useState(initialAuction);
-    const [isLoading, setIsLoading] = useState(true);
-    const [detailedData, setDetailedData] = useState<any>(null);
-    const [timeLeft, setTimeLeft] = useState('');
-    const [showClaimForm, setShowClaimForm] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const isAuctionInProgress = auction.auctionStatus === 'IN_PROGRESS';
-    
-    // NEW: Payment status state
-    const [showSuccessModal, setShowSuccessModal] = useState<any | null>(null);
-    const [showFailureModal, setShowFailureModal] = useState<any | null>(null);
-    
-      const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
-        round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
-      );
+  const winnersAnnouncedEarly = auction.winnersAnnounced && detailedData?.rounds?.some((round: RoundDetails) =>
+    round.roundNumber > 1 && ['pending', 'active'].includes((round.status || '').toLowerCase())
+  );
 
-      
-    const { initiatePayment, loading: globalPaymentLoading, airpayData } = usePayment();
-      
-    // Get user info - state for dynamic updates
-
+  const { initiatePayment, loading: globalPaymentLoading, airpayData } = usePayment();
 
   const [userInfo, setUserInfo] = useState({
     userId: localStorage.getItem('user_id') || '',
@@ -116,147 +161,92 @@ interface RoundDetails {
     userMobile: localStorage.getItem('user_mobile') || '',
   });
 
-  // ✅ SIMPLIFIED: No need to fetch user data on mount - the hook will use backend userInfo
-  // This is kept for caching purposes only - not required for prize claim
   useEffect(() => {
     const fetchUserData = async () => {
-      // Only fetch if we don't have email AND have a userId
       if (!userInfo.userEmail && userInfo.userId) {
         try {
-          console.log('📧 [AUCTION DETAILS] Attempting to cache user data for userId:', userInfo.userId);
-          
           const response = await fetch(`${API_ENDPOINTS.auth.me.profile}?user_id=${userInfo.userId}`, {
             credentials: 'include',
           });
-          
           if (response.ok) {
             const result = await response.json();
-            
-            // Handle both response formats: { data: {...} } and { user: {...} }
             const userData = result.data || result.user || result.profile;
-            
             if (result.success && userData) {
               const mobile = userData.mobile || userData.phone || userData.contact || '';
               const name = userData.username || userData.name || userInfo.userName;
               const email = userData.email || '';
-              
               if (email || mobile || name) {
-                // Update state
                 setUserInfo(prev => ({
                   ...prev,
                   userName: name || prev.userName,
                   userEmail: email || prev.userEmail,
                   userMobile: mobile || prev.userMobile,
                 }));
-                
-                // Cache to localStorage for future use
                 if (mobile) localStorage.setItem('user_mobile', mobile);
                 if (name) localStorage.setItem('user_name', name);
                 if (email) localStorage.setItem('user_email', email);
-                
-                console.log('✅ [AUCTION DETAILS] User data cached:', { name, email, mobile });
               }
             }
           }
         } catch (error) {
-          // Silent fail - the hook will use backend userInfo as fallback
-          console.log('📧 [AUCTION DETAILS] Could not cache user data (non-blocking):', error);
+          console.log('Could not cache user data:', error);
         }
       }
     };
-    
     fetchUserData();
   }, [userInfo.userId]);
 
-  // ✅ Fetch detailed data on mount
   useEffect(() => {
-    fetchDetailedData(true); // Initial load with loading state
+    fetchDetailedData(true);
   }, []);
 
-    // ✅ SIMPLIFIED: No polling - call once on mount and when userId/auctionId changes
-    useEffect(() => {
-      fetchDetailedData(false); // Background refresh without loading state
-    }, [auction.hourlyAuctionId, userInfo.userId]);
-
-  // ✅ UPDATED: Add isInitialLoad parameter to control loading state
+  useEffect(() => {
+    fetchDetailedData(false);
+  }, [auction.hourlyAuctionId, userInfo.userId]);
 
   const fetchDetailedData = async (isInitialLoad = false) => {
     if (!auction.hourlyAuctionId || !userInfo.userId) {
       if (isInitialLoad) setIsLoading(false);
       return;
     }
-
     try {
-      // ✅ Only show loading spinner on initial load
-      if (isInitialLoad) {
-        setIsLoading(true);
-      }
-      
+      if (isInitialLoad) setIsLoading(true);
       const queryString = buildQueryString({
         hourlyAuctionId: auction.hourlyAuctionId,
         userId: userInfo.userId
       });
-      const response = await fetch(
-        `${API_ENDPOINTS.scheduler.auctionDetails}${queryString}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch auction details');
-      }
-
+      const response = await fetch(`${API_ENDPOINTS.scheduler.auctionDetails}${queryString}`);
+      if (!response.ok) throw new Error('Failed to fetch auction details');
       const result = await response.json();
-
-        if (result.success && result.data) {
-          setDetailedData(result.data);
-          
-          // ✅ SYNC: Update auction state with global claim info from detailedData
-          const hourlyAuction = result.data.hourlyAuction;
-          if (hourlyAuction && hourlyAuction.winners) {
-            const claimedWinner = hourlyAuction.winners.find((w: any) => w.isPrizeClaimed);
-            if (claimedWinner) {
-              setAuction(prev => ({
-                ...prev,
-                claimedBy: claimedWinner.playerUsername,
-                claimedByRank: claimedWinner.rank,
-                claimedAt: claimedWinner.prizeClaimedAt,
-                prizeClaimStatus: prev.finalRank === claimedWinner.rank ? 'CLAIMED' : prev.prizeClaimStatus
-              }));
-            }
-          }
-          
-          // ✅ Only log on initial load to reduce console spam
-          if (isInitialLoad) {
-            console.log('✅ Auction details loaded:', result.data);
+      if (result.success && result.data) {
+        setDetailedData(result.data);
+        const hourlyAuction = result.data.hourlyAuction;
+        if (hourlyAuction && hourlyAuction.winners) {
+          const claimedWinner = hourlyAuction.winners.find((w: any) => w.isPrizeClaimed);
+          if (claimedWinner) {
+            setAuction(prev => ({
+              ...prev,
+              claimedBy: claimedWinner.playerUsername,
+              claimedByRank: claimedWinner.rank,
+              claimedAt: claimedWinner.prizeClaimedAt,
+              prizeClaimStatus: prev.finalRank === claimedWinner.rank ? 'CLAIMED' : prev.prizeClaimStatus
+            }));
           }
         }
+      }
     } catch (error) {
       console.error('Error fetching detailed auction data:', error);
-      // ✅ Only show error toast on initial load
-      if (isInitialLoad) {
-        toast.error('Could not load detailed auction information');
-      }
+      if (isInitialLoad) toast.error('Could not load detailed auction information');
     } finally {
-      if (isInitialLoad) {
-        setIsLoading(false);
-      }
+      if (isInitialLoad) setIsLoading(false);
     }
   };
 
-    // ✅ NO POLLING - Handled by manual refresh or navigation
-    useEffect(() => {
-      // Manual sync could be added here if needed
-    }, [auction.hourlyAuctionId, userInfo.userId]);
-
-  // ✅ NEW: Check if prize has been claimed by checking hourly auction winners array
   const checkPrizeClaimedStatus = () => {
     if (!detailedData || !detailedData.hourlyAuction) return null;
-    
     const hourlyAuction = detailedData.hourlyAuction;
-    
-    // Check if there are any winners who have claimed
     if (hourlyAuction.winners && hourlyAuction.winners.length > 0) {
       const claimedWinner = hourlyAuction.winners.find((w: any) => w.isPrizeClaimed);
-      
       if (claimedWinner) {
         return {
           claimed: true,
@@ -266,328 +256,167 @@ interface RoundDetails {
         };
       }
     }
-    
     return null;
   };
 
-  // ✅ NEW: Determine if current user is eligible to claim based on priority system
   const isCurrentlyEligibleToClaim = () => {
     if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return false;
-    
-    // ✅ NEW: Check if someone already claimed from overall auction status
     const claimStatus = checkPrizeClaimedStatus();
     if (claimStatus && claimStatus.claimed) {
-      // If someone with better rank claimed, not user's turn
-      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) {
-        return false;
-      }
+      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) return false;
     }
-    
-    // ✅ ALSO check auction object for claim data (from user's participation record)
-    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) {
-      return false;
-    }
-    
-    // ✅ STRICT MODE: Require currentEligibleRank to be set (no fallback for old data)
+    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) return false;
     if (!auction.currentEligibleRank || !auction.finalRank) return false;
-    
-    // Check if user's rank matches the currently eligible rank
     return auction.finalRank === auction.currentEligibleRank;
   };
 
-  // ✅ NEW: Check if user is in waiting queue (winner but not their turn yet)
   const isInWaitingQueue = () => {
     if (!auction.isWinner || auction.prizeClaimStatus !== 'PENDING') return false;
-    
-    // ✅ NEW: Check if someone already claimed from overall auction status
     const claimStatus = checkPrizeClaimedStatus();
     if (claimStatus && claimStatus.claimed) {
-      // If someone with better rank claimed, not in waiting queue anymore
-      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) {
-        return false;
-      }
+      if (auction.finalRank && claimStatus.claimedByRank < auction.finalRank) return false;
     }
-    
-    // ✅ ALSO check auction object for claim data (from user's participation record)
-    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) {
-      return false;
-    }
-    
-    // If no priority system, no queue
+    if (auction.claimedByRank && auction.finalRank && auction.claimedByRank < auction.finalRank) return false;
     if (!auction.currentEligibleRank || !auction.finalRank) return false;
-    
-    // In queue if user's rank is higher than current eligible rank
     return auction.finalRank > auction.currentEligibleRank;
   };
 
-  // ✅ NEW: Get position in waiting queue
   const getQueuePosition = () => {
     if (!auction.finalRank || !auction.currentEligibleRank) return 0;
     return auction.finalRank - auction.currentEligibleRank;
   };
-  
-  // ✅ NEW: Check if prize was claimed by someone with better rank than current user
-  const isPrizeClaimedByBetterRank = () => {
-    if (!auction.isWinner) return false;
-    
-    // First check overall auction status
-    const claimStatus = checkPrizeClaimedStatus();
-    if (claimStatus && claimStatus.claimed && auction.finalRank) {
-      if (claimStatus.claimedByRank < auction.finalRank) {
-        return {
-          claimed: true,
-          ...claimStatus
-        };
-      }
-    }
-    
-    // Also check user's participation record
-    if (auction.claimedByRank && auction.finalRank) {
-      if (auction.claimedByRank < auction.finalRank) {
-        return {
-          claimed: true,
-          claimedByRank: auction.claimedByRank,
-          claimedBy: auction.claimedBy,
-          claimedAt: auction.claimedAt
-        };
-      }
-    }
-    
-    return false;
-  };
 
-  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-        // Countdown timer for prize claim
-        useEffect(() => {
-          if (!auction.isWinner || auction.prizeClaimStatus !== "PENDING") return;
-      
-          const updateTimer = () => {
-            // ✅ Use server time from prop if available, otherwise fallback to local time
-            const now = (serverTime as any)?.timestamp || Date.now();
-      
-            // ✅ FIXED: Calculate claim windows based on winnersAnnouncedAt and rank
-            // Each winner gets exactly 15 minutes
-            // 1st winner: starts immediately after winners announced
-            // 2nd winner: starts 15 mins after winners announced  
-            // 3rd winner: starts 30 mins after winners announced
-            const getActiveWindow = () => {
-              const activeRank = auction.currentEligibleRank || 1;
-              const userRank = auction.finalRank || 1;
-              
-              // Use winnersAnnouncedAt as base time (must exist for claim system to work)
-              const winnersAnnouncedTime = auction.winnersAnnouncedAt;
-              if (!winnersAnnouncedTime) return null;
-              
-              // Calculate when current active rank's window started
-              const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
-              const activeWindowEnd = activeWindowStart + (15 * 60 * 1000); // Each window is 15 mins
-              
-              // Calculate user's own window
-              const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
-              const userWindowEnd = userWindowStart + (15 * 60 * 1000);
-  
-              return {
-                start: activeWindowStart,
-                end: activeWindowEnd,
-                userStart: userWindowStart,
-                userEnd: userWindowEnd,
-              };
-            };
-  
-            const activeWindow = getActiveWindow();
-  
-            // ✅ If in waiting queue, show time remaining until user's claim window starts
-            if (isInWaitingQueue() && activeWindow) {
-              // Show time until user's window starts (not current active window end)
-              let diff = activeWindow.userStart - now;
-  
-              if (diff > 0) {
-                const minutes = Math.floor(diff / (1000 * 60));
-                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                setTimeLeft(`${minutes}m ${seconds}s`);
-                return;
-              }
-  
-              setTimeLeft('Claim Window Soon');
-              return;
-            }
-  
-            // ✅ Check if in "Claim Window Soon" period (backend delay)
-            if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
-              // If it should be user's turn but within 1 min of window start
-              if (auction.finalRank === auction.currentEligibleRank) {
-                let diff = activeWindow.start - now;
-                if (diff <= 0 && diff > -(60 * 1000)) {
-                  setTimeLeft('Claim Window Soon');
-                  return;
-                }
-              }
-            }
-  
-            // ✅ Show time left in user's claim window (when it's their turn)
-            if (activeWindow && auction.finalRank === auction.currentEligibleRank) {
-              // Use user's window end as deadline (15 min window)
-              const deadline = activeWindow.userEnd;
-              let diff = deadline - now;
-  
-              if (diff <= 0) {
-                setTimeLeft('EXPIRED');
-                return;
-              }
-  
-              // Cap at 15 minutes max
-              const maxClaimTime = 15 * 60 * 1000;
-              if (diff > maxClaimTime) {
-                diff = maxClaimTime;
-              }
-  
-              const minutes = Math.floor(diff / (1000 * 60));
-              const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-              setTimeLeft(`${minutes}m ${seconds}s`);
-            }
-          };
-  
-          updateTimer();
-          const interval = setInterval(updateTimer, 1000);
-  
-          return () => clearInterval(interval);
-        }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt, serverTime]);
-
-    const handleClaimPrize = async () => {
-      if (timeLeft === 'EXPIRED') {
-        toast.error('Claim window has expired');
+  // Countdown timer
+  useEffect(() => {
+    if (!auction.isWinner || auction.prizeClaimStatus !== "PENDING") return;
+    const updateTimer = () => {
+      const now = (serverTime as any)?.timestamp || Date.now();
+      const getActiveWindow = () => {
+        const activeRank = auction.currentEligibleRank || 1;
+        const userRank = auction.finalRank || 1;
+        const winnersAnnouncedTime = auction.winnersAnnouncedAt;
+        if (!winnersAnnouncedTime) return null;
+        const activeWindowStart = winnersAnnouncedTime + ((activeRank - 1) * 15 * 60 * 1000);
+        const activeWindowEnd = activeWindowStart + (15 * 60 * 1000);
+        const userWindowStart = winnersAnnouncedTime + ((userRank - 1) * 15 * 60 * 1000);
+        const userWindowEnd = userWindowStart + (15 * 60 * 1000);
+        return { start: activeWindowStart, end: activeWindowEnd, userStart: userWindowStart, userEnd: userWindowEnd };
+      };
+      const activeWindow = getActiveWindow();
+      if (isInWaitingQueue() && activeWindow) {
+        let diff = activeWindow.userStart - now;
+        if (diff > 0) {
+          const minutes = Math.floor(diff / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          setTimeLeft(`${minutes}m ${seconds}s`);
+          return;
+        }
+        setTimeLeft('Claim Window Soon');
         return;
       }
-
-      if (!isCurrentlyEligibleToClaim()) {
-        toast.error('It is not your turn to claim yet. Please wait for the previous winner.');
-        return;
-      }
-
-      // ✅ CRITICAL: Validate all required data before proceeding
-      if (!auction.hourlyAuctionId) {
-        toast.error('Missing auction information. Please refresh and try again.');
-        return;
-      }
-
-      if (!auction.lastRoundBidAmount || auction.lastRoundBidAmount <= 0) {
-        toast.error('Invalid bid amount. Please contact support.');
-        return;
-      }
-
-      // ✅ SIMPLIFIED: Use whatever user data we have from localStorage
-      // The hook will use backend userInfo as fallback for email/contact
-      const currentUserEmail = userInfo.userEmail || '';
-      const currentUserMobile = userInfo.userMobile || '';
-      const currentUserName = userInfo.userName || 'User';
-
-      console.log('📧 [CLAIM] Starting prize claim with user data:', {
-        email: currentUserEmail || '(will use backend)',
-        mobile: currentUserMobile || '(will use backend)',
-        name: currentUserName,
-      });
-
-      setIsProcessing(true);
-
-      try {
-        initiatePayment(
-          {
-            userId: userInfo.userId,
-            hourlyAuctionId: auction.hourlyAuctionId,
-            amount: auction.lastRoundBidAmount,
-            currency: 'INR',
-            username: currentUserName,
-            paymentType: 'PRIZE_CLAIM'
-          },
-          {
-            name: currentUserName,
-            email: currentUserEmail, // ✅ Hook will use backend email if this is empty
-            contact: currentUserMobile, // ✅ Hook will use backend contact if this is empty
-            upiId: currentUserEmail, // ✅ Hook will use backend email if this is empty
-          },
-          async (response) => {
-            console.log('Prize claim payment successful:', response);
-            
-            // ✅ FIXED: No need to call updatePrizeClaim - verification endpoint already handles this
-            console.log('✅ Prize claim data received from verification:', response.data);
-            
-            // ✅ Show Success Modal
-            setShowSuccessModal({
-              amount: auction.lastRoundBidAmount,
-              type: 'claim',
-              productName: auction.prize,
-              productWorth: auction.prizeValue,
-              auctionId: auction.hourlyAuctionId,
-              paidBy: currentUserName,
-              paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card',
-              transactionId: response.data?.payment?.razorpayPaymentId || response.data?.payment?.airpayTransactionId // ✅ ADDED: Pass transaction ID
-            });
-
-            // ✅ Update local state immediately - no page reload
-            setAuction(prev => ({
-              ...prev,
-              prizeClaimStatus: 'CLAIMED',
-              claimedAt: Date.now(),
-              claimedBy: currentUserName,
-              claimUpiId: response.data?.upiId || currentUserEmail,
-              claimedByRank: auction.finalRank
-            }));
-            
-              toast.success('🎉 Prize Claimed Successfully!', {
-                description: `Amazon voucher details will be sent to your registered email`,
-                duration: 3000,
-              });
-            
-            setShowClaimForm(false);
-            setIsProcessing(false);
-            
-            // ✅ Refresh auction details data in background without reload
-            setTimeout(() => {
-              fetchDetailedData();
-            }, 1000);
-          },
-          (error) => {
-            console.error('Prize claim payment failed:', error);
-            
-            setShowFailureModal({
-              amount: auction.lastRoundBidAmount,
-              type: 'claim',
-              errorMessage: error || 'Failed to process prize claim payment',
-              productName: auction.prize,
-              auctionId: auction.hourlyAuctionId,
-              paidBy: currentUserName
-            });
-
-            toast.error('Payment Failed', {
-              description: error || 'Failed to process prize claim payment',
-            });
-            setIsProcessing(false);
+      if (auction.finalRank && auction.currentEligibleRank && activeWindow) {
+        if (auction.finalRank === auction.currentEligibleRank) {
+          let diff = activeWindow.start - now;
+          if (diff <= 0 && diff > -(60 * 1000)) {
+            setTimeLeft('Claim Window Soon');
+            return;
           }
-        );
-      } catch (error) {
-        console.error('Error initiating prize claim payment:', error);
-        toast.error('Failed to initiate payment. Please try again.');
-        setIsProcessing(false);
+        }
+      }
+      if (activeWindow && auction.finalRank === auction.currentEligibleRank) {
+        const deadline = activeWindow.userEnd;
+        let diff = deadline - now;
+        if (diff <= 0) { setTimeLeft('EXPIRED'); return; }
+        const maxClaimTime = 15 * 60 * 1000;
+        if (diff > maxClaimTime) diff = maxClaimTime;
+        const minutes = Math.floor(diff / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft(`${minutes}m ${seconds}s`);
       }
     };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [auction.claimDeadline, auction.prizeClaimStatus, auction.claimWindowStartedAt, auction.finalRank, auction.currentEligibleRank, auction.winnersAnnouncedAt, serverTime]);
 
-
-  // Calculate net profit properly (only final round bid amount matters)
-  const calculateNetProfit = () => {
-    if (!auction.isWinner || !auction.lastRoundBidAmount || !auction.prizeValue) {
-      return 0;
+  const handleClaimPrize = async () => {
+    if (timeLeft === 'EXPIRED') { toast.error('Claim window has expired'); return; }
+    if (!isCurrentlyEligibleToClaim()) { toast.error('It is not your turn to claim yet.'); return; }
+    if (!auction.hourlyAuctionId) { toast.error('Missing auction information.'); return; }
+    if (!auction.lastRoundBidAmount || auction.lastRoundBidAmount <= 0) { toast.error('Invalid bid amount.'); return; }
+    const currentUserEmail = userInfo.userEmail || '';
+    const currentUserMobile = userInfo.userMobile || '';
+    const currentUserName = userInfo.userName || 'User';
+    setIsProcessing(true);
+    try {
+      initiatePayment(
+        {
+          userId: userInfo.userId,
+          hourlyAuctionId: auction.hourlyAuctionId,
+          amount: auction.lastRoundBidAmount,
+          currency: 'INR',
+          username: currentUserName,
+          paymentType: 'PRIZE_CLAIM'
+        },
+        {
+          name: currentUserName,
+          email: currentUserEmail,
+          contact: currentUserMobile,
+          upiId: currentUserEmail,
+        },
+        async (response) => {
+          setShowSuccessModal({
+            amount: auction.lastRoundBidAmount,
+            type: 'claim',
+            productName: auction.prize,
+            productWorth: auction.prizeValue,
+            auctionId: auction.hourlyAuctionId,
+            paidBy: currentUserName,
+            paymentMethod: response.data?.upiId ? `UPI (${response.data.upiId})` : 'UPI / Card',
+            transactionId: response.data?.payment?.razorpayPaymentId || response.data?.payment?.airpayTransactionId
+          });
+          setAuction(prev => ({
+            ...prev,
+            prizeClaimStatus: 'CLAIMED',
+            claimedAt: Date.now(),
+            claimedBy: currentUserName,
+            claimUpiId: response.data?.upiId || currentUserEmail,
+            claimedByRank: auction.finalRank
+          }));
+          toast.success('Prize Claimed Successfully!');
+          setShowClaimForm(false);
+          setIsProcessing(false);
+          setTimeout(() => { fetchDetailedData(); }, 1000);
+        },
+        (error) => {
+          setShowFailureModal({
+            amount: auction.lastRoundBidAmount,
+            type: 'claim',
+            errorMessage: error || 'Failed to process prize claim payment',
+            productName: auction.prize,
+            auctionId: auction.hourlyAuctionId,
+            paidBy: currentUserName
+          });
+          toast.error('Payment Failed');
+          setIsProcessing(false);
+        }
+      );
+    } catch (error) {
+      toast.error('Failed to initiate payment.');
+      setIsProcessing(false);
     }
-    // Net profit = Prize Value - Final Round Bid Amount
-    return auction.prizeValue - auction.lastRoundBidAmount;
   };
 
+  const calculateNetProfit = () => {
+    if (!auction.isWinner || !auction.lastRoundBidAmount || !auction.prizeValue) return 0;
+    return auction.prizeValue - auction.lastRoundBidAmount;
+  };
   const netProfit = calculateNetProfit();
 
-  // Get rank display
   const getRankSuffix = (rank: number) => {
     if (rank === 1) return '1st';
     if (rank === 2) return '2nd';
@@ -602,15 +431,19 @@ interface RoundDetails {
     return '🏆';
   };
 
+  const toggleRoundExpanded = (roundNumber: number) => {
+    setExpandedRounds(prev => {
+      const next = new Set(prev);
+      if (next.has(roundNumber)) next.delete(roundNumber);
+      else next.add(roundNumber);
+      return next;
+    });
+  };
+
   const handleCloseSuccess = useCallback(() => {
     setShowSuccessModal(null);
     onBack();
-    // ✅ REFRESH PAGE after a small delay to ensure everything is perfectly synced
-    // This matches the behavior of the entry fee success modal
-    console.log('🔄 Reloading page after prize claim success to ensure fresh state');
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    setTimeout(() => { window.location.reload(); }, 100);
   }, [onBack]);
   const handleCloseFailure = useCallback(() => setShowFailureModal(null), []);
   const handleRetryFailure = useCallback(() => {
@@ -618,110 +451,125 @@ interface RoundDetails {
     setShowClaimForm(true);
   }, []);
 
-    return (
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        {/* Airpay Redirection Form */}
-        {airpayData && <AirpayForm url={airpayData.url} params={airpayData.params} />}
-        
-        {/* Premium Header */}
+  // Get product image from detailedData
+  const productImage = detailedData?.hourlyAuction?.imageUrl || auction.imageUrl || '';
+  const totalRounds = detailedData?.rounds?.length || 0;
+  const completedRounds = detailedData?.rounds?.filter((r: RoundDetails) => r.status?.toLowerCase() === 'completed').length || 0;
 
-      <motion.div 
-        className="relative z-10 overflow-hidden"
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-purple-50/30 relative overflow-hidden">
+      {airpayData && <AirpayForm url={airpayData.url} params={airpayData.params} />}
+
+      {/* ===== HEADER ===== */}
+      <motion.div
+        className="relative z-10"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute w-96 h-96 rounded-full blur-3xl opacity-30"
-            style={{
-              background: 'radial-gradient(circle, #C4B5FD, #8B5CF6)',
-              top: '-40%',
-              right: '-10%',
-            }}
-            animate={{
-              scale: [1, 1.2, 1],
-              x: [0, 20, 0],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
+        <div className="relative bg-gradient-to-br from-purple-700 via-violet-800 to-indigo-900 text-white overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-2xl" />
+            <div className="absolute -bottom-32 -left-16 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+            <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-yellow-300/60 rounded-full animate-pulse" />
+            <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-pink-300/50 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+          </div>
 
-        <div className="relative bg-gradient-to-r from-purple-600 via-purple-700 to-violet-700 text-white shadow-2xl">
-          <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="relative container mx-auto px-4 py-5 sm:py-6">
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 sm:gap-2 text-white/90 hover:text-white hover:bg-white/10 backdrop-blur-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl transition-all mb-3 sm:mb-4 border border-white/20 text-xs sm:text-sm"
+              className="flex items-center gap-1.5 text-white/80 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all mb-4 text-sm"
             >
-              <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <ArrowLeft className="w-4 h-4" />
               <span>Back to History</span>
             </button>
-            
-            <div className="flex items-start gap-3 sm:gap-4">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ 
-                  delay: 0.2,
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 15
-                }}
-                className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-2xl border-2 sm:border-3 border-white/40 ${
-                  auction.status === 'won'
-                    ? 'bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-700'
-                    : 'bg-gradient-to-br from-purple-500 to-purple-700'
-                }`}
-              >
-                {auction.status === 'won' ? (
-                  <Crown className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
-                ) : (
-                  <Trophy className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
-                )}
-              </motion.div>
-              
+
+            <div className="flex gap-4">
+              {/* Product Image */}
+              {productImage && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="hidden sm:block flex-shrink-0"
+                >
+                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-xl overflow-hidden border-2 border-white/30 shadow-xl bg-white/10">
+                    <img src={productImage} alt={auction.prize} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  </div>
+                </motion.div>
+              )}
+
               <div className="flex-1 min-w-0">
-                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">{auction.prize}</h1>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/90 mb-2">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>{auction.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  </div>
-                  <span className="text-white/60">•</span>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>{auction.auctionStartTime}</span>
-                  </div>
-                  {auction.auctionEndTime && (
-                    <>
-                      <span className="text-white/60">→</span>
-                      <span>{auction.auctionEndTime}</span>
-                    </>
-                  )}
-                  <span className="text-white/60">•</span>
-                  <Badge className={`border backdrop-blur-sm text-[10px] sm:text-xs ${
-                    auction.status === 'won' 
-                      ? 'bg-gradient-to-r from-violet-100/90 to-fuchsia-100/90 text-violet-900 border-violet-300/60' 
-                      : 'bg-purple-100/80 text-purple-700 border-purple-300/50'
+                {/* Status + Result */}
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Badge className={`text-xs font-bold px-2.5 py-0.5 border-0 ${
+                    auction.status === 'won'
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-amber-950'
+                      : 'bg-white/15 text-white/90 backdrop-blur-sm'
                   }`}>
                     {auction.status === 'won' ? (
-                      <><Trophy className="w-3 h-3 mr-1" /> Won</>
+                      <><Crown className="w-3 h-3 mr-1" /> WINNER</>
                     ) : (
-                      <><Target className="w-3 h-3 mr-1" /> Lost</>
+                      <><Target className="w-3 h-3 mr-1" /> PARTICIPATED</>
                     )}
                   </Badge>
+                  {auction.winnersAnnounced && (
+                    <Badge className="bg-green-500/20 text-green-200 border border-green-400/30 text-[10px]">
+                      <CheckCircle className="w-2.5 h-2.5 mr-0.5" /> Winners Declared
+                    </Badge>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md rounded-xl px-3 py-2 border border-white/30 w-fit">
-                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
-                  <span className="text-xs sm:text-sm">Prize Value:</span>
-                  <div className="flex items-center gap-0.5 font-bold">
-                    <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="text-sm sm:text-base">{auction.prizeValue.toLocaleString('en-IN')}</span>
+
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 leading-tight">{auction.prize}</h1>
+
+                {/* Meta row */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/70 mb-3">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {auction.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                  <span className="text-white/30">|</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {auction.auctionStartTime} {auction.auctionEndTime ? `→ ${auction.auctionEndTime}` : ''}
+                  </span>
+                  {auction.hourlyAuctionId && (
+                    <>
+                      <span className="text-white/30">|</span>
+                      <span className="flex items-center gap-1 font-mono text-[10px]">
+                        <Hash className="w-2.5 h-2.5" />
+                        {auction.hourlyAuctionId.slice(-8)}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {/* Key stats row */}
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/15">
+                    <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                    <span className="text-xs text-white/70">Worth</span>
+                    <span className="font-bold text-sm flex items-center">
+                      <IndianRupee className="w-3 h-3" />{auction.prizeValue.toLocaleString('en-IN')}
+                    </span>
                   </div>
+                  {auction.entryFeePaid !== undefined && auction.entryFeePaid > 0 && (
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/15">
+                      <Zap className="w-3.5 h-3.5 text-blue-300" />
+                      <span className="text-xs text-white/70">Entry</span>
+                      <span className="font-bold text-sm flex items-center">
+                        <IndianRupee className="w-3 h-3" />{auction.entryFeePaid.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
+                  {auction.finalRank && (
+                    <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/15">
+                      <Medal className="w-3.5 h-3.5 text-amber-300" />
+                      <span className="text-xs text-white/70">Rank</span>
+                      <span className="font-bold text-sm">#{auction.finalRank}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -729,194 +577,142 @@ interface RoundDetails {
         </div>
       </motion.div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8 relative z-10">
-        {/* Loading State */}
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="container mx-auto px-3 sm:px-4 py-5 sm:py-6 relative z-10 max-w-4xl">
+
+        {/* Loading */}
         {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center justify-center py-12"
-          >
-            <LoadingProfile 
-              message="Loading Auction Details" 
-              subMessage="Fetching performance data" 
-            />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-16">
+            <LoadingProfile message="Loading Auction Details" subMessage="Fetching performance data" />
           </motion.div>
         )}
 
-          {!isLoading && isAuctionInProgress && (
+        {/* In Progress */}
+        {!isLoading && isAuctionInProgress && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center py-10">
+            <Card className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-xl max-w-xl w-full">
+              <CardContent className="p-6 sm:p-8 text-center space-y-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-700 rounded-2xl flex items-center justify-center mx-auto">
+                  <Lock className="w-7 h-7 text-white" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-purple-900">Auction In Progress</h2>
+                <p className="text-sm text-purple-700">Details will be available once the auction is completed.</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {!isLoading && !isAuctionInProgress && (
+          <>
+            {/* ===== AUCTION OVERVIEW STATS ===== */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-center py-10"
+              transition={{ duration: 0.4 }}
+              className="mb-5"
             >
-              <Card className="border-2 border-purple-200/60 bg-white/80 backdrop-blur-xl shadow-xl max-w-xl w-full">
-                <CardContent className="p-6 sm:p-8 text-center space-y-3">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-500 to-violet-700 rounded-2xl flex items-center justify-center mx-auto">
-                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-white rounded-xl border border-purple-100 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-purple-500 mb-1">
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider">Total Players</span>
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-purple-900">Auction In Progress</h2>
-                  <p className="text-sm text-purple-700">Details will be available once the auction is completed.</p>
-                </CardContent>
-              </Card>
+                  <p className="text-xl font-bold text-purple-900">{auction.totalParticipants}</p>
+                </div>
+                <div className="bg-white rounded-xl border border-blue-100 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-blue-500 mb-1">
+                    <Box className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider">Rounds</span>
+                  </div>
+                  <p className="text-xl font-bold text-blue-900">{completedRounds}/{totalRounds}</p>
+                </div>
+                <div className="bg-white rounded-xl border border-green-100 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-green-500 mb-1">
+                    <Activity className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider">Your Rounds</span>
+                  </div>
+                  <p className="text-xl font-bold text-green-900">{auction.roundsParticipated || 0}</p>
+                </div>
+                <div className="bg-white rounded-xl border border-amber-100 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 text-amber-500 mb-1">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider">Total Bid</span>
+                  </div>
+                  <p className="text-xl font-bold text-amber-900 flex items-center">
+                    <IndianRupee className="w-4 h-4" />{(auction.totalAmountBid || 0).toLocaleString('en-IN')}
+                  </p>
+                </div>
+              </div>
             </motion.div>
-          )}
 
-          {!isLoading && !isAuctionInProgress && (
-            <>
-              {/* ✅ Winners Announced Banner */}
-              {auction.winnersAnnounced && (
-
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatDelay: 0.5
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                          🏆 Winners Announced
-                        </h2>
-                        <p className="text-sm text-green-700">Auction completed early with ≤3 qualified players</p>
-                      </div>
+            {/* ===== WINNERS ANNOUNCED BANNER ===== */}
+            {auction.winnersAnnounced && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow">
+                      <Trophy className="w-5 h-5 text-white" />
                     </div>
-
-                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-green-900 mb-1">
-                            Early Completion Triggered
-                          </p>
-                          <p className="text-xs text-green-700">
-                            The auction ended early because there were 3 or fewer qualified players. Winners have been announced and can now claim their prizes.
-                          </p>
-                        </div>
-                      </div>
+                    <div>
+                      <h3 className="font-bold text-green-900 text-sm">Winners Announced</h3>
+                      <p className="text-xs text-green-700">
+                        {winnersAnnouncedEarly
+                          ? 'Auction completed early — 3 or fewer qualified players remaining'
+                          : 'All rounds completed and winners have been declared'}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {/* ✅ NEW: Waiting Queue Banner - Show if user is winner but not their turn yet */}
+            {/* ===== WAITING QUEUE BANNER ===== */}
             {isInWaitingQueue() && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-blue-300/70 bg-gradient-to-r from-blue-50 via-cyan-50 to-blue-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 shadow-lg">
+                  <CardContent className="p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          rotate: [0, 10, -10, 0],
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 1
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <HourglassIcon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-blue-900 flex items-center gap-2">
-                          {getRankEmoji(auction.finalRank || 1)} You're in the Waiting Queue
-                        </h2>
-                        <p className="text-sm text-blue-700">Rank {getRankSuffix(auction.finalRank || 1)} - Your turn will come if previous winners don't claim</p>
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center shadow">
+                        <HourglassIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-blue-900 text-sm">
+                          {getRankEmoji(auction.finalRank || 1)} You're in the Waiting Queue — Rank {getRankSuffix(auction.finalRank || 1)}
+                        </h3>
+                        <p className="text-xs text-blue-700">
+                          Currently: {getRankSuffix(auction.currentEligibleRank || 1)} place has 15 min to claim. You're #{getQueuePosition()} in queue.
+                        </p>
                       </div>
                     </div>
-
-                    <div className="space-y-3">
-                      <div className="bg-white/60 rounded-lg p-3 border border-blue-200">
-                        <div className="flex items-start gap-2 mb-3">
-                          <Timer className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-blue-900 mb-1">
-                              Priority Claim System Active
-                            </p>
-                            <p className="text-xs text-blue-700 mb-2">
-                              Currently: <span className="font-bold">{getRankSuffix(auction.currentEligibleRank || 1)} place winner</span> has 15 minutes to claim the prize.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
-                          <p className="text-xs text-blue-800 font-medium mb-1">⏰ How it works:</p>
-                          <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
-                            <li>Each winner gets 15 minutes to claim</li>
-                            <li>If they don't claim, next winner gets their turn</li>
-                            <li>You're #{getQueuePosition()} in the waiting queue</li>
-                            <li>You'll be notified when it's your turn</li>
-                          </ul>
-                        </div>
+                    {timeLeft && timeLeft !== 'EXPIRED' && (
+                      <div className="flex items-center justify-center gap-2 bg-blue-100/80 rounded-lg p-2.5 border border-blue-200">
+                        <Clock className="w-4 h-4 text-blue-700" />
+                        <span className="text-sm font-bold text-blue-900">Your turn in: {timeLeft}</span>
                       </div>
-
-                        {timeLeft && timeLeft !== 'EXPIRED' && (
-                          <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-lg p-3 border border-blue-300">
-                            <Clock className="w-5 h-5 text-blue-700" />
-                            <div className="text-center">
-                              <p className="text-xs text-blue-600 font-medium">
-                                Wait time: {auction.finalRank === 2 ? '15 mins' : '30 mins'} + 15 mins claim window
-                              </p>
-                              <p className="text-lg font-bold text-blue-900">Wait: {timeLeft}</p>
-                            </div>
-                          </div>
-                        )}
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
             )}
 
-            {/* Winner Prize Claim Section - Only show if currently eligible */}
+            {/* ===== PRIZE CLAIM SECTION ===== */}
             {auction.isWinner && auction.prizeClaimStatus === 'PENDING' && isCurrentlyEligibleToClaim() && auction.lastRoundBidAmount && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Card className="border-2 border-amber-300/70 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5" onClick={(e) => e.stopPropagation()}>
+                <Card className="border-2 border-amber-300/70 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 shadow-xl">
+                  <CardContent className="p-4 sm:p-5">
                     <div className="flex items-center gap-3 mb-4">
                       <motion.div
-                        animate={{ 
-                          rotate: [0, -10, 10, -10, 0],
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 1
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg"
+                        animate={{ rotate: [0, -10, 10, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                        className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg"
                       >
-                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                        <Gift className="w-6 h-6 text-white" />
                       </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-amber-900">
+                      <div>
+                        <h2 className="text-lg font-bold text-amber-900">
                           {getRankEmoji(auction.finalRank || 1)} Your Turn to Claim! Rank {getRankSuffix(auction.finalRank || 1)}
                         </h2>
-                        <p className="text-sm text-amber-700">Claim your prize by paying your final round bid amount</p>
+                        <p className="text-sm text-amber-700">Pay your final round bid to claim the prize</p>
                       </div>
                     </div>
 
@@ -927,22 +723,20 @@ interface RoundDetails {
                             <IndianRupee className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-amber-900">Final Round Bid Amount</p>
-                            <p className="text-[10px] text-amber-700">Pay this to claim your prize</p>
+                            <p className="text-xs font-semibold text-amber-900">Final Round Bid</p>
+                            <p className="text-[10px] text-amber-700">Pay this to claim</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-0.5">
-                          <IndianRupee className="w-5 h-5 text-amber-900 font-bold" />
-                          <span className="text-xl font-bold text-amber-900">
-                            {auction.lastRoundBidAmount.toLocaleString('en-IN')}
-                          </span>
+                        <div className="flex items-center font-bold text-xl text-amber-900">
+                          <IndianRupee className="w-5 h-5" />
+                          {auction.lastRoundBidAmount.toLocaleString('en-IN')}
                         </div>
                       </div>
 
                       <div className="flex items-center justify-center gap-2 bg-white/60 rounded-lg p-2">
                         <Clock className="w-4 h-4 text-purple-600" />
                         <span className={`font-bold text-sm ${timeLeft === 'EXPIRED' ? 'text-red-600' : 'text-purple-900'}`}>
-                          Time Left to Claim: {timeLeft}
+                          Time Left: {timeLeft}
                         </span>
                       </div>
 
@@ -950,7 +744,7 @@ interface RoundDetails {
                         <Button
                           onClick={() => setShowClaimForm(true)}
                           disabled={timeLeft === 'EXPIRED' || globalPaymentLoading}
-                          className="w-full bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold py-3 rounded-xl disabled:opacity-50"
                         >
                           <Gift className="w-5 h-5 mr-2" />
                           {globalPaymentLoading ? 'Processing...' : `Pay ₹${auction.lastRoundBidAmount.toLocaleString('en-IN')} & Claim Prize`}
@@ -959,52 +753,27 @@ interface RoundDetails {
                         <div className="space-y-3">
                           <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
                             <Label className="text-purple-900 font-semibold text-sm flex items-center gap-2 mb-2">
-                              <Gift className="w-4 h-4" />
-                              Prize Delivery Email
+                              <Gift className="w-4 h-4" /> Prize Delivery Email
                             </Label>
-                            <Input
-                              type="email"
-                              value={userInfo.userEmail}
-                              disabled
-                              className="bg-white/70 border-purple-300 text-purple-900 font-medium cursor-not-allowed"
-                            />
+                            <Input type="email" value={userInfo.userEmail} disabled className="bg-white/70 border-purple-300 text-purple-900 font-medium cursor-not-allowed" />
                             <p className="text-xs text-purple-700 mt-2 flex items-start gap-1">
                               <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
-                              <span>Amazon voucher worth ₹{auction.prizeValue.toLocaleString('en-IN')} will be sent to this email after payment</span>
+                              <span>Amazon voucher worth ₹{auction.prizeValue.toLocaleString('en-IN')} will be sent to this email</span>
                             </p>
                           </div>
-
                           <div className="flex gap-2">
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowClaimForm(false);
-                              }}
-                              variant="outline"
-                              className="flex-1"
-                              disabled={globalPaymentLoading || isProcessing}
-                            >
+                            <Button onClick={(e) => { e.stopPropagation(); setShowClaimForm(false); }} variant="outline" className="flex-1" disabled={globalPaymentLoading || isProcessing}>
                               Cancel
                             </Button>
                             <Button
                               onClick={handleClaimPrize}
                               disabled={globalPaymentLoading || timeLeft === 'EXPIRED' || isProcessing}
-                              className="flex-1 bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex-1 bg-gradient-to-r from-purple-600 to-violet-700 hover:from-purple-700 hover:to-violet-800 text-white font-bold disabled:opacity-50"
                             >
                               {isProcessing ? (
-                                <>
-                                  <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
-                                  />
-                                  Processing...
-                                </>
+                                <><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" /> Processing...</>
                               ) : (
-                                <>
-                                  <IndianRupee className="w-4 h-4 mr-1" />
-                                  Pay ₹{auction.lastRoundBidAmount.toLocaleString('en-IN')}
-                                </>
+                                <><IndianRupee className="w-4 h-4 mr-1" /> Pay ₹{auction.lastRoundBidAmount.toLocaleString('en-IN')}</>
                               )}
                             </Button>
                           </div>
@@ -1016,640 +785,467 @@ interface RoundDetails {
               </motion.div>
             )}
 
-            {/* ✅ NEW: Green Banner - Prize Claimed (Check claimedBy and claimedByRank) */}
+            {/* ===== AUCTION SOLD OUT BANNER ===== */}
             {auction.claimedBy && auction.claimedByRank && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatDelay: 0.5
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                          {getRankEmoji(auction.claimedByRank)} Prize Claimed by {getRankSuffix(auction.claimedByRank)} Winner
-                        </h2>
-                        <p className="text-sm text-green-700">
-                          {auction.claimUpiId === userInfo.userEmail 
-                            ? `Congratulations! You claimed this prize`
-                            : `This prize has been claimed`
-                          }
-                        </p>
-                      </div>
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Trophy className="w-6 h-6 text-white" />
                     </div>
-
-                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-green-900 mb-1">
-                            {auction.claimUpiId === userInfo.userEmail 
-                              ? 'Prize Claimed Successfully!'
-                              : 'Winner Details'
-                            }
-                          </p>
-                            <p className="text-xs text-green-700 mb-2">
-                              {auction.claimUpiId === userInfo.userEmail 
-                                ? `Amazon voucher worth ₹${auction.prizeValue.toLocaleString('en-IN')} has been sent to ${maskEmail(userInfo.userEmail)}`
-                                : `Claimed by ${maskEmail(auction.claimedBy || '')}`
-                              }
-                            </p>
-
-                          {auction.claimedAt && (
-  <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
-    <Clock className="w-3 h-3" />
-    <span>
-      {(() => {
-        const date = new Date(auction.claimedAt);
-        const correctedDate = new Date(date.getTime() - 5.5 * 60 * 60 * 1000);
-
-          return `Claimed on ${correctedDate.toLocaleString('en-IN', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}`;
-        })()}
-      </span>
-    </div>
-  )}
-
-
-                          </div>
-                        </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-green-900">
+                        {getRankEmoji(auction.claimedByRank)} Auction Sold Out to {getRankSuffix(auction.claimedByRank)} Winner
+                      </h2>
+                      <p className="text-xs text-green-700">
+                        {auction.claimUpiId === userInfo.userEmail
+                          ? 'Congratulations! You won this auction'
+                          : 'This auction has been sold out'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-white/70 rounded-lg p-3 border border-green-200 space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-green-900">
+                        {auction.claimUpiId === userInfo.userEmail
+                          ? `Amazon voucher sent to ${maskEmail(userInfo.userEmail)}`
+                          : `Sold out to ${maskUsername(auction.claimedBy || '')}`}
+                      </span>
+                    </div>
+                    {auction.claimedAt && (
+                      <div className="flex items-center gap-1.5 text-xs text-green-600">
+                        <Clock className="w-3 h-3" />
+                        <span>Claimed on {formatTimestamp(auction.claimedAt)}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
             )}
 
-            {/* Claimed Status - Only show if claimedBy is NOT set (to avoid duplicate) */}
+            {/* Claimed by self - no claimedBy */}
             {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId === userInfo.userEmail && !auction.claimedBy && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatDelay: 0.5
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                          {getRankEmoji(auction.finalRank || 1)} Prize Claimed Successfully!
-                        </h2>
-                        <p className="text-sm text-green-700">Congratulations on your win, Rank {getRankSuffix(auction.finalRank || 1)}</p>
-                      </div>
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Gift className="w-6 h-6 text-white" />
                     </div>
-
-                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-green-900 mb-1">
-                            Amazon Voucher Delivered
-                          </p>
-                            <p className="text-xs text-green-700 mb-2">
-                              Your prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been sent to <span className="font-semibold">{maskEmail(userInfo.userEmail)}</span>
-                            </p>
-
-                          {auction.claimedAt && (
-    <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
-      <Clock className="w-3 h-3" />
-      <span>
-        {(() => {
-          const date = new Date(auction.claimedAt);
-          const corrected = new Date(date.getTime() - 5.5 * 60 * 60 * 1000);
-
-          return `Claimed on ${corrected.toLocaleString('en-IN', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          })}`;
-        })()}
-      </span>
-    </div>
-  )}
-
-
-                        </div>
-                      </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-green-900">
+                        {getRankEmoji(auction.finalRank || 1)} Auction Won Successfully!
+                      </h2>
+                      <p className="text-xs text-green-700">Amazon voucher sent to {maskEmail(userInfo.userEmail)}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  {auction.claimedAt && (
+                    <div className="flex items-center gap-1.5 text-xs text-green-600 bg-white/60 rounded px-2 py-1 w-fit">
+                      <Clock className="w-3 h-3" />
+                      <span>Claimed on {formatTimestamp(auction.claimedAt)}</span>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
-            {/* Prize claimed by another winner - Only show if claimedBy is NOT set */}
+            {/* Claimed by other - no claimedBy */}
             {auction.prizeClaimStatus === 'CLAIMED' && auction.claimUpiId && auction.claimUpiId !== userInfo.userEmail && !auction.claimedBy && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatDelay: 0.5
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Trophy className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                          {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
-                        </h2>
-                        <p className="text-sm text-green-700">This prize has been claimed</p>
-                      </div>
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Trophy className="w-6 h-6 text-white" />
                     </div>
-
-                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-green-900 mb-1">
-                            Winner Details
-                          </p>
-                          <p className="text-xs text-green-700 mb-1">
-                            Claimed by {auction.claimedBy || 'Winner'}
-                          </p>
-                          {auction.claimedAt && (
-    <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
-      <Clock className="w-3 h-3" />
-      <span>
-        {(() => {
-          const original = new Date(auction.claimedAt);
-          const adjusted = new Date(original.getTime() - 5.5 * 60 * 60 * 1000);
-
-          return `Claimed on ${adjusted.toLocaleString('en-IN', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          })}`;
-        })()}
-      </span>
-    </div>
-  )}
-
-
-                        </div>
-                      </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-green-900">Auction Sold Out</h2>
+                      <p className="text-xs text-green-700">Sold out to {maskEmail(auction.claimedBy || 'Winner')}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {/* Prize claimed but no email info - Generic claimed banner - Only show if claimedBy is NOT set */}
+            {/* Generic claimed */}
             {auction.prizeClaimStatus === 'CLAIMED' && !auction.claimUpiId && !auction.claimedBy && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6"
-              >
-                <Card className="border-2 border-green-300/70 bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 backdrop-blur-xl shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <motion.div
-                        animate={{ 
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{ 
-                          duration: 1.5,
-                          repeat: Infinity,
-                          repeatDelay: 0.5
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Gift className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      <div className="flex-1">
-                        <h2 className="text-lg sm:text-xl font-bold text-green-900 flex items-center gap-2">
-                          🎉 Prize Claimed Successfully!
-                        </h2>
-                        <p className="text-sm text-green-700">This auction prize has been claimed</p>
-                      </div>
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <Gift className="w-6 h-6 text-white" />
                     </div>
-
-                    <div className="bg-white/60 rounded-lg p-3 border border-green-200">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-green-900 mb-1">
-                            Prize Successfully Claimed
-                          </p>
-                          <p className="text-xs text-green-700 mb-2">
-                            Amazon voucher worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been delivered
-                          </p>
-                          {auction.claimedAt && (
-    <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 rounded px-2 py-1 w-fit">
-      <Clock className="w-3 h-3" />
-      <span>
-        Claimed on {(() => {
-          const d = new Date(auction.claimedAt);
-          const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
-
-          return adjusted.toLocaleString('en-IN', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
-        })()}
-      </span>
-    </div>
-  )}
-
-
-                        </div>
-                      </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-green-900">Auction Sold Out!</h2>
+                      <p className="text-xs text-green-700">Prize worth ₹{auction.prizeValue.toLocaleString('en-IN')} has been delivered</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {/* Expired Status - no one claimed */}
+            {/* Expired claim */}
             {auction.prizeClaimStatus === 'EXPIRED' && !(auction.claimedByRank && auction.claimedByRank < (auction.finalRank || 0)) && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 sm:mb-6 space-y-4"
-              >
-                <Card className="border-2 border-red-300/70 bg-gradient-to-r from-red-50 to-rose-50 backdrop-blur-xl shadow-lg overflow-hidden">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <AlertCircle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5 space-y-3">
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center shadow">
+                      <AlertCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-red-900 text-sm">{getRankEmoji(auction.finalRank || 1)} Your Claim Window Expired</p>
+                      <p className="text-xs text-red-700">The 15-minute deadline passed. Prize offered to next winner.</p>
+                    </div>
+                  </div>
+                </div>
+                {auction.claimedBy && (
+                  <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow">
+                        <Trophy className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm sm:text-lg font-bold text-red-900 mb-1">
-                          {getRankEmoji(auction.finalRank || 1)} Your Claim Window Expired
-                        </p>
-                        <p className="text-xs sm:text-sm text-red-700 leading-relaxed">
-                          The 15-minute deadline for your rank passed. The prize has been offered to the next eligible winner in the priority queue.
-                        </p>
+                      <div>
+                        <h3 className="font-bold text-emerald-900 text-sm">
+                          {getRankEmoji(auction.claimedByRank || 1)} Auction Sold Out to {getRankSuffix(auction.claimedByRank || 1)} Winner
+                        </h3>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Show detailed Claimed By container */}
-                {auction.claimedBy && (
-                  <Card className="border-2 border-emerald-300/70 bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-50 backdrop-blur-xl shadow-xl overflow-hidden">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 sm:gap-4 mb-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <Trophy className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-sm sm:text-lg font-bold text-emerald-900">
-                            {getRankEmoji(auction.claimedByRank || 1)} Prize Claimed by {getRankSuffix(auction.claimedByRank || 1)} Winner
-                          </h3>
-                          <p className="text-xs sm:text-sm text-emerald-700">The prize for this auction has been officially claimed.</p>
-                        </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-white/70 rounded-lg p-2.5 border border-emerald-100">
+                        <p className="text-[10px] text-emerald-600 font-semibold uppercase mb-0.5">Sold To</p>
+                        <p className="font-bold text-emerald-900 text-sm">{maskUsername(auction.claimedBy)}</p>
                       </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
-                          <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed By</p>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <Users className="w-4 h-4 text-emerald-600" />
-                            </div>
-                            <span className="font-bold text-emerald-900 text-sm sm:text-base">{maskEmail(auction.claimedBy)}</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-white/60 rounded-xl p-3 border border-emerald-200 shadow-sm">
-                          <p className="text-[10px] sm:text-xs text-emerald-600 font-semibold mb-1 uppercase tracking-wider">Claimed Time</p>
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-emerald-600" />
-                            </div>
-                            <span className="font-bold text-emerald-900 text-sm sm:text-base">
-                              {auction.claimedAt ? (() => {
-                                const d = new Date(auction.claimedAt);
-                                const adjusted = new Date(d.getTime() - 5.5 * 60 * 60 * 1000);
-                                  return adjusted.toLocaleString('en-IN', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: false,
-                                    timeZone: 'Asia/Kolkata'
-                                  });
-                              })() : 'Updating...'}
-                            </span>
-                          </div>
-                        </div>
+                      <div className="bg-white/70 rounded-lg p-2.5 border border-emerald-100">
+                        <p className="text-[10px] text-emerald-600 font-semibold uppercase mb-0.5">Sold At</p>
+                        <p className="font-bold text-emerald-900 text-sm">{auction.claimedAt ? formatTimestamp(auction.claimedAt) : '—'}</p>
                       </div>
-
-                      {auction.claimNotes && (
-                        <div className="mt-3 p-3 bg-white/40 rounded-lg border border-emerald-100 italic text-xs text-emerald-700">
-                          <strong>Note:</strong> {auction.claimNotes}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )}
               </motion.div>
             )}
 
-            {/* Round-by-Round Breakdown */}
+            {/* ===== ROUND-BY-ROUND TIMELINE ===== */}
             {detailedData && detailedData.rounds && detailedData.rounds.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="mb-4 sm:mb-6"
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="mb-5"
               >
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-600 to-purple-700 rounded-xl flex items-center justify-center shadow-lg">
-                    <Box className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-9 h-9 bg-gradient-to-br from-violet-600 to-purple-700 rounded-lg flex items-center justify-center shadow">
+                    <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-purple-900 text-base sm:text-lg">Round-by-Round Breakdown</h2>
-                    <p className="text-[10px] sm:text-xs text-purple-600">Detailed performance for each round</p>
+                    <h2 className="font-bold text-purple-900 text-base sm:text-lg">Round-by-Round Timeline</h2>
+                    <p className="text-[10px] sm:text-xs text-purple-500">Detailed breakdown of every round</p>
                   </div>
                 </div>
 
-                  <div className="space-y-3 sm:space-y-4">
-                      {detailedData.rounds.map((round: RoundDetails, index: number) => {
-                        const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1;
-                        
-                            // ✅ FIX: Improved round status label logic
-                            let roundStatusLabel = round.status;
-                            if (isSkippedRound) {
-                              roundStatusLabel = 'WINNERS Announced';
-                            } else if (auction.winnersAnnounced) {
-                              if (round.status.toLowerCase() === 'active' || round.status.toLowerCase() === 'pending' || round.status.toLowerCase() === 'upcoming') {
-                                roundStatusLabel = 'WINNERS Announced';
-                              } else {
-                                roundStatusLabel = 'Completed';
-                              }
-                            }
+                {/* Timeline */}
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-purple-300 via-purple-200 to-purple-100 hidden sm:block" />
 
-                        const qualifiedLabel = winnersAnnouncedEarly && round.roundNumber === 1 ? 'Winner' : 'Qualified';
-                        const nonParticipationText = isSkippedRound
-                          ? 'This round did not open because winners were announced in Round 1'
-                          : 'You did not participate in this round';
+                  <div className="space-y-4">
+                    {detailedData.rounds.map((round: RoundDetails, index: number) => {
+                      const isSkippedRound = winnersAnnouncedEarly && round.roundNumber > 1 && ['pending', 'active', 'upcoming'].includes((round.status || '').toLowerCase());
+                      const isExpanded = expandedRounds.has(round.roundNumber);
+                      const userParticipated = round.userBid !== null && round.userBid !== undefined;
+                      const eliminatedCount = round.totalParticipants - round.qualifiedCount;
+
+                      let roundStatusLabel = round.status;
+                      let statusColor = 'bg-gray-100 text-gray-600';
+                      if (isSkippedRound) {
+                        roundStatusLabel = 'Skipped — Winners Declared';
+                        statusColor = 'bg-yellow-100 text-yellow-700';
+                      } else if (round.status?.toLowerCase() === 'completed') {
+                        roundStatusLabel = 'Completed';
+                        statusColor = 'bg-green-100 text-green-700';
+                      } else if (round.status?.toLowerCase() === 'active') {
+                        roundStatusLabel = 'Active';
+                        statusColor = 'bg-blue-100 text-blue-700';
+                      }
 
                       return (
                         <motion.div
                           key={round.roundNumber}
-                          initial={{ opacity: 0, x: -20 }}
+                          initial={{ opacity: 0, x: -15 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
+                          transition={{ delay: 0.1 + index * 0.08, duration: 0.4 }}
+                          className="relative"
                         >
-                        <Card className={`relative overflow-hidden border-2 backdrop-blur-2xl shadow-xl ${
-                          round.userBid 
-                            ? round.userQualified
-                              ? 'border-green-300/70 bg-gradient-to-br from-green-50/95 via-emerald-50/80 to-green-50/70'
-                              : 'border-purple-300/60 bg-gradient-to-br from-white/90 via-purple-50/70 to-violet-50/60'
-                            : 'border-gray-300/60 bg-gradient-to-br from-white/90 to-gray-50/70'
-                        }`}>
-                          <CardContent className="p-3 sm:p-5 relative z-10">
-                            <div className="flex items-start justify-between gap-3 mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shadow-lg border-2 border-white/60 ${
-                                  round.userBid
-                                    ? round.userQualified
-                                      ? 'bg-gradient-to-br from-green-500 to-emerald-600'
-                                      : 'bg-gradient-to-br from-purple-500 to-purple-700'
-                                    : 'bg-gradient-to-br from-gray-400 to-gray-600'
-                                }`}>
-                                  {round.userBid ? (
-                                    round.userQualified ? (
-                                      <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                                    ) : (
-                                      <Target className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                                    )
-                                  ) : (
-                                    <Lock className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                          {/* Timeline dot */}
+                          <div className="absolute left-3.5 top-5 w-3.5 h-3.5 rounded-full border-2 border-white shadow-md z-10 hidden sm:block" style={{
+                            background: userParticipated
+                              ? (round.userQualified ? '#10b981' : '#8b5cf6')
+                              : '#9ca3af'
+                          }} />
+
+                          <div className={`sm:ml-12 rounded-xl border-2 overflow-hidden transition-all shadow-sm hover:shadow-md ${
+                            userParticipated
+                              ? round.userQualified
+                                ? 'border-green-200 bg-white'
+                                : 'border-purple-200 bg-white'
+                              : 'border-gray-200 bg-gray-50/50'
+                          }`}>
+                            {/* Round Header - Always visible */}
+                            <button
+                              onClick={() => !isSkippedRound && userParticipated && toggleRoundExpanded(round.roundNumber)}
+                              className={`w-full text-left p-3.5 sm:p-4 ${!isSkippedRound && userParticipated ? 'cursor-pointer hover:bg-purple-50/30' : 'cursor-default'}`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  {/* Round number badge */}
+                                  <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center font-bold text-white text-sm shadow flex-shrink-0 ${
+                                    userParticipated
+                                      ? round.userQualified
+                                        ? 'bg-gradient-to-br from-green-500 to-emerald-600'
+                                        : 'bg-gradient-to-br from-purple-500 to-violet-600'
+                                      : 'bg-gradient-to-br from-gray-400 to-gray-500'
+                                  }`}>
+                                    R{round.roundNumber}
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h3 className="font-bold text-gray-900 text-sm">Round {round.roundNumber}</h3>
+                                      <Badge className={`text-[10px] font-medium px-1.5 py-0 border-0 ${statusColor}`}>
+                                        {roundStatusLabel}
+                                      </Badge>
+                                    </div>
+
+                                    {/* Timestamps */}
+                                    {!isSkippedRound && (
+                                      <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-0.5">
+                                        <Clock className="w-2.5 h-2.5" />
+                                        <span>{formatTime(round.startedAt)}</span>
+                                        {round.completedAt && (
+                                          <><span className="text-gray-300">→</span><span>{formatTime(round.completedAt)}</span></>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Right side summary */}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {userParticipated && !isSkippedRound && (
+                                    <div className="flex items-center gap-2">
+                                      {/* Quick stats */}
+                                      <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500 mr-2">
+                                        <span className="flex items-center gap-0.5">
+                                          <Users className="w-3 h-3" /> {round.totalParticipants}
+                                        </span>
+                                        <span className="flex items-center gap-0.5 font-medium text-purple-700">
+                                          <IndianRupee className="w-3 h-3" />{round.userBid?.toLocaleString('en-IN')}
+                                        </span>
+                                        <span className="flex items-center gap-0.5 font-medium text-violet-700">
+                                          #{round.userRank || '—'}
+                                        </span>
+                                      </div>
+
+                                      {round.userQualified ? (
+                                        <Badge className="bg-green-500 text-white border-0 text-[10px] px-2">
+                                          <CheckCircle2 className="w-3 h-3 mr-0.5" /> Qualified
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="bg-red-100 text-red-700 border-0 text-[10px] px-2">
+                                          <XCircle className="w-3 h-3 mr-0.5" /> Eliminated
+                                        </Badge>
+                                      )}
+
+                                      {!isSkippedRound && (
+                                        isExpanded
+                                          ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                          : <ChevronDown className="w-4 h-4 text-gray-400" />
+                                      )}
+                                    </div>
+                                  )}
+                                  {!userParticipated && !isSkippedRound && (
+                                    <Badge className="bg-gray-100 text-gray-500 border-0 text-[10px] px-2">
+                                      <Lock className="w-3 h-3 mr-0.5" /> Did not participate
+                                    </Badge>
                                   )}
                                 </div>
-                                
-                                <div>
-                                  <h3 className="font-bold text-purple-900 text-sm sm:text-base mb-1">Round {round.roundNumber}</h3>
-                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-purple-100/80 text-purple-700 border-purple-300">
-                                    {roundStatusLabel}
-                                  </Badge>
-                                </div>
                               </div>
-  
-                              {round.userQualified && (
-                                <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 text-xs">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" /> {qualifiedLabel}
-                                </Badge>
-                              )}
-                            </div>
-  
-                            {round.userBid ? (
-                              <>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3">
-                                  <Card className="border-2 border-purple-200/60 bg-white/70 backdrop-blur-xl">
-                                    <CardContent className="p-2 sm:p-3">
-                                      <div className="flex items-center gap-1 text-[10px] text-purple-600 mb-1">
-                                        <Users className="w-3 h-3" />
-                                        <span>Participants</span>
-                                      </div>
-                                      <div className="font-bold text-purple-900 text-sm">{round.totalParticipants}</div>
-                                    </CardContent>
-                                  </Card>
-  
-                                  <Card className="border-2 border-green-200/60 bg-white/70 backdrop-blur-xl">
-                                    <CardContent className="p-2 sm:p-3">
-                                      <div className="flex items-center gap-1 text-[10px] text-green-600 mb-1">
-                                        <CheckCircle2 className="w-3 h-3" />
-                                        <span>Qualified</span>
-                                      </div>
-                                      <div className="font-bold text-green-900 text-sm">{round.qualifiedCount}</div>
-                                    </CardContent>
-                                  </Card>
-  
-                                  <Card className="border-2 border-blue-200/60 bg-white/70 backdrop-blur-xl">
-                                    <CardContent className="p-2 sm:p-3">
-                                      <div className="flex items-center gap-1 text-[10px] text-blue-600 mb-1">
-                                        <TrendingUp className="w-3 h-3" />
-                                        <span>My Bid</span>
-                                      </div>
-                                      <div className="flex items-center gap-0.5 font-bold text-blue-900">
-                                        <IndianRupee className="w-3 h-3" />
-                                        <span className="text-sm">{round.userBid?.toLocaleString('en-IN')}</span>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-  
-                                  <Card className="border-2 border-violet-200/60 bg-white/70 backdrop-blur-xl">
-                                    <CardContent className="p-2 sm:p-3">
-                                      <div className="flex items-center gap-1 text-[10px] text-violet-600 mb-1">
-                                        <Award className="w-3 h-3" />
-                                        <span>My Rank</span>
-                                      </div>
-                                      <div className="font-bold text-violet-900 text-sm">#{round.userRank || 'N/A'}</div>
-                                    </CardContent>
-                                  </Card>
+
+                              {/* Mobile quick stats */}
+                              {userParticipated && !isSkippedRound && (
+                                <div className="flex sm:hidden items-center gap-3 mt-2 text-[10px] text-gray-500 pl-[52px]">
+                                  <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {round.totalParticipants} players</span>
+                                  <span className="flex items-center gap-0.5 font-medium text-purple-700"><IndianRupee className="w-2.5 h-2.5" />{round.userBid?.toLocaleString('en-IN')}</span>
+                                  <span className="font-medium text-violet-700">Rank #{round.userRank || '—'}</span>
                                 </div>
-  
-                                <Card className="border-2 border-purple-200/60 bg-gradient-to-br from-purple-50/80 to-violet-50/60 backdrop-blur-xl">
-                                  <CardContent className="p-3">
-                                    <div className="flex items-center gap-2 mb-3">
-                                      <BarChart3 className="w-5 h-5 text-purple-600" />
-                                      <h4 className="font-bold text-purple-900 text-xs sm:text-sm">Bid Range</h4>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-2">
-                                      <div className="bg-white/80 rounded-lg p-2 border border-green-200/50">
-                                        <div className="flex items-center gap-1 mb-1">
-                                          <TrendingDown className="w-3 h-3 text-green-600" />
-                                          <span className="text-[10px] text-purple-600 font-medium">Lowest</span>
+                              )}
+                            </button>
+
+                            {/* Expanded Details */}
+                            <AnimatePresence>
+                              {isExpanded && userParticipated && !isSkippedRound && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.25 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-3.5 sm:px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
+                                    {/* Stats Grid */}
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                      <div className="bg-purple-50/80 rounded-lg p-2.5 border border-purple-100">
+                                        <p className="text-[10px] text-purple-500 font-medium uppercase mb-0.5">Participants</p>
+                                        <p className="font-bold text-purple-900 text-lg">{round.totalParticipants}</p>
+                                      </div>
+                                      <div className="bg-green-50/80 rounded-lg p-2.5 border border-green-100">
+                                        <p className="text-[10px] text-green-500 font-medium uppercase mb-0.5">Qualified</p>
+                                        <p className="font-bold text-green-900 text-lg">{round.qualifiedCount}</p>
+                                      </div>
+                                      <div className="bg-red-50/80 rounded-lg p-2.5 border border-red-100">
+                                        <p className="text-[10px] text-red-500 font-medium uppercase mb-0.5">Eliminated</p>
+                                        <p className="font-bold text-red-900 text-lg">{eliminatedCount}</p>
+                                      </div>
+                                      {round.cutoffPercentage !== undefined && round.cutoffPercentage !== null && (
+                                        <div className="bg-amber-50/80 rounded-lg p-2.5 border border-amber-100">
+                                          <p className="text-[10px] text-amber-500 font-medium uppercase mb-0.5">Cutoff</p>
+                                          <p className="font-bold text-amber-900 text-lg">{round.cutoffPercentage}%</p>
                                         </div>
-                                        <div className="flex items-center gap-0.5 font-bold text-purple-900">
-                                          <IndianRupee className="w-3 h-3" />
-                                          <span className="text-sm">{round.lowestBid.toLocaleString('en-IN')}</span>
+                                      )}
+                                    </div>
+
+                                    {/* Bid Range Bar */}
+                                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                      <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                                        <BarChart3 className="w-3.5 h-3.5 text-purple-500" /> Bid Range
+                                      </h4>
+                                      <div className="flex items-center gap-3">
+                                        <div className="text-center">
+                                          <p className="text-[10px] text-gray-500 mb-0.5">Lowest</p>
+                                          <p className="font-bold text-green-700 text-sm flex items-center justify-center">
+                                            <IndianRupee className="w-3 h-3" />{round.lowestBid.toLocaleString('en-IN')}
+                                          </p>
+                                        </div>
+                                        <div className="flex-1 h-2 bg-gradient-to-r from-green-300 via-purple-300 to-red-300 rounded-full relative">
+                                          {/* User bid marker */}
+                                          {round.userBid && round.highestBid > round.lowestBid && (
+                                            <div
+                                              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white border-2 border-purple-600 rounded-full shadow-md"
+                                              style={{
+                                                left: `${Math.min(100, Math.max(0, ((round.userBid - round.lowestBid) / (round.highestBid - round.lowestBid)) * 100))}%`,
+                                                transform: 'translate(-50%, -50%)'
+                                              }}
+                                              title={`Your bid: ₹${round.userBid.toLocaleString('en-IN')}`}
+                                            />
+                                          )}
+                                        </div>
+                                        <div className="text-center">
+                                          <p className="text-[10px] text-gray-500 mb-0.5">Highest</p>
+                                          <p className="font-bold text-red-700 text-sm flex items-center justify-center">
+                                            <IndianRupee className="w-3 h-3" />{round.highestBid.toLocaleString('en-IN')}
+                                          </p>
                                         </div>
                                       </div>
-  
-                                      <div className="bg-white/80 rounded-lg p-2 border border-red-200/50">
-                                        <div className="flex items-center gap-1 mb-1">
-                                          <TrendingUp className="w-3 h-3 text-red-600" />
-                                          <span className="text-[10px] text-purple-600 font-medium">Highest</span>
-                                        </div>
-                                        <div className="flex items-center gap-0.5 font-bold text-purple-900">
-                                          <IndianRupee className="w-3 h-3" />
-                                          <span className="text-sm">{round.highestBid.toLocaleString('en-IN')}</span>
+                                      <div className="text-center mt-1.5">
+                                        <p className="text-[10px] text-purple-600 font-medium">
+                                          Your Bid: <span className="font-bold">₹{round.userBid?.toLocaleString('en-IN')}</span> · Rank <span className="font-bold">#{round.userRank}</span>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Your Performance */}
+                                    <div className={`rounded-lg p-3 border ${
+                                      round.userQualified
+                                        ? 'bg-green-50/50 border-green-200'
+                                        : 'bg-red-50/50 border-red-200'
+                                    }`}>
+                                      <div className="flex items-center gap-2">
+                                        {round.userQualified ? (
+                                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                        ) : (
+                                          <XCircle className="w-5 h-5 text-red-500" />
+                                        )}
+                                        <div>
+                                          <p className={`text-sm font-bold ${round.userQualified ? 'text-green-800' : 'text-red-800'}`}>
+                                            {round.userQualified ? 'You Qualified!' : 'You Were Eliminated'}
+                                          </p>
+                                          <p className={`text-xs ${round.userQualified ? 'text-green-600' : 'text-red-600'}`}>
+                                            {round.userQualified
+                                              ? `Advanced to ${round.roundNumber < totalRounds ? `Round ${round.roundNumber + 1}` : 'Final Results'}`
+                                              : `Your bid of ₹${round.userBid?.toLocaleString('en-IN')} ranked #${round.userRank} — below the cutoff threshold`
+                                            }
+                                          </p>
                                         </div>
                                       </div>
                                     </div>
-                                  </CardContent>
-                                </Card>
-                              </>
-                            ) : (
-                              <Card className="border-2 border-gray-200/60 bg-gray-50/50">
-                                <CardContent className="p-4 text-center">
-                                  <Lock className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                  <p className="text-sm font-medium text-gray-600">{nonParticipationText}</p>
-                                </CardContent>
-                              </Card>
-                            )}
-                          </CardContent>
-                          </Card>
+
+                                    {/* Timestamps */}
+                                    <div className="flex flex-wrap gap-3 text-[10px] text-gray-500">
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-2.5 h-2.5" /> Started: {formatTimestamp(round.startedAt)}
+                                      </span>
+                                      {round.completedAt && (
+                                        <span className="flex items-center gap-1">
+                                          <CheckCircle className="w-2.5 h-2.5" /> Ended: {formatTimestamp(round.completedAt)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </motion.div>
                       );
                     })}
                   </div>
-                </motion.div>
-              )}
+                </div>
+              </motion.div>
+            )}
 
-
-            {/* Net Profit Card for Winners */}
+            {/* ===== NET PROFIT ===== */}
             {auction.isWinner && auction.lastRoundBidAmount && auction.prizeValue && auction.prizeClaimStatus === 'CLAIMED' && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
-                className="mb-4 sm:mb-6"
+                transition={{ delay: 0.4, duration: 0.4 }}
+                className="mb-5"
               >
-                <Card className="border-2 border-violet-300/70 backdrop-blur-xl bg-gradient-to-br from-violet-100/90 via-fuchsia-100/80 to-purple-100/70 shadow-2xl">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <motion.div
-                        animate={{ 
-                          rotate: [0, -10, 10, -10, 0],
-                          scale: [1, 1.1, 1]
-                        }}
-                        transition={{ 
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 1
-                        }}
-                        className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg"
-                      >
-                        <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-                      </motion.div>
-                      
-                      <div className="flex-1">
-                        <h3 className="font-bold text-violet-900 text-lg sm:text-xl">🎉 Your Net Profit</h3>
-                        <p className="text-sm text-violet-700">Prize Value - Final Round Bid</p>
-                      </div>
+                <div className="bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 border-2 border-violet-200 rounded-xl p-4 sm:p-5 shadow-md">
+                  <div className="flex items-center gap-3 mb-4">
+                    <motion.div
+                      animate={{ rotate: [0, -5, 5, -5, 0], scale: [1, 1.05, 1] }}
+                      transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+                      className="w-11 h-11 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center shadow-lg"
+                    >
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </motion.div>
+                    <div>
+                      <h3 className="font-bold text-violet-900 text-lg">Your Net Profit</h3>
+                      <p className="text-xs text-violet-600">Prize Value - Final Round Bid</p>
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border-2 border-violet-300/50 shadow-md">
-                        <span className="text-xs text-violet-700 font-medium">Prize Value</span>
-                        <div className="flex items-center gap-0.5 font-bold text-violet-900">
-                          <IndianRupee className="w-4 h-4" />
-                          <span className="text-lg">{auction.prizeValue.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border-2 border-purple-300/50 shadow-md">
-                        <span className="text-xs text-purple-700 font-medium">Final Round Bid</span>
-                        <div className="flex items-center gap-0.5 font-bold text-purple-900">
-                          <span className="text-lg">-</span>
-                          <IndianRupee className="w-4 h-4" />
-                          <span className="text-lg">{auction.lastRoundBidAmount.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-3 shadow-lg">
-                        <span className="text-xs font-medium">Net Profit</span>
-                        <div className="flex items-center gap-0.5 font-bold">
-                          <span className="text-lg">=</span>
-                          <IndianRupee className="w-4 h-4" />
-                          <span className="text-lg">{netProfit.toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 bg-violet-50 border border-violet-200 rounded-lg p-3">
-                      <p className="text-xs text-violet-700 text-center">
-                        💡 <strong>Note:</strong> Net profit is calculated only from your final round bid amount, not the total spent across all rounds.
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div className="bg-white/80 rounded-xl p-3 border border-violet-200 text-center">
+                      <span className="text-[10px] text-violet-500 font-medium uppercase">Prize</span>
+                      <p className="font-bold text-violet-900 flex items-center justify-center mt-0.5">
+                        <IndianRupee className="w-3.5 h-3.5" /><span className="text-lg">{auction.prizeValue.toLocaleString('en-IN')}</span>
                       </p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="bg-white/80 rounded-xl p-3 border border-purple-200 text-center">
+                      <span className="text-[10px] text-purple-500 font-medium uppercase">Paid</span>
+                      <p className="font-bold text-purple-900 flex items-center justify-center mt-0.5">
+                        <span className="text-lg">- </span><IndianRupee className="w-3.5 h-3.5" /><span className="text-lg">{auction.lastRoundBidAmount.toLocaleString('en-IN')}</span>
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl p-3 text-center shadow-lg">
+                      <span className="text-[10px] font-medium uppercase opacity-80">Profit</span>
+                      <p className="font-bold flex items-center justify-center mt-0.5">
+                        <IndianRupee className="w-3.5 h-3.5" /><span className="text-lg">{netProfit.toLocaleString('en-IN')}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </>
