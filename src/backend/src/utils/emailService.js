@@ -522,6 +522,7 @@ const activeBrandStyles = darkBrandStyles;
 let transporterInstance = null;
 let supportTransporterInstance = null;
 let contactTransporterInstance = null;
+let infoTransporterInstance = null;
 let templateCache = new Map();
 
 // Create reusable transporter with pooling for better performance
@@ -606,6 +607,38 @@ const createContactTransporter = () => {
     });
   }
   return contactTransporterInstance;
+};
+
+// Create info transporter using info@dream60.com (EMAIL_INFO_USER)
+const createInfoTransporter = () => {
+  // If no separate info credentials, fall back to default transporter
+  if (!process.env.EMAIL_INFO_USER || !process.env.EMAIL_INFO_PASSWORD) {
+    return createTransporter();
+  }
+  if (!infoTransporterInstance) {
+    const port = parseInt(process.env.EMAIL_PORT || '465');
+    infoTransporterInstance = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.zoho.in',
+      port,
+      secure: port === 465,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: Infinity,
+      rateDelta: 1000,
+      rateLimit: 10,
+      socketTimeout: 30000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      auth: {
+        user: process.env.EMAIL_INFO_USER,
+        pass: process.env.EMAIL_INFO_PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+  return infoTransporterInstance;
 };
 
 const getPrimaryClientUrl = () => {
@@ -750,7 +783,7 @@ const sendOtpEmail = async (email, otp, reason = 'Verification', username = '') 
         return { success: false, message: 'Email service not configured' };
       }
 
-      const transporter = createTransporter();
+      const transporter = createInfoTransporter();
       const template = await getTemplateByName('OTP Verification');
 
       const displayName = username || email.split('@')[0] || 'User';
@@ -798,15 +831,16 @@ const sendOtpEmail = async (email, otp, reason = 'Verification', username = '') 
       });
     }
 
-    const mailOptions = {
-      from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: subject,
-      html: htmlBody,
-    };
+      const fromEmail = process.env.EMAIL_INFO_USER || process.env.EMAIL_USER;
+      const mailOptions = {
+        from: `"Dream60" <${fromEmail}>`,
+        to: email,
+        subject: subject,
+        html: htmlBody,
+      };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ [EMAIL] OTP sent to ${email} for ${reason}`);
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ [EMAIL] OTP sent to ${email} for ${reason} from ${fromEmail}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ OTP email error:', error);
