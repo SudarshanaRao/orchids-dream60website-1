@@ -743,24 +743,29 @@ const replaceTemplateVariables = (text, variables) => {
 /**
  * Send OTP Email
  */
-const sendOtpEmail = async (email, otp, reason = 'Verification') => {
-  try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.warn('⚠️ Email credentials not configured.');
-      return { success: false, message: 'Email service not configured' };
-    }
+const sendOtpEmail = async (email, otp, reason = 'Verification', username = '') => {
+    try {
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        console.warn('⚠️ Email credentials not configured.');
+        return { success: false, message: 'Email service not configured' };
+      }
 
-    const transporter = createTransporter();
-    const template = await getTemplateByName('OTP Verification');
+      const transporter = createTransporter();
+      const template = await getTemplateByName('OTP Verification');
 
-    let subject, htmlBody;
+      const displayName = username || email.split('@')[0] || 'User';
 
-    if (template) {
-      const variables = { 
-        otp, OTP: otp,
-        reason, Reason: reason,
-        reason_lower: reason.toLowerCase()
-      };
+      let subject, htmlBody;
+
+      if (template) {
+        const variables = { 
+          otp, OTP: otp,
+          reason, Reason: reason,
+          reason_lower: reason.toLowerCase(),
+          username: displayName, Username: displayName,
+          name: displayName, Name: displayName,
+          email, Email: email
+        };
       subject = replaceTemplateVariables(template.subject, variables);
       htmlBody = replaceTemplateVariables(template.body, variables);
 

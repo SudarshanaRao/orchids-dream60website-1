@@ -242,29 +242,36 @@ const forgotPassword = async (req, res) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // ✅ Send OTP via email if type is email
-    if (type === 'email') {
-      const emailResult = await sendOtpEmail(identifier, otpCode);
-      if (!emailResult.success) {
-        console.warn('Email send failed:', emailResult.message);
-        // Continue anyway - OTP still generated
+      // ✅ Send OTP via email if type is email
+      if (type === 'email') {
+        try {
+          const emailResult = await sendOtpEmail(identifier, otpCode, 'Forgot Password', user ? user.username : '');
+          if (!emailResult.success) {
+            console.warn('Email send failed:', emailResult.message);
+          }
+        } catch (emailErr) {
+          console.error('Email send exception:', emailErr);
+        }
+      } else if (type === 'mobile') {
+        try {
+          const formatted = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
+          if (formatted.success && formatted.template) {
+            const smsResult = await sendSms(identifier, formatted.message, { templateId: formatted.template.templateId });
+            if (!smsResult.success) {
+              console.warn('SMS send failed:', smsResult.error);
+            }
+          }
+        } catch (smsErr) {
+          console.error('SMS send exception:', smsErr);
+        }
       }
-    } else if (type === 'mobile') {
-      const { message, template } = formatTemplate('PASSWORD_RESET', { name: user ? user.username : 'User', otp: otpCode });
-      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
-      if (!smsResult.success) {
-        console.warn('SMS send failed:', smsResult.error);
-        // In development we might still want to return the OTP if SMS fails
-      }
-    }
-
-    // ✅ In production, DO NOT return OTP in response
-    const responseData = {
-      success: true,
-      message: type === 'email' ? 'OTP sent to your email' : 'OTP sent to your mobile',
-      userExists: !!user,
-    };
+      // ✅ In production, DO NOT return OTP in response
+      const responseData = {
+        success: true,
+        message: type === 'email' ? 'OTP sent to your email' : 'OTP sent to your mobile',
+        userExists: !!user,
+      };
 
     return res.status(200).json(responseData);
   } catch (err) {
@@ -537,15 +544,15 @@ const sendVerificationOtp = async (req, res) => {
     );
 
     if (type === 'email') {
-        try {
-          const emailResult = await sendOtpEmail(identifier, otpCode, reason);
-          if (!emailResult.success) {
-            console.error('Email send failed:', emailResult.message);
-            // OTP is saved in DB - don't block user, they can retry
+          try {
+            const emailResult = await sendOtpEmail(identifier, otpCode, reason, username || '');
+            if (!emailResult.success) {
+              console.error('Email send failed:', emailResult.message);
+              // OTP is saved in DB - don't block user, they can retry
+            }
+          } catch (emailErr) {
+            console.error('Email send exception:', emailErr);
           }
-        } catch (emailErr) {
-          console.error('Email send exception:', emailErr);
-        }
       } else if (type === 'mobile') {
         try {
           const templateKey = ['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) ? 'MOBILE_CHANGE_OTP' : 
