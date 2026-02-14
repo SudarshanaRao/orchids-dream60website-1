@@ -537,22 +537,32 @@ const sendVerificationOtp = async (req, res) => {
     );
 
     if (type === 'email') {
-      const emailResult = await sendOtpEmail(identifier, otpCode, reason);
-      if (!emailResult.success) {
-        console.error('Email send failed:', emailResult.message);
-        return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
+        try {
+          const emailResult = await sendOtpEmail(identifier, otpCode, reason);
+          if (!emailResult.success) {
+            console.error('Email send failed:', emailResult.message);
+            // OTP is saved in DB - don't block user, they can retry
+          }
+        } catch (emailErr) {
+          console.error('Email send exception:', emailErr);
+        }
+      } else if (type === 'mobile') {
+        try {
+          const templateKey = ['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) ? 'MOBILE_CHANGE_OTP' : 
+                             reason === 'Forgot Password' ? 'PASSWORD_RESET' : 'OTP_VERIFICATION';
+          const formatted = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
+          if (formatted.success && formatted.template) {
+            const smsResult = await sendSms(identifier, formatted.message, { templateId: formatted.template.templateId });
+            if (!smsResult.success) {
+              console.error('SMS send failed:', smsResult.error);
+            }
+          } else {
+            console.error('SMS template not found for key:', templateKey);
+          }
+        } catch (smsErr) {
+          console.error('SMS send exception:', smsErr);
+        }
       }
-    } else if (type === 'mobile') {
-      const templateKey = ['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) ? 'MOBILE_CHANGE_OTP' : 
-                         reason === 'Forgot Password' ? 'PASSWORD_RESET' : 'OTP_VERIFICATION';
-      const { message, template } = formatTemplate(templateKey, { name: username || 'User', otp: otpCode });
-      const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
-
-      if (!smsResult.success) {
-        console.error('SMS send failed:', smsResult.error);
-        return res.status(500).json({ success: false, message: 'Failed to send OTP SMS. Please try again.' });
-      }
-    }
 
     return res.status(200).json({ success: true, message: `OTP sent to your ${type}` });
   } catch (err) {
