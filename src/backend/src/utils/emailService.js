@@ -753,23 +753,45 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
     const transporter = createTransporter();
     const template = await getTemplateByName('OTP Verification');
 
-    if (!template) {
-      console.warn('Template "OTP Verification" not found.');
-      return { success: false, message: 'Email template not found' };
+    let subject, htmlBody;
+
+    if (template) {
+      const variables = { 
+        otp, OTP: otp,
+        reason, Reason: reason,
+        reason_lower: reason.toLowerCase()
+      };
+      subject = replaceTemplateVariables(template.subject, variables);
+      htmlBody = replaceTemplateVariables(template.body, variables);
+
+      EmailTemplate.findOneAndUpdate(
+        { template_id: template.template_id },
+        { $inc: { usageCount: 1 } }
+      ).catch(() => {});
+    } else {
+      // Hardcoded fallback when database template is not found
+      console.warn('⚠️ Template "OTP Verification" not found in DB, using hardcoded fallback.');
+      const primaryClientUrl = getPrimaryClientUrl();
+      subject = `Your Dream60 ${reason} OTP`;
+      htmlBody = buildEmailTemplate({
+        primaryClientUrl,
+        title: reason,
+        status: 'VERIFICATION CODE',
+        bodyHtml: `
+          <h2 class="hero-title">Your ${reason} Code</h2>
+          <p class="hero-text">Use the following one-time password to complete your ${reason.toLowerCase()}. This code expires in 10 minutes.</p>
+          <div class="feature-box">
+            <div class="feature-label">Your OTP Code</div>
+            <div class="otp-code">${otp}</div>
+            <div class="feature-sub">Do not share this code with anyone</div>
+          </div>
+          <div class="alert-box alert-warning">
+            <div class="alert-title">Security Notice</div>
+            <div class="alert-desc">Dream60 will never ask for your OTP via phone or chat. If you didn't request this code, please ignore this email.</div>
+          </div>
+        `,
+      });
     }
-
-    const variables = { 
-      otp, OTP: otp,
-      reason, Reason: reason,
-      reason_lower: reason.toLowerCase()
-    };
-    const subject = replaceTemplateVariables(template.subject, variables);
-    const htmlBody = replaceTemplateVariables(template.body, variables);
-
-    await EmailTemplate.findOneAndUpdate(
-      { template_id: template.template_id },
-      { $inc: { usageCount: 1 } }
-    );
 
     const mailOptions = {
       from: `"Dream60 Security" <${process.env.EMAIL_USER}>`,
@@ -779,6 +801,7 @@ const sendOtpEmail = async (email, otp, reason = 'Verification') => {
     };
 
     const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ [EMAIL] OTP sent to ${email} for ${reason}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ OTP email error:', error);

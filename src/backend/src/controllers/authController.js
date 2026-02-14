@@ -539,7 +539,8 @@ const sendVerificationOtp = async (req, res) => {
     if (type === 'email') {
       const emailResult = await sendOtpEmail(identifier, otpCode, reason);
       if (!emailResult.success) {
-        console.warn('Email send failed:', emailResult.message);
+        console.error('Email send failed:', emailResult.message);
+        return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
       }
     } else if (type === 'mobile') {
       const templateKey = ['Change Mobile', 'Current Mobile Verification', 'New Mobile Verification'].includes(reason) ? 'MOBILE_CHANGE_OTP' : 
@@ -548,16 +549,12 @@ const sendVerificationOtp = async (req, res) => {
       const smsResult = await sendSms(identifier, message, { templateId: template.templateId });
 
       if (!smsResult.success) {
-        console.warn('SMS send failed:', smsResult.error);
+        console.error('SMS send failed:', smsResult.error);
+        return res.status(500).json({ success: false, message: 'Failed to send OTP SMS. Please try again.' });
       }
     }
 
-    const responseData = {
-      success: true,
-      message: `OTP sent to your ${type}`
-    };
-
-    return res.status(200).json(responseData);
+    return res.status(200).json({ success: true, message: `OTP sent to your ${type}` });
   } catch (err) {
     console.error('Send Verification OTP Error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
